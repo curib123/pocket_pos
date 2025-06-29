@@ -1,16 +1,40 @@
-# paninda
 
-A new Flutter project.
+# 🛒 Paninda
+### POS, Loan & Inventory Management Mobile App (Flutter)
 
-## Getting Started
+**Paninda** is a private, commercial mobile application built with **Flutter**, designed to empower small business owners in managing products, sales, inventory, and customer loans — all in one offline-friendly solution.
 
-This project is a starting point for a Flutter application.
+---
 
-A few resources to get you started if this is your first Flutter project:
+## 🚀 Features
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+✅ **Inventory Management**
+- Product creation with cost & retail price
+- Batch-based restocking (FIFO logic)
+- Tracks total quantity, inventory value, and profit
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+✅ **Point of Sale (POS)**
+- Checkout multiple products
+- Calculates total, change, and profit
+- Automatically deducts stock per batch
+- Supports both cash and loan-based checkouts
+
+✅ **Loan Tracking**
+- Create and manage borrower loans
+- Merges new loans by borrower and product if unpaid
+- Mark loans as paid
+- Loan summaries by day, week, month, or year
+
+✅ **Analytics**
+- Inventory metrics (quantity, value, and profit)
+- Loan metrics (total unpaid amount, borrowers count, etc.)
+
+---
+
+## 📦 Built With
+
+- **Flutter** (UI framework)
+- **Dart** (Programming language)
+- **Hive** (Local database – lightweight, NoSQL)
+- **Provider** (State management)
+- **Material Design** (UI components)
