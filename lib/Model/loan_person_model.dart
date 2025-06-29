@@ -2,7 +2,7 @@ import 'package:hive/hive.dart';
 
 part 'loan_person_model.g.dart';
 
-@HiveType(typeId: 1)
+@HiveType(typeId: 2)
 class LoanPerson extends HiveObject {
   @HiveField(0)
   String name;
