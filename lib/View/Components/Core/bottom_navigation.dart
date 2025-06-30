@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:paninda/View/Components/HelperClass/AppColor.dart';
 
 class BottomNavigation extends StatelessWidget {
   final int currentIndex;
@@ -16,8 +17,8 @@ class BottomNavigation extends StatelessWidget {
       currentIndex: currentIndex,
       onTap: onTabSelected,
       type: BottomNavigationBarType.fixed,
-      selectedItemColor: Colors.blue,
-      unselectedItemColor: Colors.grey,
+      selectedItemColor: AppColor.primary,
+      unselectedItemColor: AppColor.textSecondary,
       items: const [
         BottomNavigationBarItem(
           icon: Icon(Icons.dashboard_rounded),

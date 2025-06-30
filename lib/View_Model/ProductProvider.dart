@@ -14,6 +14,10 @@ class ProductProvider with ChangeNotifier {
 
   bool productExists(String id) => _productBox.containsKey(id);
 
+  int _prevProductCount = 0;
+  double _prevTotalQuantity = 0;
+
+
   Product? getProductById(String id) => _productBox.get(id);
 
   Product? getProductByName(String name) {
@@ -366,6 +370,27 @@ class ProductProvider with ChangeNotifier {
 
   /// Combined total of all stocks (sacks + kilos)
   double get totalStocks => totalStocksQuantity + totalStocksKilos;
+
+
+  /// Compare with previous count
+  double get productCountChangePercent {
+    if (_prevProductCount == 0) return 100;
+    final diff = totalProductsLength - _prevProductCount;
+    return (diff / _prevProductCount) * 100;
+  }
+
+  /// Compare with previous stock quantity
+  double get quantityChangePercent {
+    if (_prevTotalQuantity == 0) return 100;
+    final diff = totalStocksQuantity - _prevTotalQuantity;
+    return (diff / _prevTotalQuantity) * 100;
+  }
+
+  /// Update tracking snapshots
+  void updateTrackingSnapshot() {
+    _prevProductCount = totalProductsLength;
+    _prevTotalQuantity = totalStocksQuantity;
+  }
 
 
   Map<String, dynamic> exportProduct(Product product) {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:paninda/View/Components/HelperClass/AppColor.dart';
 
 class ScalableAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
@@ -27,7 +28,7 @@ class ScalableAppBar extends StatelessWidget implements PreferredSizeWidget {
         alignment: Alignment.centerLeft,
         child: Text(
           title,
-          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold,color: AppColor.textPrimary),
         ),
       ),
     );

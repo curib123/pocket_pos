@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:paninda/View/Components/Core/scalable_appbar.dart';
+import 'package:paninda/View/Components/Custom/custom_btn.dart';
+import 'package:paninda/View/Components/HelperClass/AppColor.dart';
+import 'package:paninda/View/Components/Modal/add_product_modal.dart';
 
 class ProductScreen extends StatelessWidget {
   ProductScreen({super.key});
@@ -15,7 +18,7 @@ class ProductScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      key: _scaffoldKey, // Assign the key here
+      key: _scaffoldKey,
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
@@ -30,17 +33,44 @@ class ProductScreen extends StatelessWidget {
       ),
       appBar: ScalableAppBar(
         leading: GestureDetector(
-          onTap: _openDrawer, // Use method tied to global key
+          onTap: _openDrawer,
           child: const Icon(
             Icons.notes_rounded,
             size: 30,
           ),
         ),
         title: "Product",
+
       ),
-      body: ListView(
-        children: const [
-          // Add your product list widgets here
+      body: Stack(
+        children: [
+          // Scrollable product list
+          Padding(
+            padding: const EdgeInsets.only(bottom: 70), // space for button
+            child: ListView(
+              children: const [
+                SizedBox(height: 20),
+                // Add your product widgets here
+                ListTile(title: Text('Product 1')),
+                ListTile(title: Text('Product 2')),
+                ListTile(title: Text('Product 3')),
+                // Add more...
+              ],
+            ),
+          ),
+
+          // Fixed Add Product button
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10,horizontal: 20),
+              child: CustomButton(
+                color: AppColor.primary,
+                icon: Icons.add_circle_rounded,
+                  label: "Add Product",
+                  onPressed: () => AddProductModal.show(context)),
+            )
+          ),
         ],
       ),
     );
