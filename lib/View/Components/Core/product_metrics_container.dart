@@ -37,7 +37,7 @@ class ProductMetricsContainer extends StatelessWidget {
                 Text(
                   heading.toUpperCase(),
                   style: const TextStyle(
-                    fontSize: 13,
+                    fontSize: 16,
                     fontWeight: FontWeight.bold,
                     color: AppColor.textSecondary,
                     letterSpacing: 1.1,
