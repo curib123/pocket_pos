@@ -121,11 +121,7 @@ class _CategoryProductListScreenState extends State<CategoryProductListScreen> {
                     final product = filtered[index];
                     final imageUrl = product.imageUrl;
 
-                    return Card(
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      elevation: 2,
-                      margin: const EdgeInsets.symmetric(vertical: 8),
-                      child: ListTile(
+                    return  ListTile(
                         contentPadding: const EdgeInsets.all(10),
                         leading: ClipRRect(
                           borderRadius: BorderRadius.circular(8),
@@ -173,7 +169,6 @@ class _CategoryProductListScreenState extends State<CategoryProductListScreen> {
                           // Navigate to detail page if needed
                           CartModal.show(context,product);
                         },
-                      ),
                     );
                   },
                 );
