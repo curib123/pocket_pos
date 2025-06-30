@@ -17,6 +17,32 @@ class ProductProvider with ChangeNotifier {
   int _prevProductCount = 0;
   double _prevTotalQuantity = 0;
 
+  ProductProvider(){
+    updateTrackingSnapshot();
+  }
+
+  // Add this to your ProductProvider class
+  final List<Product> _cartItems = [];
+
+  List<Product> getCartItems() => _cartItems;
+
+  void addToCart(Product product) {
+    if (!_cartItems.contains(product)) {
+      _cartItems.add(product);
+      notifyListeners();
+    }
+  }
+
+  void removeFromCart(Product product) {
+    _cartItems.remove(product);
+    notifyListeners();
+  }
+
+  void clearCart() {
+    _cartItems.clear();
+    notifyListeners();
+  }
+
 
   Product? getProductById(String id) => _productBox.get(id);
 
@@ -43,6 +69,14 @@ class ProductProvider with ChangeNotifier {
         .where((product) => product.category.toLowerCase() == category.toLowerCase())
         .toList();
   }
+
+  /// Returns the count of products in the given category
+  int getProductCountByCategory(String category) {
+    return _productBox.values
+        .where((product) => product.category.toLowerCase() == category.toLowerCase())
+        .length;
+  }
+
 
   void addProduct(Product product) {
     if (!productExists(product.id)) {

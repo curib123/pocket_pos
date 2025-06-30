@@ -3,6 +3,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
@@ -90,12 +91,26 @@ class _ModalContentState extends State<_ModalContent> {
     if (image != null) setState(() => _pickedImage = image);
   }
 
-  void _submit(BuildContext context) {
+  void _submit(BuildContext context) async {
     if (_formKey.currentState!.validate()) {
       try {
         final provider = Provider.of<ProductProvider>(context, listen: false);
         final now = DateTime.now();
         final id = widget.isEdit ? widget.product!.id : const Uuid().v4();
+
+        // Save image locally if picked
+        String savedImagePath = '';
+        if (_pickedImage != null) {
+          final directory = await getApplicationDocumentsDirectory();
+          final folder = Directory('${directory.path}/paninda_images');
+          if (!await folder.exists()) await folder.create(recursive: true);
+
+          final ext = _pickedImage!.path.split('.').last;
+          final savedPath = '${folder.path}/$id.$ext';
+          await File(_pickedImage!.path).copy(savedPath);
+
+          savedImagePath = savedPath;
+        }
 
         final product = Product(
           id: id,
@@ -104,7 +119,9 @@ class _ModalContentState extends State<_ModalContent> {
           retailPrice: double.tryParse(_retailController.text) ?? 0,
           unit: _selectedUnit ?? "Unit",
           description: _descController.text.trim(),
-          imageUrl: _pickedImage?.path ?? "",
+          imageUrl: savedImagePath.isNotEmpty
+              ? savedImagePath
+              : widget.product?.imageUrl ?? "",
           category: _selectedCategory ?? "Uncategorized",
           batches: [
             Batch(
@@ -115,7 +132,9 @@ class _ModalContentState extends State<_ModalContent> {
           ],
         );
 
-        widget.isEdit ? provider.updateProduct(product.id, product) : provider.addProduct(product);
+        widget.isEdit
+            ? provider.updateProduct(product.id, product)
+            : provider.addProduct(product);
 
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -134,6 +153,7 @@ class _ModalContentState extends State<_ModalContent> {
       }
     }
   }
+
 
   @override
   Widget build(BuildContext context) {

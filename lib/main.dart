@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:paninda/Model/batch_model.dart';
+import 'package:paninda/Model/cart_item_model.dart';
 import 'package:paninda/Model/loan_person_model.dart';
 import 'package:paninda/Model/product_model.dart';
 import 'package:paninda/View_Model/LoanPersonProvider.dart';
@@ -18,6 +19,7 @@ Future<void> main() async {
   Hive.registerAdapter(ProductAdapter());
   Hive.registerAdapter(BatchAdapter());
   Hive.registerAdapter(LoanPersonAdapter());
+  Hive.registerAdapter(CartItemAdapter());
 
   await Hive.openBox<LoanPerson>('loans');
   await Hive.openBox<Product>('products');
