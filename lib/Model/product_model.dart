@@ -12,13 +12,13 @@ class Product extends HiveObject {
   String name;
 
   @HiveField(2)
-  double costPrice; // renamed from 'price'
+  double costPrice;
 
   @HiveField(3)
-  double retailPrice; // added field
+  double retailPrice;
 
   @HiveField(4)
-  String unit;
+  String unit; // Still useful for pricing label or UI
 
   @HiveField(5)
   List<Batch> batches;
@@ -29,6 +29,9 @@ class Product extends HiveObject {
   @HiveField(7)
   String imageUrl;
 
+  @HiveField(8)
+  String category;
+
   Product({
     required this.id,
     required this.name,
@@ -38,12 +41,24 @@ class Product extends HiveObject {
     required this.batches,
     required this.description,
     required this.imageUrl,
+    required this.category,
   });
 
-  double get totalQuantity =>
-      batches.fold(0, (sum, batch) => sum + batch.quantity);
+  /// Total number of sacks/bags
+  double get totalSacks => batches.fold(0, (sum, batch) => sum + batch.quantity);
 
-  double get totalCostValue => totalQuantity * costPrice;
+  /// Total weight in kilos
+  double get totalKilos => batches.fold(0, (sum, batch) => sum + batch.kiloQuantity);
 
-  double get totalRetailValue => totalQuantity * retailPrice;
+  /// Total cost based on kilos only
+  double get totalCostValueKilo => totalKilos * costPrice;
+
+  /// Total cost based on sacks only
+  double get totalCostValueSack => totalSacks * costPrice;
+
+  /// Total retail based on kilos
+  double get totalRetailValueKilo => totalKilos * retailPrice;
+
+  /// Total retail based on sacks
+  double get totalRetailValueSack => totalSacks * retailPrice;
 }

@@ -10,10 +10,6 @@ enum DateRangeType { day, week, month, year }
 class ProductProvider with ChangeNotifier {
   final Box<Product> _productBox = Hive.box<Product>('products');
 
-  // ─────────────────────────────────────────────
-  // 📦 PRODUCT LIST & SEARCH
-  // ─────────────────────────────────────────────
-
   List<Product> get products => _productBox.values.toList();
 
   bool productExists(String id) => _productBox.containsKey(id);
@@ -38,9 +34,11 @@ class ProductProvider with ChangeNotifier {
     }).toList();
   }
 
-  // ─────────────────────────────────────────────
-  // ➕ CRUD OPERATIONS
-  // ─────────────────────────────────────────────
+  List<Product> getProductsByCategory(String category) {
+    return _productBox.values
+        .where((product) => product.category.toLowerCase() == category.toLowerCase())
+        .toList();
+  }
 
   void addProduct(Product product) {
     if (!productExists(product.id)) {
@@ -66,19 +64,21 @@ class ProductProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  // ─────────────────────────────────────────────
-  // 📦 BATCH & STOCK MANAGEMENT
-  // ─────────────────────────────────────────────
-
   List<Batch> getBatchesForProduct(String productId) {
     final product = getProductById(productId);
     return product?.batches ?? [];
   }
 
-  void restockProduct(String id, double quantity, {DateTime? date}) {
+  void restockProduct(String id, double quantity, double kiloQuantity, {DateTime? date}) {
     final product = getProductById(id);
     if (product != null) {
-      product.batches.add(Batch(date: date ?? DateTime.now(), quantity: quantity));
+      product.batches.add(
+        Batch(
+          date: date ?? DateTime.now(),
+          quantity: quantity,
+          kiloQuantity: kiloQuantity,
+        ),
+      );
       product.save();
       notifyListeners();
     }
@@ -103,15 +103,45 @@ class ProductProvider with ChangeNotifier {
       }
     }
 
-    product.batches.removeWhere((b) => b.quantity <= 0);
+    product.batches.removeWhere((b) => b.quantity <= 0 && b.kiloQuantity <= 0);
     product.save();
     notifyListeners();
   }
 
-  void updateProductQuantityManually(String id, double newQuantity) {
+  void useStockFIFOKilos(String id, double kiloToUse) {
+    final product = getProductById(id);
+    if (product == null) return;
+
+    double remaining = kiloToUse;
+    product.batches.sort((a, b) => a.date.compareTo(b.date));
+
+    for (var batch in product.batches) {
+      if (remaining <= 0) break;
+
+      if (batch.kiloQuantity >= remaining) {
+        batch.kiloQuantity -= remaining;
+        remaining = 0;
+      } else {
+        remaining -= batch.kiloQuantity;
+        batch.kiloQuantity = 0;
+      }
+    }
+
+    product.batches.removeWhere((b) => b.quantity <= 0 && b.kiloQuantity <= 0);
+    product.save();
+    notifyListeners();
+  }
+
+  void updateProductQuantityManually(String id, double quantity, double kiloQuantity) {
     final product = getProductById(id);
     if (product != null) {
-      product.batches = [Batch(date: DateTime.now(), quantity: newQuantity)];
+      product.batches = [
+        Batch(
+          date: DateTime.now(),
+          quantity: quantity,
+          kiloQuantity: kiloQuantity,
+        )
+      ];
       product.save();
       notifyListeners();
     }
@@ -129,21 +159,13 @@ class ProductProvider with ChangeNotifier {
   void removeExpiredBatches(String id, DateTime Function(Batch) getExpiryDate) {
     final product = getProductById(id);
     if (product != null) {
-      product.batches.removeWhere((batch) => getExpiryDate(batch).isBefore(DateTime.now()));
+      product.batches.removeWhere((batch) =>
+          getExpiryDate(batch).isBefore(DateTime.now()));
       product.save();
       notifyListeners();
     }
   }
 
-  // ─────────────────────────────────────────────
-  // 🛒 CHECKOUT OPERATIONS
-  // ─────────────────────────────────────────────
-  /// Checkout multiple products in a cart.
-  ///
-  /// - If [isLoan] is `false`, processes as a regular sale.
-  /// - If [isLoan] is `true`, processes as a loan (requires [loanProvider] and [borrowerName]).
-  ///
-  /// Returns a receipt map or `null` on failure (e.g. stock too low or insufficient cash).
   Map<String, dynamic>? checkoutCart({
     required List<Map<String, dynamic>> cartItems,
     required bool isLoan,
@@ -154,13 +176,16 @@ class ProductProvider with ChangeNotifier {
     double total = 0;
     List<Map<String, dynamic>> receipt = [];
 
-    // Validate all products
     for (var item in cartItems) {
       final productId = item['productId'];
       final quantity = item['quantity'];
-      final product = getProductById(productId);
+      final isKilo = item['isKilo'] ?? false;
 
-      if (product == null || quantity > product.totalQuantity) return null;
+      final product = getProductById(productId);
+      if (product == null) return null;
+
+      final available = isKilo ? product.totalKilos : product.totalSacks;
+      if (quantity > available) return null;
 
       final itemTotal = quantity * product.retailPrice;
       total += itemTotal;
@@ -168,20 +193,21 @@ class ProductProvider with ChangeNotifier {
       receipt.add({
         'productId': product.id,
         'productName': product.name,
-        'unit': product.unit,
+        'unit': isKilo ? 'kilo' : product.unit,
         'quantity': quantity,
         'unitPrice': product.retailPrice,
         'total': itemTotal,
       });
     }
 
-    // Regular cash checkout
     if (!isLoan) {
       if (buyerCash < total) return null;
 
-      // Deduct stock
       for (var item in cartItems) {
-        useStockFIFO(item['productId'], item['quantity']);
+        final isKilo = item['isKilo'] ?? false;
+        isKilo
+            ? useStockFIFOKilos(item['productId'], item['quantity'])
+            : useStockFIFO(item['productId'], item['quantity']);
       }
 
       return {
@@ -194,17 +220,19 @@ class ProductProvider with ChangeNotifier {
       };
     }
 
-    // Loan checkout
     if (isLoan) {
       if (loanProvider == null || borrowerName.trim().isEmpty) return null;
 
       for (var item in cartItems) {
         final productId = item['productId'];
         final quantity = item['quantity'];
+        final isKilo = item['isKilo'] ?? false;
         final product = getProductById(productId);
         if (product == null) continue;
 
-        useStockFIFO(productId, quantity);
+        isKilo
+            ? useStockFIFOKilos(productId, quantity)
+            : useStockFIFO(productId, quantity);
 
         loanProvider.addLoan(
           LoanPerson(
@@ -231,38 +259,43 @@ class ProductProvider with ChangeNotifier {
     return null;
   }
 
-  // ─────────────────────────────────────────────
-  // 📊 METRICS & PROFIT
-  // ─────────────────────────────────────────────
+  double get totalInventorySacks =>
+      products.fold(0, (sum, p) => sum + p.totalSacks);
 
-  double get totalInventoryQuantity =>
-      products.fold(0, (sum, p) => sum + p.totalQuantity);
+  double get totalInventoryKilos =>
+      products.fold(0, (sum, p) => sum + p.totalKilos);
 
   double get totalInventoryCostValue =>
-      products.fold(0, (sum, p) => sum + p.totalCostValue);
+      products.fold(0, (sum, p) => sum + p.totalCostValueSack + p.totalCostValueKilo);
 
   double get totalInventoryRetailValue =>
-      products.fold(0, (sum, p) => sum + p.totalRetailValue);
+      products.fold(0, (sum, p) => sum + p.totalRetailValueSack + p.totalRetailValueKilo);
 
   double get allProductsTotalProfit =>
-      products.fold(0, (sum, p) => sum + (p.totalRetailValue - p.totalCostValue));
+      products.fold(0, (sum, p) =>
+      sum + (p.totalRetailValueSack - p.totalCostValueSack) +
+          (p.totalRetailValueKilo - p.totalCostValueKilo));
 
   int get totalProductCount => _productBox.length;
 
-  int get totalBatchCount => products.fold(0, (sum, p) => sum + p.batches.length);
+  int get totalBatchCount =>
+      products.fold(0, (sum, p) => sum + p.batches.length);
 
   bool isStockLow(String id, double threshold) {
     final product = getProductById(id);
-    return product != null && product.totalQuantity < threshold;
+    return product != null && product.totalSacks < threshold;
   }
 
   List<Map<String, dynamic>> getProfitPerBatch(Product product) {
     return product.batches.map((b) {
-      final profit = b.quantity * (product.retailPrice - product.costPrice);
+      final sackProfit = b.quantity * (product.retailPrice - product.costPrice);
+      final kiloProfit = b.kiloQuantity * (product.retailPrice - product.costPrice);
       return {
         'date': b.date,
         'quantity': b.quantity,
-        'profit': profit,
+        'kiloQuantity': b.kiloQuantity,
+        'profitSacks': sackProfit,
+        'profitKilos': kiloProfit,
       };
     }).toList();
   }
@@ -271,9 +304,11 @@ class ProductProvider with ChangeNotifier {
     final Map<String, double> grouped = {};
     for (final p in products) {
       for (final b in p.batches) {
-        final profit = b.quantity * (p.retailPrice - p.costPrice);
-        final date = b.date;
+        final sackProfit = b.quantity * (p.retailPrice - p.costPrice);
+        final kiloProfit = b.kiloQuantity * (p.retailPrice - p.costPrice);
+        final totalProfit = sackProfit + kiloProfit;
 
+        final date = b.date;
         late String key;
         switch (type) {
           case DateRangeType.day:
@@ -290,25 +325,24 @@ class ProductProvider with ChangeNotifier {
             break;
         }
 
-        grouped[key] = (grouped[key] ?? 0) + profit;
+        grouped[key] = (grouped[key] ?? 0) + totalProfit;
       }
     }
     return grouped;
   }
 
-  /// Calculate total retail, cost, and profit of a cart without processing it
-  ///
-  /// Returns `null` if any product is missing or quantity exceeds stock
-  Map<String, double>? getCartTotalsWithProfit(List<Map<String, dynamic>> cartItems) {
+  Map<String, double>? getCartTotalsWithProfit(
+      List<Map<String, dynamic>> cartItems) {
     double totalRetail = 0;
     double totalCost = 0;
 
     for (var item in cartItems) {
       final productId = item['productId'];
       final quantity = item['quantity'];
-      final product = getProductById(productId);
+      final isKilo = item['isKilo'] ?? false;
 
-      if (product == null || quantity > product.totalQuantity) return null;
+      final product = getProductById(productId);
+      if (product == null) return null;
 
       totalRetail += quantity * product.retailPrice;
       totalCost += quantity * product.costPrice;
@@ -321,12 +355,17 @@ class ProductProvider with ChangeNotifier {
     };
   }
 
+  /// Total number of products
+  int get totalProductsLength => products.length;
 
-  // ─────────────────────────────────────────────
-  // 📤 EXPORT / 📥 IMPORT
-  // ─────────────────────────────────────────────
+  /// Sum of all product quantities (sacks/bags/pieces)
+  double get totalStocksQuantity => products.fold(0, (sum, p) => sum + p.totalSacks);
 
+  /// Sum of all product kilo quantities
+  double get totalStocksKilos => products.fold(0, (sum, p) => sum + p.totalKilos);
 
+  /// Combined total of all stocks (sacks + kilos)
+  double get totalStocks => totalStocksQuantity + totalStocksKilos;
 
 
   Map<String, dynamic> exportProduct(Product product) {
@@ -338,12 +377,12 @@ class ProductProvider with ChangeNotifier {
       'unit': product.unit,
       'description': product.description,
       'imageUrl': product.imageUrl,
-      'batches': product.batches
-          .map((b) => {
+      'category': product.category,
+      'batches': product.batches.map((b) => {
         'quantity': b.quantity,
+        'kiloQuantity': b.kiloQuantity,
         'date': b.date.toIso8601String(),
-      })
-          .toList(),
+      }).toList(),
     };
   }
 
@@ -356,12 +395,12 @@ class ProductProvider with ChangeNotifier {
       unit: data['unit'],
       description: data['description'],
       imageUrl: data['imageUrl'],
-      batches: (data['batches'] as List<dynamic>)
-          .map((b) => Batch(
+      category: data['category'] ?? 'Uncategorized',
+      batches: (data['batches'] as List<dynamic>).map((b) => Batch(
         quantity: b['quantity'],
+        kiloQuantity: b['kiloQuantity'] ?? 0,
         date: DateTime.parse(b['date']),
-      ))
-          .toList(),
+      )).toList(),
     );
     addProduct(product);
   }

@@ -3,12 +3,19 @@ import 'package:hive/hive.dart';
 part 'batch_model.g.dart';
 
 @HiveType(typeId: 1)
-class Batch {
+class Batch extends HiveObject {
   @HiveField(0)
-  final DateTime date;
+  double quantity; // e.g., number of sacks or bags
 
   @HiveField(1)
-  double quantity;
+  double kiloQuantity; // weight in kilos
 
-  Batch({required this.date, required this.quantity});
+  @HiveField(2)
+  DateTime date;
+
+  Batch({
+    required this.quantity,
+    required this.kiloQuantity,
+    required this.date,
+  });
 }
