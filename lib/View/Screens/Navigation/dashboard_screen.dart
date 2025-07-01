@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:paninda/Model/product_model.dart';
-import 'package:paninda/View/Components/Core/scalable_appbar.dart';
+import 'package:paninda/View/Components/HelperClass/responsive_text.dart';
 import 'package:paninda/View_Model/ProductProvider.dart';
 import 'package:provider/provider.dart';
 import 'package:animate_do/animate_do.dart';
@@ -84,17 +84,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       children: [
                         Text(
                           getGreeting(),
-                          style: const TextStyle(
-                            fontSize: 30,
+                          style:  TextStyle(
+                            fontSize: getResponsiveFontSize(context, 30),
                             fontWeight: FontWeight.w800,
                             color: AppColor.textPrimary,
                           ),
                         ),
                         const SizedBox(height: 6),
-                        const Text(
+                         Text(
                           "Welcome back to Paninda",
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: getResponsiveFontSize(context, 14),
                             color: AppColor.textSecondary,
                           ),
                         ),
@@ -135,7 +135,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
               if (_selectedProduct != null && provider.products.isNotEmpty) ...[
                 const SizedBox(height: 30),
-                const Text("📦 Profit Per Batch", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppColor.textPrimary)),
+                const Text("📦 Profit Per Stocks", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppColor.textPrimary)),
                 const SizedBox(height: 12),
                 _productDropdown(provider.products),
                 const SizedBox(height: 16),

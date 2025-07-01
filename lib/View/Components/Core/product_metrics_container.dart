@@ -21,23 +21,26 @@ class ProductMetricsContainer extends StatelessWidget {
     final Color baseColor = isNegative ? AppColor.error : AppColor.success;
     final IconData directionIcon = isNegative ? Icons.arrow_downward : Icons.arrow_upward;
 
-    // Format value with comma
     final String formattedValue = _formatWithComma(value);
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        return  Container(
-            height: 150,
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.transparent,
-              borderRadius: BorderRadius.circular(20),
-            ),
+        return Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.center,
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Text(
                   heading.toUpperCase(),
+                  textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: getResponsiveFontSize(context, 14),
                     fontWeight: FontWeight.bold,
@@ -47,6 +50,7 @@ class ProductMetricsContainer extends StatelessWidget {
                 ),
                 Text(
                   formattedValue,
+                  textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: getResponsiveFontSize(context, 26),
                     fontWeight: FontWeight.bold,
@@ -88,7 +92,7 @@ class ProductMetricsContainer extends StatelessWidget {
                 ),
               ],
             ),
-
+          ),
         );
       },
     );

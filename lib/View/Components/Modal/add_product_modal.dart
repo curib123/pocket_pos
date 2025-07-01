@@ -278,7 +278,7 @@ class _ModalContentState extends State<_ModalContent> {
                       alignment: Alignment.centerLeft,
                       child: Padding(
                         padding: const EdgeInsets.only(bottom: 10),
-                        child: Text("Previous Batches", style: TextStyle(fontWeight: FontWeight.bold)),
+                        child: Text("Previous Stocks Batch", style: TextStyle(fontWeight: FontWeight.bold)),
                       ),
                     ),
                     Container(

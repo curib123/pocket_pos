@@ -67,7 +67,7 @@ class ScalableAppBar extends StatelessWidget implements PreferredSizeWidget {
                       height: 40,
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade200,
+                        color: Colors.grey.shade100,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
