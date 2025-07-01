@@ -35,7 +35,7 @@ class _CategoryProductListScreenState extends State<CategoryProductListScreen> {
         actions: [
           Consumer<ProductProvider>(
             builder: (context, provider, _) {
-              final count = provider.getCartItems().length; // You can use cart count here
+              final count = provider.getCartItemCount(); // You can use cart count here
 
               return Stack(
                 children: [

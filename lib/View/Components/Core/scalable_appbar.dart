@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:paninda/View/Components/Custom/custom_search_delegate.dart';
 import 'package:paninda/View/Components/HelperClass/AppColor.dart';
 
 class ScalableAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
   final List<Widget>? actions;
-  final Widget? leading;
   final double height;
+  final bool showSearchBar;
 
   const ScalableAppBar({
     super.key,
     required this.title,
     this.actions,
-    this.leading,
-    this.height = kToolbarHeight, // default AppBar height
+    this.height = kToolbarHeight,
+    this.showSearchBar = true,
   });
 
   @override
@@ -21,16 +22,82 @@ class ScalableAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      leading: leading,
-      actions: actions,
-      title: FittedBox(
-        fit: BoxFit.scaleDown,
-        alignment: Alignment.centerLeft,
-        child: Text(
-          title,
-          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold,color: AppColor.textPrimary),
-        ),
+      backgroundColor: Colors.white,
+      elevation: 0,
+      titleSpacing: 16,
+      title: LayoutBuilder(
+        builder: (context, constraints) {
+          return Row(
+            children: [
+              // Title
+              Flexible(
+                flex: showSearchBar ? 2 : 1,
+                fit: FlexFit.tight,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 25,
+                      fontWeight: FontWeight.bold,
+                      color: AppColor.textPrimary,
+                    ),
+                  ),
+                ),
+              ),
+
+              // Search Bar or Empty Widget
+              showSearchBar
+                  ? const SizedBox(width: 16)
+                  : const SizedBox.shrink(),
+
+              showSearchBar
+                  ? Expanded(
+                flex: 4,
+                child: GestureDetector(
+                  onTap: () {
+                    showSearch(
+                      context: context,
+                      delegate: CustomSearchDelegate(),
+                    );
+                  },
+                  child: Container(
+                    height: 40,
+                    padding:
+                    const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade200,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisAlignment:
+                      MainAxisAlignment.spaceBetween,
+                      children: const [
+                        Flexible(
+                          child: Text(
+                            "Search Items...",
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: AppColor.textSecondary,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 8),
+                        Icon(Icons.search,
+                            color: AppColor.textSecondary, size: 25),
+                      ],
+                    ),
+                  ),
+                ),
+              )
+                  : const SizedBox.shrink(),
+            ],
+          );
+        },
       ),
+      actions: actions,
     );
   }
 }

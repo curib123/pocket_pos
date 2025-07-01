@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:paninda/View/Components/HelperClass/AppColor.dart';
+import 'package:paninda/View/Components/HelperClass/responsive_text.dart';
 
 class ProductMetricsContainer extends StatelessWidget {
   final String heading;
@@ -19,6 +21,9 @@ class ProductMetricsContainer extends StatelessWidget {
     final Color baseColor = isNegative ? AppColor.error : AppColor.success;
     final IconData directionIcon = isNegative ? Icons.arrow_downward : Icons.arrow_upward;
 
+    // Format value with comma
+    final String formattedValue = _formatWithComma(value);
+
     return LayoutBuilder(
       builder: (context, constraints) {
         return ConstrainedBox(
@@ -36,17 +41,17 @@ class ProductMetricsContainer extends StatelessWidget {
               children: [
                 Text(
                   heading.toUpperCase(),
-                  style: const TextStyle(
-                    fontSize: 16,
+                  style: TextStyle(
+                    fontSize: getResponsiveFontSize(context, 14),
                     fontWeight: FontWeight.bold,
                     color: AppColor.textSecondary,
                     letterSpacing: 1.1,
                   ),
                 ),
                 Text(
-                  value,
-                  style: const TextStyle(
-                    fontSize: 26,
+                  formattedValue,
+                  style: TextStyle(
+                    fontSize: getResponsiveFontSize(context, 26),
                     fontWeight: FontWeight.bold,
                     color: AppColor.textPrimary,
                   ),
@@ -76,7 +81,7 @@ class ProductMetricsContainer extends StatelessWidget {
                       Text(
                         percentage,
                         style: TextStyle(
-                          fontSize: 13,
+                          fontSize: getResponsiveFontSize(context, 13),
                           fontWeight: FontWeight.w800,
                           color: baseColor,
                         ),
@@ -90,5 +95,14 @@ class ProductMetricsContainer extends StatelessWidget {
         );
       },
     );
+  }
+
+  String _formatWithComma(String value) {
+    try {
+      final number = double.tryParse(value.replaceAll(',', '')) ?? 0;
+      return NumberFormat("#,##0.##").format(number);
+    } catch (_) {
+      return value; // fallback if invalid
+    }
   }
 }

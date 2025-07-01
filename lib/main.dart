@@ -8,6 +8,7 @@ import 'package:paninda/Model/loan_person_model.dart';
 import 'package:paninda/Model/product_model.dart';
 import 'package:paninda/View_Model/LoanPersonProvider.dart';
 import 'package:paninda/View_Model/ProductProvider.dart';
+import 'package:paninda/View_Model/StoreCategoryProvider.dart';
 import 'package:paninda/View_Model/TabProvider.dart';
 import 'package:paninda/home.dart';
 import 'package:provider/provider.dart';
@@ -23,6 +24,9 @@ Future<void> main() async {
 
   await Hive.openBox<LoanPerson>('loans');
   await Hive.openBox<Product>('products');
+  await Hive.openBox('categoryVisibility');
+  await Hive.openBox('snapshot');
+
 
   runApp(
     MultiProvider(
@@ -30,6 +34,7 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (_) => TabProvider()),
         ChangeNotifierProvider(create: (_) => ProductProvider()),
         ChangeNotifierProvider(create: (_) => LoanProvider()),
+        ChangeNotifierProvider(create: (_) => StoreCategoryProvider()),
       ],
       child: const MyApp(),
     ),
@@ -44,7 +49,16 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: "Paninda Stock and Inventory Mobile App",
       theme: ThemeData(
-        textTheme: GoogleFonts.poppinsTextTheme(),
+        scaffoldBackgroundColor: Colors.white,          // <- sets screen background
+        canvasColor: Colors.white,                      // <- sets modal/sheet background
+        dialogBackgroundColor: Colors.white,            // <- sets dialog background
+        textTheme: GoogleFonts.workSansTextTheme(),      // <- custom font
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.blue,
+          background: Colors.white,
+          surface: Colors.white,
+        ),
+        useMaterial3: true,
       ),
       home: Home(),
     );

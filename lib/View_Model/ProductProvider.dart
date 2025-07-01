@@ -9,28 +9,28 @@ enum DateRangeType { day, week, month, year }
 
 class ProductProvider with ChangeNotifier {
   final Box<Product> _productBox = Hive.box<Product>('products');
-
   List<Product> get products => _productBox.values.toList();
 
-  bool productExists(String id) => _productBox.containsKey(id);
-
+  final Map<Product, int> _cartItems = {};
   int _prevProductCount = 0;
-  double _prevTotalQuantity = 0;
+  int _prevTotalQuantity = 0;
+  DateTime _lastSnapshotDate = DateTime.now().subtract(const Duration(days: 1));
 
-  ProductProvider(){
-    updateTrackingSnapshot();
+  ProductProvider() {
+    loadSnapshot();
   }
 
-  // Add this to your ProductProvider class
-  final List<Product> _cartItems = [];
+  // CART
+  Map<Product, int> getCartItems() => _cartItems;
+  int getCartItemCount() => _cartItems.length;
 
-  List<Product> getCartItems() => _cartItems;
-
-  void addToCart(Product product) {
-    if (!_cartItems.contains(product)) {
-      _cartItems.add(product);
-      notifyListeners();
+  void addToCart(Product product, int quantity) {
+    if (_cartItems.containsKey(product)) {
+      _cartItems[product] = _cartItems[product]! + quantity;
+    } else {
+      _cartItems[product] = quantity;
     }
+    notifyListeners();
   }
 
   void removeFromCart(Product product) {
@@ -43,14 +43,13 @@ class ProductProvider with ChangeNotifier {
     notifyListeners();
   }
 
-
+  // PRODUCT ACTIONS
+  bool productExists(String id) => _productBox.containsKey(id);
   Product? getProductById(String id) => _productBox.get(id);
 
   Product? getProductByName(String name) {
     try {
-      return _productBox.values.firstWhere(
-            (prod) => prod.name.toLowerCase() == name.toLowerCase(),
-      );
+      return _productBox.values.firstWhere((prod) => prod.name.toLowerCase() == name.toLowerCase());
     } catch (_) {
       return null;
     }
@@ -70,13 +69,11 @@ class ProductProvider with ChangeNotifier {
         .toList();
   }
 
-  /// Returns the count of products in the given category
   int getProductCountByCategory(String category) {
     return _productBox.values
         .where((product) => product.category.toLowerCase() == category.toLowerCase())
         .length;
   }
-
 
   void addProduct(Product product) {
     if (!productExists(product.id)) {
@@ -103,20 +100,17 @@ class ProductProvider with ChangeNotifier {
   }
 
   List<Batch> getBatchesForProduct(String productId) {
-    final product = getProductById(productId);
-    return product?.batches ?? [];
+    return getProductById(productId)?.batches ?? [];
   }
 
   void restockProduct(String id, double quantity, double kiloQuantity, {DateTime? date}) {
     final product = getProductById(id);
     if (product != null) {
-      product.batches.add(
-        Batch(
-          date: date ?? DateTime.now(),
-          quantity: quantity,
-          kiloQuantity: kiloQuantity,
-        ),
-      );
+      product.batches.add(Batch(
+        date: date ?? DateTime.now(),
+        quantity: quantity,
+        kiloQuantity: kiloQuantity,
+      ));
       product.save();
       notifyListeners();
     }
@@ -131,7 +125,6 @@ class ProductProvider with ChangeNotifier {
 
     for (var batch in product.batches) {
       if (remaining <= 0) break;
-
       if (batch.quantity >= remaining) {
         batch.quantity -= remaining;
         remaining = 0;
@@ -155,7 +148,6 @@ class ProductProvider with ChangeNotifier {
 
     for (var batch in product.batches) {
       if (remaining <= 0) break;
-
       if (batch.kiloQuantity >= remaining) {
         batch.kiloQuantity -= remaining;
         remaining = 0;
@@ -173,13 +165,7 @@ class ProductProvider with ChangeNotifier {
   void updateProductQuantityManually(String id, double quantity, double kiloQuantity) {
     final product = getProductById(id);
     if (product != null) {
-      product.batches = [
-        Batch(
-          date: DateTime.now(),
-          quantity: quantity,
-          kiloQuantity: kiloQuantity,
-        )
-      ];
+      product.batches = [Batch(date: DateTime.now(), quantity: quantity, kiloQuantity: kiloQuantity)];
       product.save();
       notifyListeners();
     }
@@ -197,13 +183,13 @@ class ProductProvider with ChangeNotifier {
   void removeExpiredBatches(String id, DateTime Function(Batch) getExpiryDate) {
     final product = getProductById(id);
     if (product != null) {
-      product.batches.removeWhere((batch) =>
-          getExpiryDate(batch).isBefore(DateTime.now()));
+      product.batches.removeWhere((batch) => getExpiryDate(batch).isBefore(DateTime.now()));
       product.save();
       notifyListeners();
     }
   }
 
+  // CHECKOUT
   Map<String, dynamic>? checkoutCart({
     required List<Map<String, dynamic>> cartItems,
     required bool isLoan,
@@ -218,7 +204,6 @@ class ProductProvider with ChangeNotifier {
       final productId = item['productId'];
       final quantity = item['quantity'];
       final isKilo = item['isKilo'] ?? false;
-
       final product = getProductById(productId);
       if (product == null) return null;
 
@@ -297,32 +282,20 @@ class ProductProvider with ChangeNotifier {
     return null;
   }
 
-  double get totalInventorySacks =>
-      products.fold(0, (sum, p) => sum + p.totalSacks);
-
-  double get totalInventoryKilos =>
-      products.fold(0, (sum, p) => sum + p.totalKilos);
-
-  double get totalInventoryCostValue =>
-      products.fold(0, (sum, p) => sum + p.totalCostValueSack + p.totalCostValueKilo);
-
-  double get totalInventoryRetailValue =>
-      products.fold(0, (sum, p) => sum + p.totalRetailValueSack + p.totalRetailValueKilo);
-
-  double get allProductsTotalProfit =>
-      products.fold(0, (sum, p) =>
-      sum + (p.totalRetailValueSack - p.totalCostValueSack) +
-          (p.totalRetailValueKilo - p.totalCostValueKilo));
-
+  // INVENTORY METRICS
+  double get totalInventorySacks => products.fold(0, (sum, p) => sum + p.totalSacks);
+  double get totalInventoryKilos => products.fold(0, (sum, p) => sum + p.totalKilos);
+  double get totalInventoryCostValue => products.fold(0, (sum, p) => sum + p.totalCostValueSack + p.totalCostValueKilo);
+  double get totalInventoryRetailValue => products.fold(0, (sum, p) => sum + p.totalRetailValueSack + p.totalRetailValueKilo);
+  double get allProductsTotalProfit => products.fold(0, (sum, p) => sum + (p.totalRetailValueSack - p.totalCostValueSack) + (p.totalRetailValueKilo - p.totalCostValueKilo));
   int get totalProductCount => _productBox.length;
-
-  int get totalBatchCount =>
-      products.fold(0, (sum, p) => sum + p.batches.length);
-
+  int get totalBatchCount => products.fold(0, (sum, p) => sum + p.batches.length);
   bool isStockLow(String id, double threshold) {
     final product = getProductById(id);
-    return product != null && product.totalSacks < threshold;
+    if (product == null) return false;
+    return product.totalSacks < threshold;
   }
+
 
   List<Map<String, dynamic>> getProfitPerBatch(Product product) {
     return product.batches.map((b) {
@@ -342,10 +315,7 @@ class ProductProvider with ChangeNotifier {
     final Map<String, double> grouped = {};
     for (final p in products) {
       for (final b in p.batches) {
-        final sackProfit = b.quantity * (p.retailPrice - p.costPrice);
-        final kiloProfit = b.kiloQuantity * (p.retailPrice - p.costPrice);
-        final totalProfit = sackProfit + kiloProfit;
-
+        final profit = (b.quantity + b.kiloQuantity) * (p.retailPrice - p.costPrice);
         final date = b.date;
         late String key;
         switch (type) {
@@ -362,15 +332,13 @@ class ProductProvider with ChangeNotifier {
             key = "${date.year}";
             break;
         }
-
-        grouped[key] = (grouped[key] ?? 0) + totalProfit;
+        grouped[key] = (grouped[key] ?? 0) + profit;
       }
     }
     return grouped;
   }
 
-  Map<String, double>? getCartTotalsWithProfit(
-      List<Map<String, dynamic>> cartItems) {
+  Map<String, double>? getCartTotalsWithProfit(List<Map<String, dynamic>> cartItems) {
     double totalRetail = 0;
     double totalCost = 0;
 
@@ -393,39 +361,52 @@ class ProductProvider with ChangeNotifier {
     };
   }
 
-  /// Total number of products
-  int get totalProductsLength => products.length;
+  // SNAPSHOT — HIVE REPLACEMENT
+  Future<void> loadSnapshot() async {
+    final box = await Hive.openBox('snapshot');
+    _prevProductCount = box.get('prevProductCount', defaultValue: 0);
+    _prevTotalQuantity = box.get('prevTotalQuantity', defaultValue: 0);
+    final savedDate = box.get('lastSnapshotDate');
+    _lastSnapshotDate = savedDate != null
+        ? DateTime.tryParse(savedDate) ?? DateTime.now().subtract(const Duration(days: 1))
+        : DateTime.now().subtract(const Duration(days: 1));
+  }
 
-  /// Sum of all product quantities (sacks/bags/pieces)
-  double get totalStocksQuantity => products.fold(0, (sum, p) => sum + p.totalSacks);
+  Future<void> _saveSnapshot() async {
+    final box = await Hive.openBox('snapshot');
+    await box.put('prevProductCount', _prevProductCount);
+    await box.put('prevTotalQuantity', _prevTotalQuantity);
+    await box.put('lastSnapshotDate', _lastSnapshotDate.toIso8601String());
+  }
 
-  /// Sum of all product kilo quantities
-  double get totalStocksKilos => products.fold(0, (sum, p) => sum + p.totalKilos);
+  Future<void> updateTrackingSnapshotIfNewDay() async {
+    final now = DateTime.now();
+    final isNewDay = now.difference(_lastSnapshotDate).inDays >= 1;
 
-  /// Combined total of all stocks (sacks + kilos)
-  double get totalStocks => totalStocksQuantity + totalStocksKilos;
+    if (isNewDay) {
+      _prevProductCount = totalProductsLength;
+      _prevTotalQuantity = totalStocksQuantity.round();
+      _lastSnapshotDate = now;
+      await _saveSnapshot();
+    }
+  }
 
-
-  /// Compare with previous count
   double get productCountChangePercent {
     if (_prevProductCount == 0) return 100;
     final diff = totalProductsLength - _prevProductCount;
     return (diff / _prevProductCount) * 100;
   }
 
-  /// Compare with previous stock quantity
   double get quantityChangePercent {
     if (_prevTotalQuantity == 0) return 100;
     final diff = totalStocksQuantity - _prevTotalQuantity;
     return (diff / _prevTotalQuantity) * 100;
   }
 
-  /// Update tracking snapshots
-  void updateTrackingSnapshot() {
-    _prevProductCount = totalProductsLength;
-    _prevTotalQuantity = totalStocksQuantity;
-  }
-
+  int get totalProductsLength => products.length;
+  double get totalStocksQuantity => products.fold(0, (sum, p) => sum + p.totalSacks);
+  double get totalStocksKilos => products.fold(0, (sum, p) => sum + p.totalKilos);
+  double get totalStocks => totalStocksQuantity + totalStocksKilos;
 
   Map<String, dynamic> exportProduct(Product product) {
     return {

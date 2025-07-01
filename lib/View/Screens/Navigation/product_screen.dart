@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:paninda/View/Screens/ProductList/category_product_list_screen.dart';
+import 'package:paninda/View_Model/StoreCategoryProvider.dart';
 import 'package:provider/provider.dart';
 import 'package:paninda/View/Components/Core/product_metrics_container.dart';
 import 'package:paninda/View/Components/Core/scalable_appbar.dart';
@@ -17,40 +19,14 @@ class ProductScreen extends StatefulWidget {
 }
 
 class _ProductScreenState extends State<ProductScreen> {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  bool isGrid = false;
+  bool isGrid = false; // Only for toggling icon appearance
 
-  void _openDrawer() {
-    _scaffoldKey.currentState?.openDrawer();
-  }
-
-  void _toggleView() {
-    setState(() {
-      isGrid = !isGrid;
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      key: _scaffoldKey,
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: const [
-            DrawerHeader(
-              decoration: BoxDecoration(color: Colors.blue),
-              child: Text('Drawer Header'),
-            ),
-            ListTile(title: Text('Item 1')),
-          ],
-        ),
-      ),
       appBar: ScalableAppBar(
-        leading: GestureDetector(
-          onTap: _openDrawer,
-          child: const Icon(Icons.notes_rounded, size: 30),
-        ),
+        showSearchBar: true,
         title: "Product",
       ),
       body: Stack(
@@ -106,9 +82,13 @@ class _ProductScreenState extends State<ProductScreen> {
                         ),
                       ),
                       GestureDetector(
-                        onTap: _toggleView,
+                        onTap: () {
+                          setState(() {
+                            isGrid = !isGrid;
+                          });
+                        },
                         child: Icon(
-                          isGrid ? Icons.list_rounded : Icons.grid_view_rounded,
+                          isGrid ? Icons.archive_rounded : Icons.grid_view_rounded,
                           size: 24,
                           color: AppColor.textSecondary,
                         ),
@@ -117,143 +97,102 @@ class _ProductScreenState extends State<ProductScreen> {
                   ),
                 ),
 
-                /// Product Category List/Grid
+                /// Only List View (GridView Removed)
                 Expanded(
-                  child: Consumer<ProductProvider>(
-                    builder: (context, provider, _) {
-                      if (isGrid) {
-                        return LayoutBuilder(
-                          builder: (context, constraints) {
-                            int crossAxisCount = constraints.maxWidth > 600 ? 3 : 2;
+                  child: Consumer2<ProductProvider, StoreCategoryProvider>(
+                    builder: (context, productProvider, storeCategoryProvider, _) {
+                      final categories = !isGrid ? storeCategoryProvider.visibleCategories : storeCategoryProvider.hiddenCategories;
 
-                            return GridView.builder(
-                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: crossAxisCount,
-                                crossAxisSpacing: 16,
-                                mainAxisSpacing: 16,
-                                mainAxisExtent: 150, // <-- Fixed height
-                              ),
-                              itemCount: StoreCategory.all.length,
-                              itemBuilder: (context, index) {
-                                final category = StoreCategory.all[index];
-                                final icon = StoreCategory.icons[category] ?? Icons.category;
-                                final color = StoreCategory.colors[category] ?? Colors.grey;
-                                final count = provider.getProductCountByCategory(category);
+                      return ListView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 25),
+                        itemCount: categories.length,
+                        itemBuilder: (context, index) {
+                          final category = categories[index];
+                          final icon = StoreCategory.icons[category] ?? Icons.category;
+                          final color = StoreCategory.colors[category] ?? Colors.grey;
+                          final count = productProvider.getProductCountByCategory(category);
+                          final isHidden = storeCategoryProvider.isHidden(category);
 
-                                return GestureDetector(
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => CategoryProductListScreen(category: category),
-                                      ),
-                                    );
-                                  },
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(16),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withOpacity(0.05),
-                                          blurRadius: 8,
-                                          offset: const Offset(0, 4),
-                                        ),
-                                      ],
-                                      border: Border.all(color: color.withOpacity(0.2)),
-                                    ),
-                                    padding: const EdgeInsets.all(14),
-                                    child: Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        CircleAvatar(
-                                          backgroundColor: color.withOpacity(0.1),
-                                          radius: 24,
-                                          child: Icon(icon, color: color, size: 22),
-                                        ),
-                                        const SizedBox(height: 10),
-                                        Text(
-                                          category,
-                                          textAlign: TextAlign.center,
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 13,
-                                            color: AppColor.textPrimary,
-                                          ),
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          'All Product: $count',
-                                          style: const TextStyle(
-                                            fontSize: 12,
-                                            color: AppColor.textSecondary,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                );
-                              },
-                            );
-                          },
-                        );
-
-                      } else {
-                        return ListView.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 25),
-                          itemCount: StoreCategory.all.length,
-                          itemBuilder: (context, index) {
-                            final category = StoreCategory.all[index];
-                            final icon = StoreCategory.icons[category] ?? Icons.category;
-                            final color = StoreCategory.colors[category] ?? Colors.grey;
-                            final count = provider.getProductCountByCategory(category);
-
-                            return ListTile(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => CategoryProductListScreen(category: category),
-                                  ),
-                                );
-                              },
-
-                              contentPadding: const EdgeInsets.symmetric(vertical: 6),
-                              leading: Container(
-                                width: 40,
-                                height: 40,
-                                decoration: BoxDecoration(
-                                  color: color.withOpacity(0.15),
-                                  shape: BoxShape.circle,
+                          return Slidable(
+                            key: ValueKey(category),
+                            startActionPane: isHidden
+                                ? ActionPane(
+                              motion: const ScrollMotion(),
+                              extentRatio: 0.25,
+                              children: [
+                                SlidableAction(
+                                  onPressed: (_) =>
+                                      storeCategoryProvider.setHidden(category, false),
+                                  backgroundColor: Colors.green,
+                                  foregroundColor: Colors.white,
+                                  icon: Icons.visibility,
                                 ),
-                                child: Icon(icon, color: color, size: 20),
-                              ),
-                              title: Text(
-                                category,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 15,
-                                  color: AppColor.textPrimary,
+                              ],
+                            )
+                                : null,
+                            endActionPane: !isHidden
+                                ? ActionPane(
+                              motion: const ScrollMotion(),
+                              extentRatio: 0.25,
+                              children: [
+                                SlidableAction(
+                                  onPressed: (_) =>
+                                      storeCategoryProvider.setHidden(category, true),
+                                  backgroundColor: Colors.redAccent,
+                                  foregroundColor: Colors.white,
+                                  icon: Icons.hide_source,
                                 ),
-                              ),
-                              subtitle: Text(
-                                'All Product: $count',
-                                style: const TextStyle(
-                                  fontSize: 13,
+                              ],
+                            )
+                                : null,
+                            child: Opacity(
+                              opacity: isHidden ? 0.3 : 1,
+                              child: ListTile(
+                                onTap: isHidden
+                                    ? null
+                                    : () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          CategoryProductListScreen(category: category),
+                                    ),
+                                  );
+                                },
+                                contentPadding: const EdgeInsets.symmetric(vertical: 6),
+                                leading: Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    color: color.withOpacity(0.15),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(icon, color: color, size: 20),
+                                ),
+                                title: Text(
+                                  category,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 15,
+                                    color: AppColor.textPrimary,
+                                  ),
+                                ),
+                                subtitle: Text(
+                                  'All Product: $count',
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: AppColor.textSecondary,
+                                  ),
+                                ),
+                                trailing: const Icon(
+                                  Icons.chevron_right,
                                   color: AppColor.textSecondary,
                                 ),
                               ),
-                              trailing: const Icon(
-                                Icons.chevron_right,
-                                color: AppColor.textSecondary,
-                              ),
-                            );
-                          },
-                        );
-                      }
+                            ),
+                          );
+                        },
+                      );
                     },
                   ),
                 ),
