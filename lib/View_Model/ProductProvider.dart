@@ -189,15 +189,16 @@ class ProductProvider with ChangeNotifier {
     }
   }
 
-  // CHECKOUT
-  Map<String, dynamic>? checkoutCart({
+
+  Future<Map<String, dynamic>?> checkoutCart({
     required List<Map<String, dynamic>> cartItems,
     required bool isLoan,
     double buyerCash = 0,
     String borrowerName = '',
     LoanProvider? loanProvider,
-  }) {
+  }) async {
     double total = 0;
+    double totalProfit = 0;
     List<Map<String, dynamic>> receipt = [];
 
     for (var item in cartItems) {
@@ -211,7 +212,11 @@ class ProductProvider with ChangeNotifier {
       if (quantity > available) return null;
 
       final itemTotal = quantity * product.retailPrice;
+      final itemCost = quantity * product.costPrice;
+      final itemProfit = itemTotal - itemCost;
+
       total += itemTotal;
+      totalProfit += itemProfit;
 
       receipt.add({
         'productId': product.id,
@@ -220,8 +225,11 @@ class ProductProvider with ChangeNotifier {
         'quantity': quantity,
         'unitPrice': product.retailPrice,
         'total': itemTotal,
+        'profit': itemProfit,
       });
     }
+
+    final now = DateTime.now();
 
     if (!isLoan) {
       if (buyerCash < total) return null;
@@ -233,12 +241,19 @@ class ProductProvider with ChangeNotifier {
             : useStockFIFO(item['productId'], item['quantity']);
       }
 
+      final profitBox = Hive.box('checkout_profits');
+      await profitBox.add({
+        'profit': totalProfit,
+        'timestamp': now.toIso8601String(),
+      });
+
       return {
         'items': receipt,
         'grandTotal': total,
         'cashGiven': buyerCash,
         'change': buyerCash - total,
-        'timestamp': DateTime.now(),
+        'profit': totalProfit,
+        'timestamp': now,
         'status': 'Paid',
       };
     }
@@ -264,16 +279,23 @@ class ProductProvider with ChangeNotifier {
             productName: product.name,
             quantity: quantity,
             totalAmount: quantity * product.retailPrice,
-            date: DateTime.now(),
+            date: now,
             isPaid: false,
           ),
         );
       }
 
+      final profitBox = Hive.box('checkout_profits');
+      await profitBox.add({
+        'profit': totalProfit,
+        'timestamp': now.toIso8601String(),
+      });
+
       return {
         'items': receipt,
         'grandTotal': total,
-        'timestamp': DateTime.now(),
+        'profit': totalProfit,
+        'timestamp': now,
         'borrower': borrowerName,
         'status': 'Loan',
       };
@@ -281,6 +303,7 @@ class ProductProvider with ChangeNotifier {
 
     return null;
   }
+
 
   // INVENTORY METRICS
   double get totalInventorySacks => products.fold(0, (sum, p) => sum + p.totalSacks);
@@ -335,6 +358,39 @@ class ProductProvider with ChangeNotifier {
         grouped[key] = (grouped[key] ?? 0) + profit;
       }
     }
+    return grouped;
+  }
+
+  Map<String, double> getCheckoutProfitBy(DateRangeType rangeType) {
+    final profitBox = Hive.box('checkout_profits');
+    final Map<String, double> grouped = {};
+
+    for (var record in profitBox.values) {
+      final profit = record['profit'] ?? 0.0;
+      final timestampStr = record['timestamp'];
+      final date = DateTime.tryParse(timestampStr);
+      if (date == null) continue;
+
+      late String key;
+      switch (rangeType) {
+        case DateRangeType.day:
+          key = "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
+          break;
+        case DateRangeType.week:
+          final week = ((date.day - 1) / 7).floor() + 1;
+          key = "${date.year}-W$week";
+          break;
+        case DateRangeType.month:
+          key = "${date.year}-${date.month.toString().padLeft(2, '0')}";
+          break;
+        case DateRangeType.year:
+          key = "${date.year}";
+          break;
+      }
+
+      grouped[key] = (grouped[key] ?? 0) + profit;
+    }
+
     return grouped;
   }
 

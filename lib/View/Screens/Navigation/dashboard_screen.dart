@@ -55,7 +55,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<ProductProvider>(context);
-    final profitBy = provider.getProfitBy(_selectedRange);
+    final profitBy = provider.getCheckoutProfitBy(_selectedRange);
 
     if (_selectedProduct == null && provider.products.isNotEmpty) {
       _selectedProduct = provider.products.first;
@@ -64,7 +64,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final batchProfit = _selectedProduct != null ? getProfitPerBatch(_selectedProduct!) : [];
 
     return Scaffold(
-
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
@@ -117,7 +116,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               _dashboardGroup("💰 Financial Summary", [
                 _tile("Cost Value", currencyFormat.format(provider.totalInventoryCostValue), LucideIcons.wallet),
                 _tile("Retail Value", currencyFormat.format(provider.totalInventoryRetailValue), LucideIcons.shoppingCart),
-                _tile("Profit", currencyFormat.format(provider.allProductsTotalProfit), LucideIcons.coins, AppColor.success),
+                _tile("Potential Profit", currencyFormat.format(provider.allProductsTotalProfit), LucideIcons.coins, AppColor.success),
               ]),
 
               _dashboardGroup("📈 Growth Trends", [
@@ -126,12 +125,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ]),
 
               const SizedBox(height: 30),
-              const Text("📊 Profit by Range", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppColor.textPrimary)),
+              const Text("📊Realized Profit by Range", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppColor.textPrimary)),
               const SizedBox(height: 12),
               _dateRangeDropdown(),
               const SizedBox(height: 16),
-              ...profitBy.entries.map((entry) =>
+              ...profitBy.entries.toList().reversed.take(12).map((entry) =>
                   _tile(entry.key, currencyFormat.format(entry.value), LucideIcons.lineChart, AppColor.accent)),
+
 
               if (_selectedProduct != null && provider.products.isNotEmpty) ...[
                 const SizedBox(height: 30),
@@ -236,9 +236,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
             const SizedBox(height: 4),
             Text("All Kilos: ${numberFormat.format(batch['kiloQuantity'])}", style: const TextStyle(color: AppColor.textSecondary)),
             const SizedBox(height: 8),
-            Text("Profit (Sacks): ${currencyFormat.format(batch['profitSacks'])}", style: const TextStyle(color: AppColor.success)),
+            Text("Possible Profit (Qty): ${currencyFormat.format(batch['profitSacks'])}", style: const TextStyle(color: AppColor.success)),
             const SizedBox(height: 4),
-            Text("Profit (Kilos): ${currencyFormat.format(batch['profitKilos'])}", style: const TextStyle(color: AppColor.accent)),
+            Text("Possible Profit (Kilos): ${currencyFormat.format(batch['profitKilos'])}", style: const TextStyle(color: AppColor.accent)),
           ],
         ),
       ),

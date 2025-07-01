@@ -26,6 +26,7 @@ class _ProductScreenState extends State<ProductScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: ScalableAppBar(
+        isTitle: false,
         showSearchBar: true,
         title: "Product",
       ),

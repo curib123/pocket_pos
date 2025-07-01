@@ -218,25 +218,36 @@ class _CartListContentState extends State<_CartListContent> {
                   minimumSize: const Size.fromHeight(48),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                onPressed: () {
-                  final result = productProvider.checkoutCart(
-                    cartItems: checkoutItems,
-                    isLoan: isLoan,
-                    buyerCash: buyerCash,
-                    borrowerName: borrowerController.text.trim(),
-                    loanProvider: isLoan ? loanProvider : null,
-                  );
-
-                  if (result != null) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(isLoan ? "Loan recorded." : "Checkout successful. Change ${(result['change'] ?? 0.0).toStringAsFixed(2)}")),
+                  onPressed: () async {
+                    final result = await productProvider.checkoutCart(
+                      cartItems: checkoutItems,
+                      isLoan: isLoan,
+                      buyerCash: buyerCash,
+                      borrowerName: borrowerController.text.trim(),
+                      loanProvider: isLoan ? loanProvider : null,
                     );
-                    productProvider.clearCart();
-                    Navigator.pop(context);
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Checkout failed.")));
+
+                    if (result != null) {
+                      final profit = (result['profit'] ?? 0.0) as double;
+                      final change = (result['change'] ?? 0.0) as double;
+
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            isLoan
+                                ? "Loan recorded. Profit ₱${profit.toStringAsFixed(2)}"
+                                : "Checkout successful. Change ₱${change.toStringAsFixed(2)} | Profit ₱${profit.toStringAsFixed(2)}",
+                          ),
+                        ),
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("Checkout failed.")),
+                      );
+                    }
                   }
-                },
+
               ),
 
               const SizedBox(height: 12),

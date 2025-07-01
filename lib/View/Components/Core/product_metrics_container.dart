@@ -26,9 +26,7 @@ class ProductMetricsContainer extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        return ConstrainedBox(
-          constraints: const BoxConstraints(minWidth: 150, maxWidth: 200),
-          child: Container(
+        return  Container(
             height: 150,
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
@@ -36,8 +34,7 @@ class ProductMetricsContainer extends StatelessWidget {
               borderRadius: BorderRadius.circular(20),
             ),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 Text(
                   heading.toUpperCase(),
@@ -91,7 +88,7 @@ class ProductMetricsContainer extends StatelessWidget {
                 ),
               ],
             ),
-          ),
+
         );
       },
     );

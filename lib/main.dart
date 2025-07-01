@@ -26,6 +26,8 @@ Future<void> main() async {
   await Hive.openBox<Product>('products');
   await Hive.openBox('categoryVisibility');
   await Hive.openBox('snapshot');
+  await Hive.openBox('checkout_profits');
+
 
 
   runApp(
