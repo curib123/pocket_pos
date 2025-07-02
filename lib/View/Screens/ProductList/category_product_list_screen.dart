@@ -1,11 +1,12 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:animate_do/animate_do.dart';
 import 'package:paninda/View/Components/HelperClass/AppColor.dart';
 import 'package:paninda/View/Components/HelperClass/StoreCategory.dart';
 import 'package:paninda/View/Components/Modal/cart_list_modal.dart';
 import 'package:paninda/View/Components/Modal/cart_modal.dart';
 import 'package:paninda/View_Model/ProductProvider.dart';
-import 'package:provider/provider.dart';
 
 class CategoryProductListScreen extends StatefulWidget {
   final String category;
@@ -27,7 +28,7 @@ class _CategoryProductListScreenState extends State<CategoryProductListScreen> {
       appBar: AppBar(
         leading: GestureDetector(
           onTap: () => Navigator.pop(context),
-          child: Icon(Icons.arrow_back_ios, color: AppColor.surface),
+          child: const Icon(Icons.arrow_back_ios, color: AppColor.surface),
         ),
         title: Text(widget.category),
         backgroundColor: color,
@@ -35,14 +36,13 @@ class _CategoryProductListScreenState extends State<CategoryProductListScreen> {
         actions: [
           Consumer<ProductProvider>(
             builder: (context, provider, _) {
-              final count = provider.getCartItemCount(); // You can use cart count here
+              final count = provider.getCartItemCount();
 
               return Stack(
                 children: [
                   IconButton(
                     icon: const Icon(Icons.shopping_cart_rounded, size: 28),
                     onPressed: () {
-                      // TODO: Navigate to your cart screen
                       CartListModal.show(context);
                     },
                   ),
@@ -76,29 +76,31 @@ class _CategoryProductListScreenState extends State<CategoryProductListScreen> {
           const SizedBox(width: 12),
         ],
       ),
-
       body: Column(
         children: [
-          // Search Bar
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: 'Search product...',
-                prefixIcon: const Icon(Icons.search),
-                filled: true,
-                fillColor: Colors.grey[100],
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
+          // Search Bar with animation
+          FadeInDown(
+            duration: const Duration(milliseconds: 600),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: TextField(
+                decoration: InputDecoration(
+                  hintText: 'Search product...',
+                  prefixIcon: const Icon(Icons.search),
+                  filled: true,
+                  fillColor: Colors.grey[100],
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
                 ),
+                onChanged: (value) {
+                  setState(() {
+                    _searchQuery = value;
+                  });
+                },
               ),
-              onChanged: (value) {
-                setState(() {
-                  _searchQuery = value;
-                });
-              },
             ),
           ),
 
@@ -121,10 +123,12 @@ class _CategoryProductListScreenState extends State<CategoryProductListScreen> {
                     final product = filtered[index];
                     final imageUrl = product.imageUrl;
 
-                    return  Container(
-                      margin: EdgeInsets.symmetric(vertical: 5),
-                      child: ListTile(
-                        tileColor: color.withOpacity(0.1),
+                    return FadeInUp(
+                      duration: Duration(milliseconds: 300 + (index * 100)),
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(vertical: 5),
+                        child: ListTile(
+                          tileColor: color.withOpacity(0.1),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                           leading: ClipRRect(
                             borderRadius: BorderRadius.circular(8),
@@ -169,9 +173,9 @@ class _CategoryProductListScreenState extends State<CategoryProductListScreen> {
                           ),
                           trailing: const Icon(Icons.chevron_right, color: AppColor.textSecondary),
                           onTap: () {
-                            // Navigate to detail page if needed
-                            CartModal.show(context,product);
+                            CartModal.show(context, product);
                           },
+                        ),
                       ),
                     );
                   },

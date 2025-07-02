@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:paninda/View/Components/HelperClass/AppColor.dart';
 import 'package:paninda/View/Components/HelperClass/responsive_text.dart';
+import 'package:animate_do/animate_do.dart';
 
 class ProductMetricsContainer extends StatelessWidget {
   final String heading;
@@ -39,56 +40,71 @@ class ProductMetricsContainer extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Text(
-                  heading.toUpperCase(),
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: getResponsiveFontSize(context, 14),
-                    fontWeight: FontWeight.bold,
-                    color: AppColor.textSecondary,
-                    letterSpacing: 1.1,
+                FadeInDown(
+                  duration: const Duration(milliseconds: 600),
+                  child: Text(
+                    heading.toUpperCase(),
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: getResponsiveFontSize(context, 14),
+                      fontWeight: FontWeight.bold,
+                      color: AppColor.textSecondary,
+                      letterSpacing: 1.1,
+                    ),
                   ),
                 ),
-                Text(
-                  formattedValue,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: getResponsiveFontSize(context, 26),
-                    fontWeight: FontWeight.bold,
-                    color: AppColor.textPrimary,
+
+                const SizedBox(height: 4),
+
+                FadeIn(
+                  duration: const Duration(milliseconds: 700),
+                  child: Text(
+                    formattedValue,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: getResponsiveFontSize(context, 26),
+                      fontWeight: FontWeight.bold,
+                      color: AppColor.textPrimary,
+                    ),
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: baseColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: baseColor,
-                          borderRadius: BorderRadius.circular(5),
+
+                const SizedBox(height: 6),
+
+                Bounce(
+                  duration: const Duration(milliseconds: 800),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: baseColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: baseColor,
+                            borderRadius: BorderRadius.circular(5),
+                          ),
+                          child: Icon(
+                            directionIcon,
+                            size: 12,
+                            color: AppColor.surface,
+                          ),
                         ),
-                        child: Icon(
-                          directionIcon,
-                          size: 12,
-                          color: AppColor.surface,
+                        const SizedBox(width: 8),
+                        Text(
+                          percentage,
+                          style: TextStyle(
+                            fontSize: getResponsiveFontSize(context, 13),
+                            fontWeight: FontWeight.w800,
+                            color: baseColor,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        percentage,
-                        style: TextStyle(
-                          fontSize: getResponsiveFontSize(context, 13),
-                          fontWeight: FontWeight.w800,
-                          color: baseColor,
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ],
