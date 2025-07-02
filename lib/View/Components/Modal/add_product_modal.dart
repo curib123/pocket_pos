@@ -1,13 +1,11 @@
-// ignore_for_file: use_build_context_synchronously
-
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import 'package:paninda/Model/batch_model.dart';
 import 'package:paninda/Model/product_model.dart';
 import 'package:paninda/View/Components/Custom/custom_btn.dart';
 import 'package:paninda/View/Components/HelperClass/AppColor.dart';
-import 'package:paninda/View/Components/HelperClass/UnitList.dart';
 import 'package:paninda/View_Model/ProductProvider.dart';
 import 'package:paninda/View_Model/StoreCategoryProvider.dart';
 import 'package:path_provider/path_provider.dart';
@@ -98,8 +96,6 @@ class _ModalContentState extends State<_ModalContent> {
   }
 
   void _submit(BuildContext context) async {
-
-
 
     if (!_formKey.currentState!.validate()) return;
 
@@ -217,17 +213,20 @@ class _ModalContentState extends State<_ModalContent> {
           value: _selectedBatchIndex,
           decoration: InputDecoration(
             hintText: "Select Stock Batch to Edit",
-            prefixIcon: const Icon(Icons.list),
+            prefixIcon: const Icon(LucideIcons.layers),
             filled: true,
             fillColor: Colors.grey.shade100,
             contentPadding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
-            border: InputBorder.none,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide.none,
+            ),
           ),
           items: List.generate(widget.product!.batches.length, (i) {
             final b = widget.product!.batches[i];
             return DropdownMenuItem<int>(
               value: i,
-              child: Text("Stock Batch ${i + 1} – ${b.date.toLocal()}"),
+              child: Text("Stock Batch ${i + 1} ",style: TextStyle(overflow: TextOverflow.ellipsis,fontSize: 13),),
             );
           }),
           onChanged: (i) {
@@ -256,6 +255,7 @@ class _ModalContentState extends State<_ModalContent> {
           key: _formKey,
           child: Consumer2<StoreCategoryProvider, ProductProvider>(
             builder: (context, catProv, productProvider, _) {
+              // Inside your build method:
               return Column(
                 children: [
                   Container(
@@ -274,7 +274,6 @@ class _ModalContentState extends State<_ModalContent> {
                   const SizedBox(height: 10),
                   _batchDropdown(),
 
-                  // 👇 Autocomplete Product Name
                   Autocomplete<Product>(
                     displayStringForOption: (p) => p.name,
                     optionsBuilder: (TextEditingValue textEditingValue) {
@@ -282,7 +281,6 @@ class _ModalContentState extends State<_ModalContent> {
                         return option.name.toLowerCase().contains(textEditingValue.text.toLowerCase());
                       }).take(5);
                     },
-
                     fieldViewBuilder: (context, textEditingController, focusNode, onEditingComplete) {
                       textEditingController.text = _nameController.text;
                       textEditingController.addListener(() {
@@ -296,11 +294,14 @@ class _ModalContentState extends State<_ModalContent> {
                         validator: (val) => val == null || val.isEmpty ? 'Required' : null,
                         decoration: InputDecoration(
                           hintText: "Enter Product Name",
-                          prefixIcon: Icon(Icons.search, color: Colors.grey.shade600),
+                          prefixIcon: Icon(LucideIcons.search, color: Colors.grey.shade600),
                           filled: true,
-                          fillColor: Colors.grey.shade100,
+                          fillColor: AppColor.success.withOpacity(0.10),
                           contentPadding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
-                          border: InputBorder.none,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: BorderSide.none,
+                          ),
                         ),
                       );
                     },
@@ -343,43 +344,30 @@ class _ModalContentState extends State<_ModalContent> {
                     const SizedBox(height: 16),
                   ],
                   const SizedBox(height: 10),
-                  _modernInput(_costController, "Cost Price", Icons.monetization_on_outlined, type: TextInputType.number),
-                  _modernInput(_retailController, "Retail Price", Icons.price_check_outlined, type: TextInputType.number),
-                  _modernDropdown("Category", Icons.category_outlined, _selectedCategory, catProv.visibleCategories, (val) => setState(() => _selectedCategory = val)),
-                  _modernInput(_descController, "Description", Icons.notes_outlined, maxLines: 2),
+                  _modernInput(_costController, "Cost Price", LucideIcons.dollarSign, type: TextInputType.number),
+                  _modernInput(_retailController, "Retail Price", LucideIcons.badgeDollarSign, type: TextInputType.number),
+                  _modernDropdown("Category", LucideIcons.layoutGrid, _selectedCategory, catProv.visibleCategories, (val) => setState(() => _selectedCategory = val)),
+                  _modernInput(_descController, "Description", LucideIcons.stickyNote, maxLines: 2),
                   _imagePickerPreview(),
                   const SizedBox(height: 20),
-                  _modernInput(_quantityController, "Quantity (pcs)", Icons.shopping_bag_outlined, type: TextInputType.number),
-                  _modernInput(_kiloQuantityController, "Quantity (kilos)", Icons.scale_outlined, type: TextInputType.number),
+                  _modernInput(_quantityController, "Quantity (pcs)", LucideIcons.shoppingBag, type: TextInputType.number),
+                  _modernInput(_kiloQuantityController, "Quantity (kilos)", LucideIcons.scale, type: TextInputType.number),
                   const SizedBox(height: 20),
 
                   CustomButton(
-                    icon: Icons.save,
-                    color: AppColor.secondary,
+                    icon: LucideIcons.save,
+                    color: AppColor.success,
                     label: widget.isEdit ? "Update Product" : (_selectedProductToRestock != null ? "Restock Product" : "Add Product"),
                     onPressed: () {
-
-              if(_quantityController.text.isEmpty ||
-                  _kiloQuantityController.text.isEmpty ||
-                  _descController.text.isEmpty
-              ) {
-
-                _quantityController.text = 0.toString();
-                _kiloQuantityController.text = 0.toString();
-                _descController.text = "No Description";
-
-              }
-
-              _submit(context);
-
-              } ,
-                  ),
-                  const SizedBox(height: 10),
-                  CustomButton(
-                    icon: Icons.cancel,
-                    color: AppColor.error,
-                    label: "Cancel",
-                    onPressed: () => Navigator.pop(context),
+                      if (_quantityController.text.isEmpty ||
+                          _kiloQuantityController.text.isEmpty ||
+                          _descController.text.isEmpty) {
+                        _quantityController.text = 0.toString();
+                        _kiloQuantityController.text = 0.toString();
+                        _descController.text = "No Description";
+                      }
+                      _submit(context);
+                    },
                   ),
                 ],
               );
@@ -389,7 +377,6 @@ class _ModalContentState extends State<_ModalContent> {
       ),
     );
   }
-
   Widget _modernInput(TextEditingController c, String hint, IconData icon, {TextInputType type = TextInputType.text, int maxLines = 1}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
@@ -404,7 +391,10 @@ class _ModalContentState extends State<_ModalContent> {
           filled: true,
           fillColor: Colors.grey.shade100,
           contentPadding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
-          border: InputBorder.none,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide.none,
+          ),
         ),
       ),
     );
@@ -421,7 +411,10 @@ class _ModalContentState extends State<_ModalContent> {
           filled: true,
           fillColor: Colors.grey.shade100,
           contentPadding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
-          border: InputBorder.none,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide.none,
+          ),
         ),
         items: items.map((it) => DropdownMenuItem(value: it, child: Text(it))).toList(),
         onChanged: onChanged,
@@ -429,6 +422,7 @@ class _ModalContentState extends State<_ModalContent> {
       ),
     );
   }
+
 
   Widget _imagePickerPreview() {
     return Column(

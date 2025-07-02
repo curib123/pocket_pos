@@ -106,8 +106,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         alignment: Alignment.center,
                         children: [
                           Container(
-                            width: 60,
-                            height: 60,
+                            width: 80,
+                            height: 80,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               gradient: RadialGradient(
@@ -151,9 +151,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     ).createShader(Rect.fromLTWH(0, 0, bounds.width, bounds.height)),
                                     blendMode: BlendMode.srcIn,
                                     child: Text(
-                                      "${getGreeting()}, John Paul",
+                                      "${getGreeting()} ",
                                       style: TextStyle(
-                                        fontSize: getResponsiveFontSize(context, 22),
+                                        fontSize: getResponsiveFontSize(context, 20),
                                         fontWeight: FontWeight.w700,
                                         letterSpacing: 0.4,
                                       ),
@@ -164,9 +164,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             ),
                             const SizedBox(height: 4),
                             Text(
+                              "John Doe",
+                              style: TextStyle(
+                                fontSize: getResponsiveFontSize(context, 15),
+                                color: Colors.white.withOpacity(0.9),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            SizedBox(height: 5,),
+                            Text(
                               "Let's make today productive.",
                               style: TextStyle(
-                                fontSize: getResponsiveFontSize(context, 13),
+                                fontSize: getResponsiveFontSize(context, 10),
                                 color: Colors.white.withOpacity(0.8),
                                 fontWeight: FontWeight.w400,
                               ),

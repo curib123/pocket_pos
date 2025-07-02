@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import 'package:paninda/View/Components/Custom/custom_btn.dart';
 import 'package:provider/provider.dart';
 import 'package:paninda/Model/product_model.dart';
@@ -206,61 +207,87 @@ class _CartListContentState extends State<_CartListContent> {
                 ),
               ),
 
-              const SizedBox(height: 24),
-
+              const SizedBox(height: 20),
               /// Checkout Button
               ElevatedButton.icon(
-                icon: const Icon(Icons.shopping_bag,color: AppColor.surface,),
-                label: const Text("Checkout"),
+                icon: const Icon(
+                  LucideIcons.shoppingBag,
+                  color: Colors.white,
+                  size: 20,
+                ),
+                label: const Text(
+                  "Checkout",
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColor.primary,
                   foregroundColor: Colors.white,
                   minimumSize: const Size.fromHeight(48),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 2,
+                  shadowColor: AppColor.primary.withOpacity(0.2),
                 ),
-                  onPressed: () async {
-                    final result = await productProvider.checkoutCart(
-                      cartItems: checkoutItems,
-                      isLoan: isLoan,
-                      buyerCash: buyerCash,
-                      borrowerName: borrowerController.text.trim(),
-                      loanProvider: isLoan ? loanProvider : null,
-                    );
+                onPressed: () async {
+                  final result = await productProvider.checkoutCart(
+                    cartItems: checkoutItems,
+                    isLoan: isLoan,
+                    buyerCash: buyerCash,
+                    borrowerName: borrowerController.text.trim(),
+                    loanProvider: isLoan ? loanProvider : null,
+                  );
 
-                    if (result != null) {
-                      final profit = (result['profit'] ?? 0.0) as double;
-                      final change = (result['change'] ?? 0.0) as double;
+                  if (result != null) {
+                    final profit = (result['profit'] ?? 0.0) as double;
+                    final change = (result['change'] ?? 0.0) as double;
 
-                      Navigator.pop(context);
-                      productProvider.clearCart();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            isLoan
-                                ? "Loan recorded. Profit ₱${profit.toStringAsFixed(2)}"
-                                : "Checkout successful. Change ₱${change.toStringAsFixed(2)} | Profit ₱${profit.toStringAsFixed(2)}",
-                          ),
+                    Navigator.pop(context);
+                    productProvider.clearCart();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          isLoan
+                              ? "Loan recorded. Profit ₱${profit.toStringAsFixed(2)}"
+                              : "Checkout successful. Change ₱${change.toStringAsFixed(2)} | Profit ₱${profit.toStringAsFixed(2)}",
                         ),
-                      );
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Checkout failed.")),
-                      );
-                    }
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Checkout failed.")),
+                    );
                   }
-
+                },
               ),
 
               const SizedBox(height: 12),
 
-              CustomButton(
-                color: AppColor.error,
-                icon: Icons.exit_to_app_rounded,
-                label: "Exit",
+              /// Exit Button
+              ElevatedButton.icon(
+                icon: const Icon(
+                  LucideIcons.logOut,
+                  color: Colors.white,
+                  size: 20,
+                ),
+                label: const Text(
+                  "Exit",
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColor.error,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size.fromHeight(48),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 1,
+                  shadowColor: AppColor.error.withOpacity(0.2),
+                ),
                 onPressed: () => Navigator.pop(context),
               ),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 10),
             ],
           ),
         ),
@@ -273,173 +300,225 @@ class _CartListContentState extends State<_CartListContent> {
     final isKilo = kiloControllers.containsKey(product.id);
     final quantity = quantities[product.id] ?? 1;
 
-    return Stack(
-      children: [
-        Container(
-          margin: const EdgeInsets.only(bottom: 14),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final screenWidth = MediaQuery.of(context).size.width;
+        final isSmall = screenWidth < 400;
+        final isLarge = screenWidth > 600;
+        double baseFont(double size) => isSmall ? size * 0.9 : isLarge ? size * 1.1 : size;
 
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              /// Image & Info Row
-              Row(
+        return Stack(
+          children: [
+            Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey.shade200),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: hasImage
-                        ? Image.file(
-                      File(product.imageUrl),
-                      width: 56,
-                      height: 56,
-                      fit: BoxFit.cover,
-                    )
-                        : Container(
-                      width: 56,
-                      height: 56,
-                      color: AppColor.border,
-                      child: const Icon(Icons.image_not_supported, color: AppColor.textSecondary, size: 24),
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(product.name,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              overflow: TextOverflow.ellipsis,
-                            )),
-                        const SizedBox(height: 4),
-                        Text("${product.retailPrice.toStringAsFixed(2)}",
-                            style: TextStyle(
-                              color: AppColor.primary,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            )),
-                        const SizedBox(height: 2),
-                        Text(
-                          "Stock: ${product.totalSacks} ${product.unit} / ${product.totalKilos.toStringAsFixed(2)} kg",
-                          style: const TextStyle(fontSize: 12, color: AppColor.textSecondary),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  /// Unit selector
+                  /// Top Row: Image + Info + Chips
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      ChoiceChip(
-                        label: const Text("Quantity", style: TextStyle(fontSize: 13)),
-                        selected: !isKilo,
-                        onSelected: (_) => setState(() => kiloControllers.remove(product.id)),
-                        selectedColor: AppColor.primary.withOpacity(0.15),
-                        backgroundColor: Colors.grey.shade100,
-                        labelStyle: TextStyle(
-                          color: !isKilo ? AppColor.primary : AppColor.textSecondary,
-                          fontWeight: FontWeight.w600,
+                      /// Image
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: hasImage
+                            ? Image.file(
+                          File(product.imageUrl),
+                          width: 48,
+                          height: 48,
+                          fit: BoxFit.cover,
+                        )
+                            : Container(
+                          width: 48,
+                          height: 48,
+                          color: AppColor.border,
+                          child: const Icon(LucideIcons.imageOff, color: AppColor.textSecondary, size: 20),
                         ),
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),
                       const SizedBox(width: 10),
-                      ChoiceChip(
-                        label: const Text("Kilos", style: TextStyle(fontSize: 13)),
-                        selected: isKilo,
-                        onSelected: (_) => setState(() {
-                          kiloControllers[product.id] = TextEditingController(text: '0.0');
-                        }),
-                        selectedColor: AppColor.primary.withOpacity(0.15),
-                        backgroundColor: Colors.grey.shade100,
-                        labelStyle: TextStyle(
-                          color: isKilo ? AppColor.primary : AppColor.textSecondary,
-                          fontWeight: FontWeight.w600,
+
+                      /// Info + Chips
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(product.name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: baseFont(14),
+                                  fontWeight: FontWeight.w700,
+                                )),
+                            const SizedBox(height: 4),
+                            Text(
+                              "₱${product.retailPrice.toStringAsFixed(2)}",
+                              style: TextStyle(
+                                fontSize: baseFont(13),
+                                color: AppColor.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                Icon(LucideIcons.box, size: 13, color: AppColor.textSecondary),
+                                const SizedBox(width: 4),
+                                Flexible(
+                                  child: Text(
+                                    "${product.totalSacks} ${product.unit} / ${product.totalKilos.toStringAsFixed(2)} kg",
+                                    style: TextStyle(
+                                      fontSize: baseFont(11),
+                                      color: AppColor.textSecondary,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
+                            Row(
+                              children: [
+                                ChoiceChip(
+                                  label: Text("Qty", style: TextStyle(fontSize: baseFont(11))),
+                                  selected: !isKilo,
+                                  onSelected: (_) => setState(() => kiloControllers.remove(product.id)),
+                                  selectedColor: AppColor.primary.withOpacity(0.1),
+                                  backgroundColor: Colors.grey.shade100,
+                                  labelStyle: TextStyle(
+                                    color: !isKilo ? AppColor.primary : AppColor.textSecondary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                                ),
+                                const SizedBox(width: 8),
+                                ChoiceChip(
+                                  label: Text("Kg", style: TextStyle(fontSize: baseFont(11))),
+                                  selected: isKilo,
+                                  onSelected: (_) => setState(() {
+                                    kiloControllers[product.id] = TextEditingController(text: '0.0');
+                                  }),
+                                  selectedColor: AppColor.primary.withOpacity(0.1),
+                                  backgroundColor: Colors.grey.shade100,
+                                  labelStyle: TextStyle(
+                                    color: isKilo ? AppColor.primary : AppColor.textSecondary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  /// Quantity control
+                  isKilo
+                      ? _buildTextField(
+                    kiloControllers[product.id]!,
+                    "Enter kilo (kg)",
+                    LucideIcons.scale,
+                  )
+                      : Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      IconButton(
+                        icon: const Icon(LucideIcons.minusCircle),
+                        iconSize: isSmall ? 20 : 22,
+                        color: AppColor.error,
+                        padding: EdgeInsets.zero,
+                        visualDensity: VisualDensity.compact,
+                        onPressed: () {
+                          setState(() {
+                            final currentQty = quantities[product.id] ?? 1;
+                            if (currentQty > 1) quantities[product.id] = currentQty - 1;
+                          });
+                        },
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: Text(
+                          '$quantity',
+                          style: TextStyle(fontSize: baseFont(18), fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(LucideIcons.plusCircle),
+                        iconSize: isSmall ? 20 : 22,
+                        color: AppColor.primary,
+                        padding: EdgeInsets.zero,
+                        visualDensity: VisualDensity.compact,
+                        onPressed: () {
+                          setState(() {
+                            final currentQty = quantities[product.id] ?? 1;
+                            if (currentQty < product.totalSacks) quantities[product.id] = currentQty + 1;
+                          });
+                        },
                       ),
                     ],
                   ),
                 ],
               ),
-
-              SizedBox(height: 10,),
-              /// Quantity control or input
-              isKilo
-                  ? _buildTextField(kiloControllers[product.id]!, "Enter kilo (kg)", Icons.scale)
-                  : Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.remove_circle_outline, size: 25),
-                    color: AppColor.error,
-                    onPressed: () {
-                      setState(() {
-                        final currentQty = quantities[product.id] ?? 1;
-                        if (currentQty > 1 ) quantities[product.id] = currentQty - 1;
-                      });
-                    },
-                  ),
-                  Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 12),
-                    child: Text(
-                      '$quantity',
-                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.add_circle_outline, size: 25),
-                    color: AppColor.primary,
-                    onPressed: () {
-                      setState(() {
-                        final currentQty = quantities[product.id] ?? 1;
-                       if (currentQty < product.totalSacks) quantities[product.id] = currentQty + 1;
-                      });
-                    },
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-
-        /// ❌ Remove icon (top-right)
-        Positioned(
-          top: 0,
-          right: 0,
-          child: GestureDetector(
-            onTap: () {
-              setState(() {
-                quantities.remove(product.id);
-                kiloControllers.remove(product.id);
-                context.read<ProductProvider>().removeFromCart(product);
-              });
-            },
-            child: const CircleAvatar(
-              radius: 12,
-              backgroundColor: AppColor.error,
-              child: Icon(Icons.close, size: 16, color: Colors.white),
             ),
-          ),
-        ),
-      ],
-    );
 
+            /// ❌ Remove Icon
+            Positioned(
+              top: 4,
+              right: 4,
+              child: GestureDetector(
+                onTap: () {
+                  setState(() {
+                    quantities.remove(product.id);
+                    kiloControllers.remove(product.id);
+                    context.read<ProductProvider>().removeFromCart(product);
+                  });
+                },
+                child: const CircleAvatar(
+                  radius: 12,
+                  backgroundColor: AppColor.error,
+                  child: Icon(LucideIcons.x, size: 14, color: Colors.white),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
+
 
   Widget _buildTextField(TextEditingController controller, String label, IconData icon) {
     return Padding(
-      padding: const EdgeInsets.only(top: 8.0),
+      padding: const EdgeInsets.only(top: 12.0),
       child: TextField(
         controller: controller,
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        style: const TextStyle(fontSize: 16),
         decoration: InputDecoration(
           labelText: label,
-          prefixIcon: Icon(icon),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          prefixIcon: Icon(icon, size: 20, color: AppColor.primary),
+          filled: true,
+          fillColor: Colors.grey.shade100,
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Colors.grey.shade300),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: AppColor.primary, width: 1.5),
+          ),
         ),
         onChanged: (_) => setState(() {}),
       ),
@@ -447,12 +526,30 @@ class _CartListContentState extends State<_CartListContent> {
   }
 
   Widget _buildPriceRow(String label, double value, Color color, {bool isBold = false}) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(label, style: TextStyle(fontWeight: isBold ? FontWeight.bold : FontWeight.w500, color: AppColor.textSecondary)),
-        Text(value.toStringAsFixed(2), style: TextStyle(color: color, fontWeight: isBold ? FontWeight.bold : FontWeight.w600)),
-      ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: isBold ? FontWeight.w700 : FontWeight.w500,
+              color: AppColor.textSecondary,
+            ),
+          ),
+          Text(
+            '₱${value.toStringAsFixed(2)}',
+            style: TextStyle(
+              fontSize: 15,
+              color: color,
+              fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
     );
   }
+
 }

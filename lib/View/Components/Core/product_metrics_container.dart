@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import 'package:paninda/View/Components/HelperClass/AppColor.dart';
 import 'package:paninda/View/Components/HelperClass/responsive_text.dart';
 
@@ -19,7 +20,7 @@ class ProductMetricsContainer extends StatelessWidget {
   Widget build(BuildContext context) {
     final isNegative = percentage.contains('-');
     final Color baseColor = isNegative ? AppColor.error : AppColor.success;
-    final IconData directionIcon = isNegative ? Icons.arrow_downward : Icons.arrow_upward;
+    final IconData directionIcon = isNegative ? LucideIcons.arrowDown : LucideIcons.arrowUp;
 
     final String formattedValue = _formatWithComma(value);
 
@@ -103,7 +104,7 @@ class ProductMetricsContainer extends StatelessWidget {
       final number = double.tryParse(value.replaceAll(',', '')) ?? 0;
       return NumberFormat("#,##0.##").format(number);
     } catch (_) {
-      return value; // fallback if invalid
+      return value;
     }
   }
 }

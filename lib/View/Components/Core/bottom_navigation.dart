@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import 'package:paninda/View/Components/HelperClass/AppColor.dart';
 
 class BottomNavigation extends StatelessWidget {
@@ -21,19 +22,19 @@ class BottomNavigation extends StatelessWidget {
       unselectedItemColor: AppColor.textSecondary,
       items: const [
         BottomNavigationBarItem(
-          icon: Icon(Icons.dashboard_rounded),
+          icon: Icon(LucideIcons.layoutDashboard),
           label: 'Dashboard',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.inventory_rounded),
+          icon: Icon(LucideIcons.boxes),
           label: 'Product',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.attach_money_rounded),
+          icon: Icon(LucideIcons.wallet),
           label: 'Loan',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.settings_rounded),
+          icon: Icon(LucideIcons.settings),
           label: 'Settings',
         ),
       ],

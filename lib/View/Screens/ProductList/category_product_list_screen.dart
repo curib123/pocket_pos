@@ -121,54 +121,58 @@ class _CategoryProductListScreenState extends State<CategoryProductListScreen> {
                     final product = filtered[index];
                     final imageUrl = product.imageUrl;
 
-                    return  ListTile(
-                        contentPadding: const EdgeInsets.all(10),
-                        leading: ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: imageUrl.isNotEmpty && File(imageUrl).existsSync()
-                              ? Image.file(
-                            File(imageUrl),
-                            width: 48,
-                            height: 48,
-                            fit: BoxFit.cover,
-                          )
-                              : _placeholderIcon(color),
-                        ),
-                        title: Text(
-                          product.name,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 15,
-                            color: AppColor.textPrimary,
+                    return  Container(
+                      margin: EdgeInsets.symmetric(vertical: 5),
+                      child: ListTile(
+                        tileColor: color.withOpacity(0.1),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          leading: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: imageUrl.isNotEmpty && File(imageUrl).existsSync()
+                                ? Image.file(
+                              File(imageUrl),
+                              width: 48,
+                              height: 48,
+                              fit: BoxFit.cover,
+                            )
+                                : _placeholderIcon(color),
                           ),
-                        ),
-                        subtitle: Padding(
-                          padding: const EdgeInsets.only(top: 4),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Stocks: ${product.totalSacks}',
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  color: AppColor.textSecondary,
-                                ),
-                              ),
-                              Text(
-                                'Price :${product.retailPrice.toStringAsFixed(2)}',
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.green,
-                                ),
-                              ),
-                            ],
+                          title: Text(
+                            product.name,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 15,
+                              color: AppColor.textPrimary,
+                            ),
                           ),
-                        ),
-                        trailing: const Icon(Icons.chevron_right, color: AppColor.textSecondary),
-                        onTap: () {
-                          // Navigate to detail page if needed
-                          CartModal.show(context,product);
-                        },
+                          subtitle: Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Stocks: ${product.totalSacks}',
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: AppColor.textSecondary,
+                                  ),
+                                ),
+                                Text(
+                                  'Price :${product.retailPrice.toStringAsFixed(2)}',
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.green,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          trailing: const Icon(Icons.chevron_right, color: AppColor.textSecondary),
+                          onTap: () {
+                            // Navigate to detail page if needed
+                            CartModal.show(context,product);
+                          },
+                      ),
                     );
                   },
                 );

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 
 class StoreCategory {
   static const List<String> all = [
@@ -36,89 +37,89 @@ class StoreCategory {
     "Toys & Games", "Sports & Fitness", "Books & Magazines", "Gifts & Stationery", "Seasonal Items", "Miscellaneous",
   ];
 
+
   static const Map<String, IconData> icons = {
     // Food & Beverages
-    "Groceries": Icons.shopping_cart,
-    "Fruits & Vegetables": Icons.eco,
-    "Snacks": Icons.fastfood,
-    "Dairy Products": Icons.local_cafe,
-    "Frozen Foods": Icons.ac_unit,
-    "Beverages": Icons.wine_bar,
-    "Canned Goods": Icons.kitchen,
-    "Bakery": Icons.cake,
-    "Meat & Poultry": Icons.set_meal,
-    "Seafood": Icons.lunch_dining,
+    "Groceries": LucideIcons.shoppingCart,
+    "Fruits & Vegetables": LucideIcons.apple,
+    "Snacks": LucideIcons.pizza,
+    "Dairy Products": LucideIcons.milk,
+    "Frozen Foods": LucideIcons.snowflake,
+    "Beverages": LucideIcons.wine,
+    "Canned Goods": LucideIcons.box,
+    "Meat & Poultry": LucideIcons.beef,
+    "Seafood": LucideIcons.fish,
 
     // Household Items
-    "Cleaning Supplies": Icons.cleaning_services,
-    "Laundry Products": Icons.local_laundry_service,
-    "Kitchen Supplies": Icons.kitchen,
-    "Bathroom Essentials": Icons.bathtub,
-    "Paper Products": Icons.description,
-    "Storage & Organization": Icons.inventory,
+    "Cleaning Supplies": LucideIcons.sprayCan,
+    "Laundry Products": LucideIcons.soup,
+    "Kitchen Supplies": LucideIcons.utensils,
+    "Bathroom Essentials": LucideIcons.bath,
+    "Paper Products": LucideIcons.fileText,
+    "Storage & Organization": LucideIcons.archive,
 
     // Personal Care
-    "Toiletries": Icons.soap,
-    "Skincare": Icons.face,
-    "Haircare": Icons.cut,
-    "Oral Care": Icons.masks,
-    "Health & Wellness": Icons.favorite,
+    "Toiletries": LucideIcons.showerHead,
+    "Skincare": LucideIcons.sparkles,
+    "Haircare": LucideIcons.scissors,
+    "Oral Care": LucideIcons.smile,
+    "Health & Wellness": LucideIcons.heartPulse,
 
     // Electronics
-    "Mobile Phones": Icons.phone_android,
-    "Accessories": Icons.headphones,
-    "Home Appliances": Icons.microwave,
-    "Chargers & Batteries": Icons.battery_charging_full,
-    "Computers & Tablets": Icons.computer,
+    "Mobile Phones": LucideIcons.smartphone,
+    "Accessories": LucideIcons.headphones,
+    "Home Appliances": LucideIcons.airVent,
+    "Chargers & Batteries": LucideIcons.batteryCharging,
+    "Computers & Tablets": LucideIcons.monitor,
 
     // Clothing & Apparel
-    "Men's Clothing": Icons.male,
-    "Women's Clothing": Icons.female,
-    "Children's Clothing": Icons.child_care,
-    "Footwear": Icons.hiking,
-    "Fashion Accessories": Icons.watch,
+    "Men's Clothing": LucideIcons.shirt,
+    "Women's Clothing": LucideIcons.shirt,
+    "Children's Clothing": LucideIcons.user,
+    "Footwear": LucideIcons.tag,
+    "Fashion Accessories": LucideIcons.watch,
 
     // Office & School Supplies
-    "Stationery": Icons.create,
-    "Notebooks & Paper": Icons.book,
-    "Writing Instruments": Icons.edit,
-    "Art Materials": Icons.brush,
-    "Office Equipment": Icons.print,
+    "Notebooks & Paper": LucideIcons.bookOpen,
+    "Writing Instruments": LucideIcons.pencil,
+    "Art Materials": LucideIcons.paintbrush,
+    "Office Equipment": LucideIcons.printer,
 
     // Baby Products
-    "Baby Food": Icons.baby_changing_station,
-    "Diapers": Icons.bed,
-    "Baby Care": Icons.family_restroom,
+    "Baby Food": LucideIcons.baby,
+    "Diapers": LucideIcons.baby,
+    "Baby Care": LucideIcons.baby,
 
     // Pet Supplies
-    "Pet Food": Icons.pets,
-    "Pet Care": Icons.medical_services,
-    "Pet Accessories": Icons.style,
+    "Pet Food": LucideIcons.bone,
+    "Pet Care": LucideIcons.heart,
+    "Pet Accessories": LucideIcons.box,
 
     // Home & Living
-    "Furniture": Icons.weekend,
-    "Lighting": Icons.lightbulb,
-    "Home Decor": Icons.wallpaper,
-    "Bedding & Linens": Icons.bedroom_baby,
-    "Tools & Hardware": Icons.handyman,
+    "Furniture": LucideIcons.sofa,
+    "Lighting": LucideIcons.lightbulb,
+    "Home Decor": LucideIcons.image,
+    "Bedding & Linens": LucideIcons.bed,
+    "Tools & Hardware": LucideIcons.wrench,
 
     // Automotive
-    "Car Accessories": Icons.car_repair,
-    "Motor Oils": Icons.local_gas_station,
-    "Car Maintenance": Icons.build,
+    "Car Accessories": LucideIcons.car,
+    "Motor Oils": LucideIcons.droplets,
+    "Car Maintenance": LucideIcons.settings,
 
     // Others
-    "Toys & Games": Icons.toys,
-    "Sports & Fitness": Icons.fitness_center,
-    "Books & Magazines": Icons.menu_book,
-    "Gifts & Stationery": Icons.card_giftcard,
-    "Seasonal Items": Icons.calendar_today,
-    "Miscellaneous": Icons.all_inbox,
+    "Toys & Games": LucideIcons.gamepad2,
+    "Sports & Fitness": LucideIcons.dumbbell,
+    "Books & Magazines": LucideIcons.bookOpen,
+    "Gifts & Stationery": LucideIcons.gift,
+    "Seasonal Items": LucideIcons.sun,
+    "Miscellaneous": LucideIcons.boxes,
   };
+
 
   static const Map<String, Color> colors = {
     // Food & Beverages
-    "Groceries": Color(0xFF34D399),
+    "Groceries": Color(0xFF76D399),
     "Fruits & Vegetables": Color(0xFF4ADE80),
     "Snacks": Color(0xFFFBBF24),
     "Dairy Products": Color(0xFFF472B6),

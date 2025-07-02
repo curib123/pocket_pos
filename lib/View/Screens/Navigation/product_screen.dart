@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import 'package:paninda/View/Screens/ProductList/category_product_list_screen.dart';
 import 'package:paninda/View_Model/StoreCategoryProvider.dart';
 import 'package:provider/provider.dart';
@@ -19,8 +20,7 @@ class ProductScreen extends StatefulWidget {
 }
 
 class _ProductScreenState extends State<ProductScreen> {
-  bool isGrid = false; // Only for toggling icon appearance
-
+  bool isGrid = false;
 
   @override
   Widget build(BuildContext context) {
@@ -89,7 +89,7 @@ class _ProductScreenState extends State<ProductScreen> {
                           });
                         },
                         child: Icon(
-                          isGrid ? Icons.archive_rounded : Icons.grid_view_rounded,
+                          isGrid ? LucideIcons.archive : LucideIcons.layoutGrid,
                           size: 24,
                           color: AppColor.textSecondary,
                         ),
@@ -98,7 +98,7 @@ class _ProductScreenState extends State<ProductScreen> {
                   ),
                 ),
 
-                /// Only List View (GridView Removed)
+                /// Category List
                 Expanded(
                   child: Consumer2<ProductProvider, StoreCategoryProvider>(
                     builder: (context, productProvider, storeCategoryProvider, _) {
@@ -109,7 +109,7 @@ class _ProductScreenState extends State<ProductScreen> {
                         itemCount: categories.length,
                         itemBuilder: (context, index) {
                           final category = categories[index];
-                          final icon = StoreCategory.icons[category] ?? Icons.category;
+                          final icon = StoreCategory.icons[category] ?? LucideIcons.tag;
                           final color = StoreCategory.colors[category] ?? Colors.grey;
                           final count = productProvider.getProductCountByCategory(category);
                           final isHidden = storeCategoryProvider.isHidden(category);
@@ -122,11 +122,10 @@ class _ProductScreenState extends State<ProductScreen> {
                               extentRatio: 0.25,
                               children: [
                                 SlidableAction(
-                                  onPressed: (_) =>
-                                      storeCategoryProvider.setHidden(category, false),
+                                  onPressed: (_) => storeCategoryProvider.setHidden(category, false),
                                   backgroundColor: Colors.green,
                                   foregroundColor: Colors.white,
-                                  icon: Icons.visibility,
+                                  icon: LucideIcons.eye,
                                 ),
                               ],
                             )
@@ -137,11 +136,10 @@ class _ProductScreenState extends State<ProductScreen> {
                               extentRatio: 0.25,
                               children: [
                                 SlidableAction(
-                                  onPressed: (_) =>
-                                      storeCategoryProvider.setHidden(category, true),
+                                  onPressed: (_) => storeCategoryProvider.setHidden(category, true),
                                   backgroundColor: Colors.redAccent,
                                   foregroundColor: Colors.white,
-                                  icon: Icons.hide_source,
+                                  icon: LucideIcons.eyeOff,
                                 ),
                               ],
                             )
@@ -155,8 +153,7 @@ class _ProductScreenState extends State<ProductScreen> {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (_) =>
-                                          CategoryProductListScreen(category: category),
+                                      builder: (_) => CategoryProductListScreen(category: category),
                                     ),
                                   );
                                 },
@@ -165,7 +162,7 @@ class _ProductScreenState extends State<ProductScreen> {
                                   width: 40,
                                   height: 40,
                                   decoration: BoxDecoration(
-                                    color: color.withOpacity(0.15), 
+                                    color: color.withOpacity(0.15),
                                     shape: BoxShape.circle,
                                   ),
                                   child: Icon(icon, color: color, size: 20),
@@ -186,7 +183,7 @@ class _ProductScreenState extends State<ProductScreen> {
                                   ),
                                 ),
                                 trailing: const Icon(
-                                  Icons.chevron_right,
+                                  LucideIcons.chevronRight,
                                   color: AppColor.textSecondary,
                                 ),
                               ),
@@ -208,7 +205,7 @@ class _ProductScreenState extends State<ProductScreen> {
               padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
               child: CustomButton(
                 color: AppColor.primary,
-                icon: Icons.add_circle_rounded,
+                icon: LucideIcons.plusCircle,
                 label: "Add Product",
                 onPressed: () => AddProductModal.show(context),
               ),
