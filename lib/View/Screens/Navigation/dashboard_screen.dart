@@ -89,19 +89,34 @@ class _DashboardScreenState extends State<DashboardScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+
               FadeInDown(
                 duration: const Duration(milliseconds: 500),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                  margin: const EdgeInsets.only(bottom: 20),
+                  margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 12),
+                  padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(
-                    color: AppColor.primary.withOpacity(0.9),
-                    borderRadius: BorderRadius.circular(18),
+                    borderRadius: BorderRadius.circular(20),
+                    gradient: LinearGradient(
+                      colors: [
+                        AppColor.primary.withOpacity(0.7),
+                        AppColor.primary.withOpacity(0.5),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColor.primary.withOpacity(0.3),
+                        blurRadius: 20,
+                        spreadRadius: 3,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
                   ),
                   child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      // Avatar Glow
+                      // Avatar with Glow
                       Stack(
                         alignment: Alignment.center,
                         children: [
@@ -111,27 +126,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               gradient: RadialGradient(
-                                colors: [Colors.white.withOpacity(0.18), Colors.transparent],
-                                radius: 0.85,
+                                colors: [Colors.cyanAccent.withOpacity(0.2), Colors.transparent],
+                                radius: 0.9,
                               ),
                             ),
                           ),
                           CircleAvatar(
-                            radius: 24,
-                            backgroundColor: Colors.white.withOpacity(0.1),
-                            child: Spin( // animated
+                            radius: 28,
+                            backgroundColor: Colors.white.withOpacity(0.08),
+                            child: Spin(
                               infinite: true,
                               duration: const Duration(seconds: 4),
-                              child: Icon(getGreetingIcon(), color: Colors.white, size: 22),
+                              child: Icon(
+                                getGreetingIcon(),
+                                color: Colors.white,
+                                size: 26,
+                              ),
                             ),
                           ),
-
                         ],
                       ),
 
-                      const SizedBox(width: 16),
+                      const SizedBox(width: 20),
 
-                      // Greeting and subtitle
+                      // Greeting Info
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -144,39 +162,39 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 return Opacity(
                                   opacity: value,
                                   child: ShaderMask(
-                                    shaderCallback: (bounds) => LinearGradient(
+                                    shaderCallback: (bounds) => const LinearGradient(
                                       colors: [Colors.white, Colors.cyanAccent],
                                       begin: Alignment.topLeft,
                                       end: Alignment.bottomRight,
                                     ).createShader(Rect.fromLTWH(0, 0, bounds.width, bounds.height)),
                                     blendMode: BlendMode.srcIn,
                                     child: Text(
-                                      "${getGreeting()} ",
+                                      getGreeting(),
                                       style: TextStyle(
-                                        fontSize: getResponsiveFontSize(context, 20),
-                                        fontWeight: FontWeight.w700,
-                                        letterSpacing: 0.4,
+                                        fontSize: getResponsiveFontSize(context, 18),
+                                        fontWeight: FontWeight.bold,
+                                        letterSpacing: 0.5,
                                       ),
                                     ),
                                   ),
                                 );
                               },
                             ),
-                            const SizedBox(height: 4),
+                            const SizedBox(height: 6),
                             Text(
                               "John Doe",
                               style: TextStyle(
                                 fontSize: getResponsiveFontSize(context, 15),
                                 color: Colors.white.withOpacity(0.9),
-                                fontWeight: FontWeight.w500,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
-                            SizedBox(height: 5,),
+                            const SizedBox(height: 4),
                             Text(
                               "Let's make today productive.",
                               style: TextStyle(
                                 fontSize: getResponsiveFontSize(context, 10),
-                                color: Colors.white.withOpacity(0.8),
+                                color: Colors.white.withOpacity(0.75),
                                 fontWeight: FontWeight.w400,
                               ),
                             ),
@@ -184,26 +202,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                       ),
 
-                      // Subtle Icon
+                      const SizedBox(width: 12),
+
+                      // Animated Icon
                       FadeInRight(
                         duration: const Duration(milliseconds: 800),
-                        child: Spin( // animated
+                        child: Spin(
                           infinite: true,
                           duration: const Duration(seconds: 3),
                           child: Icon(
                             LucideIcons.zap,
-                            size: 20,
+                            size: 22,
                             color: Colors.white70,
+                            shadows: [
+                              Shadow(
+                                color: Colors.cyanAccent.withOpacity(0.5),
+                                blurRadius: 10,
+                              ),
+                            ],
                           ),
                         ),
                       ),
-
                     ],
                   ),
                 ),
               ),
-
-
 
               const SizedBox(height: 30),
               _dashboardGroup(
