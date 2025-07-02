@@ -171,6 +171,20 @@ class ProductProvider with ChangeNotifier {
     }
   }
 
+  void updateBatchForProduct({
+    required String productId,
+    required int batchIndex,
+    required Batch updatedBatch,
+  }) {
+    final product = getProductById(productId);
+    if (product != null && batchIndex >= 0 && batchIndex < product.batches.length) {
+      product.batches[batchIndex] = updatedBatch;
+      product.save();
+      notifyListeners();
+    }
+  }
+
+
   void removeAllBatches(String id) {
     final product = getProductById(id);
     if (product != null) {
@@ -313,6 +327,7 @@ class ProductProvider with ChangeNotifier {
   double get allProductsTotalProfit => products.fold(0, (sum, p) => sum + (p.totalRetailValueSack - p.totalCostValueSack) + (p.totalRetailValueKilo - p.totalCostValueKilo));
   int get totalProductCount => _productBox.length;
   int get totalBatchCount => products.fold(0, (sum, p) => sum + p.batches.length);
+
   bool isStockLow(String id, double threshold) {
     final product = getProductById(id);
     if (product == null) return false;

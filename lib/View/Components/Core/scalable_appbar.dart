@@ -64,7 +64,7 @@ class ScalableAppBar extends StatelessWidget implements PreferredSizeWidget {
                       );
                     },
                     child: Container(
-                      height: 40,
+                      height: 45,
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       decoration: BoxDecoration(
                         color: Colors.grey.shade100,
@@ -75,7 +75,7 @@ class ScalableAppBar extends StatelessWidget implements PreferredSizeWidget {
                         children: const [
                           Flexible(
                             child: Text(
-                              "Search Items...",
+                              "Search Product...",
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 color: AppColor.textSecondary,

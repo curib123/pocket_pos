@@ -1,11 +1,13 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:paninda/View/Components/Modal/add_product_modal.dart';
 import 'package:provider/provider.dart';
 import 'package:paninda/Model/product_model.dart';
 import 'package:paninda/View_Model/ProductProvider.dart';
 import 'package:paninda/View/Components/HelperClass/AppColor.dart';
-// import 'package:paninda/View/Modals/add_product_modal.dart'; // <- Uncomment if you want to trigger edit modal
+
+
 class CartModal {
   static void show(BuildContext context, Product product) {
     showModalBottomSheet(
@@ -135,7 +137,13 @@ class _ProductProfileContentState extends State<_ProductProfileContent> {
                     child: GestureDetector(
                       onTap: () {
                         Navigator.pop(context);
-                        // AddProductModal.show(context, isEdit: true, product: product);
+
+                        AddProductModal.show(
+                          context,
+                          isEdit: true,
+                          product: product,
+                        );
+
                       },
                       child: Container(
                         padding: const EdgeInsets.all(6),
@@ -217,7 +225,7 @@ class _ProductProfileContentState extends State<_ProductProfileContent> {
                     ),
                   ),
                   IconButton(
-                    onPressed: () => setState(() => quantity++),
+                    onPressed: () => setState(() => product.totalSacks > quantity ? quantity++ : null),
                     icon: const Icon(Icons.add_circle, color: AppColor.primary),
                   ),
                 ],

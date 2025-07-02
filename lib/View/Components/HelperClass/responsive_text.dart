@@ -5,10 +5,10 @@ double getResponsiveFontSize(BuildContext context, double baseSize) {
 
   if (screenWidth >= 900) {
     // Tablet or large screen
-    return baseSize * 3;
+    return baseSize * 2;
   } else if (screenWidth >= 600) {
     // Small tablets
-    return baseSize * 2.5;
+    return baseSize * 2;
   } else {
     // Mobile
     return baseSize * 1;
