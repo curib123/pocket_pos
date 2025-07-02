@@ -38,26 +38,32 @@ class _CategoryProductListScreenState extends State<CategoryProductListScreen> {
             builder: (context, provider, _) {
               final count = provider.getCartItemCount();
 
-              return Stack(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.shopping_cart_rounded, size: 28),
-                    onPressed: () {
-                      CartListModal.show(context);
-                    },
-                  ),
-                  if (count > 0)
-                    Positioned(
-                      right: 6,
-                      top: 6,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: const BoxDecoration(
-                          color: Colors.red,
-                          shape: BoxShape.circle,
-                        ),
-                        constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
-                        child: Center(
+              return SizedBox(
+                width: 48, // make tap target bigger than just icon
+                height: 48,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.shopping_cart_rounded, size: 28),
+                      onPressed: () {
+                        CartListModal.show(context);
+                      },
+                      padding: EdgeInsets.zero, // optional, reduces icon padding
+                      constraints: const BoxConstraints(), // shrink to icon size
+                    ),
+                    if (count > 0)
+                      Positioned(
+                        right: 4,
+                        top: 4,
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: const BoxDecoration(
+                            color: Colors.red,
+                            shape: BoxShape.circle,
+                          ),
+                          constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
+                          alignment: Alignment.center,
                           child: Text(
                             '$count',
                             style: const TextStyle(
@@ -65,15 +71,17 @@ class _CategoryProductListScreenState extends State<CategoryProductListScreen> {
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
                             ),
+                            textAlign: TextAlign.center,
                           ),
                         ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               );
             },
           ),
           const SizedBox(width: 12),
+
         ],
       ),
       body: Column(

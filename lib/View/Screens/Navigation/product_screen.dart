@@ -226,8 +226,8 @@ class _ProductScreenState extends State<ProductScreen> {
                 child: CustomButton(
                   color: AppColor.primary,
                   icon: LucideIcons.plusCircle,
-                  label: "Add Product",
-                  onPressed: () => AddProductModal.show(context),
+                  label: "Add Product / Restock",
+                  onPressed: () => AddProductModal.show(context,isStock: false),
                 ),
               ),
             ),

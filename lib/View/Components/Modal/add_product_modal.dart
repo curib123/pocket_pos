@@ -13,7 +13,7 @@ import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
 class AddProductModal {
-  static void show(BuildContext context, {bool isEdit = false, Product? product}) {
+  static void show(BuildContext context, {bool isEdit = false, bool isStock = false, Product? product}) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -22,23 +22,31 @@ class AddProductModal {
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       builder: (_) {
-        return FractionallySizedBox(
-          heightFactor: 0.85,
-          child: Padding(
-            padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-            child: _ModalContent(isEdit: isEdit, product: product),
-          ),
+        // Fix: wrap with Builder to access a valid MediaQuery context
+        return Builder(
+          builder: (innerContext) {
+            final bottomInset = MediaQuery.of(innerContext).viewInsets.bottom;
+            return FractionallySizedBox(
+              heightFactor: 0.85,
+              child: Padding(
+                padding: EdgeInsets.only(bottom: bottomInset),
+                child: _ModalContent(isEdit: isEdit, isStock: isStock, product: product),
+              ),
+            );
+          },
         );
       },
     );
   }
 }
 
+
 class _ModalContent extends StatefulWidget {
   final bool isEdit;
+  final bool isStock;
   final Product? product;
 
-  const _ModalContent({Key? key, this.isEdit = false, this.product}) : super(key: key);
+  const _ModalContent({Key? key, this.isEdit = false, this.isStock = false, this.product}) : super(key: key);
 
   @override
   State<_ModalContent> createState() => _ModalContentState();
@@ -56,15 +64,17 @@ class _ModalContentState extends State<_ModalContent> {
   String? _selectedCategory;
   final ImagePicker _picker = ImagePicker();
   XFile? _pickedImage;
-
   Product? _selectedProductToRestock;
   int? _selectedBatchIndex;
+  Product? _editingProduct;
 
   @override
   void initState() {
     super.initState();
-    if (widget.isEdit && widget.product != null) {
-      final p = widget.product!;
+    if (widget.isEdit && widget.product != null || widget.isStock && widget.product != null) {
+      _selectedProductToRestock = widget.product;
+      _editingProduct = widget.product;
+      final p = _editingProduct!;
       _nameController.text = p.name;
       _costController.text = p.costPrice.toString();
       _retailController.text = p.retailPrice.toString();
@@ -73,11 +83,17 @@ class _ModalContentState extends State<_ModalContent> {
       if (p.imageUrl.isNotEmpty) _pickedImage = XFile(p.imageUrl);
       if (p.batches.isNotEmpty) {
         _selectedBatchIndex = 0;
-        _quantityController.text = p.batches[0].quantity.toString();
-        _kiloQuantityController.text = p.batches[0].kiloQuantity.toString();
+        if(!widget.isStock){
+          _quantityController.text = p.batches[0].quantity.toString();
+          _kiloQuantityController.text = p.batches[0].kiloQuantity.toString();
+        }else{
+          _quantityController.text = 0.toString();
+          _kiloQuantityController.text = 0.toString();
+        }
       }
     }
   }
+
 
   @override
   void dispose() {
@@ -96,43 +112,35 @@ class _ModalContentState extends State<_ModalContent> {
   }
 
   void _submit(BuildContext context) async {
-
     if (!_formKey.currentState!.validate()) return;
-
     try {
       final provider = Provider.of<ProductProvider>(context, listen: false);
       final now = DateTime.now();
       final id = widget.isEdit ? widget.product!.id : const Uuid().v4();
-
       String savedImagePath = '';
+
       if (_pickedImage != null) {
         final dir = await getApplicationDocumentsDirectory();
         final folder = Directory('${dir.path}/paninda_images');
         if (!await folder.exists()) await folder.create(recursive: true);
-
         final ext = _pickedImage!.path.split('.').last;
         final path = '${folder.path}/$id.$ext';
         await File(_pickedImage!.path).copy(path);
         savedImagePath = path;
       }
 
-      // 👉 Restock
       if (_selectedProductToRestock != null) {
         final u = _selectedProductToRestock!;
         u.name = _nameController.text.trim();
-        u.costPrice = double.tryParse(_costController.text) ?? 0;
-        u.retailPrice = double.tryParse(_retailController.text) ?? 0;
-        u.description = _descController.text.trim();
-        u.category = _selectedCategory ?? "Uncategorized";
-        u.imageUrl = savedImagePath.isNotEmpty ? savedImagePath : u.imageUrl;
-
+        if (!widget.isStock) {
+          u.imageUrl = savedImagePath.isNotEmpty ? savedImagePath : u.imageUrl;
+        }
         final batch = Batch(
           date: now,
           quantity: double.tryParse(_quantityController.text) ?? 0,
           kiloQuantity: double.tryParse(_kiloQuantityController.text) ?? 0,
         );
         u.batches.add(batch);
-
         provider.updateProduct(u.id, u);
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -141,28 +149,24 @@ class _ModalContentState extends State<_ModalContent> {
         return;
       }
 
-      // 👉 Update
-      if (widget.isEdit && widget.product != null) {
-        final u = widget.product!;
+      if (widget.isEdit && _editingProduct != null) {
+        final u = _editingProduct!;
         u.name = _nameController.text.trim();
         u.costPrice = double.tryParse(_costController.text) ?? 0;
         u.retailPrice = double.tryParse(_retailController.text) ?? 0;
         u.description = _descController.text.trim();
         u.category = _selectedCategory ?? "Uncategorized";
         u.imageUrl = savedImagePath.isNotEmpty ? savedImagePath : u.imageUrl;
-
         final batch = Batch(
           date: now,
           quantity: double.tryParse(_quantityController.text) ?? 0,
           kiloQuantity: double.tryParse(_kiloQuantityController.text) ?? 0,
         );
-
         if (_selectedBatchIndex != null && u.batches.length > _selectedBatchIndex!) {
           u.batches[_selectedBatchIndex!] = batch;
         } else {
           u.batches.add(batch);
         }
-
         provider.updateProduct(u.id, u);
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -171,13 +175,13 @@ class _ModalContentState extends State<_ModalContent> {
         return;
       }
 
-      // 👉 Add new
+
       final product = Product(
         id: id,
         name: _nameController.text.trim(),
         costPrice: double.tryParse(_costController.text) ?? 0,
         retailPrice: double.tryParse(_retailController.text) ?? 0,
-        unit:  "Unit",
+        unit: "Unit",
         description: _descController.text.trim(),
         imageUrl: savedImagePath,
         category: _selectedCategory ?? "Uncategorized",
@@ -190,17 +194,13 @@ class _ModalContentState extends State<_ModalContent> {
         ],
       );
       provider.addProduct(product);
-
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Product added!"), backgroundColor: AppColor.success),
       );
-    } catch (e) {
+    } catch (_) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Something went wrong. Try again."),
-          backgroundColor: AppColor.warning,
-        ),
+        const SnackBar(content: Text("Something went wrong. Try again."), backgroundColor: AppColor.warning),
       );
     }
   }
@@ -212,21 +212,17 @@ class _ModalContentState extends State<_ModalContent> {
         child: DropdownButtonFormField<int>(
           value: _selectedBatchIndex,
           decoration: InputDecoration(
-            hintText: "Select Stock Batch to Edit",
+            hintText: "Choose Batch to Edit",
             prefixIcon: const Icon(LucideIcons.layers),
             filled: true,
             fillColor: Colors.grey.shade100,
             contentPadding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide.none,
-            ),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
           ),
           items: List.generate(widget.product!.batches.length, (i) {
-            final b = widget.product!.batches[i];
             return DropdownMenuItem<int>(
               value: i,
-              child: Text("Stock Batch ${i + 1} ",style: TextStyle(overflow: TextOverflow.ellipsis,fontSize: 13),),
+              child: Text("Batch ${i + 1}", style: const TextStyle(fontSize: 13)),
             );
           }),
           onChanged: (i) {
@@ -246,185 +242,8 @@ class _ModalContentState extends State<_ModalContent> {
     return const SizedBox.shrink();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-        child: Form(
-          key: _formKey,
-          child: Consumer2<StoreCategoryProvider, ProductProvider>(
-            builder: (context, catProv, productProvider, _) {
-              // Inside your build method:
-              return Column(
-                children: [
-                  Container(
-                    width: 40,
-                    height: 5,
-                    margin: const EdgeInsets.only(bottom: 20),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  Text(
-                    widget.isEdit ? "Edit Product" : "Add New Product",
-                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
-                  ),
-                  const SizedBox(height: 10),
-                  _batchDropdown(),
-
-                  Autocomplete<Product>(
-                    displayStringForOption: (p) => p.name,
-                    optionsBuilder: (TextEditingValue textEditingValue) {
-                      return productProvider.products.where((Product option) {
-                        return option.name.toLowerCase().contains(textEditingValue.text.toLowerCase());
-                      }).take(5);
-                    },
-                    fieldViewBuilder: (context, textEditingController, focusNode, onEditingComplete) {
-                      textEditingController.text = _nameController.text;
-                      textEditingController.addListener(() {
-                        _nameController.text = textEditingController.text;
-                      });
-
-                      return TextFormField(
-                        controller: textEditingController,
-                        focusNode: focusNode,
-                        onEditingComplete: onEditingComplete,
-                        validator: (val) => val == null || val.isEmpty ? 'Required' : null,
-                        decoration: InputDecoration(
-                          hintText: "Enter Product Name",
-                          prefixIcon: Icon(LucideIcons.search, color: Colors.grey.shade600),
-                          filled: true,
-                          fillColor: AppColor.success.withOpacity(0.10),
-                          contentPadding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: BorderSide.none,
-                          ),
-                        ),
-                      );
-                    },
-                    onSelected: (Product selected) {
-                      setState(() {
-                        _selectedProductToRestock = selected;
-                        _nameController.text = selected.name;
-                        _costController.text = selected.costPrice.toString();
-                        _retailController.text = selected.retailPrice.toString();
-                        _descController.text = selected.description;
-                        _selectedCategory = selected.category;
-                        _pickedImage = selected.imageUrl.isNotEmpty ? XFile(selected.imageUrl) : null;
-                        _quantityController.clear();
-                        _kiloQuantityController.clear();
-                      });
-                    },
-                  ),
-
-                  if (_selectedProductToRestock != null) ...[
-                    const SizedBox(height: 10),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text("Previous Stocks Batch", style: TextStyle(fontWeight: FontWeight.bold)),
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: _selectedProductToRestock!.batches.map((b) => Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 4),
-                          child: Text("Date: ${b.date.toLocal()} | Qty: ${b.quantity}, Kg: ${b.kiloQuantity}"),
-                        )).toList(),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-                  const SizedBox(height: 10),
-                  _modernInput(_costController, "Cost Price", LucideIcons.dollarSign, type: TextInputType.number),
-                  _modernInput(_retailController, "Retail Price", LucideIcons.badgeDollarSign, type: TextInputType.number),
-                  _modernDropdown("Category", LucideIcons.layoutGrid, _selectedCategory, catProv.visibleCategories, (val) => setState(() => _selectedCategory = val)),
-                  _modernInput(_descController, "Description", LucideIcons.stickyNote, maxLines: 2),
-                  _imagePickerPreview(),
-                  const SizedBox(height: 20),
-                  _modernInput(_quantityController, "Quantity (pcs)", LucideIcons.shoppingBag, type: TextInputType.number),
-                  _modernInput(_kiloQuantityController, "Quantity (kilos)", LucideIcons.scale, type: TextInputType.number),
-                  const SizedBox(height: 20),
-
-                  CustomButton(
-                    icon: LucideIcons.save,
-                    color: AppColor.success,
-                    label: widget.isEdit ? "Update Product" : (_selectedProductToRestock != null ? "Restock Product" : "Add Product"),
-                    onPressed: () {
-                      if (_quantityController.text.isEmpty ||
-                          _kiloQuantityController.text.isEmpty ||
-                          _descController.text.isEmpty) {
-                        _quantityController.text = 0.toString();
-                        _kiloQuantityController.text = 0.toString();
-                        _descController.text = "No Description";
-                      }
-                      _submit(context);
-                    },
-                  ),
-                ],
-              );
-            },
-          ),
-        ),
-      ),
-    );
-  }
-  Widget _modernInput(TextEditingController c, String hint, IconData icon, {TextInputType type = TextInputType.text, int maxLines = 1}) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: TextFormField(
-        controller: c,
-        keyboardType: type,
-        maxLines: maxLines,
-        validator: (v) => v == null || v.isEmpty ? 'Required' : null,
-        decoration: InputDecoration(
-          hintText: hint,
-          prefixIcon: Icon(icon),
-          filled: true,
-          fillColor: Colors.grey.shade100,
-          contentPadding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide.none,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _modernDropdown(String label, IconData icon, String? value, List<String> items, void Function(String?) onChanged) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: DropdownButtonFormField<String>(
-        value: value,
-        decoration: InputDecoration(
-          hintText: label,
-          prefixIcon: Icon(icon),
-          filled: true,
-          fillColor: Colors.grey.shade100,
-          contentPadding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide.none,
-          ),
-        ),
-        items: items.map((it) => DropdownMenuItem(value: it, child: Text(it))).toList(),
-        onChanged: onChanged,
-        validator: (v) => v == null || v.isEmpty ? 'Required' : null,
-      ),
-    );
-  }
-
-
   Widget _imagePickerPreview() {
+    if (widget.isStock) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -450,7 +269,7 @@ class _ModalContentState extends State<_ModalContent> {
                 children: [
                   Icon(Icons.camera_alt, size: 40, color: Colors.grey.shade600),
                   const SizedBox(height: 8),
-                  Text("Tap to capture product image", style: TextStyle(color: Colors.grey.shade600)),
+                  Text("Tap to take product photo", style: TextStyle(color: Colors.grey.shade600)),
                 ],
               ),
             )
@@ -458,6 +277,211 @@ class _ModalContentState extends State<_ModalContent> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _modernInput(TextEditingController c, String hint, IconData icon,
+      {TextInputType type = TextInputType.text, int maxLines = 1}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: TextFormField(
+        controller: c,
+        keyboardType: type,
+        maxLines: maxLines,
+        validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+        decoration: InputDecoration(
+          hintText: hint,
+          prefixIcon: Icon(icon),
+          filled: true,
+          fillColor: Colors.grey.shade100,
+          contentPadding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+        ),
+      ),
+    );
+  }
+
+  Widget _modernDropdown(String label, IconData icon, String? value, List<String> items, void Function(String?) onChanged) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: DropdownButtonFormField<String>(
+        value: value,
+        decoration: InputDecoration(
+          hintText: label,
+          prefixIcon: Icon(icon),
+          filled: true,
+          fillColor: Colors.grey.shade100,
+          contentPadding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+        ),
+        items: items.map((it) => DropdownMenuItem(value: it, child: Text(it))).toList(),
+        onChanged: onChanged,
+        validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        child: Form(
+          key: _formKey,
+          child: Consumer2<StoreCategoryProvider, ProductProvider>(
+            builder: (context, catProv, productProvider, _) {
+              return Column(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 5,
+                    margin: const EdgeInsets.only(bottom: 20),
+                    decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(12)),
+                  ),
+                  Text(
+                    widget.isStock
+                        ? "Restock Existing Product"
+                        : widget.isEdit
+                        ? "Edit Product Details"
+                        : "Add a New Product",
+                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 10),
+                  if (!widget.isEdit)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.search, color: Colors.grey, size: 20),
+                          const SizedBox(width: 6),
+                          Text(
+                            "Search for a product (if restocking)",
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontStyle: FontStyle.italic,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                  const SizedBox(height: 10),
+                  Autocomplete<Product>(
+                    displayStringForOption: (p) => p.name,
+                    optionsBuilder: (val) => productProvider.products
+                        .where((p) => p.name.toLowerCase().contains(val.text.toLowerCase()))
+                        .take(5),
+                    fieldViewBuilder: (context, controller, focusNode, onEditingComplete) {
+                      controller.text = _nameController.text;
+                      controller.selection = TextSelection.fromPosition(TextPosition(offset: controller.text.length));
+                      return TextFormField(
+                        controller: controller,
+                        focusNode: focusNode,
+                        onEditingComplete: onEditingComplete,
+                        onChanged: (val) => _nameController.text = val,
+                        validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+                        decoration: InputDecoration(
+                          hintText: "Search or enter product name",
+                          prefixIcon: Icon(LucideIcons.search),
+                          filled: true,
+                          fillColor: AppColor.success.withOpacity(0.10),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                      );
+                    },
+                    onSelected: (selected) {
+                      setState(() {
+                        _selectedProductToRestock = selected;
+                        _nameController.text = selected.name;
+                        if (!widget.isStock) {
+                          _costController.text = selected.costPrice.toString();
+                          _retailController.text = selected.retailPrice.toString();
+                          _descController.text = selected.description;
+                          _selectedCategory = selected.category;
+                          _pickedImage = selected.imageUrl.isNotEmpty ? XFile(selected.imageUrl) : null;
+                        }
+                        _quantityController.clear();
+                        _kiloQuantityController.clear();
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 10),
+
+                  if (_selectedProductToRestock != null) ...[
+                    const SizedBox(height: 10),
+                    const Text("Recent Restocks", style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey.shade300),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: _selectedProductToRestock!.batches.reversed.take(5).map((b) {
+                          final formattedDate = "${b.date.year}-${b.date.month.toString().padLeft(2, '0')}-${b.date.day.toString().padLeft(2, '0')}";
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 4),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.history, size: 16, color: Colors.grey),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Text(
+                                    "$formattedDate — ${b.quantity} pcs / ${b.kiloQuantity} kg",
+                                    style: const TextStyle(fontSize: 13),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ],
+
+                  const SizedBox(height: 10),
+
+                  if (!widget.isStock) ...[
+                    _batchDropdown(),
+                    _modernInput(_costController, "Purchase Price", LucideIcons.dollarSign, type: TextInputType.number),
+                    _modernInput(_retailController, "Selling Price", LucideIcons.badgeDollarSign, type: TextInputType.number),
+                    _modernDropdown("Select Category", LucideIcons.layoutGrid, _selectedCategory,
+                        catProv.visibleCategories, (val) => setState(() => _selectedCategory = val)),
+                    _modernInput(_descController, "Product Description", LucideIcons.stickyNote, maxLines: 2),
+                    _imagePickerPreview(),
+                  ],
+                  if(widget.isStock)  const SizedBox(height: 5),
+                  const Text("Add New Batch of Stocks", style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 5),
+                  _modernInput(_quantityController, "Stock Quantity (pieces)", LucideIcons.shoppingBag, type: TextInputType.number),
+                  _modernInput(_kiloQuantityController, "Stock Quantity (kilograms)", LucideIcons.scale, type: TextInputType.number),
+
+                  const SizedBox(height: 20),
+
+                  CustomButton(
+                    icon: LucideIcons.save,
+                    color: AppColor.success,
+                    label: widget.isEdit
+                        ? "Save Changes"
+                        : (widget.isStock || _selectedProductToRestock != null ? "Confirm Restock" : "Add Product"),
+                    onPressed: () {
+                      if (_quantityController.text.isEmpty) _quantityController.text = "0";
+                      if (_kiloQuantityController.text.isEmpty) _kiloQuantityController.text = "0";
+                      if (_descController.text.isEmpty) _descController.text = "No Description";
+                      _submit(context);
+                    },
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      ),
     );
   }
 }

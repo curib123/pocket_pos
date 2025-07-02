@@ -7,7 +7,6 @@ import 'package:paninda/Model/product_model.dart';
 import 'package:paninda/View_Model/ProductProvider.dart';
 import 'package:paninda/View/Components/HelperClass/AppColor.dart';
 
-
 class CartModal {
   static void show(BuildContext context, Product product) {
     showModalBottomSheet(
@@ -31,7 +30,7 @@ class _ProductProfileContent extends StatefulWidget {
 }
 
 class _ProductProfileContentState extends State<_ProductProfileContent> {
-  int quantity = 1;
+  int quantity = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -52,6 +51,7 @@ class _ProductProfileContentState extends State<_ProductProfileContent> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // Handle Bar
               Container(
                 width: 48,
                 height: 6,
@@ -62,99 +62,114 @@ class _ProductProfileContentState extends State<_ProductProfileContent> {
                 ),
               ),
 
-              // Product Card with Edit Icon
-              Stack(
+              // Product Display
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    child: Row(
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: hasImage
+                        ? Image.file(
+                      File(product.imageUrl),
+                      width: 100,
+                      height: 100,
+                      fit: BoxFit.cover,
+                    )
+                        : Container(
+                      width: 100,
+                      height: 100,
+                      color: AppColor.border,
+                      child: const Icon(Icons.image_not_supported, size: 32, color: AppColor.textSecondary),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(10),
-                          child: hasImage
-                              ? Image.file(
-                            File(product.imageUrl),
-                            width: 100,
-                            height: 100,
-                            fit: BoxFit.cover,
-                          )
-                              : Container(
-                            width: 100,
-                            height: 100,
-                            color: AppColor.border,
-                            child: const Icon(Icons.image_not_supported, size: 32, color: AppColor.textSecondary),
+                        Text(
+                          product.name,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                            color: AppColor.textPrimary,
                           ),
                         ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                product.name,
-                                style: const TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColor.textPrimary,
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                "${product.retailPrice.toStringAsFixed(2)}",
-                                style: TextStyle(
-                                  color: AppColor.primary,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                "Cost: ${product.costPrice.toStringAsFixed(2)}",
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: AppColor.textSecondary,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                "Description: ${product.description}",
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: AppColor.textSecondary,
-                                ),
-                              ),
-                            ],
+                        const SizedBox(height: 6),
+                        Text(
+                          "₱${product.retailPrice.toStringAsFixed(2)}",
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: AppColor.primary,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          "Cost: ₱${product.costPrice.toStringAsFixed(2)}",
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: AppColor.textSecondary,
+                            fontStyle: FontStyle.italic,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          "Description: ${product.description}",
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: AppColor.textSecondary,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: GestureDetector(
-                      onTap: () {
-                        Navigator.pop(context);
+                ],
+              ),
 
-                        AddProductModal.show(
-                          context,
-                          isEdit: true,
-                          product: product,
-                        );
+              const SizedBox(height: 16),
 
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.all(6),
-                        child: const Icon(Icons.edit, size: 30, color: AppColor.primary),
+              // Edit and Restock Buttons
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      icon:  Icon(Icons.edit, size: 20,color: AppColor.surface,),
+                      label: const Text("Edit Product"),
+                      style: ElevatedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        backgroundColor: AppColor.primary,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
                       ),
+                      onPressed: () {
+                        Navigator.pop(context);
+                        AddProductModal.show(context, isEdit: true, product: product);
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      icon:  Icon(Icons.inventory_2_rounded, size: 20,color: AppColor.surface,),
+                      label: const Text("Restock"),
+                      style: ElevatedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        backgroundColor: AppColor.secondary,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      onPressed: () {
+                        Navigator.pop(context);
+                        AddProductModal.show(context, isStock: true, product: product);
+                      },
                     ),
                   ),
                 ],
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 24),
 
               // Batches Section
               if (product.batches.isNotEmpty) ...[
@@ -206,9 +221,7 @@ class _ProductProfileContentState extends State<_ProductProfileContent> {
                 children: [
                   IconButton(
                     onPressed: () {
-                      if (quantity > 1) {
-                        setState(() => quantity--);
-                      }
+                      if (quantity > 0) setState(() => quantity--);
                     },
                     icon: const Icon(Icons.remove_circle, color: AppColor.primary),
                   ),
@@ -247,7 +260,7 @@ class _ProductProfileContentState extends State<_ProductProfileContent> {
                   elevation: 3,
                 ),
                 onPressed: () {
-                  provider.addToCart(product, quantity); // <-- Must support quantity in your provider
+                  provider.addToCart(product, quantity);
                   Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text("Added $quantity ${product.unit}(s) to cart")),
