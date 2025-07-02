@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:paninda/Model/loan_person_model.dart';
 import 'package:paninda/View/Components/Custom/custom_btn.dart';
 import 'package:provider/provider.dart';
 import 'package:paninda/Model/product_model.dart';
@@ -148,9 +149,54 @@ class _CartListContentState extends State<_CartListContent> {
 
               /// Payment input field
               if (!isLoan)
-                _buildTextField(cashController, "Enter Cash", Icons.payments)
+                _buildTextField(cashController, "Enter Cash", Icons.payments,isNumber: true)
               else
-                _buildTextField(borrowerController, "Borrower's Name", Icons.person),
+                Autocomplete<LoanPerson>(
+                  displayStringForOption: (LoanPerson p) => p.name,
+                  optionsBuilder: (TextEditingValue textEditingValue) {
+                    if (textEditingValue.text == '') {
+                      return const Iterable<LoanPerson>.empty();
+                    }
+                    return loanProvider.loans.where((LoanPerson option) {
+                      return option.name.toLowerCase().contains(textEditingValue.text.toLowerCase());
+                    }).take(5);
+                  },
+                  fieldViewBuilder: (BuildContext context, TextEditingController textEditingController,
+                      FocusNode focusNode, VoidCallback onEditingComplete) {
+                    // Set the controller text if it's not already there
+                    textEditingController.text = borrowerController.text;
+                    textEditingController.selection = TextSelection.fromPosition(
+                      TextPosition(offset: textEditingController.text.length),
+                    );
+
+                    textEditingController.addListener(() {
+                      borrowerController.text = textEditingController.text;
+                    });
+
+                    return TextFormField(
+                      controller: textEditingController,
+                      focusNode: focusNode,
+                      onEditingComplete: onEditingComplete,
+                      validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+                      decoration: InputDecoration(
+                        hintText: "Enter Borrower's Name",
+                        prefixIcon: Icon(LucideIcons.search, color: Colors.grey.shade600),
+                        filled: true,
+                        fillColor: AppColor.success.withOpacity(0.10),
+                        contentPadding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    );
+                  },
+                  onSelected: (LoanPerson selected) {
+                    setState(() {
+                      borrowerController.text = selected.name;
+                    });
+                  },
+                ),
 
               if (!isLoan)
                 Padding(
@@ -498,12 +544,20 @@ class _CartListContentState extends State<_CartListContent> {
   }
 
 
-  Widget _buildTextField(TextEditingController controller, String label, IconData icon) {
+
+  Widget _buildTextField(
+      TextEditingController controller,
+      String label,
+      IconData icon, {
+        bool isNumber = false,
+      }) {
     return Padding(
       padding: const EdgeInsets.only(top: 12.0),
       child: TextField(
         controller: controller,
-        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        keyboardType: isNumber
+            ? const TextInputType.numberWithOptions(decimal: true)
+            : TextInputType.text,
         style: const TextStyle(fontSize: 16),
         decoration: InputDecoration(
           labelText: label,

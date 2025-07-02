@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:paninda/View/Screens/Navigation/dashboard_screen.dart';
 import 'package:paninda/View/Screens/Navigation/loan_screen.dart';
 import 'package:paninda/View/Screens/Navigation/product_screen.dart';
-import 'package:paninda/View/Screens/Navigation/settings_screen.dart';
+import 'package:paninda/View/Screens/Navigation/profile_screen.dart';
 class TabProvider extends ChangeNotifier {
   int _currentIndex = 0;
 
@@ -17,6 +17,6 @@ class TabProvider extends ChangeNotifier {
     DashboardScreen(),
     ProductScreen(),
     LoanScreen(),
-    SettingsScreen(),
+    ProfileScreen(),
   ];
 }

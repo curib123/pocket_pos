@@ -5,22 +5,27 @@ import 'package:paninda/Model/loan_person_model.dart';
 class LoanProvider with ChangeNotifier {
   final Box<LoanPerson> _loanBox = Hive.box<LoanPerson>('loans');
 
-  // 📄 All loan records
   List<LoanPerson> get loans => _loanBox.values.toList();
 
-  // ➕ Add new loan or merge if same person & product & unpaid
+  /// ➕ Add new loan or merge if same name, productId, and unpaid
   void addLoan(LoanPerson newLoan) {
-    final existingIndex = _loanBox.values.toList().indexWhere((loan) =>
-    loan.name.toLowerCase() == newLoan.name.toLowerCase() &&
-        loan.productId == newLoan.productId &&
-        !loan.isPaid);
+    final existingKey = _loanBox.keys.cast<int?>().firstWhere(
+          (key) {
+        final loan = _loanBox.get(key);
+        return loan != null &&
+            loan.name.toLowerCase() == newLoan.name.toLowerCase() &&
+            loan.productId == newLoan.productId &&
+            !loan.isPaid;
+      },
+      orElse: () => null,
+    );
 
-    if (existingIndex != -1) {
-      final existingLoan = _loanBox.getAt(existingIndex)!;
-      existingLoan.quantity += newLoan.quantity;
-      existingLoan.totalAmount += newLoan.totalAmount;
-      existingLoan.date = DateTime.now();
-      existingLoan.save();
+    if (existingKey != null) {
+      final loan = _loanBox.get(existingKey)!;
+      loan.quantity += newLoan.quantity;
+      loan.totalAmount += newLoan.totalAmount;
+      loan.date = DateTime.now();
+      loan.save();
     } else {
       _loanBox.add(newLoan);
     }
@@ -28,7 +33,40 @@ class LoanProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  // 🔁 Mark loan as paid
+  /// ➖ Deduct specific loan by person & product
+  void deductLoan({
+    required String name,
+    required String productId,
+    int quantityToDeduct = 0,
+    required double amountToDeduct,
+  }) {
+    final existingKey = _loanBox.keys.cast<int?>().firstWhere(
+          (key) {
+        final loan = _loanBox.get(key);
+        return loan != null &&
+            loan.name.toLowerCase() == name.toLowerCase() &&
+            loan.productId == productId &&
+            !loan.isPaid;
+      },
+      orElse: () => null,
+    );
+
+    if (existingKey != null) {
+      final loan = _loanBox.get(existingKey)!;
+      loan.quantity -= quantityToDeduct;
+      loan.totalAmount -= amountToDeduct;
+      loan.date = DateTime.now();
+
+      if (loan.totalAmount <= 0 || loan.quantity <= 0) {
+        _loanBox.delete(existingKey);
+      } else {
+        loan.save();
+      }
+
+      notifyListeners();
+    }
+  }
+
   void markAsPaid(int index) {
     final loan = _loanBox.getAt(index);
     if (loan != null && !loan.isPaid) {
@@ -38,50 +76,50 @@ class LoanProvider with ChangeNotifier {
     }
   }
 
-  // ❌ Remove a specific loan
   void removeLoan(int index) {
     _loanBox.deleteAt(index);
     notifyListeners();
   }
 
-  // 🧹 Clear all loan records
   void clearLoans() {
     _loanBox.clear();
     notifyListeners();
   }
 
-  // 🔍 Get all loans for a specific person
+  /// 🔍 Get all loans (paid/unpaid) by name
   List<LoanPerson> getLoansByName(String name) {
     return _loanBox.values
         .where((loan) => loan.name.toLowerCase() == name.toLowerCase())
         .toList();
   }
 
-  // 📊 Total unpaid loan amount
+  /// 📊 Total unpaid loan amount
   double get totalLoanAmount {
     return _loanBox.values
         .where((l) => !l.isPaid)
         .fold(0.0, (sum, l) => sum + l.totalAmount);
   }
 
-  // 📊 Number of unpaid borrowers
+  /// 📊 Count of unique unpaid borrowers
   int get totalUnpaidBorrowers {
     return _loanBox.values
         .where((l) => !l.isPaid)
-        .map((l) => l.name)
+        .map((l) => l.name.toLowerCase())
         .toSet()
         .length;
   }
 
-  // 📊 Get total loan value for a given DateTime range
+  /// 📊 Loan amounts in custom date ranges
   double getLoanAmountBetween(DateTime start, DateTime end, {bool onlyUnpaid = false}) {
-    return _loanBox.values.where((loan) {
-      final matchStatus = onlyUnpaid ? !loan.isPaid : true;
-      return loan.date.isAfter(start) && loan.date.isBefore(end) && matchStatus;
-    }).fold(0.0, (sum, loan) => sum + loan.totalAmount);
+    return _loanBox.values
+        .where((loan) {
+      final isInDate = loan.date.isAfter(start) && loan.date.isBefore(end);
+      final matchesStatus = onlyUnpaid ? !loan.isPaid : true;
+      return isInDate && matchesStatus;
+    })
+        .fold(0.0, (sum, loan) => sum + loan.totalAmount);
   }
 
-  // 📅 Metrics: today, this week, month, year
   double get todayLoanAmount {
     final now = DateTime.now();
     final start = DateTime(now.year, now.month, now.day);
@@ -110,7 +148,7 @@ class LoanProvider with ChangeNotifier {
     return getLoanAmountBetween(start, end);
   }
 
-  // ✅ Filter loans by paid/unpaid
+  /// 🧾 Filtered loans
   List<LoanPerson> get unpaidLoans =>
       _loanBox.values.where((l) => !l.isPaid).toList();
 

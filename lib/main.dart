@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hive/hive.dart';
@@ -14,21 +15,22 @@ import 'package:paninda/home.dart';
 import 'package:provider/provider.dart';
 
 Future<void> main() async {
-
   WidgetsFlutterBinding.ensureInitialized();
   await Hive.initFlutter();
+
+  // Register adapters
   Hive.registerAdapter(ProductAdapter());
   Hive.registerAdapter(BatchAdapter());
   Hive.registerAdapter(LoanPersonAdapter());
   Hive.registerAdapter(CartItemAdapter());
 
+
+  // Open other boxes
   await Hive.openBox<LoanPerson>('loans');
   await Hive.openBox<Product>('products');
   await Hive.openBox('categoryVisibility');
   await Hive.openBox('snapshot');
   await Hive.openBox('checkout_profits');
-
-
 
   runApp(
     MultiProvider(
@@ -42,6 +44,7 @@ Future<void> main() async {
     ),
   );
 }
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -51,10 +54,10 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: "Paninda Stock and Inventory Mobile App",
       theme: ThemeData(
-        scaffoldBackgroundColor: Colors.white,          // <- sets screen background
-        canvasColor: Colors.white,                      // <- sets modal/sheet background
-        dialogBackgroundColor: Colors.white,            // <- sets dialog background
-        textTheme: GoogleFonts.workSansTextTheme(),      // <- custom font
+        scaffoldBackgroundColor: Colors.white,
+        canvasColor: Colors.white,
+        dialogBackgroundColor: Colors.white,
+        textTheme: GoogleFonts.workSansTextTheme(),
         colorScheme: ColorScheme.fromSeed(
           seedColor: Colors.blue,
           background: Colors.white,
@@ -66,3 +69,4 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+

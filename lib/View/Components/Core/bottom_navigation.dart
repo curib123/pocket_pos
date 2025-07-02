@@ -34,8 +34,8 @@ class BottomNavigation extends StatelessWidget {
           label: 'Loan',
         ),
         BottomNavigationBarItem(
-          icon: Icon(LucideIcons.settings),
-          label: 'Settings',
+          icon: Icon(LucideIcons.store),
+          label: 'Profile',
         ),
       ],
     );
