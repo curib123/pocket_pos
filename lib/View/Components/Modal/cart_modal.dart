@@ -1,6 +1,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:lucide_icons/lucide_icons.dart';
+import 'package:paninda/View/Components/Alert/custom_confirm_dialog.dart';
+import 'package:paninda/View/Components/Alert/show_quantity_edit.dart';
 import 'package:paninda/View/Components/Modal/add_product_modal.dart';
 import 'package:provider/provider.dart';
 import 'package:paninda/Model/product_model.dart';
@@ -34,10 +37,11 @@ class _ProductProfileContentState extends State<_ProductProfileContent> {
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.read<ProductProvider>();
+    final provider = context.watch<ProductProvider>();
     final product = widget.product;
     final hasImage = product.imageUrl.isNotEmpty && File(product.imageUrl).existsSync();
     final dateFormat = DateFormat('MMM d, yyyy');
+    print(product.imageUrl);
 
     return SafeArea(
       child: Padding(
@@ -87,14 +91,40 @@ class _ProductProfileContentState extends State<_ProductProfileContent> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          product.name,
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w700,
-                            color: AppColor.textPrimary,
-                          ),
-                        ),
+                       Row(
+                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                         children: [
+                           Text(
+                             product.name,
+                             style: const TextStyle(
+                               fontSize: 20,
+                               fontWeight: FontWeight.w700,
+                               color: AppColor.textPrimary,
+                             ),
+                           ),
+                           IconButton(
+                               onPressed: (){
+                                 showDialog(
+                                   context: context,
+                                   builder: (context) => CustomConfirmDialog(
+                                     icon: Icons.delete_forever,
+                                     iconColor: Colors.redAccent,
+                                     title: "Are You Sure?",
+                                     content: "Deleting this product is permanent and cannot be undone.",
+                                     cancelText: "Go Back",
+                                     confirmText: "Delete Product",
+                                     onConfirm: () {
+                                       // Delete logic here
+                                       provider.removeProduct(product.id);
+                                       Navigator.pop(context);
+                                     },
+                                   ),
+                                 );
+
+                               },
+                               icon:Icon(Icons.delete_rounded,color: AppColor.errorText,) )
+                         ],
+                       ),
                         const SizedBox(height: 6),
                         Text(
                           "₱${product.retailPrice.toStringAsFixed(2)}",
@@ -175,9 +205,25 @@ class _ProductProfileContentState extends State<_ProductProfileContent> {
               if (product.batches.isNotEmpty) ...[
                 Align(
                   alignment: Alignment.centerLeft,
-                  child: Text(
-                    "Stocks:",
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColor.textPrimary),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Stocks:",
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColor.textPrimary),
+                      ),
+                      SizedBox(height: 5,),
+                      Text(
+                        "Restocking on the same day will automatically combine with the existing stock for that date.",
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontStyle: FontStyle.italic,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.grey,
+                        ),
+                      ),
+
+                    ],
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -198,14 +244,59 @@ class _ProductProfileContentState extends State<_ProductProfileContent> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            "Qty: ${batch.quantity.toStringAsFixed(0)} ${product.unit}\nKg: ${batch.kiloQuantity.toStringAsFixed(2)} kg",
-                            style: const TextStyle(fontSize: 14, color: AppColor.textSecondary),
-                          ),
-                          Text(
-                            dateFormat.format(batch.date),
-                            style: const TextStyle(fontSize: 13, color: Colors.grey),
-                          ),
+                         Column(
+                           mainAxisAlignment: MainAxisAlignment.start,
+                           crossAxisAlignment: CrossAxisAlignment.start,
+                           children: [
+                             Text(
+                               "Qty: ${batch.quantity.toStringAsFixed(0)} ${product.unit}\nKg: ${batch.kiloQuantity.toStringAsFixed(2)} kg",
+                               style: const TextStyle(fontSize: 14, color: AppColor.textSecondary),
+                             ),
+                             SizedBox(height: 5,),
+                             Text(
+                               dateFormat.format(batch.date),
+                               style: const TextStyle(fontSize: 13, color: Colors.grey),
+                             ),
+                           ],
+                         ),
+                          Row(
+                            children: [
+                              IconButton(
+                                  onPressed: (){
+                                    showQuantityEditDialog(
+                                      context: context,
+                                      title: 'Update Quantity',
+                                      initialQuantity: product.batches[index].quantity,
+                                      initialKiloQuantity: product.batches[index].kiloQuantity ,
+                                      onConfirm: (newQty,newKiloQty) {
+                                       provider.updateProductQuantityManually(product.id, newQty, newKiloQty);
+                                      },
+                                    );
+
+                                  },
+                                  icon:Icon( LucideIcons.edit,color: AppColor.primary,)),
+                              IconButton(
+                                  onPressed: (){
+                                    showDialog(
+                                      context: context,
+                                      builder: (context) => CustomConfirmDialog(
+                                        icon: Icons.delete_forever,
+                                        iconColor: Colors.redAccent,
+                                        title: "Are You Sure?",
+                                        content: "Deleting this Batch is permanent and cannot be undone.",
+                                        cancelText: "Go Back",
+                                        confirmText: "Confirm Delete",
+                                        onConfirm: () {
+                                          // Delete logic here
+                                          provider.removeBatchFromProduct(productId: product.id, batchDate: batch.date);
+                                        },
+                                      ),
+                                    );
+
+                                  },
+                                  icon: Icon(LucideIcons.delete,color: AppColor.errorText,))
+                            ],
+                          )
                         ],
                       ),
                     );

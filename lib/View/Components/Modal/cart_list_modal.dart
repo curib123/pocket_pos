@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:paninda/Model/loan_person_model.dart';
+import 'package:paninda/View/Components/Alert/custom_alert_notification.dart';
 import 'package:paninda/View/Components/Custom/custom_btn.dart';
 import 'package:provider/provider.dart';
 import 'package:paninda/Model/product_model.dart';
@@ -221,20 +222,26 @@ class _CartListContentState extends State<_CartListContent> {
                   if (result != null) {
                     final profit = (result['profit'] ?? 0.0) as double;
                     final change = (result['change'] ?? 0.0) as double;
-                    Navigator.pop(context);
-                    productProvider.clearCart();
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      content: Text(
-                        isLoan
-                            ? "Loan recorded successfully.\nProfit: ₱${profit.toStringAsFixed(2)}"
-                            : "Payment successful.\nChange: ₱${change.toStringAsFixed(2)} | Profit: ₱${profit.toStringAsFixed(2)}",
-                      ),
-                    ));
+
+                    // Show success alert first
+                    showCustomAlertBox(
+                      context,
+                      isLoan
+                          ? "Loan recorded successfully!\nProfit: ₱${profit.toStringAsFixed(2)}"
+                          : "Payment successful!\nChange: ₱${change.toStringAsFixed(2)}\nProfit: ₱${profit.toStringAsFixed(2)}",
+                      AlertType.success,
+                    );
+
+
                   } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Something went wrong. Please try again.")),
+                    // Show error alert
+                    showCustomAlertBox(
+                      context,
+                      "Something went wrong. Please try again.Pay Now !! Need Cash",
+                      AlertType.error,
                     );
                   }
+
                 },
               ),
               const SizedBox(height: 12),

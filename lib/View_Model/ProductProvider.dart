@@ -102,19 +102,36 @@ class ProductProvider with ChangeNotifier {
   List<Batch> getBatchesForProduct(String productId) {
     return getProductById(productId)?.batches ?? [];
   }
-
+  bool isSameDate(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
   void restockProduct(String id, double quantity, double kiloQuantity, {DateTime? date}) {
     final product = getProductById(id);
     if (product != null) {
-      product.batches.add(Batch(
-        date: date ?? DateTime.now(),
-        quantity: quantity,
-        kiloQuantity: kiloQuantity,
-      ));
+      final targetDate = date ?? DateTime.now();
+
+      // Try to find an existing batch with the same date (same day)
+      final index = product.batches.indexWhere((batch) => isSameDate(batch.date, targetDate));
+
+      if (index != -1) {
+        // Merge quantities if same day
+        product.batches[index].quantity += quantity;
+        product.batches[index].kiloQuantity += kiloQuantity;
+      } else {
+        // No batch on same day, add new one
+        product.batches.add(Batch(
+          date: targetDate,
+          quantity: quantity,
+          kiloQuantity: kiloQuantity,
+        ));
+      }
+
       product.save();
       notifyListeners();
     }
   }
+
+
 
   void useStockFIFO(String id, double quantityToUse) {
     final product = getProductById(id);
@@ -171,18 +188,6 @@ class ProductProvider with ChangeNotifier {
     }
   }
 
-  void updateBatchForProduct({
-    required String productId,
-    required int batchIndex,
-    required Batch updatedBatch,
-  }) {
-    final product = getProductById(productId);
-    if (product != null && batchIndex >= 0 && batchIndex < product.batches.length) {
-      product.batches[batchIndex] = updatedBatch;
-      product.save();
-      notifyListeners();
-    }
-  }
 
 
   void removeAllBatches(String id) {
@@ -202,6 +207,24 @@ class ProductProvider with ChangeNotifier {
       notifyListeners();
     }
   }
+
+  void removeBatchFromProduct({
+    required String productId,
+    required DateTime batchDate,
+  }) {
+    final product = getProductById(productId);
+    if (product != null) {
+      final batchToRemove = product.batches.firstWhere(
+            (batch) => batch.date == batchDate,
+      );
+      if (batchToRemove != null) {
+        product.batches.remove(batchToRemove);
+        product.save();
+        notifyListeners();
+      }
+    }
+  }
+
 
 
   Future<Map<String, dynamic>?> checkoutCart({

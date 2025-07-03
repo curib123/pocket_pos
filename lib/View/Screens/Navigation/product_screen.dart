@@ -227,7 +227,7 @@ class _ProductScreenState extends State<ProductScreen> {
                   color: AppColor.primary,
                   icon: LucideIcons.plusCircle,
                   label: "Add Product / Restock",
-                  onPressed: () => AddProductModal.show(context,isStock: false),
+                  onPressed: () => AddProductModal.show(context,isStock: false,isEdit: false),
                 ),
               ),
             ),

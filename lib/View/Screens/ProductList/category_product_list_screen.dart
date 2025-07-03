@@ -146,6 +146,7 @@ class _CategoryProductListScreenState extends State<CategoryProductListScreen> {
                               width: 48,
                               height: 48,
                               fit: BoxFit.cover,
+                              key: ValueKey(product.imageUrl),  // This forces Flutter to reload image if imageUrl changes
                             )
                                 : _placeholderIcon(color),
                           ),

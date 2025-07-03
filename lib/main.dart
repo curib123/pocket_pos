@@ -1,5 +1,5 @@
-
 import 'package:flutter/material.dart';
+import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -24,23 +24,25 @@ Future<void> main() async {
   Hive.registerAdapter(LoanPersonAdapter());
   Hive.registerAdapter(CartItemAdapter());
 
-
-  // Open other boxes
+  // Open boxes
   await Hive.openBox<LoanPerson>('loans');
   await Hive.openBox<Product>('products');
   await Hive.openBox('categoryVisibility');
   await Hive.openBox('snapshot');
   await Hive.openBox('checkout_profits');
 
+  // ✅ Correct runApp placement inside Phoenix
   runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => TabProvider()),
-        ChangeNotifierProvider(create: (_) => ProductProvider()),
-        ChangeNotifierProvider(create: (_) => LoanProvider()),
-        ChangeNotifierProvider(create: (_) => StoreCategoryProvider()),
-      ],
-      child: const MyApp(),
+    Phoenix(
+      child: MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (_) => TabProvider()),
+          ChangeNotifierProvider(create: (_) => ProductProvider()),
+          ChangeNotifierProvider(create: (_) => LoanProvider()),
+          ChangeNotifierProvider(create: (_) => StoreCategoryProvider()),
+        ],
+        child: const MyApp(),
+      ),
     ),
   );
 }
@@ -65,8 +67,7 @@ class MyApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: Home(),
+      home: const Home(),
     );
   }
 }
-
