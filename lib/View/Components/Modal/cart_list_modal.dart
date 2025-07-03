@@ -1,9 +1,7 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:paninda/Model/loan_person_model.dart';
 import 'package:paninda/View/Components/Alert/custom_alert_notification.dart';
-import 'package:paninda/View/Components/Custom/custom_btn.dart';
 import 'package:provider/provider.dart';
 import 'package:paninda/Model/product_model.dart';
 import 'package:paninda/View_Model/ProductProvider.dart';
@@ -19,9 +17,9 @@ class CartListModal {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (context) => FractionallySizedBox(
+      builder: (context) => const FractionallySizedBox(
         heightFactor: 0.85,
-        child: const _CartListContent(),
+        child: _CartListContent(),
       ),
     );
   }
@@ -69,7 +67,6 @@ class _CartListContentState extends State<_CartListContent> {
     final loanProvider = context.read<LoanProvider>();
     final cartItems = productProvider.getCartItems();
 
-    // Clean up controllers and quantities for removed products
     final removedKeys = kiloControllers.keys.where((key) => !cartItems.keys.any((p) => p.id == key)).toList();
     for (var key in removedKeys) {
       kiloControllers.remove(key)?.dispose();
@@ -78,29 +75,21 @@ class _CartListContentState extends State<_CartListContent> {
 
     double finalTotalPrice = 0;
     double costTotal = 0;
-
     List<Map<String, dynamic>> checkoutItems = [];
 
     for (var product in cartItems.keys) {
       final isKiloProduct = product.unit.toLowerCase().contains('kilo') || product.unit.toLowerCase().contains('kg');
 
-      // Ensure controller exists for kilo products
       if (isKiloProduct) {
         kiloControllers.putIfAbsent(product.id, () => TextEditingController());
       }
 
-      double qty = 1.0;
-      if (isKiloProduct) {
-        qty = double.tryParse(kiloControllers[product.id]?.text ?? '') ?? 0.0;
-      } else {
-        qty = (quantities[product.id] ?? 1).toDouble();
-      }
+      double qty = isKiloProduct
+          ? double.tryParse(kiloControllers[product.id]?.text ?? '') ?? 0.0
+          : (quantities[product.id] ?? 1).toDouble();
 
-      final productTotalPrice = qty * product.retailPrice;
-      final productCost = qty * product.costPrice;
-
-      finalTotalPrice += productTotalPrice;
-      costTotal += productCost;
+      finalTotalPrice += qty * product.retailPrice;
+      costTotal += qty * product.costPrice;
 
       checkoutItems.add({
         'productId': product.id,
@@ -124,89 +113,18 @@ class _CartListContentState extends State<_CartListContent> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 5,
-                  margin: const EdgeInsets.only(bottom: 16),
-                  decoration: BoxDecoration(
-                    color: AppColor.border,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-              Center(
-                child: Wrap(
-                  spacing: 12,
-                  children: [
-                    ChoiceChip(
-                      label: const Text("Cash"),
-                      selected: !isLoan,
-                      onSelected: (_) => setState(() => isLoan = false),
-                      selectedColor: AppColor.primary.withOpacity(0.15),
-                    ),
-                    ChoiceChip(
-                      label: const Text("Loan / Utang"),
-                      selected: isLoan,
-                      onSelected: (_) => setState(() => isLoan = true),
-                      selectedColor: AppColor.secondary.withOpacity(0.15),
-                    ),
-                  ],
-                ),
-              ),
+              _buildDragHandle(),
+              _buildPaymentTypeSelector(),
               const SizedBox(height: 24),
-              ...cartItems.keys.map((product) => _buildProductCard(product, productProvider)).toList(),
+              ...cartItems.keys.map((product) => _buildProductCard(product, productProvider)),
               const SizedBox(height: 24),
-              if (!isLoan)
-                _buildTextField(cashController, "Enter Cash Payment", Icons.payments, isNumber: true)
-              else
-                _buildLoanAutocomplete(loanProvider),
-              if (!isLoan)
-                Padding(
-                  padding: const EdgeInsets.only(top: 12),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: (change >= 0 ? AppColor.success.withOpacity(0.1) : AppColor.error.withOpacity(0.1)),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text("Your Change:", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
-                        Text(
-                          "₱${change.toStringAsFixed(2)}",
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: change >= 0 ? AppColor.success : AppColor.error,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+              isLoan ? _buildLoanAutocomplete(loanProvider) : _buildTextField(cashController, "Enter Cash Payment", Icons.payments, isNumber: true),
+              if (!isLoan) _buildChangeIndicator(change),
               const SizedBox(height: 24),
-              Card(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                elevation: 1,
-                color: AppColor.surface,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-                  child: Column(
-                    children: [
-                      _buildPriceRow("Total Amount to Pay", finalTotalPrice, AppColor.secondary),
-                      const SizedBox(height: 8),
-                      _buildPriceRow("Total Cost", costTotal, AppColor.warning),
-                      const Divider(height: 24),
-                      _buildPriceRow("Estimated Profit", profit, profit >= 0 ? AppColor.accent : AppColor.error, isBold: true),
-                    ],
-                  ),
-                ),
-              ),
+              _buildSummaryCard(finalTotalPrice, costTotal, profit),
               const SizedBox(height: 20),
-              _buildGlowingButton(
-                label: "Pay Now",
+              _buildActionButton(
+                label: "Confirm Payment",
                 icon: LucideIcons.checkCircle2,
                 backgroundColor: AppColor.primary,
                 shadowColor: AppColor.primary,
@@ -222,31 +140,27 @@ class _CartListContentState extends State<_CartListContent> {
                   if (result != null) {
                     final profit = (result['profit'] ?? 0.0) as double;
                     final change = (result['change'] ?? 0.0) as double;
+                    productProvider.clearCart();
 
-                    // Show success alert first
                     showCustomAlertBox(
                       context,
                       isLoan
                           ? "Loan recorded successfully!\nProfit: ₱${profit.toStringAsFixed(2)}"
-                          : "Payment successful!\nChange: ₱${change.toStringAsFixed(2)}\nProfit: ₱${profit.toStringAsFixed(2)}",
+                          : "Payment completed!\nChange: ₱${change.toStringAsFixed(2)}\nProfit: ₱${profit.toStringAsFixed(2)}",
                       AlertType.success,
                     );
-
-
                   } else {
-                    // Show error alert
                     showCustomAlertBox(
                       context,
-                      "Something went wrong. Please try again.Pay Now !! Need Cash",
+                      "Transaction failed. Please try again. Payment requires valid cash amount.",
                       AlertType.error,
                     );
                   }
-
                 },
               ),
               const SizedBox(height: 12),
-              _buildGlowingButton(
-                label: "Exit Without Saving",
+              _buildActionButton(
+                label: "Cancel & Exit",
                 icon: LucideIcons.logOut,
                 backgroundColor: AppColor.error,
                 shadowColor: AppColor.error,
@@ -260,40 +174,121 @@ class _CartListContentState extends State<_CartListContent> {
     );
   }
 
-  Widget _buildLoanAutocomplete(LoanProvider loanProvider) {
-    return Autocomplete<LoanPerson>(
-      displayStringForOption: (LoanPerson p) => p.name,
-      optionsBuilder: (TextEditingValue textEditingValue) {
-        if (textEditingValue.text == '') return const Iterable<LoanPerson>.empty();
-        return loanProvider.loans.where((LoanPerson option) {
-          return option.name.toLowerCase().contains(textEditingValue.text.toLowerCase());
-        }).take(5);
-      },
-      fieldViewBuilder: (context, controller, focusNode, onEditingComplete) {
-        controller.text = borrowerController.text;
-        controller.addListener(() => borrowerController.text = controller.text);
-        return TextFormField(
-          controller: controller,
-          focusNode: focusNode,
-          onEditingComplete: onEditingComplete,
-          decoration: InputDecoration(
-            hintText: "Enter Borrower's Name",
-            prefixIcon: Icon(LucideIcons.search, color: Colors.grey.shade600),
-            filled: true,
-            fillColor: AppColor.success.withOpacity(0.10),
-            contentPadding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide.none,
-            ),
+  Widget _buildDragHandle() {
+    return Center(
+      child: Container(
+        width: 40,
+        height: 5,
+        margin: const EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+          color: AppColor.border,
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPaymentTypeSelector() {
+    return Center(
+      child: Wrap(
+        spacing: 12,
+        children: [
+          ChoiceChip(
+            label: const Text("Cash Payment"),
+            selected: !isLoan,
+            onSelected: (_) => setState(() => isLoan = false),
+            selectedColor: AppColor.primary.withOpacity(0.15),
           ),
-        );
-      },
-      onSelected: (LoanPerson selected) {
-        setState(() {
-          borrowerController.text = selected.name;
-        });
-      },
+          ChoiceChip(
+            label: const Text("Loan / Credit"),
+            selected: isLoan,
+            onSelected: (_) => setState(() => isLoan = true),
+            selectedColor: AppColor.secondary.withOpacity(0.15),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChangeIndicator(double change) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: (change >= 0 ? AppColor.success.withOpacity(0.1) : AppColor.error.withOpacity(0.1)),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text("Change Due:", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+            Text(
+              "₱${change.toStringAsFixed(2)}",
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: change >= 0 ? AppColor.success : AppColor.error,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSummaryCard(double total, double cost, double profit) {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 1,
+      color: AppColor.surface,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+        child: Column(
+          children: [
+            _buildPriceRow("Total Payment", total, AppColor.secondary),
+            const SizedBox(height: 8),
+            _buildPriceRow("Total Cost", cost, AppColor.warning),
+            const Divider(height: 24),
+            _buildPriceRow("Estimated Profit", profit, profit >= 0 ? AppColor.accent : AppColor.error, isBold: true),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionButton({
+    required String label,
+    required IconData icon,
+    required Color backgroundColor,
+    required Color shadowColor,
+    required VoidCallback onPressed,
+  }) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      decoration: BoxDecoration(
+        boxShadow: [
+          BoxShadow(
+            color: shadowColor.withOpacity(0.35),
+            blurRadius: 12,
+            spreadRadius: 1,
+            offset: const Offset(0, 4),
+          ),
+        ],
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: ElevatedButton.icon(
+        icon: Icon(icon, color: Colors.white, size: 20),
+        label: Text(label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: backgroundColor,
+          foregroundColor: Colors.white,
+          minimumSize: const Size.fromHeight(48),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          elevation: 0,
+        ),
+        onPressed: onPressed,
+      ),
     );
   }
 
@@ -343,38 +338,40 @@ class _CartListContentState extends State<_CartListContent> {
     );
   }
 
-  Widget _buildGlowingButton({
-    required String label,
-    required IconData icon,
-    required Color backgroundColor,
-    required Color shadowColor,
-    required VoidCallback onPressed,
-  }) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      decoration: BoxDecoration(
-        boxShadow: [
-          BoxShadow(
-            color: shadowColor.withOpacity(0.35),
-            blurRadius: 12,
-            spreadRadius: 1,
-            offset: const Offset(0, 4),
+  Widget _buildLoanAutocomplete(LoanProvider loanProvider) {
+    return Autocomplete<LoanPerson>(
+      displayStringForOption: (LoanPerson p) => p.name,
+      optionsBuilder: (TextEditingValue textEditingValue) {
+        if (textEditingValue.text == '') return const Iterable<LoanPerson>.empty();
+        return loanProvider.loans.where((LoanPerson option) {
+          return option.name.toLowerCase().contains(textEditingValue.text.toLowerCase());
+        }).take(5);
+      },
+      fieldViewBuilder: (context, controller, focusNode, onEditingComplete) {
+        controller.text = borrowerController.text;
+        controller.addListener(() => borrowerController.text = controller.text);
+        return TextFormField(
+          controller: controller,
+          focusNode: focusNode,
+          onEditingComplete: onEditingComplete,
+          decoration: InputDecoration(
+            hintText: "Search Borrower's Name",
+            prefixIcon: Icon(LucideIcons.search, color: Colors.grey.shade600),
+            filled: true,
+            fillColor: AppColor.success.withOpacity(0.10),
+            contentPadding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide.none,
+            ),
           ),
-        ],
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: ElevatedButton.icon(
-        icon: Icon(icon, color: Colors.white, size: 20),
-        label: Text(label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: backgroundColor,
-          foregroundColor: Colors.white,
-          minimumSize: const Size.fromHeight(48),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          elevation: 0,
-        ),
-        onPressed: onPressed,
-      ),
+        );
+      },
+      onSelected: (LoanPerson selected) {
+        setState(() {
+          borrowerController.text = selected.name;
+        });
+      },
     );
   }
 
@@ -444,7 +441,7 @@ class _CartListContentState extends State<_CartListContent> {
                       controller: kiloControllers[product.id],
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       decoration: InputDecoration(
-                        labelText: "Enter kilo",
+                        labelText: "Enter Kilos",
                         isDense: true,
                         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                         border: OutlineInputBorder(

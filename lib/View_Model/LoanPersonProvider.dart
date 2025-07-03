@@ -76,10 +76,53 @@ class LoanProvider with ChangeNotifier {
     }
   }
 
-  void removeLoan(int index) {
-    _loanBox.deleteAt(index);
-    notifyListeners();
+  void removeLoan(String productId) {
+    final key = _loanBox.keys.cast<int?>().firstWhere(
+          (key) {
+        final loan = _loanBox.get(key);
+        return loan != null && loan.productId == productId;
+      },
+      orElse: () => null,
+    );
+
+    if (key != null) {
+      _loanBox.delete(key);
+      notifyListeners();
+    }
   }
+
+  /// ✏️ Edit loan by productName (case-insensitive)
+  void editLoanByProductName({
+    required String productName,
+    required String newName,
+    required String newProductName,
+    required double newQuantity,
+    required double newTotalAmount,
+    required DateTime newDate,
+  }) {
+    final key = _loanBox.keys.cast<int?>().firstWhere(
+          (key) {
+        final loan = _loanBox.get(key);
+        return loan != null && loan.productName.toLowerCase() == productName.toLowerCase();
+      },
+      orElse: () => null,
+    );
+
+    if (key != null) {
+      final loan = _loanBox.get(key);
+      if (loan != null) {
+        loan
+          ..name = newName
+          ..productName = newProductName
+          ..quantity = newQuantity
+          ..totalAmount = newTotalAmount
+          ..date = newDate;
+        loan.save();
+        notifyListeners();
+      }
+    }
+  }
+
 
   void clearLoans() {
     _loanBox.clear();

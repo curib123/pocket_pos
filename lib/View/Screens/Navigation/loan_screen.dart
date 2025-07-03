@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:paninda/Model/loan_person_model.dart';
+import 'package:paninda/View/Components/Alert/custom_confirm_dialog.dart';
 import 'package:paninda/View/Components/Core/scalable_appbar.dart';
 import 'package:paninda/View/Components/HelperClass/AppColor.dart';
 import 'package:paninda/View_Model/LoanPersonProvider.dart';
@@ -22,7 +24,9 @@ class _LoanScreenState extends State<LoanScreen> {
     final provider = Provider.of<LoanProvider>(context);
     final currencyFormat = NumberFormat.currency(locale: 'fil_PH', symbol: '₱ ', decimalDigits: 2);
 
-    final borrowerNames = provider.unpaidLoans.map((e) => e.name).toSet().toList();
+    final  List<String> borrowerNames = provider.unpaidLoans.map((e) => e.name).toSet().toList();
+
+
     final selectedLoans = _selectedBorrowerName == null
         ? []
         : provider.getLoansByName(_selectedBorrowerName!).where((e) => !e.isPaid).toList();
@@ -91,32 +95,32 @@ class _LoanScreenState extends State<LoanScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-
               _tile("Total Loan Entries", provider.loans.length.toString(), LucideIcons.wallet2),
               _tile("Unpaid Borrowers", provider.totalUnpaidBorrowers.toString(), LucideIcons.userX, AppColor.warning),
               _tile("Total Unpaid", currencyFormat.format(provider.totalLoanAmount), LucideIcons.alertCircle, AppColor.error),
               _tile("Today's Loan", currencyFormat.format(provider.todayLoanAmount), LucideIcons.calendarDays),
               const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text("Select Borrower", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-               if(selectedLoans.isNotEmpty) Align(
-                  alignment: Alignment.centerRight,
-                  child: ElevatedButton.icon(
-                    onPressed: () => _showPayAllDialog(context, selectedLoans),
-                    icon:  Icon(LucideIcons.checkCircle,color: AppColor.surface,),
-                    label: const Text("Pay All Loans"),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColor.success,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 8,horizontal: 10),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text("Select Borrower", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                  if (selectedLoans.isNotEmpty)
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: ElevatedButton.icon(
+                        onPressed: () => _showPayAllDialog(context, selectedLoans),
+                        icon: const Icon(LucideIcons.checkCircle, color: AppColor.surface),
+                        label: const Text("Pay All Loans"),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColor.success,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-              ],
-            ),
+                ],
+              ),
               const SizedBox(height: 10),
               DropdownButtonFormField<String>(
                 value: _selectedBorrowerName,
@@ -133,57 +137,163 @@ class _LoanScreenState extends State<LoanScreen> {
                   setState(() => _selectedBorrowerName = name);
                 },
               ),
-              SizedBox(height: 10,),
-
+              const SizedBox(height: 10),
               const SizedBox(height: 20),
               if (_selectedBorrowerName == null)
                 _emptyState()
               else if (selectedLoans.isEmpty)
                 _noLoansState()
               else ...[
-                  ...selectedLoans.map((loan) => _buildLoanCard(loan)),
+                  ...selectedLoans.map((loan) => _buildLoanCard(loan,borrowerNames,provider)),
                   const SizedBox(height: 16),
-
-                ]
+                ],
             ],
           ),
         ),
       ),
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: ElevatedButton.icon(
+          onPressed:  () => _showAddLoanDialog(context),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColor.primary,
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+          icon: const Icon(LucideIcons.plusCircle, color: AppColor.surface, size: 20),
+          label: const Text(
+            "Add Loan Entry",
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: AppColor.surface,
+            ),
+          ),
+        ),
+      ),
+
     );
+
   }
 
-  Widget _buildLoanCard(loan) {
+  Widget _buildLoanCard(loan,List<String> borrowerNames,LoanProvider provider) {
     final currencyFormat = NumberFormat.currency(locale: 'fil_PH', symbol: '₱ ', decimalDigits: 2);
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8),
+      margin: const EdgeInsets.symmetric(vertical: 10),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColor.surface,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [BoxShadow(color: Colors.black12.withOpacity(0.03), blurRadius: 6, offset: const Offset(0, 3))],
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black12.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          )
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(LucideIcons.user, size: 18, color: AppColor.primary),
-              const SizedBox(width: 8),
-              Expanded(child: Text("${loan.name} - ${loan.productName}", style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16))),
-              IconButton(
-                icon: const Icon(LucideIcons.minusCircle, color: AppColor.warning, size: 20),
-                onPressed: () => _showDeductDialog(context, loan),
-              )
+              const Icon(LucideIcons.user, size: 20, color: AppColor.primary),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  "${loan.name} • ${loan.productName}",
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  _actionButton(
+                    icon: LucideIcons.trash2,
+                    label: "Delete",
+                    color: AppColor.errorText,
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (context) => CustomConfirmDialog(
+                          icon: Icons.delete_forever,
+                          iconColor: Colors.redAccent,
+                          title: "Delete Loan?",
+                          content: "This will permanently delete the loan record for '${loan.name}'.",
+                          cancelText: "Cancel",
+                          confirmText: "Delete",
+                          onConfirm: () {
+                            provider.removeLoan(loan.productId);
+                            setState(() {
+                              if (!provider.loans.any((l) => l.name == _selectedBorrowerName)) {
+                                _selectedBorrowerName = null;
+                              }
+                            });
+                          }
+,
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(width: 5),
+                  _actionButton(
+                    icon: LucideIcons.pencil,
+                    label: "Edit",
+                    color: AppColor.secondary,
+                    onPressed: () {
+                      _showAddLoanDialog(context,isEdit: true, loan: loan);
+                    },
+                  ),
+                  const SizedBox(width: 5),
+                  _actionButton(
+                    icon: LucideIcons.checkCircle,
+                    label: "Pay Now",
+                    color: AppColor.warning,
+                    onPressed: () => _showDeductDialog(context, loan),
+                  ),
+                ],
+              ),
             ],
           ),
-          const SizedBox(height: 6),
-          _loanRow(LucideIcons.layers, "Quantity: ${loan.quantity}"),
-          _loanRow(LucideIcons.wallet, "Total: ${currencyFormat.format(loan.totalAmount)}"),
-          _loanRow(LucideIcons.calendar, "Date: ${DateFormat.yMMMMd().format(loan.date)}"),
+          const SizedBox(height: 14),
+          _loanRow(LucideIcons.box, "Quantity: ${loan.quantity}"),
+          _loanRow(LucideIcons.wallet, "Amount: ${currencyFormat.format(loan.totalAmount)}"),
+          _loanRow(LucideIcons.calendarDays, "Date: ${DateFormat.yMMMMd().format(loan.date)}"),
         ],
       ),
     );
   }
+
+  Widget _actionButton({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onPressed,
+  }) {
+    return TextButton.icon(
+      onPressed: onPressed,
+      icon: Icon(icon, color: color, size: 20),
+      label: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      style: TextButton.styleFrom(
+        backgroundColor: color.withOpacity(0.05),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+      ),
+    );
+  }
+
 
   void _showDeductDialog(BuildContext context, loan) {
     final provider = Provider.of<LoanProvider>(context, listen: false);
@@ -428,6 +538,7 @@ class _LoanScreenState extends State<LoanScreen> {
   }
 
   Widget _emptyState() => Container(
+      width: double.infinity,
       margin: const EdgeInsets.only(top: 20),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -464,5 +575,224 @@ class _LoanScreenState extends State<LoanScreen> {
       ),
     ),
   );
+
+  void _showAddLoanDialog(BuildContext context, {LoanPerson? loan, bool isEdit = false}) {
+    final provider = Provider.of<LoanProvider>(context, listen: false);
+    final nameController = TextEditingController(text: loan?.name ?? '');
+    final productController = TextEditingController(text: loan?.productName ?? '');
+    final quantityController = TextEditingController(text: loan?.quantity.toString() ?? '');
+    final amountController = TextEditingController(text: loan?.totalAmount.toString() ?? '');
+
+    final borrowerNames = provider.loans.map((loan) => loan.name).toSet().toList();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: Colors.white,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(LucideIcons.scrollText, color: AppColor.primary, size: 22),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        isEdit ? "Edit Loan" : "Add New Loan",
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: AppColor.textPrimary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+
+                /// Autocomplete Borrower Name
+                RawAutocomplete<String>(
+                  textEditingController: nameController,
+                  focusNode: FocusNode(),
+                  optionsBuilder: (textEditingValue) {
+                    if (textEditingValue.text.isEmpty) return const Iterable<String>.empty();
+                    return borrowerNames.where((name) => name.toLowerCase().contains(textEditingValue.text.toLowerCase()));
+                  },
+                  displayStringForOption: (option) => option,
+                  fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+                    return _customTextField(
+                      controller: controller,
+                      focusNode: focusNode,
+                      label: "Borrower Name",
+                      hint: "Enter or select borrower's name",
+                      icon: LucideIcons.user,
+                    );
+                  },
+                  optionsViewBuilder: (context, onSelected, options) {
+                    return Align(
+                      alignment: Alignment.topLeft,
+                      child: Material(
+                        elevation: 4,
+                        borderRadius: BorderRadius.circular(12),
+                        child: ListView.separated(
+                          padding: EdgeInsets.zero,
+                          shrinkWrap: true,
+                          itemCount: options.length,
+                          separatorBuilder: (_, __) => const Divider(height: 1),
+                          itemBuilder: (context, index) {
+                            final option = options.elementAt(index);
+                            return ListTile(
+                              title: Text(option),
+                              onTap: () => onSelected(option),
+                            );
+                          },
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 12),
+
+                _customTextField(
+                  controller: productController,
+                  label: "Product Name",
+                  hint: "Enter product name",
+                  icon: LucideIcons.shoppingBag,
+                ),
+                const SizedBox(height: 12),
+
+                _customTextField(
+                  controller: quantityController,
+                  label: "Quantity",
+                  hint: "Enter quantity",
+                  icon: LucideIcons.package2,
+                  keyboardType: TextInputType.number,
+                ),
+                const SizedBox(height: 12),
+
+                _customTextField(
+                  controller: amountController,
+                  label: "Total Amount",
+                  hint: "Enter total amount",
+                  icon: LucideIcons.wallet,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                ),
+                const SizedBox(height: 24),
+
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        child: const Text("Cancel"),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        icon: const Icon(LucideIcons.checkCircle2, size: 18),
+                        label: Text(isEdit ? "Update Loan" : "Save Loan"),
+                        onPressed: () {
+                          final borrowerName = nameController.text.trim();
+                          final productName = productController.text.trim();
+                          final quantity = double.tryParse(quantityController.text) ?? 0;
+                          final amount = double.tryParse(amountController.text) ?? 0.0;
+
+                          if (borrowerName.isNotEmpty && productName.isNotEmpty && quantity > 0 && amount > 0) {
+                            if (isEdit && loan != null) {
+                              provider.editLoanByProductName(
+                                newName: borrowerName,
+                                newQuantity: quantity,
+                                newTotalAmount: amount,
+                                newDate: DateTime.now(),
+                                productName: loan.productName,
+                                newProductName: productName,
+                              );
+                            } else {
+                              final newLoan = LoanPerson(
+                                name: borrowerName,
+                                productName: productName,
+                                productId: loan?.productId ?? DateTime.now().millisecondsSinceEpoch.toString(),
+                                quantity: quantity,
+                                totalAmount: amount,
+                                isPaid: loan?.isPaid ?? false,
+                                date: DateTime.now(),
+                              );
+                              provider.addLoan(newLoan);
+                            }
+
+                            Navigator.pop(ctx);
+
+                            /// ✅ Safely check borrower name after edit or add
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              final borrowerNames = provider.loans.map((l) => l.name).toSet().toList();
+                              setState(() {
+                                if (!borrowerNames.contains(_selectedBorrowerName)) {
+                                  _selectedBorrowerName = null;
+                                }
+                              });
+                            });
+                          } else {
+                            // Optional: Show error alert/snackbar here
+                          }
+                        },
+
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColor.primary,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        ),
+                      ),
+                    ),
+
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _customTextField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    required String hint,
+    TextInputType keyboardType = TextInputType.text,
+    FocusNode? focusNode,
+  }) {
+    return TextField(
+      controller: controller,
+      focusNode: focusNode,
+      keyboardType: keyboardType,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        prefixIcon: Icon(icon),
+        filled: true,
+        fillColor: Colors.grey.shade50,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+      ),
+    );
+  }
+
+
+
 }
 
