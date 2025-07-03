@@ -296,7 +296,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   _tile(entry.key, currencyFormat.format(entry.value), LucideIcons.lineChart, AppColor.accent)),
 
 
-              if (_selectedProduct != null && provider.products.isNotEmpty) ...[
+              if ( provider.products.isNotEmpty) ...[
                 const SizedBox(height: 30),
                 const Text("📦 Profit Per Stocks", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppColor.textPrimary)),
                 const SizedBox(height: 12),
@@ -510,28 +510,41 @@ class _DashboardScreenState extends State<DashboardScreen> {
         children: [
           Text(
             "Product: ${product.name}",
-            style: const TextStyle(fontWeight: FontWeight.w600, color: AppColor.textPrimary),
+            style: const TextStyle(
+              fontWeight: FontWeight.w600,
+              color: AppColor.textPrimary,
+            ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 5),
           const Text(
             "Stock Batches:",
-            style: TextStyle(fontWeight: FontWeight.w600, color: AppColor.textSecondary),
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              color: AppColor.textSecondary,
+            ),
           ),
           const SizedBox(height: 8),
           if (hasBatches)
-            ...product.batches.map((batch) {
-              final sackProfit = batch.quantity * (product.retailPrice - product.costPrice);
-              final kiloProfit = batch.kiloQuantity * (product.retailPrice - product.costPrice);
+            ...product.batches.asMap().entries.map((entry) {
+              final index = entry.key;
+              final batch = entry.value;
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 4),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text("- ${batch.date}", style: const TextStyle(color: AppColor.textSecondary)),
-                    Text("  • Sack Profit: ${currencyFormat.format(sackProfit)}",
-                        style: const TextStyle(color: AppColor.success)),
-                    Text("  • Kilo Profit: ${currencyFormat.format(kiloProfit)}",
-                        style: const TextStyle(color: AppColor.accent)),
+                    Text(
+                      "Batch #${index + 1}",
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w500,
+                        color: AppColor.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text("📅 Date: ${batch.date}",
+                        style: const TextStyle(color: AppColor.textSecondary)),
+                    Text("📦 Qty: ${batch.quantity} | ⚖️ ${batch.kiloQuantity} kg",
+                        style: const TextStyle(color: AppColor.textSecondary)),
                   ],
                 ),
               );
@@ -540,8 +553,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 4),
               child: Text(
-                "No Stock available. ReStock now !!",
-                style: TextStyle(color: AppColor.errorText, fontStyle: FontStyle.italic),
+                "No Stock available. Restock now!",
+                style: TextStyle(
+                  color: AppColor.errorText,
+                  fontStyle: FontStyle.italic,
+                ),
               ),
             ),
         ],
@@ -551,6 +567,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
 
   Widget _productDropdown(List<Product> products) {
+    // Set default value if not yet selected and products are available
+    if (_selectedProduct == null && products.isNotEmpty) {
+      _selectedProduct = products.first;
+    }
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
@@ -574,6 +595,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
     );
   }
+
 }
 
 
