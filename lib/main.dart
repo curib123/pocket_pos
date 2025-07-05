@@ -7,12 +7,15 @@ import 'package:paninda/Model/batch_model.dart';
 import 'package:paninda/Model/cart_item_model.dart';
 import 'package:paninda/Model/loan_person_model.dart';
 import 'package:paninda/Model/product_model.dart';
+import 'package:paninda/View_Model/AuthPaymentProvider.dart';
+import 'package:paninda/View_Model/CurrencyProvider.dart';
 import 'package:paninda/View_Model/LoanPersonProvider.dart';
 import 'package:paninda/View_Model/ProductProvider.dart';
 import 'package:paninda/View_Model/StoreCategoryProvider.dart';
 import 'package:paninda/View_Model/TabProvider.dart';
 import 'package:paninda/home.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,8 +33,12 @@ Future<void> main() async {
   await Hive.openBox('categoryVisibility');
   await Hive.openBox('snapshot');
   await Hive.openBox('checkout_profits');
+  await Hive.openBox('settings_currency');
 
-  // ✅ Correct runApp placement inside Phoenix
+  const supabaseUrl = 'https://ftqrtildlcgfmfqczwle.supabase.co';
+  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ0cXJ0aWxkbGNnZm1mcWN6d2xlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE2ODU0MDIsImV4cCI6MjA2NzI2MTQwMn0.Q3I5PojjIcH4MoOQHA98BQG28HY_EatpMcElc_iXP-s';
+  await Supabase.initialize(url: supabaseUrl, anonKey: supabaseKey);
+
   runApp(
     Phoenix(
       child: MultiProvider(
@@ -40,6 +47,8 @@ Future<void> main() async {
           ChangeNotifierProvider(create: (_) => ProductProvider()),
           ChangeNotifierProvider(create: (_) => LoanProvider()),
           ChangeNotifierProvider(create: (_) => StoreCategoryProvider()),
+          ChangeNotifierProvider(create: (_) => CurrencyProvider()),
+          ChangeNotifierProvider(create: (_) => AuthPaymentProvider()),
         ],
         child: const MyApp(),
       ),

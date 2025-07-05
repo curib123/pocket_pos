@@ -3,7 +3,8 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'package:paninda/Model/product_model.dart';
 import 'package:paninda/View/Components/Core/scalable_appbar.dart';
 import 'package:paninda/View/Components/HelperClass/responsive_text.dart';
-import 'package:paninda/View/Components/Modal/showProductSelectorModal.dart';
+import 'package:paninda/View_Model/AuthPaymentProvider.dart';
+import 'package:paninda/View_Model/CurrencyProvider.dart';
 import 'package:paninda/View_Model/ProductProvider.dart';
 import 'package:provider/provider.dart';
 import 'package:animate_do/animate_do.dart';
@@ -11,25 +12,30 @@ import 'package:paninda/View/Components/HelperClass/AppColor.dart';
 import 'package:intl/intl.dart';
 
 class DashboardScreen extends StatefulWidget {
-  final String userName;
-  const DashboardScreen({super.key, this.userName = "John Doe"});
+  const DashboardScreen({super.key});
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  final currencyFormat = NumberFormat.currency(locale: 'fil_PH', symbol: '₱ ', decimalDigits: 2);
+
+  late NumberFormat currencyFormat;
   final numberFormat = NumberFormat.decimalPattern();
 
   DateRangeType _selectedRange = DateRangeType.day;
   Product? _selectedProduct;
   Product? _selectedLowStockProduct;
+  String? accountEmail;
+  String? storeName;
+  String? ownerName;
 
   @override
   void initState() {
     super.initState();
+    _loadUserDetails();
     final provider = Provider.of<ProductProvider>(context, listen: false);
+    currencyFormat = context.read<CurrencyProvider>().currencyFormat;
     if (provider.products.isNotEmpty) {
       _selectedProduct = provider.products.first;
     }
@@ -39,20 +45,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  String getGreeting() {
-    final hour = DateTime.now().hour;
-    if (hour >= 5 && hour < 12) return "Good Morning";
-    if (hour >= 12 && hour < 17) return "Good Afternoon";
-    if (hour >= 17 && hour < 20) return "Good Evening";
-    return "Good Night";
-  }
-
-  IconData getGreetingIcon() {
-    final hour = DateTime.now().hour;
-    if (hour >= 5 && hour < 12) return LucideIcons.sun;
-    if (hour >= 12 && hour < 17) return LucideIcons.sunMedium;
-    if (hour >= 17 && hour < 20) return LucideIcons.cloudSun;
-    return LucideIcons.moon;
+  Future<void> _loadUserDetails() async {
+    final userDetails = await Provider.of<AuthPaymentProvider>(context, listen: false).readUserDetails();
+    setState(() {
+      accountEmail = userDetails['email'] ?? 'Unknown';
+      storeName = userDetails['storeName'] ?? 'Unknown Store';
+      ownerName = userDetails['ownerName'] ?? 'Unknown Owner';
+    });
   }
 
   List<Map<String, dynamic>> getProfitPerBatch(Product product) {
@@ -128,23 +127,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ),
       ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: ElevatedButton.icon(
-          icon: const Icon(Icons.add_shopping_cart),
-          label: const Text("Open Product Selector"),
-          onPressed: () {
-            final productProvider = Provider.of<ProductProvider>(context, listen: false);
-           showProductCalculatorModal(context, productProvider.products);
-          },
-          style: ElevatedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-        ),
-      ),
     );
   }
 
@@ -152,48 +134,63 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return FadeInDown(
       duration: const Duration(milliseconds: 500),
       child: Container(
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(24),
           gradient: LinearGradient(
-            colors: [AppColor.primary.withOpacity(0.7), AppColor.primary.withOpacity(0.5)],
+            colors: [AppColor.primary.withOpacity(0.8), AppColor.primary.withOpacity(0.6)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           boxShadow: [
-            BoxShadow(color: AppColor.primary.withOpacity(0.3), blurRadius: 20, spreadRadius: 3, offset: const Offset(0, 8)),
+            BoxShadow(
+              color: AppColor.primary.withOpacity(0.4),
+              blurRadius: 25,
+              spreadRadius: 4,
+              offset: const Offset(0, 10),
+            ),
           ],
         ),
         child: Row(
           children: [
-            // Avatar
+            // Store Icon Avatar with Glow
             Stack(
               alignment: Alignment.center,
               children: [
                 Container(
-                  width: 80,
-                  height: 80,
+                  width: 90,
+                  height: 90,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: RadialGradient(
-                      colors: [Colors.cyanAccent.withOpacity(0.2), Colors.transparent],
-                      radius: 0.9,
+                      colors: [
+                        Colors.cyanAccent.withOpacity(0.2),
+                        Colors.transparent,
+                      ],
+                      radius: 0.8,
                     ),
                   ),
                 ),
                 CircleAvatar(
-                  radius: 28,
-                  backgroundColor: Colors.white.withOpacity(0.08),
+                  radius: 32,
+                  backgroundColor: Colors.white.withOpacity(0.1),
                   child: Spin(
                     infinite: true,
-                    duration: const Duration(seconds: 4),
-                    child: Icon(getGreetingIcon(), color: Colors.white, size: 26),
+                    duration: const Duration(seconds: 5),
+                    child: Icon(
+                      LucideIcons.store,
+                      color: Colors.white,
+                      size: 30,
+                      shadows: [
+                        Shadow(color: Colors.cyanAccent.withOpacity(0.6), blurRadius: 12),
+                      ],
+                    ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(width: 20),
-            // Greeting text
+            const SizedBox(width: 22),
+            // Greeting Texts
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -212,30 +209,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ).createShader(Rect.fromLTWH(0, 0, bounds.width, bounds.height)),
                         blendMode: BlendMode.srcIn,
                         child: Text(
-                          getGreeting(),
+                          "Welcome to ${storeName ?? 'Your Store'}, ",
                           style: TextStyle(
-                            fontSize: getResponsiveFontSize(context, 18),
+                            fontSize: getResponsiveFontSize(context, 12),
                             fontWeight: FontWeight.bold,
-                            letterSpacing: 0.5,
+                            letterSpacing: 0.6,
                           ),
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 8),
                   Text(
-                    widget.userName,
+                    ownerName ?? 'Unknown Owner',
                     style: TextStyle(
-                      fontSize: getResponsiveFontSize(context, 15),
+                      fontSize: getResponsiveFontSize(context, 16),
                       color: Colors.white.withOpacity(0.9),
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
                   Text(
-                    "Let's make today productive.",
+                    "Keep growing your business today.",
                     style: TextStyle(
-                      fontSize: getResponsiveFontSize(context, 10),
+                      fontSize: getResponsiveFontSize(context, 11),
                       color: Colors.white.withOpacity(0.75),
                       fontWeight: FontWeight.w400,
                     ),
@@ -243,16 +240,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ],
               ),
             ),
-            const SizedBox(width: 12),
-            // Animated Icon
+            const SizedBox(width: 16),
+            // Glowing Animated Icon (Lightning or Star)
             FadeInRight(
               duration: const Duration(milliseconds: 800),
               child: Spin(
                 infinite: true,
-                duration: const Duration(seconds: 3),
-                child: Icon(LucideIcons.zap, size: 22, color: Colors.white70, shadows: [
-                  Shadow(color: Colors.cyanAccent.withOpacity(0.5), blurRadius: 10),
-                ]),
+                duration: const Duration(seconds: 4),
+                child: Icon(
+                  LucideIcons.sparkles,
+                  size: 26,
+                  color: Colors.white70,
+                  shadows: [
+                    Shadow(color: Colors.cyanAccent.withOpacity(0.5), blurRadius: 15),
+                  ],
+                ),
               ),
             ),
           ],
@@ -260,15 +262,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
     );
   }
-
   Widget _buildInventoryOverview(ProductProvider provider) {
     return _dashboardGroup(
-      "Inventory Overview",
+      "Inventory Management",
       [
-        _tile("Total Products", provider.totalProductsLength.toString(), LucideIcons.box),
-        _tile("Total Stocks", numberFormat.format(provider.totalStocksQuantity), LucideIcons.truck),
-        _tile("Total Kilos", numberFormat.format(provider.totalStocksKilos), LucideIcons.dumbbell),
-        _tile("Low Stock Product", numberFormat.format(provider.products.where((p) => p.totalSacks < 10).length), LucideIcons.alertTriangle, AppColor.warning),
+        _tile("Products Available", provider.totalProductsLength.toString(), LucideIcons.box),
+        _tile("Total Stock Items", numberFormat.format(provider.totalStocksQuantity), LucideIcons.truck),
+        _tile("Total Weight (kg)", numberFormat.format(provider.totalStocksKilos), LucideIcons.dumbbell),
+        _tile("Items Running Low", numberFormat.format(provider.products.where((p) => p.totalSacks < 10).length), LucideIcons.alertTriangle, AppColor.warning),
       ],
       icon: LucideIcons.boxes,
     );
@@ -276,11 +277,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildFinancialSummary(ProductProvider provider) {
     return _dashboardGroup(
-      "Financial Summary",
+      "Money Overview",
       [
-        _tile("Cost Value", currencyFormat.format(provider.totalInventoryCostValue), LucideIcons.wallet),
-        _tile("Retail Value", currencyFormat.format(provider.totalInventoryRetailValue), LucideIcons.shoppingCart),
-        _tile("Potential Profit", currencyFormat.format(provider.allProductsTotalProfit), LucideIcons.coins, AppColor.success),
+        _tile("Total Cost Value", currencyFormat.format(provider.totalInventoryCostValue), LucideIcons.wallet),
+        _tile("ToTal Sell Value", currencyFormat.format(provider.totalInventoryRetailValue), LucideIcons.shoppingCart),
+        _tile("Total Possible Profit", currencyFormat.format(provider.allProductsTotalProfit), LucideIcons.coins, AppColor.success),
       ],
       icon: LucideIcons.wallet,
     );
@@ -293,24 +294,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Align(
-          alignment: Alignment.centerLeft,
-          child: Row(
-            children: [
-              Icon(LucideIcons.arrowDownCircle, size: 20, color: AppColor.textPrimary),
-              SizedBox(width: 8),
-              Text(
-                "Low Stock Products",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppColor.textPrimary),
-              ),
-            ],
-          ),
+        const Row(
+          children: [
+            Icon(LucideIcons.arrowDownCircle, size: 20, color: AppColor.textPrimary),
+            SizedBox(width: 8),
+            Text(
+              "Low Stock Alerts",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppColor.textPrimary),
+            ),
+          ],
         ),
         const SizedBox(height: 12),
         _customDropdown<Product>(
           items: lowStockProducts,
           selected: _selectedLowStockProduct,
-          hint: "Select Low Stock Product",
+          hint: "Pick a Product Below",
           onChanged: (val) => setState(() => _selectedLowStockProduct = val),
           getLabel: (product) => product.name,
         ),
@@ -413,10 +411,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: Container(
         width: MediaQuery.of(context).size.width,
         margin: const EdgeInsets.symmetric(vertical: 8),
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: AppColor.surface,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
               color: Colors.black12.withOpacity(0.06),
@@ -445,7 +443,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    "All Stocks: ${numberFormat.format(batch['quantity'])}",
+                    "Total Items: ${numberFormat.format(batch['quantity'])}",
                     style: const TextStyle(color: AppColor.textSecondary),
                   ),
                 ),
@@ -458,7 +456,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    "All Kilos: ${numberFormat.format(batch['kiloQuantity'])}",
+                    "Total Weight: ${numberFormat.format(batch['kiloQuantity'])} kg",
                     style: const TextStyle(color: AppColor.textSecondary),
                   ),
                 ),
@@ -471,7 +469,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    "Qty Profit: ${currencyFormat.format(batch['profitSacks'])}",
+                    "Item Profit: ${currencyFormat.format(batch['profitSacks'])}",
                     style: const TextStyle(color: AppColor.success, fontWeight: FontWeight.w600),
                   ),
                 ),
@@ -484,7 +482,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    "Kilo Profit: ${currencyFormat.format(batch['profitKilos'])}",
+                    "Weight Profit: ${currencyFormat.format(batch['profitKilos'])}",
                     style: const TextStyle(color: AppColor.accent, fontWeight: FontWeight.w600),
                   ),
                 ),
@@ -495,6 +493,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
     );
   }
+
 
   Widget _lowStockTile(Product product) {
     final hasBatches = product.batches.isNotEmpty;

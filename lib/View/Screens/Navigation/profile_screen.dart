@@ -1,17 +1,51 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:animate_do/animate_do.dart';
+import 'package:paninda/View/Components/Alert/custom_confirm_dialog.dart';
+import 'package:paninda/View/Components/Custom/custom_btn.dart';
+import 'package:paninda/View_Model/TabProvider.dart';
+import 'package:provider/provider.dart';
 import 'package:paninda/View/Components/HelperClass/AppColor.dart';
 import 'package:paninda/View/Components/HelperClass/responsive_text.dart';
+import 'package:paninda/View_Model/CurrencyProvider.dart';
+import 'package:paninda/View_Model/AuthPaymentProvider.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
   @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  String? accountEmail;
+  String? storeName;
+  String? ownerName;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserDetails();
+  }
+
+  Future<void> _loadUserDetails() async {
+    final userDetails = await Provider.of<AuthPaymentProvider>(context, listen: false).readUserDetails();
+    setState(() {
+      accountEmail = userDetails['email'] ?? 'Unknown';
+      storeName = userDetails['storeName'] ?? 'Unknown Store';
+      ownerName = userDetails['ownerName'] ?? 'Unknown Owner';
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    Provider.of<CurrencyProvider>(context, listen: false).loadCurrency();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // Mock Data (replace with your provider later)
-    const String currency = "₱ - PHP";
-    const String accountEmail = "example@email.com";
     const String aboutDev = "CuribTech Software Development Services";
 
     return Scaffold(
@@ -22,7 +56,6 @@ class ProfileScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
               // Header Card
               FadeInDown(
                 duration: const Duration(milliseconds: 600),
@@ -55,13 +88,26 @@ class ProfileScreen extends StatelessWidget {
                       ),
                       const SizedBox(width: 20),
                       Expanded(
-                        child: Text(
-                          "Your Store",
-                          style: TextStyle(
-                            fontSize: getResponsiveFontSize(context, 20),
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              storeName ?? 'Loading...',
+                              style: TextStyle(
+                                fontSize: getResponsiveFontSize(context, 20),
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              ownerName ?? '',
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
@@ -71,23 +117,62 @@ class ProfileScreen extends StatelessWidget {
 
               const SizedBox(height: 30),
 
-              // Editable Currency
-              _profileTile(
-                context,
-                icon: LucideIcons.dollarSign,
-                title: "Currency",
-                subtitle: currency,
-                onTap: () => _editFieldDialog(context, "Currency", currency, (val) {
-                  // Save new currency
-                }),
+              // Currency Dropdown
+              FadeInUp(
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  margin: const EdgeInsets.only(bottom: 12),
+                  decoration: BoxDecoration(
+                    color: AppColor.surface,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(color: Colors.black12.withOpacity(0.04), blurRadius: 6),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text("Currency", style: TextStyle(fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 4),
+                      Consumer<CurrencyProvider>(
+                        builder: (context, provider, _) {
+                          if (provider.selectedCurrency == null) {
+                            return const CircularProgressIndicator();
+                          }
+                          return DropdownButton<Map<String, dynamic>>(
+                            isExpanded: true,
+                            value: provider.selectedCurrency,
+                            onChanged: (value) {
+                              if (value != null && value != provider.selectedCurrency) {
+                                provider.selectCurrency(value);
+                              }
+                            },
+                            items: provider.currencies.map((currency) {
+                              return DropdownMenuItem(
+                                value: currency,
+                                child: Row(
+                                  children: [
+                                    Text(currency['symbol'], style: const TextStyle(fontWeight: FontWeight.bold)),
+                                    const SizedBox(width: 8),
+                                    Expanded(child: Text(currency['name'])),
+                                  ],
+                                ),
+                              );
+                            }).toList(),
+                          );
+                        },
+                      )
+                    ],
+                  ),
+                ),
               ),
 
-              // Email (not editable)
+              // Email
               _profileTile(
                 context,
                 icon: LucideIcons.mail,
                 title: "Account Email",
-                subtitle: accountEmail,
+                subtitle: accountEmail ?? 'Loading...',
               ),
 
               // About Developer
@@ -98,46 +183,35 @@ class ProfileScreen extends StatelessWidget {
                 subtitle: aboutDev,
               ),
 
-              const SizedBox(height: 30),
+              SizedBox(height: 10,),
 
-              // Export / Import Buttons
-              FadeInUp(
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          // Export logic
-                        },
-                        icon: const Icon(LucideIcons.download),
-                        label: const Text("Export"),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColor.primary,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          padding: const EdgeInsets.symmetric(vertical: 14),
+              Consumer2<AuthPaymentProvider, TabProvider>(
+                builder: (context, authPaymentProvider, tabProvider, _) {
+                  return CustomButton(
+                    color: AppColor.error,
+                    label: "Logout",
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (_) => FadeInDown(
+                          duration: const Duration(milliseconds: 400),
+                          child: CustomConfirmDialog(
+                            title: "Logout Confirmation",
+                            content:
+                            "Are you sure you want to log out? You will need to sign in again to access your account.",
+                            onConfirm: () {
+                              authPaymentProvider.logout();
+                              tabProvider.setFirstTimeFlag(true);
+                              Phoenix.rebirth(context);
+                            },
+                          ),
                         ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          // Import logic
-                        },
-                        icon: const Icon(LucideIcons.upload),
-                        label: const Text("Import"),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                      );
+                    },
+                  );
+                },
               ),
+
             ],
           ),
         ),
@@ -182,51 +256,14 @@ class ProfileScreen extends StatelessWidget {
                     Text(
                       subtitle,
                       style: const TextStyle(color: AppColor.textSecondary),
-                      overflow: isAboutDeveloper ? null : TextOverflow.ellipsis,
+                      overflow: isAboutDeveloper ? TextOverflow.visible : TextOverflow.ellipsis,
                     ),
                   ],
                 ),
               ),
-              if (onTap != null)
-                const Icon(Icons.edit, color: AppColor.textSecondary),
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  void _editFieldDialog(
-      BuildContext context,
-      String title,
-      String initialValue,
-      Function(String) onSave, {
-        bool multiline = false,
-      }) {
-    final controller = TextEditingController(text: initialValue);
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text("Edit $title"),
-        content: TextField(
-          controller: controller,
-          maxLines: multiline ? 3 : 1,
-          decoration: InputDecoration(hintText: title),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text("Cancel"),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              onSave(controller.text.trim());
-              Navigator.pop(ctx);
-            },
-            child: const Text("Save"),
-          ),
-        ],
       ),
     );
   }

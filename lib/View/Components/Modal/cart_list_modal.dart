@@ -1,12 +1,17 @@
+// FULLY FIXED AND FINALIZED CART LIST MODAL
+
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import 'package:paninda/Model/loan_person_model.dart';
-import 'package:paninda/View/Components/Alert/custom_alert_notification.dart';
 import 'package:provider/provider.dart';
+
+import 'package:paninda/Model/loan_person_model.dart';
 import 'package:paninda/Model/product_model.dart';
-import 'package:paninda/View_Model/ProductProvider.dart';
-import 'package:paninda/View_Model/LoanPersonProvider.dart';
+import 'package:paninda/View/Components/Alert/custom_alert_notification.dart';
 import 'package:paninda/View/Components/HelperClass/AppColor.dart';
+import 'package:paninda/View_Model/LoanPersonProvider.dart';
+import 'package:paninda/View_Model/ProductProvider.dart';
+
+import '../../../View_Model/CurrencyProvider.dart';
 
 class CartListModal {
   static void show(BuildContext context) {
@@ -35,17 +40,25 @@ class _CartListContent extends StatefulWidget {
 class _CartListContentState extends State<_CartListContent> {
   final Map<String, TextEditingController> kiloControllers = {};
   final Map<String, int> quantities = {};
+  final Map<String, int> selectedModes = {}; // 0 = Quantity, 1 = Kilo
+
   final TextEditingController cashController = TextEditingController();
   final TextEditingController borrowerController = TextEditingController();
 
   bool isLoan = false;
 
+  late final currencyFormat;
+
   @override
   void initState() {
     super.initState();
     final cartItems = context.read<ProductProvider>().getCartItems();
+    currencyFormat = context.read<CurrencyProvider>().currencyFormat;
     for (var entry in cartItems.entries) {
-      quantities[entry.key.id] = entry.value;
+      final product = entry.key;
+      quantities[product.id] = entry.value;
+      bool isKiloProduct = product.unit.toLowerCase().contains("kilo") || product.unit.toLowerCase().contains("kg");
+      selectedModes[product.id] = isKiloProduct ? 1 : 0;
     }
   }
 
@@ -64,6 +77,7 @@ class _CartListContentState extends State<_CartListContent> {
   @override
   Widget build(BuildContext context) {
     final productProvider = context.watch<ProductProvider>();
+
     final loanProvider = context.read<LoanProvider>();
     final cartItems = productProvider.getCartItems();
 
@@ -71,6 +85,7 @@ class _CartListContentState extends State<_CartListContent> {
     for (var key in removedKeys) {
       kiloControllers.remove(key)?.dispose();
       quantities.remove(key);
+      selectedModes.remove(key);
     }
 
     double finalTotalPrice = 0;
@@ -78,13 +93,12 @@ class _CartListContentState extends State<_CartListContent> {
     List<Map<String, dynamic>> checkoutItems = [];
 
     for (var product in cartItems.keys) {
-      final isKiloProduct = product.unit.toLowerCase().contains('kilo') || product.unit.toLowerCase().contains('kg');
+      bool isKiloProduct = product.unit.toLowerCase().contains("kilo") || product.unit.toLowerCase().contains("kg");
+      kiloControllers.putIfAbsent(product.id, () => TextEditingController());
 
-      if (isKiloProduct) {
-        kiloControllers.putIfAbsent(product.id, () => TextEditingController());
-      }
+      int selectedMode = selectedModes[product.id] ?? (isKiloProduct ? 1 : 0);
 
-      double qty = isKiloProduct
+      double qty = selectedMode == 1
           ? double.tryParse(kiloControllers[product.id]?.text ?? '') ?? 0.0
           : (quantities[product.id] ?? 1).toDouble();
 
@@ -94,7 +108,7 @@ class _CartListContentState extends State<_CartListContent> {
       checkoutItems.add({
         'productId': product.id,
         'quantity': qty,
-        'isKilo': isKiloProduct,
+        'isKilo': selectedMode == 1,
       });
     }
 
@@ -145,8 +159,8 @@ class _CartListContentState extends State<_CartListContent> {
                     showCustomAlertBox(
                       context,
                       isLoan
-                          ? "Loan recorded successfully!\nProfit: ₱${profit.toStringAsFixed(2)}"
-                          : "Payment completed!\nChange: ₱${change.toStringAsFixed(2)}\nProfit: ₱${profit.toStringAsFixed(2)}",
+                          ? "Loan recorded successfully!\nProfit: \u20b1${profit.toStringAsFixed(2)}"
+                          : "Payment completed!\nChange: \u20b1${change.toStringAsFixed(2)}\nProfit: \u20b1${profit.toStringAsFixed(2)}",
                       AlertType.success,
                     );
                   } else {
@@ -173,6 +187,144 @@ class _CartListContentState extends State<_CartListContent> {
       ),
     );
   }
+
+  Widget _buildProductCard(Product product, ProductProvider productProvider) {
+    int selectedMode = selectedModes[product.id] ?? 0;
+
+    // Initialize kilo controller ONCE with default '1'
+    kiloControllers.putIfAbsent(product.id, () => TextEditingController(text: '1'));
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      elevation: 1,
+      color: AppColor.surface,
+      child: Padding(
+        padding: const EdgeInsets.all(14.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Product header with delete button
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    product.name,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                ),
+                GestureDetector(
+                  child: Icon(LucideIcons.xCircle, color: AppColor.error),
+                  onTap: () {
+                    setState(() {
+                      productProvider.removeFromCart(product);
+                      quantities.remove(product.id);
+                      kiloControllers.remove(product.id)?.dispose();
+                      selectedModes.remove(product.id);
+                    });
+                  },
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 12),
+
+            Text(
+              "${currencyFormat.format(product.retailPrice)} / ${product.unit}",
+              style: const TextStyle(fontSize: 14),
+            ),
+
+
+            const SizedBox(height: 12),
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ChoiceChip(
+                  label: const Text("Quantity"),
+                  selected: selectedMode == 0,
+                  onSelected: (val) {
+                    if (val) {
+                      setState(() => selectedModes[product.id] = 0);
+                    }
+                  },
+                  selectedColor: AppColor.primary.withOpacity(0.2),
+                ),
+                const SizedBox(width: 10),
+                ChoiceChip(
+                  label: const Text("Kilo"),
+                  selected: selectedMode == 1,
+                  onSelected: (val) {
+                    if (val) {
+                      setState(() {
+                        selectedModes[product.id] = 1;
+                        // ✅ Reset kilo value to '1' ONLY when switching to Kilo mode
+                        kiloControllers[product.id]?.text = '1';
+                      });
+                    }
+                  },
+                  selectedColor: AppColor.primary.withOpacity(0.2),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 10),
+
+            selectedMode == 0
+                ? Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                IconButton(
+                  icon: Icon(Icons.remove_circle_outline, color: AppColor.errorText),
+                  onPressed: () {
+                    setState(() {
+                      final current = quantities[product.id] ?? 1;
+                      if (current > 1) quantities[product.id] = current - 1;
+                    });
+                  },
+                  splashRadius: 22,
+                ),
+                Text(
+                  '${quantities[product.id] ?? 1}',
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                ),
+                IconButton(
+                  icon: Icon(Icons.add_circle_outline, color: AppColor.primary),
+                  onPressed: () {
+                    setState(() {
+                      final current = quantities[product.id] ?? 1;
+                      quantities[product.id] = current + 1;
+                    });
+                  },
+                  splashRadius: 22,
+                ),
+              ],
+            )
+                : SizedBox(
+              width: double.infinity,
+              child: TextField(
+                controller: kiloControllers[product.id],
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                decoration: InputDecoration(
+                  hintText: "Enter kilo quantity",
+                  filled: true,
+                  fillColor: Colors.grey.shade100,
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                ),
+                onChanged: (_) => setState(() {}),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+
 
   Widget _buildDragHandle() {
     return Center(
@@ -224,7 +376,7 @@ class _CartListContentState extends State<_CartListContent> {
           children: [
             const Text("Change Due:", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
             Text(
-              "₱${change.toStringAsFixed(2)}",
+              currencyFormat.format(change),
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
@@ -330,9 +482,14 @@ class _CartListContentState extends State<_CartListContent> {
             style: TextStyle(fontSize: 14, fontWeight: isBold ? FontWeight.w700 : FontWeight.w500),
           ),
           Text(
-            '₱${value.toStringAsFixed(2)}',
-            style: TextStyle(fontSize: 15, color: color, fontWeight: isBold ? FontWeight.bold : FontWeight.w600),
+            currencyFormat.format(value),
+            style: TextStyle(
+              fontSize: 15,
+              color: color,
+              fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
+            ),
           ),
+
         ],
       ),
     );
@@ -375,92 +532,5 @@ class _CartListContentState extends State<_CartListContent> {
     );
   }
 
-  Widget _buildProductCard(Product product, ProductProvider productProvider) {
-    final isKiloProduct = product.unit.toLowerCase().contains("kilo") || product.unit.toLowerCase().contains("kg");
-    kiloControllers.putIfAbsent(product.id, () => TextEditingController());
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 1,
-      color: AppColor.surface,
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(child: Text(product.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16))),
-                GestureDetector(
-                  child: Icon(LucideIcons.xCircle, color: AppColor.error),
-                  onTap: () {
-                    setState(() {
-                      productProvider.removeFromCart(product);
-                      quantities.remove(product.id);
-                      kiloControllers.remove(product.id)?.dispose();
-                    });
-                  },
-                )
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text("₱${product.retailPrice.toStringAsFixed(2)} / ${product.unit}", style: const TextStyle(fontSize: 14)),
-                if (!isKiloProduct)
-                  Row(
-                    children: [
-                      IconButton(
-                        icon: Icon(Icons.remove_circle_outline, color: AppColor.errorText),
-                        onPressed: () {
-                          setState(() {
-                            final current = quantities[product.id] ?? 1;
-                            if (current > 1) quantities[product.id] = current - 1;
-                          });
-                        },
-                      ),
-                      Text('${quantities[product.id] ?? 1}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-                      IconButton(
-                        icon: Icon(Icons.add_circle_outline, color: AppColor.primary),
-                        onPressed: () {
-                          setState(() {
-                            final current = quantities[product.id] ?? 1;
-                            quantities[product.id] = current + 1;
-                          });
-                        },
-                      ),
-                    ],
-                  ),
-                if (isKiloProduct)
-                  SizedBox(
-                    width: 90,
-                    child: TextField(
-                      controller: kiloControllers[product.id],
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      decoration: InputDecoration(
-                        labelText: "Enter Kilos",
-                        isDense: true,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide(color: Colors.grey.shade300),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide(color: AppColor.primary),
-                        ),
-                      ),
-                      onChanged: (_) => setState(() {}),
-                    ),
-                  ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }

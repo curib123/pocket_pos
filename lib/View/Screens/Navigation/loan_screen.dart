@@ -4,6 +4,7 @@ import 'package:paninda/Model/loan_person_model.dart';
 import 'package:paninda/View/Components/Alert/custom_confirm_dialog.dart';
 import 'package:paninda/View/Components/Core/scalable_appbar.dart';
 import 'package:paninda/View/Components/HelperClass/AppColor.dart';
+import 'package:paninda/View_Model/CurrencyProvider.dart';
 import 'package:paninda/View_Model/LoanPersonProvider.dart';
 import 'package:provider/provider.dart';
 import 'package:animate_do/animate_do.dart';
@@ -22,8 +23,7 @@ class _LoanScreenState extends State<LoanScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<LoanProvider>(context);
-    final currencyFormat = NumberFormat.currency(locale: 'fil_PH', symbol: '₱ ', decimalDigits: 2);
-
+   final  currencyFormat = context.read<CurrencyProvider>().currencyFormat;
     final  List<String> borrowerNames = provider.unpaidLoans.map((e) => e.name).toSet().toList();
 
 
@@ -176,19 +176,20 @@ class _LoanScreenState extends State<LoanScreen> {
 
   }
 
-  Widget _buildLoanCard(loan,List<String> borrowerNames,LoanProvider provider) {
-    final currencyFormat = NumberFormat.currency(locale: 'fil_PH', symbol: '₱ ', decimalDigits: 2);
+  Widget _buildLoanCard(loan, List<String> borrowerNames, LoanProvider provider) {
+    final  currencyFormat = context.read<CurrencyProvider>().currencyFormat;
+
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 10),
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppColor.surface,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
             color: Colors.black12.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
           )
         ],
       ),
@@ -198,71 +199,69 @@ class _LoanScreenState extends State<LoanScreen> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(LucideIcons.user, size: 20, color: AppColor.primary),
-              const SizedBox(width: 10),
+              const Icon(LucideIcons.user, size: 18, color: AppColor.primary),
+              const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   "${loan.name} • ${loan.productName}",
                   style: const TextStyle(
                     fontWeight: FontWeight.w700,
-                    fontSize: 16,
+                    fontSize: 15,
                   ),
                 ),
               ),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  _actionButton(
-                    icon: LucideIcons.trash2,
-                    label: "Delete",
-                    color: AppColor.errorText,
-                    onPressed: () {
-                      showDialog(
-                        context: context,
-                        builder: (context) => CustomConfirmDialog(
-                          icon: Icons.delete_forever,
-                          iconColor: Colors.redAccent,
-                          title: "Delete Loan?",
-                          content: "This will permanently delete the loan record for '${loan.name}'.",
-                          cancelText: "Cancel",
-                          confirmText: "Delete",
-                          onConfirm: () {
-                            provider.removeLoan(loan.productId);
-                            setState(() {
-                              if (!provider.loans.any((l) => l.name == _selectedBorrowerName)) {
-                                _selectedBorrowerName = null;
-                              }
-                            });
+            ],
+          ),
+          const SizedBox(height: 12),
+          _loanRow(LucideIcons.box, "Qty: ${loan.quantity}"),
+          _loanRow(LucideIcons.wallet, "${currencyFormat.format(loan.totalAmount)}"),
+          _loanRow(LucideIcons.calendarDays, DateFormat.yMMMd().format(loan.date)),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 6,
+            children: [
+              _actionButton(
+                icon: LucideIcons.trash2,
+                label: "Delete",
+                color: AppColor.errorText,
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (context) => CustomConfirmDialog(
+                      icon: Icons.delete_forever,
+                      iconColor: Colors.redAccent,
+                      title: "Delete Loan?",
+                      content: "This will permanently delete the loan record for '${loan.name}'.",
+                      cancelText: "Cancel",
+                      confirmText: "Delete",
+                      onConfirm: () {
+                        provider.removeLoan(loan.productId);
+                        setState(() {
+                          if (!provider.loans.any((l) => l.name == _selectedBorrowerName)) {
+                            _selectedBorrowerName = null;
                           }
-,
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(width: 5),
-                  _actionButton(
-                    icon: LucideIcons.pencil,
-                    label: "Edit",
-                    color: AppColor.secondary,
-                    onPressed: () {
-                      _showAddLoanDialog(context,isEdit: true, loan: loan);
-                    },
-                  ),
-                  const SizedBox(width: 5),
-                  _actionButton(
-                    icon: LucideIcons.checkCircle,
-                    label: "Pay Now",
-                    color: AppColor.warning,
-                    onPressed: () => _showDeductDialog(context, loan),
-                  ),
-                ],
+                        });
+                      },
+                    ),
+                  );
+                },
+              ),
+              _actionButton(
+                icon: LucideIcons.pencil,
+                label: "Edit",
+                color: AppColor.secondary,
+                onPressed: () {
+                  _showAddLoanDialog(context, isEdit: true, loan: loan);
+                },
+              ),
+              _actionButton(
+                icon: LucideIcons.checkCircle,
+                label: "Pay",
+                color: AppColor.warning,
+                onPressed: () => _showDeductDialog(context, loan),
               ),
             ],
           ),
-          const SizedBox(height: 14),
-          _loanRow(LucideIcons.box, "Quantity: ${loan.quantity}"),
-          _loanRow(LucideIcons.wallet, "Amount: ${currencyFormat.format(loan.totalAmount)}"),
-          _loanRow(LucideIcons.calendarDays, "Date: ${DateFormat.yMMMMd().format(loan.date)}"),
         ],
       ),
     );
@@ -297,7 +296,7 @@ class _LoanScreenState extends State<LoanScreen> {
 
   void _showDeductDialog(BuildContext context, loan) {
     final provider = Provider.of<LoanProvider>(context, listen: false);
-    final currencyFormat = NumberFormat.currency(locale: 'fil_PH', symbol: '₱ ', decimalDigits: 2);
+    final  currencyFormat = context.read<CurrencyProvider>().currencyFormat;
     final totalLoan = loan.totalAmount;
     final controller = TextEditingController();
     double change = 0.0;
@@ -344,7 +343,7 @@ class _LoanScreenState extends State<LoanScreen> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: ElevatedButton.icon(
-                    icon: const Icon(LucideIcons.checkCircle2, size: 18),
+                    icon: const Icon(LucideIcons.checkCircle2, size: 18,color: AppColor.surface,),
                     label: const Text("Pay"),
                     onPressed: () {
                       final double amt = double.tryParse(controller.text) ?? 0.0;
@@ -371,7 +370,7 @@ class _LoanScreenState extends State<LoanScreen> {
 
   void _showPayAllDialog(BuildContext context, List selectedLoans) {
     final provider = Provider.of<LoanProvider>(context, listen: false);
-    final currencyFormat = NumberFormat.currency(locale: 'fil_PH', symbol: '₱ ', decimalDigits: 2);
+    final  currencyFormat = context.read<CurrencyProvider>().currencyFormat;
     final totalLoan = selectedLoans.fold(0.0, (sum, loan) => sum + loan.totalAmount);
     final controller = TextEditingController();
     double change = 0.0;
@@ -406,7 +405,7 @@ class _LoanScreenState extends State<LoanScreen> {
                   hintText: 'Enter cash amount...',
                   filled: true,
                   fillColor: Colors.grey.shade50,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12),borderSide: BorderSide.none),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
                 ),
               ),
@@ -472,9 +471,6 @@ class _LoanScreenState extends State<LoanScreen> {
     decoration: BoxDecoration(
       color: (change >= 0 ? AppColor.success.withOpacity(0.08) : AppColor.error.withOpacity(0.08)),
       borderRadius: BorderRadius.circular(12),
-      border: Border.all(
-        color: change >= 0 ? AppColor.success.withOpacity(0.4) : AppColor.error.withOpacity(0.4),
-      ),
     ),
     child: Row(children: [
       Icon(LucideIcons.wallet2, size: 18, color: change >= 0 ? AppColor.success : AppColor.error),
@@ -695,7 +691,7 @@ class _LoanScreenState extends State<LoanScreen> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: ElevatedButton.icon(
-                        icon: const Icon(LucideIcons.checkCircle2, size: 18),
+                        icon: const Icon(LucideIcons.checkCircle2, size: 18,color:  Colors.white,),
                         label: Text(isEdit ? "Update Loan" : "Save Loan"),
                         onPressed: () {
                           final borrowerName = nameController.text.trim();

@@ -11,7 +11,7 @@ class ProductProvider with ChangeNotifier {
   final Box<Product> _productBox = Hive.box<Product>('products');
   List<Product> get products => _productBox.values.toList();
 
-  final Map<Product, int> _cartItems = {};
+
   int _prevProductCount = 0;
   int _prevTotalQuantity = 0;
   DateTime _lastSnapshotDate = DateTime.now().subtract(const Duration(days: 1));
@@ -21,27 +21,37 @@ class ProductProvider with ChangeNotifier {
   }
 
   // CART
+  final Map<Product, int> _cartItems = {};
+  final Map<Product, double> _kiloCartItems = {};
+
   Map<Product, int> getCartItems() => _cartItems;
+  Map<Product, double> getKiloCartItems() => _kiloCartItems;
+
   int getCartItemCount() => _cartItems.length;
 
-  void addToCart(Product product, int quantity) {
+  void addToCart(Product product, int quantity, double kiloQuantity) {
     if (_cartItems.containsKey(product)) {
       _cartItems[product] = _cartItems[product]! + quantity;
+      _kiloCartItems[product] = (_kiloCartItems[product] ?? 0.0) + kiloQuantity;
     } else {
       _cartItems[product] = quantity;
+      _kiloCartItems[product] = kiloQuantity;
     }
     notifyListeners();
   }
 
   void removeFromCart(Product product) {
     _cartItems.remove(product);
+    _kiloCartItems.remove(product);
     notifyListeners();
   }
 
   void clearCart() {
     _cartItems.clear();
+    _kiloCartItems.clear();
     notifyListeners();
   }
+
 
   // PRODUCT ACTIONS
   bool productExists(String id) => _productBox.containsKey(id);

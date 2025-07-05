@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:paninda/View_Model/CurrencyProvider.dart';
 import 'package:provider/provider.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:paninda/View/Components/HelperClass/AppColor.dart';
@@ -23,6 +24,7 @@ class _CategoryProductListScreenState extends State<CategoryProductListScreen> {
   @override
   Widget build(BuildContext context) {
     final color = StoreCategory.colors[widget.category] ?? Colors.grey;
+   final  currencyFormat = context.read<CurrencyProvider>().currencyFormat;
 
     return Scaffold(
       appBar: AppBar(
@@ -36,50 +38,51 @@ class _CategoryProductListScreenState extends State<CategoryProductListScreen> {
         actions: [
           Consumer<ProductProvider>(
             builder: (context, provider, _) {
-              final count = provider.getCartItemCount();
+              final count = provider.getCartItems().length;
 
-              return SizedBox(
-                width: 48, // make tap target bigger than just icon
-                height: 48,
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.shopping_cart_rounded, size: 28),
-                      onPressed: () {
-                        CartListModal.show(context);
-                      },
-                      padding: EdgeInsets.zero, // optional, reduces icon padding
-                      constraints: const BoxConstraints(), // shrink to icon size
-                    ),
-                    if (count > 0)
-                      Positioned(
-                        right: 4,
-                        top: 4,
-                        child: Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: const BoxDecoration(
-                            color: Colors.red,
-                            shape: BoxShape.circle,
-                          ),
-                          constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
-                          alignment: Alignment.center,
-                          child: Text(
-                            '$count',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
+              return Material(
+                color: Colors.transparent, // So it blends with background
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(100),
+                  onTap: () {
+                    CartListModal.show(context);
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.all(12), // Make tap area larger
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        const Icon(Icons.shopping_cart_rounded, size: 28),
+                        if (count > 0)
+                          Positioned(
+                            right: 2,
+                            top: 4,
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: const BoxDecoration(
+                                color: Colors.red,
+                                shape: BoxShape.circle,
+                              ),
+                              constraints: const BoxConstraints(minWidth: 15, minHeight: 15),
+                              child: Text(
+                                '$count',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
                             ),
-                            textAlign: TextAlign.center,
                           ),
-                        ),
-                      ),
-                  ],
+                      ],
+                    ),
+                  ),
                 ),
               );
             },
           ),
+
           const SizedBox(width: 12),
 
         ],
@@ -171,12 +174,13 @@ class _CategoryProductListScreenState extends State<CategoryProductListScreen> {
                                   ),
                                 ),
                                 Text(
-                                  'Price :${product.retailPrice.toStringAsFixed(2)}',
+                                  'Price : ${currencyFormat.format(product.retailPrice)}',
                                   style: const TextStyle(
                                     fontSize: 13,
                                     color: Colors.green,
                                   ),
                                 ),
+
                               ],
                             ),
                           ),

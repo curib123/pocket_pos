@@ -14,41 +14,49 @@ class CustomSearchDelegate extends SearchDelegate {
       builder: (context, provider, _) {
         final count = provider.getCartItems().length;
 
-        return Stack(
-          children: [
-            IconButton(
-              icon: const Icon(Icons.shopping_cart_rounded, size: 28),
-              onPressed: () {
-                CartListModal.show(context);
-              },
-            ),
-            if (count > 0)
-              Positioned(
-                right: 6,
-                top: 6,
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(
-                    color: Colors.red,
-                    shape: BoxShape.circle,
-                  ),
-                  constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
-                  child: Center(
-                    child: Text(
-                      '$count',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
+        return Material(
+          color: Colors.transparent, // So it blends with background
+          child: InkWell(
+            borderRadius: BorderRadius.circular(100),
+            onTap: () {
+              CartListModal.show(context);
+            },
+            child: Padding(
+              padding: const EdgeInsets.all(12), // Make tap area larger
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  const Icon(Icons.shopping_cart_rounded, size: 28),
+                  if (count > 0)
+                    Positioned(
+                      right: 2,
+                      top: 4,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                        constraints: const BoxConstraints(minWidth: 15, minHeight: 15),
+                        child: Text(
+                          '$count',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
                       ),
                     ),
-                  ),
-                ),
+                ],
               ),
-          ],
+            ),
+          ),
         );
       },
     ),
+
     IconButton(
       icon: const Icon(Icons.clear),
       onPressed: () => query = '',

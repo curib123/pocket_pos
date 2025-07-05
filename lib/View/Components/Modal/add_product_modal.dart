@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:paninda/Model/batch_model.dart';
@@ -463,6 +462,7 @@ class _ModalContentState extends State<_ModalContent> {
                       ),
                       const SizedBox(height: 5),
                     ],
+                  if(widget.isEdit) ...[
                     SizedBox(height: 5,),
                     Text(
                       "Note: After saving product changes, you may need to restart the app to see updated product images.",
@@ -475,6 +475,7 @@ class _ModalContentState extends State<_ModalContent> {
                     ),
 
                     SizedBox(height: 5,),
+                  ],
                     _imagePickerPreview(),
                   ],
                   if (widget.isStock) ...[
