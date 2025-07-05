@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hive/hive.dart';
 import 'package:paninda/Model/loan_person_model.dart';
 import 'package:paninda/Model/product_model.dart';
 import 'package:paninda/Model/batch_model.dart';
+import 'package:paninda/View/Components/HelperClass/supabase_service.dart';
 import 'package:paninda/View_Model/LoanPersonProvider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 enum DateRangeType { day, week, month, year }
 
 class ProductProvider with ChangeNotifier {
   final Box<Product> _productBox = Hive.box<Product>('products');
   List<Product> get products => _productBox.values.toList();
-
+  final _supabaseService = SupabaseService();
+  final supabase = Supabase.instance.client;
 
   int _prevProductCount = 0;
   int _prevTotalQuantity = 0;
@@ -26,9 +30,61 @@ class ProductProvider with ChangeNotifier {
 
   Map<Product, int> getCartItems() => _cartItems;
   Map<Product, double> getKiloCartItems() => _kiloCartItems;
-
   int getCartItemCount() => _cartItems.length;
 
+
+  final _secureStorage = const FlutterSecureStorage();
+  DateTime? _lastSyncTime;
+
+  Future<void> loadLastSyncTime() async {
+    final stored = await _secureStorage.read(key: 'lastProductSync');
+    _lastSyncTime = stored != null ? DateTime.tryParse(stored) : null;
+  }
+
+  Future<void> saveLastSyncTime(DateTime time) async {
+    await _secureStorage.write(key: 'lastProductSync', value: time.toIso8601String());
+    _lastSyncTime = time;
+  }
+
+
+  /// Insert Multiple Products (Bulk Insert)
+  Future<void> insertProductsToDatabase() async {
+    return _supabaseService.insertProducts(products, supabase.auth.currentUser!.id);
+  }
+
+  /// Fetch Products By User
+  Future<List<Product>> getProductsByUserFromDatabase(String userId) async {
+    return _supabaseService.getProductsByUser(userId);
+  }
+
+  Future<void> syncProductsWithServer() async {
+    await loadLastSyncTime();
+
+    // Fetch all products from server
+    final serverProducts = await getProductsByUserFromDatabase(supabase.auth.currentUser!.id);
+
+    // Sync server -> local
+    for (var serverProduct in serverProducts) {
+      final localProduct = getProductById(serverProduct.id);
+
+      if (localProduct == null) {
+        addProduct(serverProduct);
+      } else if (localProduct.lastModified.isBefore(serverProduct.lastModified)) {
+        updateProduct(serverProduct.id, serverProduct);
+      }
+    }
+
+    // Upload local products modified after last sync
+    final updatedProducts = products.where((p) =>
+    _lastSyncTime == null || p.lastModified.isAfter(_lastSyncTime!)).toList();
+
+    if (updatedProducts.isNotEmpty) {
+      await _supabaseService.insertProducts(updatedProducts, supabase.auth.currentUser!.id);
+    }
+
+    await saveLastSyncTime(DateTime.now());
+    notifyListeners();
+  }
   void addToCart(Product product, int quantity, double kiloQuantity) {
     if (_cartItems.containsKey(product)) {
       _cartItems[product] = _cartItems[product]! + quantity;
@@ -52,9 +108,10 @@ class ProductProvider with ChangeNotifier {
     notifyListeners();
   }
 
-
   // PRODUCT ACTIONS
+
   bool productExists(String id) => _productBox.containsKey(id);
+
   Product? getProductById(String id) => _productBox.get(id);
 
   Product? getProductByName(String name) {
@@ -87,6 +144,7 @@ class ProductProvider with ChangeNotifier {
 
   void addProduct(Product product) {
     if (!productExists(product.id)) {
+      product.lastModified = DateTime.now();  // UPDATED
       _productBox.put(product.id, product);
       notifyListeners();
     }
@@ -94,6 +152,7 @@ class ProductProvider with ChangeNotifier {
 
   void updateProduct(String id, Product updatedProduct) {
     if (productExists(id)) {
+      updatedProduct.lastModified = DateTime.now();  // UPDATED
       _productBox.put(id, updatedProduct);
       notifyListeners();
     }
@@ -112,23 +171,22 @@ class ProductProvider with ChangeNotifier {
   List<Batch> getBatchesForProduct(String productId) {
     return getProductById(productId)?.batches ?? [];
   }
+
   bool isSameDate(DateTime a, DateTime b) {
     return a.year == b.year && a.month == b.month && a.day == b.day;
   }
+
   void restockProduct(String id, double quantity, double kiloQuantity, {DateTime? date}) {
     final product = getProductById(id);
     if (product != null) {
       final targetDate = date ?? DateTime.now();
 
-      // Try to find an existing batch with the same date (same day)
       final index = product.batches.indexWhere((batch) => isSameDate(batch.date, targetDate));
 
       if (index != -1) {
-        // Merge quantities if same day
         product.batches[index].quantity += quantity;
         product.batches[index].kiloQuantity += kiloQuantity;
       } else {
-        // No batch on same day, add new one
         product.batches.add(Batch(
           date: targetDate,
           quantity: quantity,
@@ -136,12 +194,11 @@ class ProductProvider with ChangeNotifier {
         ));
       }
 
+      product.lastModified = DateTime.now();  // UPDATED
       product.save();
       notifyListeners();
     }
   }
-
-
 
   void useStockFIFO(String id, double quantityToUse) {
     final product = getProductById(id);
@@ -162,6 +219,7 @@ class ProductProvider with ChangeNotifier {
     }
 
     product.batches.removeWhere((b) => b.quantity <= 0 && b.kiloQuantity <= 0);
+    product.lastModified = DateTime.now();  // UPDATED
     product.save();
     notifyListeners();
   }
@@ -185,6 +243,7 @@ class ProductProvider with ChangeNotifier {
     }
 
     product.batches.removeWhere((b) => b.quantity <= 0 && b.kiloQuantity <= 0);
+    product.lastModified = DateTime.now();  // UPDATED
     product.save();
     notifyListeners();
   }
@@ -193,17 +252,17 @@ class ProductProvider with ChangeNotifier {
     final product = getProductById(id);
     if (product != null) {
       product.batches = [Batch(date: DateTime.now(), quantity: quantity, kiloQuantity: kiloQuantity)];
+      product.lastModified = DateTime.now();  // UPDATED
       product.save();
       notifyListeners();
     }
   }
 
-
-
   void removeAllBatches(String id) {
     final product = getProductById(id);
     if (product != null) {
       product.batches.clear();
+      product.lastModified = DateTime.now();  // UPDATED
       product.save();
       notifyListeners();
     }
@@ -213,6 +272,7 @@ class ProductProvider with ChangeNotifier {
     final product = getProductById(id);
     if (product != null) {
       product.batches.removeWhere((batch) => getExpiryDate(batch).isBefore(DateTime.now()));
+      product.lastModified = DateTime.now();  // UPDATED
       product.save();
       notifyListeners();
     }
@@ -229,13 +289,12 @@ class ProductProvider with ChangeNotifier {
       );
       if (batchToRemove != null) {
         product.batches.remove(batchToRemove);
+        product.lastModified = DateTime.now();  // UPDATED
         product.save();
         notifyListeners();
       }
     }
   }
-
-
 
   Future<Map<String, dynamic>?> checkoutCart({
     required List<Map<String, dynamic>> cartItems,
@@ -351,7 +410,6 @@ class ProductProvider with ChangeNotifier {
     return null;
   }
 
-
   // INVENTORY METRICS
   double get totalInventorySacks => products.fold(0, (sum, p) => sum + p.totalSacks);
   double get totalInventoryKilos => products.fold(0, (sum, p) => sum + p.totalKilos);
@@ -366,7 +424,6 @@ class ProductProvider with ChangeNotifier {
     if (product == null) return false;
     return product.totalSacks < threshold;
   }
-
 
   List<Map<String, dynamic>> getProfitPerBatch(Product product) {
     return product.batches.map((b) {
@@ -522,6 +579,7 @@ class ProductProvider with ChangeNotifier {
       'description': product.description,
       'imageUrl': product.imageUrl,
       'category': product.category,
+      'lastModified': product.lastModified?.toIso8601String(),
       'batches': product.batches.map((b) => {
         'quantity': b.quantity,
         'kiloQuantity': b.kiloQuantity,
@@ -540,6 +598,9 @@ class ProductProvider with ChangeNotifier {
       description: data['description'],
       imageUrl: data['imageUrl'],
       category: data['category'] ?? 'Uncategorized',
+      lastModified: data['lastModified'] != null
+          ? DateTime.parse(data['lastModified'])
+          : DateTime.now(),
       batches: (data['batches'] as List<dynamic>).map((b) => Batch(
         quantity: b['quantity'],
         kiloQuantity: b['kiloQuantity'] ?? 0,
@@ -549,3 +610,4 @@ class ProductProvider with ChangeNotifier {
     addProduct(product);
   }
 }
+

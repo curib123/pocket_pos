@@ -206,6 +206,7 @@ class _ModalContentState extends State<_ModalContent> {
           kiloQuantity: double.tryParse(_kiloQuantityController.text) ?? 0,
         ),
       ],
+      lastModified: DateTime.now(),
     );
 
     provider.addProduct(product);

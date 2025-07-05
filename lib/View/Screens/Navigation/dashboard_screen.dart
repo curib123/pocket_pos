@@ -43,7 +43,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
     if (lowStockProducts.isNotEmpty) {
       _selectedLowStockProduct = lowStockProducts.first;
     }
+
+    Future.delayed(Duration.zero, () async {
+      await provider.syncProductsWithServer();
+    });
   }
+
 
   Future<void> _loadUserDetails() async {
     final userDetails = await Provider.of<AuthPaymentProvider>(context, listen: false).readUserDetails();
@@ -134,7 +139,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return FadeInDown(
       duration: const Duration(milliseconds: 500),
       child: Container(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.symmetric(vertical: 20),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(24),
           gradient: LinearGradient(
@@ -172,7 +177,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ),
                 CircleAvatar(
-                  radius: 32,
+                  radius: 30,
                   backgroundColor: Colors.white.withOpacity(0.1),
                   child: Spin(
                     infinite: true,
@@ -209,7 +214,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ).createShader(Rect.fromLTWH(0, 0, bounds.width, bounds.height)),
                         blendMode: BlendMode.srcIn,
                         child: Text(
-                          "Welcome to ${storeName ?? 'Your Store'}, ",
+                          "Welcome to ${storeName ?? 'Your Store'} ",
                           style: TextStyle(
                             fontSize: getResponsiveFontSize(context, 12),
                             fontWeight: FontWeight.bold,

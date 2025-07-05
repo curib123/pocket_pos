@@ -9,9 +9,11 @@ class AuthPaymentProvider with ChangeNotifier {
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
   bool _isLoading = false;
+
   bool get isLoading => _isLoading;
 
   AuthMode _authMode = AuthMode.signIn;
+
   AuthMode get authMode => _authMode;
 
   /// Switch auth mode
@@ -71,8 +73,10 @@ class AuthPaymentProvider with ChangeNotifier {
 
   /// ✅ Save User Details to Secure Storage
   Future<void> saveUserDetails(Map<String, dynamic> userDetails) async {
-    await _storage.write(key: 'storeName', value: userDetails['storeName'] ?? '');
-    await _storage.write(key: 'ownerName', value: userDetails['ownerName'] ?? '');
+    await _storage.write(
+        key: 'storeName', value: userDetails['storeName'] ?? '');
+    await _storage.write(
+        key: 'ownerName', value: userDetails['ownerName'] ?? '');
   }
 
   /// ✅ Save Email to Secure Storage
@@ -132,4 +136,6 @@ class AuthPaymentProvider with ChangeNotifier {
   Future<void> setTrialStatus(String userId, bool isTrial) async {
     await _supabaseService.setTrialStatus(userId, isTrial);
   }
+
+
 }

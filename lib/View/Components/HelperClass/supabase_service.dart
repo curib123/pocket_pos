@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+import 'package:paninda/Model/product_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SupabaseService {
@@ -179,4 +181,62 @@ class SupabaseService {
   Future<void> deleteProfile(String id) async {
     await _client.from('profiles').delete().eq('id', id);
   }
+
+
+  /// Insert or Update entire product list as JSON array in product_data
+  Future<void> insertProducts(List<Product> products, String userId) async {
+
+    final data = {
+      'user_id': userId,
+      'product_data': products.map((p) => p.toMap()).toList(),
+    };
+
+    debugPrint('Upserting products for user $userId...');
+    debugPrint('Product Data: ${data['product_data']}');
+
+    try {
+      final response = await _client
+          .from('products')
+          .upsert(data, onConflict: 'user_id');
+
+      debugPrint('Upsert successful: $response');
+    } catch (e) {
+      debugPrint('Error upserting products: $e');
+      throw Exception('Upsert failed: $e');
+    }
+  }
+
+  /// Fetch list of products for user (from JSON array)
+  Future<List<Product>> getProductsByUser(String userId) async {
+    debugPrint('Fetching products for userId: $userId...');
+
+    try {
+      final data = await _client
+          .from('products')
+          .select('product_data')
+          .eq('user_id', userId)
+          .single();
+
+      if (data == null || data['product_data'] == null) {
+        debugPrint('No products found.');
+        return [];
+      }
+
+      final productsJsonList = (data['product_data'] as List<dynamic>)
+          .cast<Map<String, dynamic>>();
+
+      final products = productsJsonList
+          .map((json) => mapProductFromJson(json))
+          .toList();
+
+      debugPrint('Fetched ${products.length} products from database.');
+      return products;
+    } catch (e) {
+      debugPrint('Error fetching products: $e');
+      return [];
+    }
+  }
+
+
+
 }

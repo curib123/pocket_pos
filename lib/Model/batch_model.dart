@@ -18,4 +18,22 @@ class Batch extends HiveObject {
     required this.kiloQuantity,
     required this.date,
   });
+
+  /// For Supabase or JSON
+  Map<String, dynamic> toMap() {
+    return {
+      'quantity': quantity,
+      'kilo_quantity': kiloQuantity,
+      'date': date.toIso8601String(),
+    };
+  }
+
+  /// External Mapper (for Supabase or JSON)
+  factory Batch.fromMap(Map<String, dynamic> map) {
+    return Batch(
+      quantity: (map['quantity'] as num).toDouble(),
+      kiloQuantity: (map['kilo_quantity'] as num).toDouble(),
+      date: DateTime.parse(map['date'] as String),
+    );
+  }
 }
