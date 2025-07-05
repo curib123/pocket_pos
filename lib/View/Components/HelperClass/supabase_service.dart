@@ -183,9 +183,7 @@ class SupabaseService {
   }
 
 
-  /// Insert or Update entire product list as JSON array in product_data
   Future<void> insertProducts(List<Product> products, String userId) async {
-
     final data = {
       'user_id': userId,
       'product_data': products.map((p) => p.toMap()).toList(),

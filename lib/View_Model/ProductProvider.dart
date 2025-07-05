@@ -32,59 +32,75 @@ class ProductProvider with ChangeNotifier {
   Map<Product, double> getKiloCartItems() => _kiloCartItems;
   int getCartItemCount() => _cartItems.length;
 
-
   final _secureStorage = const FlutterSecureStorage();
   DateTime? _lastSyncTime;
 
+  /// Load last sync time from secure storage
   Future<void> loadLastSyncTime() async {
     final stored = await _secureStorage.read(key: 'lastProductSync');
-    _lastSyncTime = stored != null ? DateTime.tryParse(stored) : null;
+    if (stored != null) {
+      _lastSyncTime = DateTime.tryParse(stored);
+    }
   }
 
+  /// Save current time as last sync time
   Future<void> saveLastSyncTime(DateTime time) async {
     await _secureStorage.write(key: 'lastProductSync', value: time.toIso8601String());
     _lastSyncTime = time;
   }
 
-
-  /// Insert Multiple Products (Bulk Insert)
-  Future<void> insertProductsToDatabase() async {
-    return _supabaseService.insertProducts(products, supabase.auth.currentUser!.id);
+  /// Insert products to database
+  Future<void> insertOrUpdateProductsToDatabase() async {
+    await _supabaseService.insertProducts(products, supabase.auth.currentUser!.id);
   }
 
-  /// Fetch Products By User
+  /// Fetch products by user from server
   Future<List<Product>> getProductsByUserFromDatabase(String userId) async {
-    return _supabaseService.getProductsByUser(userId);
+    return await _supabaseService.getProductsByUser(userId);
   }
 
+  /// Main Sync Method (handles both download & upload)
   Future<void> syncProductsWithServer() async {
-    await loadLastSyncTime();
+    try {
+      await loadLastSyncTime();
 
-    // Fetch all products from server
-    final serverProducts = await getProductsByUserFromDatabase(supabase.auth.currentUser!.id);
-
-    // Sync server -> local
-    for (var serverProduct in serverProducts) {
-      final localProduct = getProductById(serverProduct.id);
-
-      if (localProduct == null) {
-        addProduct(serverProduct);
-      } else if (localProduct.lastModified.isBefore(serverProduct.lastModified)) {
-        updateProduct(serverProduct.id, serverProduct);
+      final userId = supabase.auth.currentUser?.id;
+      if (userId == null) {
+        throw Exception('User not logged in.');
       }
+
+      // Step 1: Fetch all products from server
+      final serverProducts = await getProductsByUserFromDatabase(userId);
+
+      // Step 2: Merge server products into local storage
+      for (var serverProduct in serverProducts) {
+        final localProduct = getProductById(serverProduct.id);
+
+        if (localProduct == null) {
+          addProduct(serverProduct);
+        } else if (localProduct.lastModified.isBefore(serverProduct.lastModified)) {
+          updateProduct(serverProduct.id, serverProduct);
+        }
+      }
+
+      // Step 3: Upload local changes after last sync
+      final updatedProducts = products.where((p) =>
+      _lastSyncTime == null || p.lastModified.isAfter(_lastSyncTime!)).toList();
+
+      if (updatedProducts.isNotEmpty) {
+        await _supabaseService.insertProducts(updatedProducts, userId);
+      }
+
+      // Step 4: Save sync time after successful sync
+      await saveLastSyncTime(DateTime.now());
+
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error during product sync: $e');
+      // Optionally: show a user-friendly error here
     }
-
-    // Upload local products modified after last sync
-    final updatedProducts = products.where((p) =>
-    _lastSyncTime == null || p.lastModified.isAfter(_lastSyncTime!)).toList();
-
-    if (updatedProducts.isNotEmpty) {
-      await _supabaseService.insertProducts(updatedProducts, supabase.auth.currentUser!.id);
-    }
-
-    await saveLastSyncTime(DateTime.now());
-    notifyListeners();
   }
+
   void addToCart(Product product, int quantity, double kiloQuantity) {
     if (_cartItems.containsKey(product)) {
       _cartItems[product] = _cartItems[product]! + quantity;

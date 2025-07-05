@@ -46,6 +46,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     Future.delayed(Duration.zero, () async {
       await provider.syncProductsWithServer();
+      await provider.insertOrUpdateProductsToDatabase();
     });
   }
 
@@ -118,14 +119,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 const SizedBox(height: 30),
                 const Text("Possible Profit Per Stocks", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppColor.textPrimary)),
                 const SizedBox(height: 12),
-                _customDropdown<Product>(
-                  items: provider.products,
-                  selected: _selectedProduct,
+                _customDropdown<String>(
+                  items: provider.products.map((p) => p.id).toList(),
+                  selected: _selectedProduct?.id,
                   hint: "Select Product",
-                  onChanged: (val) => setState(() => _selectedProduct = val),
-                  getLabel: (product) => product.name,
+                  onChanged: (val) {
+                    setState(() {
+                      _selectedProduct = provider.products.firstWhere((p) => p.id == val);
+                    });
+                  },
+                  getLabel: (productId) =>
+                  provider.products.firstWhere((p) => p.id == productId).name,
                 ),
-                const SizedBox(height: 16),
+              const SizedBox(height: 16),
                 ...batchProfit.map((batch) => _batchTile(batch)),
               ],
             ],

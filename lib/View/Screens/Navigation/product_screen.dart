@@ -25,6 +25,19 @@ class _ProductScreenState extends State<ProductScreen> {
   bool isGrid = false;
 
   @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+
+    final provider = Provider.of<ProductProvider>(context, listen: false);
+    Future.delayed(Duration.zero, () async {
+      await provider.syncProductsWithServer();
+      await provider.insertOrUpdateProductsToDatabase();
+    });
+
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: ScalableAppBar(
