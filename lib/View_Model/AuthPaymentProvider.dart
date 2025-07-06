@@ -1,22 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:paninda/View/Components/HelperClass/supabase_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 enum AuthMode { signIn, signUp }
 
 class AuthPaymentProvider with ChangeNotifier {
   final _supabaseService = SupabaseService();
-  final FlutterSecureStorage _storage = const FlutterSecureStorage();
+  final _storage = const FlutterSecureStorage();
 
   bool _isLoading = false;
-
   bool get isLoading => _isLoading;
 
   AuthMode _authMode = AuthMode.signIn;
-
   AuthMode get authMode => _authMode;
 
-  /// Switch auth mode
+  /// ✅ Switch auth mode
   void setAuthMode(AuthMode mode) {
     _authMode = mode;
     notifyListeners();
@@ -59,32 +58,24 @@ class AuthPaymentProvider with ChangeNotifier {
     }
   }
 
-  /// ✅ Fetch User Details & Save to Storage (Including Email)
+  /// ✅ Fetch User Details & Save to Storage
   Future<void> fetchAndSaveUserDetails(String email) async {
-    final userDetails = await getUserDetails(email);
+    final userDetails = await _supabaseService.fetchUserDetails(email);
     await saveUserDetails(userDetails);
     await saveUserEmail(email);
   }
 
-  /// ✅ Fetch User Details from Supabase
-  Future<Map<String, dynamic>> getUserDetails(String email) async {
-    return await _supabaseService.fetchUserDetails(email);
-  }
-
   /// ✅ Save User Details to Secure Storage
   Future<void> saveUserDetails(Map<String, dynamic> userDetails) async {
-    await _storage.write(
-        key: 'storeName', value: userDetails['storeName'] ?? '');
-    await _storage.write(
-        key: 'ownerName', value: userDetails['ownerName'] ?? '');
+    await _storage.write(key: 'storeName', value: userDetails['storeName'] ?? '');
+    await _storage.write(key: 'ownerName', value: userDetails['ownerName'] ?? '');
   }
 
-  /// ✅ Save Email to Secure Storage
   Future<void> saveUserEmail(String email) async {
     await _storage.write(key: 'email', value: email);
   }
 
-  /// ✅ Read User Details (Store, Owner, Email)
+  /// ✅ Read User Details
   Future<Map<String, String?>> readUserDetails() async {
     final storeName = await _storage.read(key: 'storeName');
     final ownerName = await _storage.read(key: 'ownerName');
@@ -96,46 +87,73 @@ class AuthPaymentProvider with ChangeNotifier {
     };
   }
 
-  /// ✅ Clear All Stored User Data
-  Future<void> clearUserDetails() async {
-    await _storage.deleteAll();
+  /// ✅ Save Trial Info to Storage
+  Future<void> saveTrialInfo(Map<String, dynamic> trialInfo) async {
+    await _storage.write(key: 'trialEndDate', value: trialInfo['trialEndDate']?.toString() ?? '');
+    await _storage.write(key: 'isTrial', value: trialInfo['isTrial'].toString());
+    await _storage.write(key: 'remainingDays', value: trialInfo['remainingDays'].toString());
   }
 
-  /// ✅ Logout User
+  /// ✅ Read Trial Info from Storage
+  Future<Map<String, dynamic>> readTrialInfo() async {
+    final trialEndDate = await _storage.read(key: 'trialEndDate');
+    final isTrial = await _storage.read(key: 'isTrial');
+    final remainingDays = await _storage.read(key: 'remainingDays');
+
+    return {
+      'trialEndDate': trialEndDate,
+      'isTrial': isTrial == 'true',
+      'remainingDays': int.tryParse(remainingDays ?? '0') ?? 0,
+    };
+  }
+
+  /// ✅ Fetch Trial Info (Online & Save Offline)
+  Future<Map<String, dynamic>?> fetchTrialInfo() async {
+    final trialInfo = await _supabaseService.getTrialInfo();
+    if (trialInfo != null) {
+      await saveTrialInfo(trialInfo);
+    }
+    return trialInfo;
+  }
+
+  /// ✅ Get Trial Info from Offline Storage
+  Future<Map<String, dynamic>> getTrialInfoOffline() async {
+    return await readTrialInfo();
+  }
+
+  /// ✅ Logout & Clear Storage
   Future<void> logout() async {
     await _supabaseService.signOut();
     await clearUserDetails();
   }
 
-  /// ✅ Check Both (Active OR Trial)
+  Future<void> clearUserDetails() async {
+    await _storage.deleteAll();
+  }
+
+  /// ✅ Activation & Trial Status Checkers
   Future<bool> checkActivationStatus() async {
     return await _supabaseService.isUserActiveOrOnTrial();
   }
 
-  /// ✅ Check Only Active
   Future<bool> checkActiveStatus() async {
     return await _supabaseService.isActive();
   }
 
-  /// ✅ Check Only Trial
   Future<bool> checkTrialStatus() async {
     return await _supabaseService.isTrial();
   }
 
-  /// ✅ Activate Account (Ends Trial)
-  Future<void> activateAccount(String userId) async {
-    await _supabaseService.activateUser(userId);
+  /// ✅ Update Activation & Trial Status (Now Auto-uses Current User)
+  Future<void> activateAccount() async {
+    await _supabaseService.activateUser();
   }
 
-  /// ✅ Update Activation Only
-  Future<void> setActiveStatus(String userId, bool isActive) async {
-    await _supabaseService.setActiveStatus(userId, isActive);
+  Future<void> setActiveStatus(bool isActive) async {
+    await _supabaseService.setActiveStatus(isActive);
   }
 
-  /// ✅ Update Trial Only
-  Future<void> setTrialStatus(String userId, bool isTrial) async {
-    await _supabaseService.setTrialStatus(userId, isTrial);
+  Future<void> setTrialStatus(bool isTrial) async {
+    await _supabaseService.setTrialStatus(isTrial);
   }
-
-
 }

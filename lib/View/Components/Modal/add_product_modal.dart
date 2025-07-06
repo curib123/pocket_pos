@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:paninda/Model/batch_model.dart';
 import 'package:paninda/Model/product_model.dart';
+import 'package:paninda/View/Components/Alert/ImagePickerDialog.dart';
 import 'package:paninda/View/Components/Alert/custom_alert_notification.dart';
 import 'package:paninda/View/Components/Custom/custom_btn.dart';
 import 'package:paninda/View/Components/Custom/modern_dropdown.dart';
@@ -226,9 +227,18 @@ class _ModalContentState extends State<_ModalContent> {
     super.dispose();
   }
 
-  Future<void> _pickImage() async {
-    final image = await _picker.pickImage(source: ImageSource.camera, maxWidth: 800, imageQuality: 85);
-    if (image != null) setState(() => _pickedImage = image);
+  Future<void> _pickImage({
+    required ImageSource source,
+    required Function(XFile) onImagePicked,
+  }) async {
+    final image = await _picker.pickImage(
+      source: source,
+      maxWidth: 800,
+      imageQuality: 85,
+    );
+    if (image != null) {
+      onImagePicked(image);
+    }
   }
 
 
@@ -278,7 +288,28 @@ class _ModalContentState extends State<_ModalContent> {
         const Text("Product Image", style: TextStyle(fontWeight: FontWeight.bold)),
         const SizedBox(height: 10),
         InkWell(
-          onTap: _pickImage,
+          onTap: (){
+            ImagePickerDialog.show(
+              context: context,
+              onCamera: () {
+                _pickImage(
+                  source: ImageSource.camera,
+                  onImagePicked: (image) {
+                    setState(() => _pickedImage = image);
+                  },
+                );
+              },
+              onGallery: () {
+                _pickImage(
+                  source: ImageSource.gallery,
+                  onImagePicked: (image) {
+                    setState(() => _pickedImage = image);
+                  },
+                );
+              },
+            );
+
+          },
           child: Container(
             width: double.infinity,
             height: 130,

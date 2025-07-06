@@ -51,12 +51,12 @@ class ProductProvider with ChangeNotifier {
 
   /// Insert products to database
   Future<void> insertOrUpdateProductsToDatabase() async {
-    await _supabaseService.insertProducts(products, supabase.auth.currentUser!.id);
+    await _supabaseService.insertProducts(products);
   }
 
   /// Fetch products by user from server
   Future<List<Product>> getProductsByUserFromDatabase(String userId) async {
-    return await _supabaseService.getProductsByUser(userId);
+    return await _supabaseService.getProductsByUser();
   }
 
   /// Main Sync Method (handles both download & upload)
@@ -88,7 +88,7 @@ class ProductProvider with ChangeNotifier {
       _lastSyncTime == null || p.lastModified.isAfter(_lastSyncTime!)).toList();
 
       if (updatedProducts.isNotEmpty) {
-        await _supabaseService.insertProducts(updatedProducts, userId);
+        await _supabaseService.insertProducts(updatedProducts);
       }
 
       // Step 4: Save sync time after successful sync

@@ -31,7 +31,7 @@ class LoanProvider with ChangeNotifier {
 
   /// Fetch loans from server
   Future<List<LoanPerson>> getLoansByUserFromDatabase(String userId) async {
-    return await _supabaseService.getLoansByUser(userId);
+    return await _supabaseService.getLoansByUser();
   }
 
   /// Sync loans with server (2-way sync)
@@ -80,7 +80,7 @@ class LoanProvider with ChangeNotifier {
       _lastSyncTime == null || loan.lastModified.isAfter(_lastSyncTime!)).toList();
 
       if (updatedLoans.isNotEmpty) {
-        await _supabaseService.insertLoans(updatedLoans, userId);
+        await _supabaseService.insertLoans(updatedLoans);
       }
 
       await saveLastSyncTime(DateTime.now());
@@ -94,7 +94,7 @@ class LoanProvider with ChangeNotifier {
   Future<void> insertOrUpdateLoansToDatabase() async {
     final userId = supabase.auth.currentUser?.id;
     if (userId != null) {
-      await _supabaseService.insertLoans(loans, userId);
+      await _supabaseService.insertLoans(loans);
     }
   }
 

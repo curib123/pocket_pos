@@ -21,7 +21,7 @@ class SupabaseService {
 
     final user = response.user;
     if (user != null) {
-      final trialEndDate = DateTime.now().add(const Duration(days: 30));
+      final trialEndDate = DateTime.now().add(const Duration(days: 7));
       try {
         await _client.from('profiles').insert({
           'id': user.id,
@@ -29,7 +29,7 @@ class SupabaseService {
           'store_name': storeName,
           'owner_name': ownerName,
           'trial_end_date': trialEndDate.toUtc().toIso8601String(),
-          'is_trial': true,
+          'is_trial': false,
           'is_active': false,
         });
         print("✅ Profile inserted successfully.");
@@ -118,24 +118,60 @@ class SupabaseService {
     return data['is_trial'] == true && trialEndDate != null && now.isBefore(trialEndDate);
   }
 
+  /// ✅ Get Trial End Date & Remaining Days (Auto-disable trial if expired)
+  Future<Map<String, dynamic>?> getTrialInfo() async {
+    final user = _client.auth.currentUser;
+    if (user == null) return null;
+
+    final data = await _client
+        .from('profiles')
+        .select('trial_end_date, is_trial')
+        .eq('id', user.id)
+        .maybeSingle();
+
+    if (data == null) return null;
+
+    final trialEndDate = DateTime.tryParse(data['trial_end_date'] ?? '');
+    if (trialEndDate == null) return null;
+
+    final now = DateTime.now().toUtc();
+    int remainingDays = trialEndDate.difference(now).inDays;
+
+    if (remainingDays <= 0 && data['is_trial'] == true) {
+      await _client.from('profiles').update({'is_trial': false}).eq('id', user.id);
+      remainingDays = 0;
+    }
+
+    return {
+      'trialEndDate': trialEndDate,
+      'remainingDays': remainingDays > 0 ? remainingDays : 0,
+      'isTrial': remainingDays > 0 && data['is_trial'] == true,
+    };
+  }
+
   /// ✅ Activation & Status Setters
-  Future<void> activateUser(String userId) async {
+  Future<void> activateUser() async {
+    final user = _client.auth.currentUser;
+    if (user == null) throw Exception("No logged-in user.");
+
     await _client.from('profiles').update({
       'is_active': true,
       'is_trial': false,
-    }).eq('id', userId);
+    }).eq('id', user.id);
   }
 
-  Future<void> setActiveStatus(String userId, bool isActive) async {
-    await _client.from('profiles').update({
-      'is_active': isActive,
-    }).eq('id', userId);
+  Future<void> setActiveStatus(bool isActive) async {
+    final user = _client.auth.currentUser;
+    if (user == null) throw Exception("No logged-in user.");
+
+    await _client.from('profiles').update({'is_active': isActive}).eq('id', user.id);
   }
 
-  Future<void> setTrialStatus(String userId, bool isTrial) async {
-    await _client.from('profiles').update({
-      'is_trial': isTrial,
-    }).eq('id', userId);
+  Future<void> setTrialStatus(bool isTrial) async {
+    final user = _client.auth.currentUser;
+    if (user == null) throw Exception("No logged-in user.");
+
+    await _client.from('profiles').update({'is_trial': isTrial}).eq('id', user.id);
   }
 
   /// ✅ CRUD METHODS (Admin / Profile Management)
@@ -153,142 +189,89 @@ class SupabaseService {
     return response;
   }
 
-  Future<void> updateProfile({
-    required String id,
-    String? email,
-    bool? isActive,
-    bool? isTrial,
-    String? paymentRef,
-    DateTime? trialEndDate,
-    String? storeName,
-    String? ownerName,
-  }) async {
-    final updateData = <String, dynamic>{};
-    if (email != null) updateData['email'] = email;
-    if (isActive != null) updateData['is_active'] = isActive;
-    if (isTrial != null) updateData['is_trial'] = isTrial;
-    if (paymentRef != null) updateData['payment_ref'] = paymentRef;
-    if (trialEndDate != null) {
-      updateData['trial_end_date'] = trialEndDate.toUtc().toIso8601String();
-    }
-    if (storeName != null) updateData['store_name'] = storeName;
-    if (ownerName != null) updateData['owner_name'] = ownerName;
+  /// ✅ Products (Auto User ID)
+  Future<void> insertProducts(List<Product> products) async {
+    final user = _client.auth.currentUser;
+    if (user == null) throw Exception("No logged-in user.");
 
-    if (updateData.isNotEmpty) {
-      await _client.from('profiles').update(updateData).eq('id', id);
-    }
-  }
-
-  Future<void> deleteProfile(String id) async {
-    await _client.from('profiles').delete().eq('id', id);
-  }
-
-
-  Future<void> insertProducts(List<Product> products, String userId) async {
     final data = {
-      'user_id': userId,
+      'user_id': user.id,
       'product_data': products.map((p) => p.toMap()).toList(),
     };
 
-    debugPrint('Upserting products for user $userId...');
-    debugPrint('Product Data: ${data['product_data']}');
-
+    debugPrint('Upserting products for user ${user.id}...');
     try {
-      final response = await _client
-          .from('products')
-          .upsert(data, onConflict: 'user_id');
-
-      debugPrint('Upsert successful: $response');
+      await _client.from('products').upsert(data, onConflict: 'user_id');
+      debugPrint('Products upserted.');
     } catch (e) {
       debugPrint('Error upserting products: $e');
       throw Exception('Upsert failed: $e');
     }
   }
 
-  /// Fetch list of products for user (from JSON array)
-  Future<List<Product>> getProductsByUser(String userId) async {
-    debugPrint('Fetching products for userId: $userId...');
+  Future<List<Product>> getProductsByUser() async {
+    final user = _client.auth.currentUser;
+    if (user == null) throw Exception("No logged-in user.");
 
     try {
       final data = await _client
           .from('products')
           .select('product_data')
-          .eq('user_id', userId)
+          .eq('user_id', user.id)
           .single();
 
-      if (data == null || data['product_data'] == null) {
-        debugPrint('No products found.');
-        return [];
-      }
+      if (data == null || data['product_data'] == null) return [];
 
-      final productsJsonList = (data['product_data'] as List<dynamic>)
-          .cast<Map<String, dynamic>>();
+      final productsJsonList =
+      (data['product_data'] as List<dynamic>).cast<Map<String, dynamic>>();
 
-      final products = productsJsonList
-          .map((json) => mapProductFromJson(json))
-          .toList();
-
-      debugPrint('Fetched ${products.length} products from database.');
-      return products;
+      return productsJsonList.map((json) => mapProductFromJson(json)).toList();
     } catch (e) {
       debugPrint('Error fetching products: $e');
       return [];
     }
   }
 
-  // Upload (insert or update) loans for the user (store as JSON array per user)
-  Future<void> insertLoans(List<LoanPerson> loans, String userId) async {
+  /// ✅ Loans (Auto User ID)
+  Future<void> insertLoans(List<LoanPerson> loans) async {
+    final user = _client.auth.currentUser;
+    if (user == null) throw Exception("No logged-in user.");
+
     final data = {
-      'user_id': userId,
+      'user_id': user.id,
       'loan_data': loans.map((loan) => loan.toMap()).toList(),
     };
 
-    debugPrint('Upserting loans for user $userId...');
-    debugPrint('Loan Data: ${data['loan_data']}');
-
+    debugPrint('Upserting loans for user ${user.id}...');
     try {
-      final response = await Supabase.instance.client
-          .from('loans')
-          .upsert(data, onConflict: 'user_id'); // Upsert by user_id (1 row per user)
-
-      debugPrint('Upsert successful: $response');
+      await _client.from('loans').upsert(data, onConflict: 'user_id');
+      debugPrint('Loans upserted.');
     } catch (e) {
       debugPrint('Error upserting loans: $e');
       throw Exception('Upsert failed: $e');
     }
   }
 
-// Fetch loans for a user (stored as JSON array)
-  Future<List<LoanPerson>> getLoansByUser(String userId) async {
-    debugPrint('Fetching loans for userId: $userId...');
+  Future<List<LoanPerson>> getLoansByUser() async {
+    final user = _client.auth.currentUser;
+    if (user == null) throw Exception("No logged-in user.");
 
     try {
-      final data = await Supabase.instance.client
+      final data = await _client
           .from('loans')
           .select('loan_data')
-          .eq('user_id', userId)
+          .eq('user_id', user.id)
           .single();
 
-      if (data == null || data['loan_data'] == null) {
-        debugPrint('No loans found.');
-        return [];
-      }
+      if (data == null || data['loan_data'] == null) return [];
 
       final loansJsonList =
       (data['loan_data'] as List<dynamic>).cast<Map<String, dynamic>>();
 
-      final loans = loansJsonList
-          .map((json) => LoanPerson.fromMap(json))
-          .toList();
-
-      debugPrint('Fetched ${loans.length} loan(s) from database.');
-      return loans;
+      return loansJsonList.map((json) => LoanPerson.fromMap(json)).toList();
     } catch (e) {
       debugPrint('Error fetching loans: $e');
       return [];
     }
   }
-
-
-
 }

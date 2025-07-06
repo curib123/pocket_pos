@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:paninda/View/Components/Core/bottom_navigation.dart';
+import 'package:paninda/View/Components/HelperClass/CheckTrialExpired.dart';
 import 'package:paninda/View/Screens/Navigation/signin_screen.dart';
 import 'package:paninda/View/Screens/Navigation/signup_screen.dart';
+import 'package:paninda/View_Model/AuthPaymentProvider.dart';
 import 'package:provider/provider.dart';
 import 'package:paninda/View_Model/TabProvider.dart';
 
@@ -19,6 +21,7 @@ class _HomeState extends State<Home> {
   void initState() {
     super.initState();
     _loadFirstTimeFlag();
+    checkIfTrialExpired(context);
 
   }
 
@@ -29,6 +32,10 @@ class _HomeState extends State<Home> {
       _isLoading = false;
     });
   }
+
+
+
+
 
   @override
   Widget build(BuildContext context) {

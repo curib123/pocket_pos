@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:paninda/View/Components/Alert/custom_confirm_dialog.dart';
+import 'package:paninda/View/Components/HelperClass/CheckTrialExpired.dart';
+import 'package:paninda/View/Components/HelperClass/LinkOpener.dart';
 import 'package:paninda/View/Screens/Navigation/verification_screen.dart';
 import 'package:paninda/View_Model/AuthPaymentProvider.dart';
 import 'package:paninda/View_Model/TabProvider.dart';
@@ -28,6 +31,19 @@ class _SigninScreenState extends State<SigninScreen> {
     passwordController.dispose();
     super.dispose();
   }
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+
+    Future.delayed(Duration.zero, () async {
+      final authPaymentProvider = Provider.of<AuthPaymentProvider>(context, listen: false);
+      await authPaymentProvider.fetchTrialInfo();
+    });
+
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -131,7 +147,12 @@ class _SigninScreenState extends State<SigninScreen> {
                                       cancelText: "Close",
                                       confirmText: "Continue",
                                       onConfirm: () async {
-                                        if (await authPaymentProvider.checkActiveStatus()) {
+                                        final isActivated = await authPaymentProvider.checkActivationStatus();
+
+                                        if (isActivated) {
+                                          final isTrial = await authPaymentProvider.checkTrialStatus();
+                                          final isActive = await authPaymentProvider.checkActiveStatus();
+
                                           Navigator.pushReplacement(
                                             context,
                                             MaterialPageRoute(
@@ -140,23 +161,36 @@ class _SigninScreenState extends State<SigninScreen> {
                                                 body: Center(
                                                   child: VerificationStatusCard(
                                                     isSuccess: true,
-                                                    title: 'Account Activated',
-                                                    subtitle: 'Your payment has been confirmed.\nYour account is now active and ready to use.',
+                                                    title: isTrial
+                                                        ? 'Free Trial Activated'
+                                                        : (isActive ? 'Fully Account Activated' : 'Account Status Unknown'),
+                                                    subtitleWidget: Text(
+                                                      isTrial
+                                                          ? 'Welcome aboard! You’re now on a Free Trial.\nEnjoy exploring all features during your trial period.'
+                                                          : (isActive
+                                                          ? 'Thank you for your payment!\nYour account is now fully activated and ready to use.'
+                                                          : 'We couldn’t verify your account status.\nPlease contact support.'),
+                                                      textAlign: TextAlign.center,
+                                                    ),
                                                     statusIcon: LucideIcons.checkCircle,
                                                     buttonIcon: LucideIcons.arrowRight,
-                                                    buttonText: 'Proceed Now',
+                                                    buttonText: 'Get Started',
                                                     mainColor: const Color(0xFF4CAF50),
-                                                    onPressed: () {
-                                                      tabProvider.setFirstTimeFlag(false);
-
-                                                      Phoenix.rebirth(context);
+                                                    onPressed: () async {
+                                                      await authPaymentProvider.setTrialStatus(false);
+                                                      checkIfTrialExpired(context);
+                                                      await tabProvider.setFirstTimeFlag(false);
+                                                      if (!tabProvider.isFirstTime) {
+                                                        Phoenix.rebirth(context);
+                                                      }
                                                     },
                                                   ),
                                                 ),
                                               ),
                                             ),
                                           );
-                                        } else {
+                                        }
+                                        else {
                                           Navigator.pushReplacement(
                                             context,
                                             MaterialPageRoute(
@@ -166,14 +200,113 @@ class _SigninScreenState extends State<SigninScreen> {
                                                   child: VerificationStatusCard(
                                                     isSuccess: false,
                                                     title: 'Activation Failed',
-                                                    subtitle: 'We couldn’t verify your payment.\nPlease complete your payment to activate your account.',
+                                                    subtitleWidget: Column(
+                                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                                      children: [
+                                                        const Text(
+                                                          "We couldn’t verify your payment.",
+                                                          style: TextStyle(
+                                                            fontSize: 13,
+                                                            fontWeight: FontWeight.w600,
+                                                            color: Colors.black87,
+                                                          ),
+                                                        ),
+                                                        const SizedBox(height: 14),
+                                                        Container(
+                                                          padding: const EdgeInsets.all(12),
+                                                          decoration: BoxDecoration(
+                                                            color: Colors.amber.withOpacity(0.1),
+                                                            borderRadius: BorderRadius.circular(10),
+                                                          ),
+                                                          child: Row(
+                                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                                            children: [
+                                                              const Icon(LucideIcons.wallet, color: Colors.amber, size: 22),
+                                                              const SizedBox(width: 10),
+                                                              Expanded(
+                                                                child: Column(
+                                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                                  children: [
+                                                                    const Text(
+                                                                      "Need Full Access?",
+                                                                      style: TextStyle(
+                                                                        fontWeight: FontWeight.w700,
+                                                                        fontSize: 14,
+                                                                        color: Colors.black87,
+                                                                      ),
+                                                                    ),
+                                                                    const SizedBox(height: 8),
+                                                                    const Text(
+                                                                      "Please message us via our Facebook page:",
+                                                                      style: TextStyle(
+                                                                        fontSize: 13,
+                                                                        color: Colors.black87,
+                                                                        height: 1.4,
+                                                                      ),
+                                                                    ),
+                                                                    const SizedBox(height: 10),
+                                                                    Row(
+                                                                      children: [
+                                                                        Expanded(
+                                                                          child: SelectableText(
+                                                                            "📩 Curib Tech\n💬 Message: Mobile Paninda Payment",
+                                                                            style: const TextStyle(
+                                                                              fontSize: 12,
+                                                                              color: Colors.blueAccent,
+                                                                              fontWeight: FontWeight.w600,
+                                                                              height: 1.4,
+                                                                            ),
+                                                                          ),
+                                                                        ),
+                                                                        IconButton(
+                                                                          icon: const Icon(Icons.copy, size: 18, color: Colors.blueAccent),
+                                                                          tooltip: "Copy",
+                                                                          onPressed: () {
+                                                                            Clipboard.setData(const ClipboardData(
+                                                                              text: "Curib Tech - Mobile Paninda POS and Inventory App Payment",
+                                                                            ));
+                                                                            ScaffoldMessenger.of(context).showSnackBar(
+                                                                              const SnackBar(
+                                                                                content: Text("Copied to clipboard!"),
+                                                                              ),
+                                                                            );
+                                                                          },
+                                                                        ),
+                                                                      ],
+                                                                    ),
+                                                                  ],
+                                                                ),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+
                                                     statusIcon: LucideIcons.xCircle,
                                                     buttonIcon: LucideIcons.creditCard,
-                                                    buttonText: 'Pay Now',
+                                                    buttonText: 'Message Us on Facebook',
                                                     mainColor: const Color(0xFFF44336),
+                                                    showPrimaryButton: false,
+                                                    showSecondButton: true,
                                                     onPressed: () {
-                                                      // Redirect to payment
+                                                      LinkOpener.openLink(
+                                                        context,
+                                                        "https://www.facebook.com/profile.php?id=61577201312987",
+                                                      );
                                                     },
+                                                    secondButtonIcon: LucideIcons.gift,
+                                                    secondButtonText: 'Start Free Trial',
+                                                    secondButtonColor: Colors.blueGrey,
+                                                    secondButtonOnPressed: () async {
+                                                      await authPaymentProvider.setTrialStatus(true);
+                                                      await authPaymentProvider.fetchTrialInfo();
+                                                      await tabProvider.setFirstTimeFlag(false);
+                                                      if (!tabProvider.isFirstTime) {
+                                                        Phoenix.rebirth(context);
+                                                      }
+                                                    },
+                                                    secondButtonSubtitle: 'Enjoy limited access for 7 days without payment.',
                                                   ),
                                                 ),
                                               ),
@@ -216,7 +349,8 @@ class _SigninScreenState extends State<SigninScreen> {
                                 ),
                               ),
                             ),
-                          ),
+                          )
+
                         ],
                       ),
                     ),
