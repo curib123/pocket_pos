@@ -6,6 +6,7 @@ import 'package:paninda/View/Components/Core/scalable_appbar.dart';
 import 'package:paninda/View/Components/HelperClass/AppColor.dart';
 import 'package:paninda/View_Model/CurrencyProvider.dart';
 import 'package:paninda/View_Model/LoanPersonProvider.dart';
+import 'package:paninda/View_Model/ProductProvider.dart';
 import 'package:provider/provider.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:intl/intl.dart';
@@ -19,6 +20,21 @@ class LoanScreen extends StatefulWidget {
 
 class _LoanScreenState extends State<LoanScreen> {
   String? _selectedBorrowerName;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    final productProvider = Provider.of<ProductProvider>(context, listen: false);
+    final loanProvider = Provider.of<LoanProvider>(context, listen: false);
+
+    Future.delayed(Duration.zero, () async {
+      await productProvider.syncProductsWithServer();
+      await productProvider.insertOrUpdateProductsToDatabase();
+      await loanProvider.syncLoansWithServer();
+      await loanProvider.insertOrUpdateLoansToDatabase();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {

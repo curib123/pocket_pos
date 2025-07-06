@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:paninda/View_Model/LoanPersonProvider.dart';
 import 'package:provider/provider.dart';
 import 'package:animate_do/animate_do.dart';
 
@@ -29,10 +30,14 @@ class _ProductScreenState extends State<ProductScreen> {
     // TODO: implement initState
     super.initState();
 
-    final provider = Provider.of<ProductProvider>(context, listen: false);
+    final productProvider = Provider.of<ProductProvider>(context, listen: false);
+    final loanProvider = Provider.of<LoanProvider>(context, listen: false);
+
     Future.delayed(Duration.zero, () async {
-      await provider.syncProductsWithServer();
-      await provider.insertOrUpdateProductsToDatabase();
+      await productProvider.syncProductsWithServer();
+      await productProvider.insertOrUpdateProductsToDatabase();
+      await loanProvider.syncLoansWithServer();
+      await loanProvider.insertOrUpdateLoansToDatabase();
     });
 
   }

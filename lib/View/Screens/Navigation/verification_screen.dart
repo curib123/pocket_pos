@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:animate_do/animate_do.dart';
+import 'package:paninda/View_Model/LoanPersonProvider.dart';
+import 'package:paninda/View_Model/ProductProvider.dart';
+import 'package:provider/provider.dart';
 
-class VerificationStatusCard extends StatelessWidget {
+class VerificationStatusCard extends StatefulWidget {
   final bool isSuccess;
   final String title;
   final String subtitle;
@@ -25,6 +28,32 @@ class VerificationStatusCard extends StatelessWidget {
     this.animationDuration = const Duration(milliseconds: 1000),
   });
 
+
+
+  @override
+  State<VerificationStatusCard> createState() => _VerificationStatusCardState();
+}
+
+
+
+class _VerificationStatusCardState extends State<VerificationStatusCard> {
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    final productProvider = Provider.of<ProductProvider>(context, listen: false);
+    final loanProvider = Provider.of<LoanProvider>(context, listen: false);
+
+    Future.delayed(Duration.zero, () async {
+      await productProvider.syncProductsWithServer();
+      await productProvider.insertOrUpdateProductsToDatabase();
+      await loanProvider.syncLoansWithServer();
+      await loanProvider.insertOrUpdateLoansToDatabase();
+    });
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -47,14 +76,14 @@ class VerificationStatusCard extends StatelessWidget {
           children: [
             // Status Icon
             ZoomIn(
-              duration: animationDuration,
+              duration: widget.animationDuration,
               child: Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      mainColor.withOpacity(0.2),
-                      mainColor.withOpacity(0.05),
+                      widget.mainColor.withOpacity(0.2),
+                      widget.mainColor.withOpacity(0.05),
                     ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
@@ -62,9 +91,9 @@ class VerificationStatusCard extends StatelessWidget {
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
-                  statusIcon,
+                  widget.statusIcon,
                   size: 72,
-                  color: mainColor,
+                  color: widget.mainColor,
                 ),
               ),
             ),
@@ -72,13 +101,13 @@ class VerificationStatusCard extends StatelessWidget {
 
             // Title
             FadeIn(
-              duration: animationDuration,
+              duration: widget.animationDuration,
               child: Text(
-                title,
+                widget.title,
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: mainColor,
+                  color: widget.mainColor,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -87,9 +116,9 @@ class VerificationStatusCard extends StatelessWidget {
 
             // Subtitle
             FadeInUp(
-              duration: animationDuration,
+              duration: widget.animationDuration,
               child: Text(
-                subtitle,
+                widget.subtitle,
                 style: const TextStyle(
                   fontSize: 16,
                   color: Colors.black87,
@@ -102,16 +131,16 @@ class VerificationStatusCard extends StatelessWidget {
 
             // Button
             FadeInUp(
-              duration: animationDuration,
+              duration: widget.animationDuration,
               child: ElevatedButton.icon(
-                onPressed: onPressed,
+                onPressed: widget.onPressed,
                 icon: BounceInDown(
-                  child: Icon(buttonIcon, color: Colors.white),
+                  child: Icon(widget.buttonIcon, color: Colors.white),
                   duration: const Duration(milliseconds: 800),
                 ),
-                label: Text(buttonText),
+                label: Text(widget.buttonText),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: mainColor,
+                  backgroundColor: widget.mainColor,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 18),
                   textStyle: const TextStyle(

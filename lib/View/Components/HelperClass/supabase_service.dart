@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:paninda/Model/loan_person_model.dart';
 import 'package:paninda/Model/product_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -231,6 +232,59 @@ class SupabaseService {
       return products;
     } catch (e) {
       debugPrint('Error fetching products: $e');
+      return [];
+    }
+  }
+
+  // Upload (insert or update) loans for the user (store as JSON array per user)
+  Future<void> insertLoans(List<LoanPerson> loans, String userId) async {
+    final data = {
+      'user_id': userId,
+      'loan_data': loans.map((loan) => loan.toMap()).toList(),
+    };
+
+    debugPrint('Upserting loans for user $userId...');
+    debugPrint('Loan Data: ${data['loan_data']}');
+
+    try {
+      final response = await Supabase.instance.client
+          .from('loans')
+          .upsert(data, onConflict: 'user_id'); // Upsert by user_id (1 row per user)
+
+      debugPrint('Upsert successful: $response');
+    } catch (e) {
+      debugPrint('Error upserting loans: $e');
+      throw Exception('Upsert failed: $e');
+    }
+  }
+
+// Fetch loans for a user (stored as JSON array)
+  Future<List<LoanPerson>> getLoansByUser(String userId) async {
+    debugPrint('Fetching loans for userId: $userId...');
+
+    try {
+      final data = await Supabase.instance.client
+          .from('loans')
+          .select('loan_data')
+          .eq('user_id', userId)
+          .single();
+
+      if (data == null || data['loan_data'] == null) {
+        debugPrint('No loans found.');
+        return [];
+      }
+
+      final loansJsonList =
+      (data['loan_data'] as List<dynamic>).cast<Map<String, dynamic>>();
+
+      final loans = loansJsonList
+          .map((json) => LoanPerson.fromMap(json))
+          .toList();
+
+      debugPrint('Fetched ${loans.length} loan(s) from database.');
+      return loans;
+    } catch (e) {
+      debugPrint('Error fetching loans: $e');
       return [];
     }
   }

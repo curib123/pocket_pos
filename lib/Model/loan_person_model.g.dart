@@ -24,13 +24,14 @@ class LoanPersonAdapter extends TypeAdapter<LoanPerson> {
       totalAmount: fields[4] as double,
       date: fields[5] as DateTime,
       isPaid: fields[6] as bool,
+      lastModified: fields[7] as DateTime?,
     );
   }
 
   @override
   void write(BinaryWriter writer, LoanPerson obj) {
     writer
-      ..writeByte(7)
+      ..writeByte(8)
       ..writeByte(0)
       ..write(obj.name)
       ..writeByte(1)
@@ -44,7 +45,9 @@ class LoanPersonAdapter extends TypeAdapter<LoanPerson> {
       ..writeByte(5)
       ..write(obj.date)
       ..writeByte(6)
-      ..write(obj.isPaid);
+      ..write(obj.isPaid)
+      ..writeByte(7)
+      ..write(obj.lastModified);
   }
 
   @override

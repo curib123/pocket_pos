@@ -5,6 +5,7 @@ import 'package:paninda/View/Components/Core/scalable_appbar.dart';
 import 'package:paninda/View/Components/HelperClass/responsive_text.dart';
 import 'package:paninda/View_Model/AuthPaymentProvider.dart';
 import 'package:paninda/View_Model/CurrencyProvider.dart';
+import 'package:paninda/View_Model/LoanPersonProvider.dart';
 import 'package:paninda/View_Model/ProductProvider.dart';
 import 'package:provider/provider.dart';
 import 'package:animate_do/animate_do.dart';
@@ -34,19 +35,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
     _loadUserDetails();
-    final provider = Provider.of<ProductProvider>(context, listen: false);
+    final productProvider = Provider.of<ProductProvider>(context, listen: false);
+    final loanProvider = Provider.of<LoanProvider>(context, listen: false);
     currencyFormat = context.read<CurrencyProvider>().currencyFormat;
-    if (provider.products.isNotEmpty) {
-      _selectedProduct = provider.products.first;
+    if (productProvider.products.isNotEmpty) {
+      _selectedProduct = productProvider.products.first;
     }
-    final lowStockProducts = provider.products.where((p) => provider.isStockLow(p.id, 5)).toList();
+    final lowStockProducts = productProvider.products.where((p) => productProvider.isStockLow(p.id, 5)).toList();
     if (lowStockProducts.isNotEmpty) {
       _selectedLowStockProduct = lowStockProducts.first;
     }
 
     Future.delayed(Duration.zero, () async {
-      await provider.syncProductsWithServer();
-      await provider.insertOrUpdateProductsToDatabase();
+      await productProvider.syncProductsWithServer();
+      await productProvider.insertOrUpdateProductsToDatabase();
+      await loanProvider.syncLoansWithServer();
+      await loanProvider.insertOrUpdateLoansToDatabase();
     });
   }
 
