@@ -187,30 +187,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
               Consumer2<AuthPaymentProvider, TabProvider>(
                 builder: (context, authPaymentProvider, tabProvider, _) {
-                  return CustomButton(
-                    color: AppColor.error,
-                    label: "Logout",
-                    onPressed: () {
-                      showDialog(
-                        context: context,
-                        builder: (_) => FadeInDown(
-                          duration: const Duration(milliseconds: 400),
-                          child: CustomConfirmDialog(
-                            title: "Logout Confirmation",
-                            content:
-                            "Are you sure you want to log out? You will need to sign in again to access your account.",
-                            onConfirm: () {
-                              authPaymentProvider.logout();
-                              tabProvider.setFirstTimeFlag(true);
-                              Phoenix.rebirth(context);
-                            },
+                  return FadeInUp(
+                    duration: const Duration(milliseconds: 500),
+                    child: CustomButton(
+                      color: AppColor.error,
+                      label: "Logout",
+                      onPressed: () {
+                        showDialog(
+                          context: context,
+                          builder: (_) => FadeInDown(
+                            duration: const Duration(milliseconds: 400),
+                            child: CustomConfirmDialog(
+                              title: "Logout Confirmation",
+                              content:
+                              "Are you sure you want to log out? You will need to sign in again to access your account.",
+                              onConfirm: () {
+                                authPaymentProvider.logout();
+                                tabProvider.setFirstTimeFlag(true);
+                                Phoenix.rebirth(context);
+                              },
+                            ),
                           ),
-                        ),
-                      );
-                    },
+                        );
+                      },
+                    ),
                   );
                 },
               ),
+
 
             ],
           ),

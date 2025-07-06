@@ -52,7 +52,7 @@ class _CategoryProductListScreenState extends State<CategoryProductListScreen> {
                     child: Stack(
                       clipBehavior: Clip.none,
                       children: [
-                        const Icon(Icons.shopping_cart_rounded, size: 28),
+                        const Icon(Icons.shopping_cart_rounded, size: 35),
                         if (count > 0)
                           Positioned(
                             right: 2,

@@ -288,11 +288,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildFinancialSummary(ProductProvider provider) {
     return _dashboardGroup(
-      "Money Overview",
+      "Financial Overview",
       [
-        _tile("Total Cost Value", currencyFormat.format(provider.totalInventoryCostValue), LucideIcons.wallet),
-        _tile("ToTal Sell Value", currencyFormat.format(provider.totalInventoryRetailValue), LucideIcons.shoppingCart),
-        _tile("Total Possible Profit", currencyFormat.format(provider.allProductsTotalProfit), LucideIcons.coins, AppColor.success),
+        _tile(" Cost Value", currencyFormat.format(provider.totalInventoryCostValue), LucideIcons.wallet),
+        _tile(" Sell Value", currencyFormat.format(provider.totalInventoryRetailValue), LucideIcons.shoppingCart),
+        _tile("Possible Profit", currencyFormat.format(provider.allProductsTotalProfit), LucideIcons.coins, AppColor.success),
       ],
       icon: LucideIcons.wallet,
     );
@@ -335,7 +335,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
       children: [
         Padding(
           padding: const EdgeInsets.only(bottom: 12),
-          child: Row(
+          child: SlideInLeft(
+            duration: const Duration(milliseconds: 500),
+            child: Row(
             children: [
               if (icon != null)
                 Icon(icon, color: iconColor ?? AppColor.primary, size: 22),
@@ -349,7 +351,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               ),
             ],
-          ),
+          ),)
         ),
         Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,

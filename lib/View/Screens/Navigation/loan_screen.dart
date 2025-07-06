@@ -100,77 +100,99 @@ class _LoanScreenState extends State<LoanScreen> {
               _tile("Total Unpaid", currencyFormat.format(provider.totalLoanAmount), LucideIcons.alertCircle, AppColor.error),
               _tile("Today's Loan", currencyFormat.format(provider.todayLoanAmount), LucideIcons.calendarDays),
               const SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text("Select Borrower", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-                  if (selectedLoans.isNotEmpty)
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: ElevatedButton.icon(
-                        onPressed: () => _showPayAllDialog(context, selectedLoans),
-                        icon: const Icon(LucideIcons.checkCircle, color: AppColor.surface),
-                        label: const Text("Pay All Loans"),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColor.success,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              SlideInUp(
+                duration: const Duration(milliseconds: 600),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          "Select Borrower",
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                         ),
-                      ),
+                        if (selectedLoans.isNotEmpty)
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: ElevatedButton.icon(
+                              onPressed: () => _showPayAllDialog(context, selectedLoans),
+                              icon: const Icon(LucideIcons.checkCircle, color: AppColor.surface),
+                              label: const Text("Pay All Loans"),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColor.success,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              DropdownButtonFormField<String>(
-                value: _selectedBorrowerName,
-                isExpanded: true,
-                decoration: InputDecoration(
-                  hintText: "Choose name...",
-                  filled: true,
-                  fillColor: AppColor.surface,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    const SizedBox(height: 10),
+
+                    DropdownButtonFormField<String>(
+                      value: _selectedBorrowerName,
+                      isExpanded: true,
+                      decoration: InputDecoration(
+                        hintText: "Choose name...",
+                        filled: true,
+                        fillColor: AppColor.surface,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      items: borrowerNames
+                          .map((name) => DropdownMenuItem(
+                        value: name,
+                        child: Text(name),
+                      ))
+                          .toList(),
+                      onChanged: (name) {
+                        setState(() => _selectedBorrowerName = name);
+                      },
+                    ),
+                    const SizedBox(height: 20),
+
+                    if (_selectedBorrowerName == null)
+                      _emptyState()
+                    else if (selectedLoans.isEmpty)
+                      _noLoansState()
+                    else ...[
+                        ...selectedLoans.map((loan) => _buildLoanCard(loan, borrowerNames, provider)),
+                        const SizedBox(height: 16),
+                      ],
+                  ],
                 ),
-                items: borrowerNames.map((name) => DropdownMenuItem(value: name, child: Text(name))).toList(),
-                onChanged: (name) {
-                  setState(() => _selectedBorrowerName = name);
-                },
               ),
-              const SizedBox(height: 10),
-              const SizedBox(height: 20),
-              if (_selectedBorrowerName == null)
-                _emptyState()
-              else if (selectedLoans.isEmpty)
-                _noLoansState()
-              else ...[
-                  ...selectedLoans.map((loan) => _buildLoanCard(loan,borrowerNames,provider)),
-                  const SizedBox(height: 16),
-                ],
+
             ],
           ),
         ),
       ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: ElevatedButton.icon(
-          onPressed:  () => _showAddLoanDialog(context),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColor.primary,
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-          icon: const Icon(LucideIcons.plusCircle, color: AppColor.surface, size: 20),
-          label: const Text(
-            "Add Loan Entry",
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: AppColor.surface,
+      bottomNavigationBar: SlideInUp(
+        duration: const Duration(milliseconds: 500),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: ElevatedButton.icon(
+            onPressed: () => _showAddLoanDialog(context),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColor.primary,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            icon: const Icon(LucideIcons.plusCircle, color: AppColor.surface, size: 20),
+            label: const Text(
+              "Add Loan Entry",
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: AppColor.surface,
+              ),
             ),
           ),
         ),
       ),
+
 
     );
 
