@@ -4,6 +4,7 @@ import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:paninda/View/Components/Alert/custom_confirm_dialog.dart';
+import 'package:paninda/View/Components/Custom/activation_subtitle_widget.dart';
 import 'package:paninda/View/Components/Custom/custom_btn.dart';
 import 'package:paninda/View_Model/TabProvider.dart';
 import 'package:provider/provider.dart';
@@ -130,11 +131,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           const SizedBox(height: 12),
                           Container(
                             padding: const EdgeInsets.all(14),
-                            decoration: BoxDecoration(
-                              color: Colors.amber.shade50,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.amber.shade200),
-                            ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -155,63 +151,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   ],
                                 ),
                                 const SizedBox(height: 12),
-                                Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Icon(LucideIcons.wallet, color: Colors.amber, size: 20),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          const Text(
-                                            "Need Full Access?",
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.black87,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 6),
-                                          const Text(
-                                            "To continue enjoying all features or to upgrade to a paid plan anytime, please contact us through our official Facebook page:",
-                                            style: TextStyle(fontSize: 13, color: Colors.black87, height: 1.4),
-                                          ),
-
-                                          const SizedBox(height: 8),
-                                          Row(
-                                            children: [
-                                              const Expanded(
-                                                child:SelectableText(
-                                                  "📩 Facebook Page: Curib Tech\n💬 Copy and send this message on our page: Mobile Paninda POS and Inventory App Payment",
-                                                  style: TextStyle(
-                                                    fontSize: 13,
-                                                    color: Colors.blueAccent,
-                                                    fontWeight: FontWeight.w600,
-                                                  ),
-                                                ),
-
-                                              ),
-                                              IconButton(
-                                                icon: const Icon(Icons.copy, size: 18, color: Colors.blueAccent),
-                                                tooltip: "Copy",
-                                                onPressed: () {
-                                                  Clipboard.setData(const ClipboardData(
-                                                    text: "Curib Tech - Mobile Paninda POS and Inventory App Payment",
-                                                  ));
-                                                  ScaffoldMessenger.of(context).showSnackBar(
-                                                    const SnackBar(
-                                                      content: Text("Payment contact copied to clipboard!"),
-                                                    ),
-                                                  );
-                                                },
-                                              ),
-                                            ],
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                                ActivationSubtitleWidget()
                               ],
                             ),
                           ),

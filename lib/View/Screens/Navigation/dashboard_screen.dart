@@ -314,7 +314,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Padding(
                     padding: const EdgeInsets.only(top: 12),
                     child: Text(
-                      "🎁 You’re enjoying a Free Trial — ${trialInfo['remainingDays']} day(s) left!\nUnlock full access anytime to keep your progress safe.",
+                      "🎁 You’re enjoying a Free Trial — ${trialInfo['remainingDays']} day(s) left!\nUnlock lifetime access anytime to keep your progress safe.",
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: getResponsiveFontSize(context, 11),

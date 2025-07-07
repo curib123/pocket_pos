@@ -10,6 +10,8 @@ import 'package:paninda/Model/product_model.dart';
 import 'package:paninda/View_Model/AuthPaymentProvider.dart';
 import 'package:paninda/View_Model/CurrencyProvider.dart';
 import 'package:paninda/View_Model/LoanPersonProvider.dart';
+import 'package:paninda/View_Model/PaymentGuideProvider.dart';
+import 'package:paninda/View_Model/PaymentProvider.dart';
 import 'package:paninda/View_Model/ProductProvider.dart';
 import 'package:paninda/View_Model/StoreCategoryProvider.dart';
 import 'package:paninda/View_Model/TabProvider.dart';
@@ -49,6 +51,8 @@ Future<void> main() async {
           ChangeNotifierProvider(create: (_) => StoreCategoryProvider()),
           ChangeNotifierProvider(create: (_) => CurrencyProvider()),
           ChangeNotifierProvider(create: (_) => AuthPaymentProvider()),
+          ChangeNotifierProvider(create: (_) => PaymentProvider()),
+          ChangeNotifierProvider(create: (_) => PaymentGuideProvider ()),
         ],
         child: const MyApp(),
       ),

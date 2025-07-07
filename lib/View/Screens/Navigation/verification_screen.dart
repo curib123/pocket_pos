@@ -1,3 +1,4 @@
+// ✅ Clean UX: Removed Button Subtitles
 import 'package:flutter/material.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:paninda/View_Model/LoanPersonProvider.dart';
@@ -15,16 +16,22 @@ class VerificationStatusCard extends StatefulWidget {
   final VoidCallback onPressed;
   final Duration animationDuration;
 
-  // Optional Second Button (Reusable)
+  // Optional Second Button
   final IconData? secondButtonIcon;
   final String? secondButtonText;
   final Color? secondButtonColor;
   final VoidCallback? secondButtonOnPressed;
-  final String? secondButtonSubtitle;
 
-  // New parameters for button visibility
+  // Optional Third Button
+  final IconData? thirdButtonIcon;
+  final String? thirdButtonText;
+  final Color? thirdButtonColor;
+  final VoidCallback? thirdButtonOnPressed;
+
+  // Button Visibility
   final bool showPrimaryButton;
   final bool showSecondButton;
+  final bool showThirdButton;
 
   const VerificationStatusCard({
     super.key,
@@ -41,9 +48,13 @@ class VerificationStatusCard extends StatefulWidget {
     this.secondButtonText,
     this.secondButtonColor,
     this.secondButtonOnPressed,
-    this.secondButtonSubtitle,
+    this.thirdButtonIcon,
+    this.thirdButtonText,
+    this.thirdButtonColor,
+    this.thirdButtonOnPressed,
     this.showPrimaryButton = true,
     this.showSecondButton = true,
+    this.showThirdButton = false,
   });
 
   @override
@@ -68,9 +79,9 @@ class _VerificationStatusCardState extends State<VerificationStatusCard> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+      padding: const EdgeInsets.symmetric(horizontal: 10.0),
       child: Container(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
@@ -82,114 +93,129 @@ class _VerificationStatusCardState extends State<VerificationStatusCard> {
             ),
           ],
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            FadeIn(
-              duration: widget.animationDuration,
-              child: Container(
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      widget.mainColor.withOpacity(0.2),
-                      widget.mainColor.withOpacity(0.05),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              FadeIn(
+                duration: widget.animationDuration,
+                child: Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        widget.mainColor.withOpacity(0.2),
+                        widget.mainColor.withOpacity(0.05),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    shape: BoxShape.circle,
                   ),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  widget.statusIcon,
-                  size: 60,
-                  color: widget.mainColor,
+                  child: Icon(
+                    widget.statusIcon,
+                    size: 60,
+                    color: widget.mainColor,
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 20),
-            FadeIn(
-              duration: widget.animationDuration,
-              child: Text(
-                widget.title,
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: widget.mainColor,
+              const SizedBox(height: 20),
+              FadeIn(
+                duration: widget.animationDuration,
+                child: Text(
+                  widget.title,
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: widget.mainColor,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                textAlign: TextAlign.center,
               ),
-            ),
-            const SizedBox(height: 12),
-            FadeIn(
-              duration: widget.animationDuration,
-              child: widget.subtitleWidget,
-            ),
-            const SizedBox(height: 28),
-            FadeIn(
-              duration: widget.animationDuration,
-              child: Column(
-                children: [
-                  if (widget.showPrimaryButton) ...[
-                    ElevatedButton.icon(
-                      onPressed: widget.onPressed,
-                      icon: Icon(widget.buttonIcon, color: Colors.white, size: 20),
-                      label: Text(
-                        widget.buttonText,
-                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: widget.mainColor,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
+              const SizedBox(height: 12),
+              FadeIn(
+                duration: widget.animationDuration,
+                child: widget.subtitleWidget,
+              ),
+              const SizedBox(height: 28),
+              FadeIn(
+                duration: widget.animationDuration,
+                child: Column(
+                  children: [
+                    if (widget.showThirdButton &&
+                        widget.thirdButtonIcon != null &&
+                        widget.thirdButtonText != null &&
+                        widget.thirdButtonColor != null &&
+                        widget.thirdButtonOnPressed != null) ...[
+                      ElevatedButton.icon(
+                        onPressed: widget.thirdButtonOnPressed,
+                        icon: Icon(widget.thirdButtonIcon, color: Colors.white, size: 20),
+                        label: Text(
+                          widget.thirdButtonText!,
+                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
                         ),
-                        elevation: 4,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: widget.thirdButtonColor,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          elevation: 4,
+                        ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 14),
+                    ],
 
-                  if (widget.showSecondButton &&
-                      !widget.isSuccess &&
-                      widget.secondButtonIcon != null &&
-                      widget.secondButtonText != null &&
-                      widget.secondButtonColor != null &&
-                      widget.secondButtonOnPressed != null) ...[
-                    const SizedBox(height: 14),
-                    ElevatedButton.icon(
-                      onPressed: widget.secondButtonOnPressed,
-                      icon: Icon(widget.secondButtonIcon, color: Colors.white, size: 20),
-                      label: Text(
-                        widget.secondButtonText!,
-                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: widget.secondButtonColor,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
+                    if (widget.showSecondButton &&
+                        widget.secondButtonIcon != null &&
+                        widget.secondButtonText != null &&
+                        widget.secondButtonColor != null &&
+                        widget.secondButtonOnPressed != null) ...[
+                      ElevatedButton.icon(
+                        onPressed: widget.secondButtonOnPressed,
+                        icon: Icon(widget.secondButtonIcon, color: Colors.white, size: 20),
+                        label: Text(
+                          widget.secondButtonText!,
+                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
                         ),
-                        elevation: 4,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: widget.secondButtonColor,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          elevation: 4,
+                        ),
                       ),
-                    ),
-                    if (widget.secondButtonSubtitle != null) ...[
-                      const SizedBox(height: 6),
-                      Text(
-                        widget.secondButtonSubtitle!,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: Colors.black54,
+                      const SizedBox(height: 14),
+                    ],
+
+                    if (widget.showPrimaryButton) ...[
+                      ElevatedButton.icon(
+                        onPressed: widget.onPressed,
+                        icon: Icon(widget.buttonIcon, color: Colors.white, size: 20),
+                        label: Text(
+                          widget.buttonText,
+                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: widget.mainColor,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          elevation: 4,
                         ),
                       ),
                     ],
                   ],
-                ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
