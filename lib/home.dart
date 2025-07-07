@@ -48,7 +48,7 @@ class _HomeState extends State<Home> {
 
       // ✅ Priority 1: Payment Verification
       if (latestPayment.isNotEmpty &&
-          latestPayment['payment_status'].toString().isNotEmpty) {
+          latestPayment['payment_status'].toString().isNotEmpty &&  latestPayment['payment_status'].toString() != "approved") {
         _startScreen = HandlePaymentVerification(latestPayment: latestPayment, paymentProofPublicUrl: paymentProofPublicUrl,);
       }
       // ✅ Priority 2: First-Time User Check
