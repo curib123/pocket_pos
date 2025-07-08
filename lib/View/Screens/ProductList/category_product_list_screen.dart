@@ -121,7 +121,7 @@ class _CategoryProductListScreenState extends State<CategoryProductListScreen> {
                             },
                             child: Container(
                               decoration: BoxDecoration(
-                                color: AppColor.accent.withOpacity(0.05),
+                                color: color.withOpacity(0.05),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               padding: const EdgeInsets.all(10),
