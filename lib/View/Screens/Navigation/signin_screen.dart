@@ -148,7 +148,7 @@ class _SigninScreenState extends State<SigninScreen> {
                                       cancelText: "Close",
                                       confirmText: "Continue",
                                       onConfirm: () async {
-                                       await handleActivationCheck(context);
+                                       Phoenix.rebirth(context);
                                       },
                                     ),
                                   );

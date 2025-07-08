@@ -6,6 +6,8 @@ import 'package:animate_do/animate_do.dart';
 import 'package:paninda/View/Components/Alert/custom_confirm_dialog.dart';
 import 'package:paninda/View/Components/Custom/activation_subtitle_widget.dart';
 import 'package:paninda/View/Components/Custom/custom_btn.dart';
+import 'package:paninda/View/Screens/Navigation/payment_form_screen.dart';
+import 'package:paninda/View_Model/PaymentProvider.dart';
 import 'package:paninda/View_Model/TabProvider.dart';
 import 'package:provider/provider.dart';
 import 'package:paninda/View/Components/HelperClass/AppColor.dart';
@@ -151,7 +153,42 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   ],
                                 ),
                                 const SizedBox(height: 12),
-                                ActivationSubtitleWidget()
+                                ActivationSubtitleWidget(),
+                                const SizedBox(height: 12),
+                                Consumer3<AuthPaymentProvider, TabProvider, PaymentProvider>(
+                                  builder: (context, authPaymentProvider, tabProvider, paymentProvider, _) {
+                                    return FadeInUp(
+                                      duration: const Duration(milliseconds: 500),
+                                      child: CustomButton(
+                                        color: AppColor.success,
+                                        label: "Unlock Lifetime Access Now",
+                                        onPressed: () {
+                                          showDialog(
+                                            context: context,
+                                            builder: (_) => FadeInDown(
+                                              duration: const Duration(milliseconds: 400),
+                                              child: CustomConfirmDialog(
+                                                title: "Confirm Purchase",
+                                                content:
+                                                "You’re about to unlock lifetime access. Continue to manual payment form?",
+                                                onConfirm: () {
+                                                  Navigator.pop(context); // Close dialog
+                                                  Navigator.push(
+                                                    context,
+                                                    MaterialPageRoute(
+                                                      builder: (context) => PaymentFormScreen(),
+                                                    ),
+                                                  );
+                                                },
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    );
+                                  },
+                                ),
+
                               ],
                             ),
                           ),

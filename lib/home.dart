@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-
+import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:paninda/View/Components/Core/bottom_navigation.dart';
-import 'package:paninda/View/Components/Custom/handle_payment_verification.dart';
 import 'package:paninda/View/Components/Custom/handleActivationCheck.dart';
+import 'package:paninda/View/Components/Custom/handle_payment_verification.dart';
 import 'package:paninda/View/Components/HelperClass/CheckTrialExpired.dart';
 import 'package:paninda/View/Screens/Navigation/signin_screen.dart';
 import 'package:paninda/View_Model/AuthPaymentProvider.dart';
 import 'package:paninda/View_Model/PaymentProvider.dart';
 import 'package:paninda/View_Model/TabProvider.dart';
+import 'package:provider/provider.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -24,49 +24,48 @@ class _HomeState extends State<Home> {
   @override
   void initState() {
     super.initState();
-    _initApp();
+    _initializeApp();
     checkIfTrialExpired(context);
   }
 
-  /// ✅ Initialize App State & Determine Initial Screen
-  Future<void> _initApp() async {
+  Future<void> _initializeApp() async {
     try {
       final tabProvider = Provider.of<TabProvider>(context, listen: false);
-      final authPaymentProvider = Provider.of<AuthPaymentProvider>(context, listen: false);
       final paymentProvider = Provider.of<PaymentProvider>(context, listen: false);
+      final authPaymentProvider = Provider.of<AuthPaymentProvider>(context, listen: false);
 
       await tabProvider.loadFirstTimeStatus();
       await paymentProvider.fetchPayments();
 
-     final Map<String, dynamic>  latestPayment = paymentProvider.payments.isNotEmpty
-          ? paymentProvider.payments.first
-          : {};
+      final latestPayment = paymentProvider.payments.isNotEmpty
+          ? Map<String, dynamic>.from(paymentProvider.payments.first)
+          : <String, dynamic>{};
 
-      print(  latestPayment['payment_status'].toString());
-      final paymentProofPublicUrl = paymentProvider.getLatestPaymentProofUrl();
-
-
-      // ✅ Priority 1: Payment Verification
       if (latestPayment.isNotEmpty &&
-          latestPayment['payment_status'].toString().isNotEmpty &&  latestPayment['payment_status'].toString() != "approved") {
-        _startScreen = HandlePaymentVerification(latestPayment: latestPayment, paymentProofPublicUrl: paymentProofPublicUrl,);
-      }
-      // ✅ Priority 2: First-Time User Check
-      else if (tabProvider.isFirstTime) {
+          (latestPayment['payment_status']?.toString().isNotEmpty ?? false) &&
+          latestPayment['payment_status'].toString() != "approved") {
+        final paymentProofPublicUrl = paymentProvider.getLatestPaymentProofUrl();
+        _startScreen = HandlePaymentVerification(
+          latestPayment: latestPayment,
+          paymentProofPublicUrl: paymentProofPublicUrl,
+        );
+      } else if (tabProvider.isFirstTime) {
         final userDetails = await authPaymentProvider.readUserDetails();
         final email = userDetails['email'];
 
-        if (email == null || email.isEmpty) {
+        if (email == null || email.toString().isEmpty) {
           _startScreen = const SigninScreen();
         } else {
-          final card = await handleActivationCheck(context, isReturn: true);
-          _startScreen = Scaffold(
-            body: Center(child: card),
-          );
+          // ✅ No need to assign a widget; just navigate.
+          if (context.mounted) {
+            await handleActivationCheck(context);
+          }
         }
       }
-    } catch (e) {
-      debugPrint('Error initializing app: $e');
+    } catch (e, stackTrace) {
+      debugPrint('❗ Error during app initialization: $e');
+      debugPrint('$stackTrace');
+      _startScreen = const SigninScreen();
     } finally {
       setState(() {
         _isLoading = false;
@@ -84,19 +83,17 @@ class _HomeState extends State<Home> {
       );
     }
 
-    // ✅ Show First-Time Screen or Payment Verification if available
     if (_startScreen != null) {
       return _startScreen!;
     }
 
-    // ✅ Main App Screen
-    final currentScreen = tabProvider.screens[tabProvider.currentIndex];
-
     return Scaffold(
-      body: currentScreen,
+      body: tabProvider.screens[tabProvider.currentIndex],
       bottomNavigationBar: BottomNavigation(
         currentIndex: tabProvider.currentIndex,
-        onTabSelected: (index) => tabProvider.setTab(index),
+        onTabSelected: (index) {
+          tabProvider.setTab(index);
+        },
       ),
     );
   }

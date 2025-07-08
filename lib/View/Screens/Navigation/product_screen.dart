@@ -223,7 +223,7 @@ class _ProductScreenState extends State<ProductScreen> {
                                   final isHidden = storeCategoryProvider.isHidden(category);
 
                                   return FadeInLeft(
-                                    duration: Duration(milliseconds: 300 + (index * 100)),
+                                    duration: Duration(milliseconds: 300),
                                     child: Slidable(
                                       key: ValueKey(category),
                                       startActionPane: isHidden
