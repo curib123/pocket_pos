@@ -130,7 +130,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                         },
                         child: Container(
                           decoration: BoxDecoration(
-                            color: AppColor.accent.withOpacity(0.1),
+                            color: AppColor.accent.withOpacity(0.05),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           padding: const EdgeInsets.all(10),
@@ -162,7 +162,6 @@ class _ProductListScreenState extends State<ProductListScreen> {
                                         fontSize: 14,
                                         color: AppColor.textPrimary,
                                       ),
-                                      maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
                                       textAlign: TextAlign.center,
                                     ),
@@ -274,7 +273,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
       width: _isGridView ? double.infinity : 90,
       height: 100,
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withOpacity(0.06),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Icon(Icons.image_not_supported, color: color),

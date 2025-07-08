@@ -63,7 +63,7 @@ class CustomSearchDelegate extends SearchDelegate {
         final color = StoreCategory.colors[product.category] ?? Colors.grey;
 
         return SlideInUp(
-          duration: Duration(milliseconds: 500 + (index * 200)), // slight stagger per item
+          duration: Duration(milliseconds: 500), // slight stagger per item
           child: Container(
             margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             decoration: BoxDecoration(

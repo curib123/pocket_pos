@@ -8,7 +8,6 @@ import 'package:paninda/View_Model/AuthPaymentProvider.dart';
 import 'package:paninda/View_Model/CurrencyProvider.dart';
 import 'package:paninda/View_Model/LoanPersonProvider.dart';
 import 'package:paninda/View_Model/ProductProvider.dart';
-import 'package:paninda/View_Model/TabProvider.dart';
 import 'package:provider/provider.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:paninda/View/Components/HelperClass/AppColor.dart';
@@ -368,8 +367,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
 
   Widget _buildLowStockSection(ProductProvider provider) {
-    final lowStockProducts = provider.products.where((p) => provider.isStockLow(p.id, 10)).toList();
+    final lowStockProducts = provider.products
+        .where((p) => provider.isStockLow(p.id, 10))
+        .toList();
     if (lowStockProducts.isEmpty) return const SizedBox();
+
+    // ✅ Fix here:
+    if (_selectedLowStockProduct == null ||
+        !lowStockProducts.any((p) => p.id == _selectedLowStockProduct!.id)) {
+      _selectedLowStockProduct = lowStockProducts.first;
+    } else {
+      _selectedLowStockProduct = lowStockProducts.firstWhere(
+              (p) => p.id == _selectedLowStockProduct!.id);
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -398,6 +408,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+
   Widget _dashboardGroup(String title, List<Widget> tiles, {IconData? icon, Color? iconColor}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -409,12 +420,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: Row(
             children: [
               if (icon != null)
-                Icon(icon, color: iconColor ?? AppColor.primary, size: 22),
-              if (icon != null) const SizedBox(width: 10),
+                Icon(icon, color: iconColor ?? AppColor.primary, size: 23),
+              if (icon != null) const SizedBox(width: 15),
               Text(
                 title,
-                style: const TextStyle(
-                  fontSize: 17,
+                style:  TextStyle(
+                  fontSize: getResponsiveFontSize(context, 18),
                   fontWeight: FontWeight.w700,
                   color: AppColor.textPrimary,
                 ),
@@ -470,7 +481,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 duration: const Duration(milliseconds: 500),
                 child: Text(
                   title,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: AppColor.textPrimary),
+                  style:  TextStyle(fontSize: getResponsiveFontSize(context, 14), fontWeight: FontWeight.w500, color: AppColor.textPrimary),
                 ),
               ),
             ),
@@ -478,7 +489,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               duration: const Duration(milliseconds: 600),
               child: Text(
                 value,
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: iconColor),
+                style: TextStyle(fontSize: getResponsiveFontSize(context, 14), fontWeight: FontWeight.bold, color: iconColor),
               ),
             ),
           ],
@@ -514,7 +525,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 const SizedBox(width: 8),
                 Text(
                   "Batch Created: ${batch['date']}",
-                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                  style:  TextStyle(fontWeight: FontWeight.w600, fontSize: getResponsiveFontSize(context, 12)),
                 ),
               ],
             ),

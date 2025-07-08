@@ -118,7 +118,7 @@ class _CategoryProductListScreenState extends State<CategoryProductListScreen> {
                         },
                         child: Container(
                           decoration: BoxDecoration(
-                            color: color.withOpacity(0.1),
+                            color: color.withOpacity(0.05),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           padding: const EdgeInsets.all(10),
@@ -131,7 +131,7 @@ class _CategoryProductListScreenState extends State<CategoryProductListScreen> {
                                     ? Image.file(
                                   File(imageUrl),
                                   width: double.infinity,
-                                  height: 90,
+                                  height: 100,
                                   fit: BoxFit.cover,
                                   key: ValueKey(product.imageUrl),
                                 )
@@ -149,7 +149,6 @@ class _CategoryProductListScreenState extends State<CategoryProductListScreen> {
                                         fontSize: 14,
                                         color: AppColor.textPrimary,
                                       ),
-                                      maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
                                       textAlign: TextAlign.center,
                                     ),
@@ -259,7 +258,7 @@ class _CategoryProductListScreenState extends State<CategoryProductListScreen> {
       width: _isGridView ? double.infinity :90,
       height: 100,
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withOpacity(0.06),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Icon(Icons.image_not_supported, color: color),

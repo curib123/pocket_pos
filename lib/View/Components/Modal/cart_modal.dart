@@ -101,7 +101,7 @@ class _ProductProfileContentState extends State<_ProductProfileContent> {
                           children: [
                             Text(
                               product.name,
-                              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: AppColor.textPrimary),
+                              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: AppColor.textPrimary,overflow: TextOverflow.ellipsis),
                             ),
                             IconButton(
                               icon: const Icon(Icons.delete_rounded, color: AppColor.errorText),

@@ -1,4 +1,6 @@
 
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:provider/provider.dart';
@@ -191,7 +193,7 @@ class _CartListContentState extends State<_CartListContent> {
     kiloControllers.putIfAbsent(product.id, () => TextEditingController(text: '1'));
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 20),
+      margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
         color: AppColor.surface,
         borderRadius: BorderRadius.circular(16),
@@ -212,14 +214,14 @@ class _CartListContentState extends State<_CartListContent> {
               ClipRRect(
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
                 child: product.imageUrl.isNotEmpty
-                    ? Image.asset(
-                  product.imageUrl,
-                  height: 160,
-                  width: double.infinity,
+                    ? Image.file(
+                  File(product.imageUrl), // ✅ Use File for local file paths
+                  height: 100,
+                  width: double.infinity, // ✅ Consistent width
                   fit: BoxFit.cover,
                 )
                     : Container(
-                  height: 160,
+                  height: 100,
                   width: double.infinity,
                   color: Colors.grey.shade200,
                   alignment: Alignment.center,
@@ -227,7 +229,7 @@ class _CartListContentState extends State<_CartListContent> {
                 ),
               ),
               Positioned(
-                bottom: 10,
+                bottom: 5,
                 right: 12,
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -245,7 +247,7 @@ class _CartListContentState extends State<_CartListContent> {
           ),
 
           Padding(
-            padding: const EdgeInsets.all(18),
+            padding: const EdgeInsets.all(0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -275,11 +277,11 @@ class _CartListContentState extends State<_CartListContent> {
                   ],
                 ),
 
-                const SizedBox(height: 14),
+                const SizedBox(height: 5),
 
                 // Choice Chips
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -296,7 +298,7 @@ class _CartListContentState extends State<_CartListContent> {
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      const SizedBox(width: 10),
+                      const SizedBox(width: 15),
                       ChoiceChip(
                         label: const Text("Kilo"),
                         selected: selectedMode == 1,
@@ -318,8 +320,6 @@ class _CartListContentState extends State<_CartListContent> {
                     ],
                   ),
                 ),
-
-                const SizedBox(height: 16),
 
                 // Quantity or Kilo
                 selectedMode == 0
