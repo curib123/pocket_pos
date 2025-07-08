@@ -5,26 +5,22 @@ import 'package:paninda/View_Model/CurrencyProvider.dart';
 import 'package:provider/provider.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:paninda/View/Components/HelperClass/AppColor.dart';
-import 'package:paninda/View/Components/HelperClass/StoreCategory.dart';
 import 'package:paninda/View/Components/Modal/cart_modal.dart';
 import 'package:paninda/View_Model/ProductProvider.dart';
 
-class CategoryProductListScreen extends StatefulWidget {
-  final String category;
-
-  const CategoryProductListScreen({super.key, required this.category});
+class ProductListScreen extends StatefulWidget {
+  const ProductListScreen({super.key});
 
   @override
-  State<CategoryProductListScreen> createState() => _CategoryProductListScreenState();
+  State<ProductListScreen> createState() => _ProductListScreenState();
 }
 
-class _CategoryProductListScreenState extends State<CategoryProductListScreen> {
+class _ProductListScreenState extends State<ProductListScreen> {
   String _searchQuery = '';
   bool _isGridView = true;
 
   @override
   Widget build(BuildContext context) {
-    final color = StoreCategory.colors[widget.category] ?? Colors.grey;
     final currencyFormat = context.read<CurrencyProvider>().currencyFormat;
 
     return Scaffold(
@@ -33,11 +29,11 @@ class _CategoryProductListScreenState extends State<CategoryProductListScreen> {
           onTap: () => Navigator.pop(context),
           child: const Icon(Icons.arrow_back_ios, color: AppColor.surface),
         ),
-        title: Text(widget.category),
-        backgroundColor: color,
+        title: const Text('All Products'),
+        backgroundColor: AppColor.accent,
         foregroundColor: Colors.white,
         actions: [
-          ShoppingCartAnimatedwidget(iconColor: AppColor.surface,),
+          ShoppingCartAnimatedwidget(iconColor: AppColor.surface),
           const SizedBox(width: 12),
         ],
       ),
@@ -56,7 +52,8 @@ class _CategoryProductListScreenState extends State<CategoryProductListScreen> {
                         prefixIcon: const Icon(Icons.search),
                         filled: true,
                         fillColor: Colors.grey[100],
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide.none,
@@ -78,7 +75,7 @@ class _CategoryProductListScreenState extends State<CategoryProductListScreen> {
                     },
                     icon: Icon(
                       _isGridView ? Icons.layers_rounded : Icons.dashboard_rounded,
-                      color: color,
+                      color: AppColor.accent,
                     ),
                   ),
                 ],
@@ -88,9 +85,12 @@ class _CategoryProductListScreenState extends State<CategoryProductListScreen> {
           Expanded(
             child: Consumer<ProductProvider>(
               builder: (context, provider, _) {
-                final filtered = provider.getProductsByCategory(widget.category).where((p) {
-                  return p.name.toLowerCase().contains(_searchQuery.toLowerCase());
-                }).toList();
+
+                final filtered = provider.products
+                    .where((p) => p.name.toLowerCase().contains(_searchQuery.toLowerCase()))
+                    .take(40)
+                    .toList();
+
 
                 if (filtered.isEmpty) {
                   return const Center(child: Text('No products found.'));
@@ -103,7 +103,7 @@ class _CategoryProductListScreenState extends State<CategoryProductListScreen> {
                     crossAxisCount: 2,
                     crossAxisSpacing: 10,
                     mainAxisSpacing: 10,
-                    childAspectRatio: 1, // Adjust to your preferred height
+                    childAspectRatio: 1,
                   ),
                   itemCount: filtered.length,
                   itemBuilder: (context, index) {
@@ -118,7 +118,7 @@ class _CategoryProductListScreenState extends State<CategoryProductListScreen> {
                         },
                         child: Container(
                           decoration: BoxDecoration(
-                            color: color.withOpacity(0.1),
+                            color: AppColor.accent.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           padding: const EdgeInsets.all(10),
@@ -127,7 +127,8 @@ class _CategoryProductListScreenState extends State<CategoryProductListScreen> {
                             children: [
                               ClipRRect(
                                 borderRadius: BorderRadius.circular(8),
-                                child: imageUrl.isNotEmpty && File(imageUrl).existsSync()
+                                child: imageUrl.isNotEmpty &&
+                                    File(imageUrl).existsSync()
                                     ? Image.file(
                                   File(imageUrl),
                                   width: double.infinity,
@@ -135,7 +136,7 @@ class _CategoryProductListScreenState extends State<CategoryProductListScreen> {
                                   fit: BoxFit.cover,
                                   key: ValueKey(product.imageUrl),
                                 )
-                                    : _placeholderIcon(color),
+                                    : _placeholderIcon(AppColor.accent),
                               ),
                               const SizedBox(height: 8),
                               Expanded(
@@ -180,7 +181,6 @@ class _CategoryProductListScreenState extends State<CategoryProductListScreen> {
                     );
                   },
                 )
-
                     : ListView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   itemCount: filtered.length,
@@ -193,11 +193,13 @@ class _CategoryProductListScreenState extends State<CategoryProductListScreen> {
                       child: Container(
                         margin: const EdgeInsets.symmetric(vertical: 5),
                         child: ListTile(
-                          tileColor: color.withOpacity(0.1),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          tileColor: AppColor.accent.withOpacity(0.1),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10)),
                           leading: ClipRRect(
                             borderRadius: BorderRadius.circular(8),
-                            child: imageUrl.isNotEmpty && File(imageUrl).existsSync()
+                            child: imageUrl.isNotEmpty &&
+                                File(imageUrl).existsSync()
                                 ? Image.file(
                               File(imageUrl),
                               width: 48,
@@ -205,7 +207,7 @@ class _CategoryProductListScreenState extends State<CategoryProductListScreen> {
                               fit: BoxFit.cover,
                               key: ValueKey(product.imageUrl),
                             )
-                                : _placeholderIcon(color),
+                                : _placeholderIcon(AppColor.accent),
                           ),
                           title: Text(
                             product.name,
@@ -237,7 +239,8 @@ class _CategoryProductListScreenState extends State<CategoryProductListScreen> {
                               ],
                             ),
                           ),
-                          trailing: const Icon(Icons.chevron_right, color: AppColor.textSecondary),
+                          trailing: const Icon(Icons.chevron_right,
+                              color: AppColor.textSecondary),
                           onTap: () {
                             CartModal.show(context, product);
                           },
@@ -256,7 +259,7 @@ class _CategoryProductListScreenState extends State<CategoryProductListScreen> {
 
   Widget _placeholderIcon(Color color) {
     return Container(
-      width: _isGridView ? double.infinity :90,
+      width: _isGridView ? double.infinity : 90,
       height: 120,
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),

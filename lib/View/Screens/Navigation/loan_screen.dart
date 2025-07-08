@@ -48,11 +48,7 @@ class _LoanScreenState extends State<LoanScreen> {
         : provider.getLoansByName(_selectedBorrowerName!).where((e) => !e.isPaid).toList();
 
     return Scaffold(
-      appBar: ScalableAppBar(
-        isTitle: false,
-        showSearchBar: true,
-        title: "Loan",
-      ),
+     appBar: ScalableAppBar(),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),

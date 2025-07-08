@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:paninda/View/Screens/Navigation/ProductListScreen.dart';
 import 'package:paninda/View_Model/LoanPersonProvider.dart';
 import 'package:provider/provider.dart';
 import 'package:animate_do/animate_do.dart';
@@ -45,11 +46,7 @@ class _ProductScreenState extends State<ProductScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: ScalableAppBar(
-        isTitle: false,
-        showSearchBar: true,
-        title: "Product",
-      ),
+      appBar: ScalableAppBar(),
       body: Stack(
         children: [
           Padding(
@@ -321,19 +318,39 @@ class _ProductScreenState extends State<ProductScreen> {
           /// Add Product Button with animation
           Align(
             alignment: Alignment.bottomCenter,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
-              child: FadeInUp(
-                duration: const Duration(milliseconds: 500),
-                child: CustomButton(
-                  color: AppColor.primary,
-                  icon: LucideIcons.plusCircle,
-                  label: "Add Product / Restock",
-                  onPressed: () => AddProductModal.show(context,isStock: false,isEdit: false),
+            child: FadeInUp(
+              duration: const Duration(milliseconds: 500),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CustomButton(
+                      color: AppColor.primary,
+                      icon: LucideIcons.plusCircle,
+                      label: "Add New Product",
+                      onPressed: () => AddProductModal.show(context, isStock: false, isEdit: false),
+                    ),
+                    const SizedBox(height: 10),
+                    CustomButton(
+                      color: AppColor.accent,
+                      icon: LucideIcons.box,
+                      label: "View All Product",
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const ProductListScreen()),
+                        );
+                      },
+                    ),
+                  ],
                 ),
               ),
             ),
           ),
+
+
+
         ],
       ),
     );

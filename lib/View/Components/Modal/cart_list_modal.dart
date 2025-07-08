@@ -1,16 +1,13 @@
-// FULLY FIXED AND FINALIZED CART LIST MODAL
 
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:provider/provider.dart';
-
 import 'package:paninda/Model/loan_person_model.dart';
 import 'package:paninda/Model/product_model.dart';
 import 'package:paninda/View/Components/Alert/custom_alert_notification.dart';
 import 'package:paninda/View/Components/HelperClass/AppColor.dart';
 import 'package:paninda/View_Model/LoanPersonProvider.dart';
 import 'package:paninda/View_Model/ProductProvider.dart';
-
 import '../../../View_Model/CurrencyProvider.dart';
 
 class CartListModal {
@@ -130,12 +127,12 @@ class _CartListContentState extends State<_CartListContent> {
               _buildDragHandle(),
               _buildPaymentTypeSelector(),
               const SizedBox(height: 24),
-              ...cartItems.keys.map((product) => _buildProductCard(product, productProvider)),
+              ...cartItems.keys.map((product) => _buildRefinedProductCard(product, productProvider)),
               const SizedBox(height: 24),
-              isLoan ? _buildLoanAutocomplete(loanProvider) : _buildTextField(cashController, "Enter Cash Payment", Icons.payments, isNumber: true),
+              isLoan ? _buildLoanAutocomplete(loanProvider) : _buildHighlightedTotalPaymentField(cashController, "Enter Cash Payment", LucideIcons.wallet2, isNumber: true),
               if (!isLoan) _buildChangeIndicator(change),
               const SizedBox(height: 24),
-              _buildSummaryCard(finalTotalPrice, costTotal, profit),
+              _buildFlatSummaryCard(finalTotalPrice, costTotal, profit),
               const SizedBox(height: 20),
               _buildActionButton(
                 label: "Confirm Payment",
@@ -188,142 +185,196 @@ class _CartListContentState extends State<_CartListContent> {
     );
   }
 
-  Widget _buildProductCard(Product product, ProductProvider productProvider) {
+  Widget _buildRefinedProductCard(Product product, ProductProvider productProvider) {
     int selectedMode = selectedModes[product.id] ?? 0;
 
-    // Initialize kilo controller ONCE with default '1'
     kiloControllers.putIfAbsent(product.id, () => TextEditingController(text: '1'));
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      elevation: 1,
-      color: AppColor.surface,
-      child: Padding(
-        padding: const EdgeInsets.all(14.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Product header with delete button
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      decoration: BoxDecoration(
+        color: AppColor.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: AppColor.primary.withOpacity(0.08),
+            blurRadius: 14,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Image with price overlay
+          Stack(
+            children: [
+              ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                child: product.imageUrl.isNotEmpty
+                    ? Image.asset(
+                  product.imageUrl,
+                  height: 160,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                )
+                    : Container(
+                  height: 160,
+                  width: double.infinity,
+                  color: Colors.grey.shade200,
+                  alignment: Alignment.center,
+                  child: const Icon(Icons.image_outlined, size: 48, color: Colors.grey),
+                ),
+              ),
+              Positioned(
+                bottom: 10,
+                right: 12,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.6),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                   child: Text(
-                    product.name,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    "${currencyFormat.format(product.retailPrice)} / ${product.unit}",
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
                   ),
                 ),
-                GestureDetector(
-                  child: Icon(LucideIcons.xCircle, color: AppColor.error),
-                  onTap: () {
-                    setState(() {
-                      productProvider.removeFromCart(product);
-                      quantities.remove(product.id);
-                      kiloControllers.remove(product.id)?.dispose();
-                      selectedModes.remove(product.id);
-                    });
-                  },
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 12),
-
-            Text(
-              "${currencyFormat.format(product.retailPrice)} / ${product.unit}",
-              style: const TextStyle(fontSize: 14),
-            ),
-
-
-            const SizedBox(height: 12),
-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ChoiceChip(
-                  label: const Text("Quantity"),
-                  selected: selectedMode == 0,
-                  onSelected: (val) {
-                    if (val) {
-                      setState(() => selectedModes[product.id] = 0);
-                    }
-                  },
-                  selectedColor: AppColor.primary.withOpacity(0.2),
-                ),
-                const SizedBox(width: 10),
-                ChoiceChip(
-                  label: const Text("Kilo"),
-                  selected: selectedMode == 1,
-                  onSelected: (val) {
-                    if (val) {
-                      setState(() {
-                        selectedModes[product.id] = 1;
-                        // ✅ Reset kilo value to '1' ONLY when switching to Kilo mode
-                        kiloControllers[product.id]?.text = '1';
-                      });
-                    }
-                  },
-                  selectedColor: AppColor.primary.withOpacity(0.2),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 10),
-
-            selectedMode == 0
-                ? Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                IconButton(
-                  icon: Icon(Icons.remove_circle_outline, color: AppColor.errorText),
-                  onPressed: () {
-                    setState(() {
-                      final current = quantities[product.id] ?? 1;
-                      if (current > 1) quantities[product.id] = current - 1;
-                    });
-                  },
-                  splashRadius: 22,
-                ),
-                Text(
-                  '${quantities[product.id] ?? 1}',
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                ),
-                IconButton(
-                  icon: Icon(Icons.add_circle_outline, color: AppColor.primary),
-                  onPressed: () {
-                    setState(() {
-                      final current = quantities[product.id] ?? 1;
-                      quantities[product.id] = current + 1;
-                    });
-                  },
-                  splashRadius: 22,
-                ),
-              ],
-            )
-                : SizedBox(
-              width: double.infinity,
-              child: TextField(
-                controller: kiloControllers[product.id],
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-                decoration: InputDecoration(
-                  hintText: "Enter kilo quantity",
-                  filled: true,
-                  fillColor: Colors.grey.shade100,
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                ),
-                onChanged: (_) => setState(() {}),
               ),
+            ],
+          ),
+
+          Padding(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Product Name & Delete
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        product.name,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: Icon(LucideIcons.trash2, color: AppColor.error),
+                      onPressed: () {
+                        setState(() {
+                          productProvider.removeFromCart(product);
+                          quantities.remove(product.id);
+                          kiloControllers.remove(product.id)?.dispose();
+                          selectedModes.remove(product.id);
+                        });
+                      },
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 14),
+
+                // Choice Chips
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ChoiceChip(
+                        label: const Text("Quantity"),
+                        selected: selectedMode == 0,
+                        onSelected: (val) {
+                          if (val) setState(() => selectedModes[product.id] = 0);
+                        },
+                        selectedColor: AppColor.primary.withOpacity(0.15),
+                        backgroundColor: Colors.transparent,
+                        labelStyle: TextStyle(
+                          color: selectedMode == 0 ? AppColor.primary : Colors.grey.shade600,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      ChoiceChip(
+                        label: const Text("Kilo"),
+                        selected: selectedMode == 1,
+                        onSelected: (val) {
+                          if (val) {
+                            setState(() {
+                              selectedModes[product.id] = 1;
+                              kiloControllers[product.id]?.text = '1';
+                            });
+                          }
+                        },
+                        selectedColor: AppColor.primary.withOpacity(0.15),
+                        backgroundColor: Colors.transparent,
+                        labelStyle: TextStyle(
+                          color: selectedMode == 1 ? AppColor.primary : Colors.grey.shade600,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // Quantity or Kilo
+                selectedMode == 0
+                    ? Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    IconButton(
+                      icon: Icon(Icons.remove_circle_outline, color: AppColor.errorText),
+                      onPressed: () {
+                        setState(() {
+                          final current = quantities[product.id] ?? 1;
+                          if (current > 1) quantities[product.id] = current - 1;
+                        });
+                      },
+                      splashRadius: 24,
+                    ),
+                    Text(
+                      '${quantities[product.id] ?? 1}',
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.add_circle_outline, color: AppColor.primary),
+                      onPressed: () {
+                        setState(() {
+                          final current = quantities[product.id] ?? 1;
+                          quantities[product.id] = current + 1;
+                        });
+                      },
+                      splashRadius: 24,
+                    ),
+                  ],
+                )
+                    : TextField(
+                  controller: kiloControllers[product.id],
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  decoration: InputDecoration(
+                    hintText: "Enter kilo quantity",
+                    filled: true,
+                    fillColor: Colors.grey.shade100,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+                  ),
+                  onChanged: (_) => setState(() {}),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
-
 
 
   Widget _buildDragHandle() {
@@ -342,25 +393,47 @@ class _CartListContentState extends State<_CartListContent> {
 
   Widget _buildPaymentTypeSelector() {
     return Center(
-      child: Wrap(
-        spacing: 12,
-        children: [
-          ChoiceChip(
-            label: const Text("Cash Payment"),
-            selected: !isLoan,
-            onSelected: (_) => setState(() => isLoan = false),
-            selectedColor: AppColor.primary.withOpacity(0.15),
-          ),
-          ChoiceChip(
-            label: const Text("Loan / Credit"),
-            selected: isLoan,
-            onSelected: (_) => setState(() => isLoan = true),
-            selectedColor: AppColor.secondary.withOpacity(0.15),
-          ),
-        ],
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: AppColor.surface,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Wrap(
+          spacing: 14,
+          runSpacing: 10,
+          alignment: WrapAlignment.center,
+          children: [
+            ChoiceChip(
+              label: const Text("Cash Payment"),
+              selected: !isLoan,
+              onSelected: (_) => setState(() => isLoan = false),
+              selectedColor: AppColor.primary.withOpacity(0.15),
+              backgroundColor: Colors.grey.shade100,
+              labelStyle: TextStyle(
+                color: !isLoan ? AppColor.primary : Colors.grey.shade700,
+                fontWeight: FontWeight.w600,
+              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            ChoiceChip(
+              label: const Text("Loan / Credit"),
+              selected: isLoan,
+              onSelected: (_) => setState(() => isLoan = true),
+              selectedColor: AppColor.secondary.withOpacity(0.15),
+              backgroundColor: Colors.grey.shade100,
+              labelStyle: TextStyle(
+                color: isLoan ? AppColor.secondary : Colors.grey.shade700,
+                fontWeight: FontWeight.w600,
+              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+          ],
+        ),
       ),
     );
   }
+
 
   Widget _buildChangeIndicator(double change) {
     return Padding(
@@ -388,26 +461,58 @@ class _CartListContentState extends State<_CartListContent> {
       ),
     );
   }
+  Widget _buildFlatSummaryCard(double total, double cost, double profit) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColor.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200, width: 1),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Highlighted Total Payment
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
+            decoration: BoxDecoration(
+              color: AppColor.accent.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: _buildPriceRow(
+              "Total Price",
+              total,
+              AppColor.accent,
+              isBold: true,
+            ),
+          ),
 
-  Widget _buildSummaryCard(double total, double cost, double profit) {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      elevation: 1,
-      color: AppColor.surface,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-        child: Column(
-          children: [
-            _buildPriceRow("Total Payment", total, AppColor.secondary),
-            const SizedBox(height: 8),
-            _buildPriceRow("Total Cost", cost, AppColor.warning),
-            const Divider(height: 24),
-            _buildPriceRow("Estimated Profit", profit, profit >= 0 ? AppColor.accent : AppColor.error, isBold: true),
-          ],
-        ),
+          const SizedBox(height: 12),
+
+          _buildPriceRow("Total Cost", cost, AppColor.warning),
+
+          const SizedBox(height: 16),
+
+          // Estimated Profit (with profit/loss highlight)
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+            decoration: BoxDecoration(
+              color: profit >= 0 ? Colors.green.withOpacity(0.08) : Colors.red.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: _buildPriceRow(
+              "Estimated Profit",
+              profit,
+              profit >= 0 ? Colors.green : Colors.red,
+              isBold: true,
+            ),
+          ),
+        ],
       ),
     );
   }
+
+
 
   Widget _buildActionButton({
     required String label,
@@ -444,32 +549,41 @@ class _CartListContentState extends State<_CartListContent> {
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String label, IconData icon, {bool isNumber = false}) {
+  Widget _buildHighlightedTotalPaymentField(TextEditingController controller, String label, IconData icon, {bool isNumber = false}) {
     return Padding(
       padding: const EdgeInsets.only(top: 12.0),
-      child: TextField(
-        controller: controller,
-        keyboardType: isNumber ? const TextInputType.numberWithOptions(decimal: true) : TextInputType.text,
-        style: const TextStyle(fontSize: 16),
-        decoration: InputDecoration(
-          labelText: label,
-          prefixIcon: Icon(icon, size: 20, color: AppColor.primary),
-          filled: true,
-          fillColor: Colors.grey.shade100,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.grey.shade300),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: AppColor.primary, width: 1.5),
-          ),
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColor.primary.withOpacity(0.12), // Highlighted background
+          borderRadius: BorderRadius.circular(12),
         ),
-        onChanged: (_) => setState(() {}),
+        child: TextField(
+          controller: controller,
+          keyboardType: isNumber ? const TextInputType.numberWithOptions(decimal: true) : TextInputType.text,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.black, // Stronger text for total payment
+          ),
+          decoration: InputDecoration(
+            labelText: label,
+            labelStyle: TextStyle(
+              fontWeight: FontWeight.w700,
+              color: AppColor.primary,
+            ),
+            prefixIcon: Icon(icon, size: 22, color: AppColor.primary),
+            border: InputBorder.none,
+            focusedBorder: InputBorder.none,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          ),
+          onChanged: (_) => setState(() {}),
+        ),
       ),
     );
   }
+
+
+
 
   Widget _buildPriceRow(String label, double value, Color color, {bool isBold = false}) {
     return Padding(

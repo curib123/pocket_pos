@@ -1,25 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:paninda/View/Components/Custom/ShoppingCartAnimatedWidget.dart';
 import 'package:paninda/View/Components/Custom/custom_search_delegate.dart';
 import 'package:paninda/View/Components/HelperClass/AppColor.dart';
 
 class ScalableAppBar extends StatelessWidget implements PreferredSizeWidget {
-  final String title;
-  final List<Widget>? actions;
-  final double height;
-  final bool showSearchBar;
-  final bool isTitle; // NEW
-
-  const ScalableAppBar({
-    super.key,
-    required this.title,
-    this.actions,
-    this.height = kToolbarHeight,
-    this.showSearchBar = true,
-    this.isTitle = true, // NEW
-  });
+  const ScalableAppBar({super.key});
 
   @override
-  Size get preferredSize => Size.fromHeight(height);
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 
   @override
   Widget build(BuildContext context) {
@@ -27,75 +15,51 @@ class ScalableAppBar extends StatelessWidget implements PreferredSizeWidget {
       backgroundColor: Colors.white,
       elevation: 0,
       titleSpacing: 16,
-      title: LayoutBuilder(
-        builder: (context, constraints) {
-          return Row(
-            children: [
-              // Title
-              if (isTitle)
-                Flexible(
-                  flex: showSearchBar ? 2 : 1,
-                  fit: FlexFit.tight,
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 25,
-                        fontWeight: FontWeight.bold,
-                        color: AppColor.textPrimary,
+      title: Row(
+        children: [
+          Expanded(
+            child: GestureDetector(
+              onTap: () {
+                showSearch(
+                  context: context,
+                  delegate: CustomSearchDelegate(),
+                );
+              },
+              child: Container(
+                height: 45,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: const [
+                    Flexible(
+                      child: Text(
+                        "Search Product...",
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Colors.grey,
+                          fontSize: 16,
+                        ),
                       ),
                     ),
-                  ),
-                ),
-
-              // Search Bar or Empty Widget
-              if (showSearchBar && isTitle) const SizedBox(width: 16),
-
-              if (showSearchBar)
-                Expanded(
-                  flex: 4,
-                  child: GestureDetector(
-                    onTap: () {
-                      showSearch(
-                        context: context,
-                        delegate: CustomSearchDelegate(),
-                      );
-                    },
-                    child: Container(
-                      height: 45,
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: const [
-                          Flexible(
-                            child: Text(
-                              "Search Product...",
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                color: AppColor.textSecondary,
-                                fontSize: 16,
-                              ),
-                            ),
-                          ),
-                          SizedBox(width: 8),
-                          Icon(Icons.search,
-                              color: AppColor.textSecondary, size: 25),
-                        ],
-                      ),
+                    SizedBox(width: 8),
+                    Icon(
+                      Icons.search,
+                      color: Colors.grey,
+                      size: 25,
                     ),
-                  ),
+                  ],
                 ),
-            ],
-          );
-        },
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+           ShoppingCartAnimatedwidget(iconColor: AppColor.primary.withOpacity(0.7),),
+        ],
       ),
-      actions: actions,
     );
   }
 }

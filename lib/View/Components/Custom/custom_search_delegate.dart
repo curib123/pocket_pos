@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
+import 'package:paninda/View/Components/Custom/ShoppingCartAnimatedWidget.dart';
 import 'package:paninda/View/Components/Modal/cart_modal.dart';
-import 'package:paninda/View/Components/Modal/cart_list_modal.dart';
 import 'package:paninda/View_Model/ProductProvider.dart';
 import 'package:paninda/View/Components/HelperClass/AppColor.dart';
 import 'package:provider/provider.dart';
@@ -12,51 +12,7 @@ import 'package:paninda/View/Components/HelperClass/StoreCategory.dart'; // <- I
 class CustomSearchDelegate extends SearchDelegate {
   @override
   List<Widget>? buildActions(BuildContext context) => [
-    Consumer<ProductProvider>(
-      builder: (context, provider, _) {
-        final count = provider.getCartItems().length;
-
-        return Material(
-          color: Colors.transparent,
-          child: InkWell(
-            borderRadius: BorderRadius.circular(100),
-            onTap: () => CartListModal.show(context),
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  const Icon(Icons.shopping_cart_rounded, size: 35),
-                  if (count > 0)
-                    Positioned(
-                      right: 2,
-                      top: 4,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: const BoxDecoration(
-                          color: Colors.red,
-                          shape: BoxShape.circle,
-                        ),
-                        constraints:
-                        const BoxConstraints(minWidth: 15, minHeight: 15),
-                        child: Text(
-                          '$count',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    ),
+    ShoppingCartAnimatedwidget(),
     IconButton(
       icon: const Icon(Icons.clear),
       onPressed: () => query = '',

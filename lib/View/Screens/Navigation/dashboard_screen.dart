@@ -90,11 +90,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final batchProfit = _selectedProduct != null ? getProfitPerBatch(_selectedProduct!) : [];
 
     return Scaffold(
-      appBar: ScalableAppBar(
-        isTitle: false,
-        showSearchBar: true,
-        title: "Dashboard",
-      ),
+      appBar: ScalableAppBar(),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
@@ -107,7 +103,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
               _buildFinancialSummary(provider),
               _buildLowStockSection(provider),
               const SizedBox(height: 30),
-              const Text("Realized Profit by Date", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppColor.textPrimary)),
+              Row(
+                children: [
+                  const Icon(Icons.trending_up_rounded, size: 18, color: AppColor.primary),
+                  SizedBox(width: 6),
+                  const Text("Current Profit Per Stock", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColor.textPrimary)),
+                ],
+              ),
               const SizedBox(height: 12),
               _customDropdown<DateRangeType>(
                 items: DateRangeType.values,
@@ -126,7 +128,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   _tile(entry.key, currencyFormat.format(entry.value), LucideIcons.lineChart, AppColor.accent)),
               if (provider.products.isNotEmpty) ...[
                 const SizedBox(height: 30),
-                const Text("Possible Profit Per Stocks", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppColor.textPrimary)),
+                Row(
+                  children: [
+                    const Icon(Icons.trending_up_rounded, size: 18, color: AppColor.primary),
+                    SizedBox(width: 6),
+                    const Text("Potential Profit Per Stock", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColor.textPrimary)),
+                  ],
+                ),
                 const SizedBox(height: 12),
                 _customDropdown<String>(
                   items: provider.products.map((p) => p.id).toList(),
@@ -333,15 +341,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
 
-
   Widget _buildInventoryOverview(ProductProvider provider) {
     return _dashboardGroup(
-      "Inventory Management",
+      "Inventory Overview",
       [
-        _tile("Products Available", provider.totalProductsLength.toString(), LucideIcons.box),
+        _tile("Available Products", provider.totalProductsLength.toString(), LucideIcons.box),
         _tile("Total Stock Items", numberFormat.format(provider.totalStocksQuantity), LucideIcons.truck),
-        _tile("Total Weight (kg)", numberFormat.format(provider.totalStocksKilos), LucideIcons.dumbbell),
-        _tile("Items Running Low", numberFormat.format(provider.products.where((p) => p.totalSacks < 10).length), LucideIcons.alertTriangle, AppColor.warning),
+        _tile("Total Stock Weight (kg)", numberFormat.format(provider.totalStocksKilos), LucideIcons.dumbbell),
+        _tile("Low Stock Alerts", numberFormat.format(provider.products.where((p) => p.totalSacks < 10).length), LucideIcons.alertTriangle, AppColor.warning),
       ],
       icon: LucideIcons.boxes,
     );
@@ -349,15 +356,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildFinancialSummary(ProductProvider provider) {
     return _dashboardGroup(
-      "Financial Overview",
+      "Financial Summary",
       [
-        _tile(" Cost Value", currencyFormat.format(provider.totalInventoryCostValue), LucideIcons.wallet),
-        _tile(" Sell Value", currencyFormat.format(provider.totalInventoryRetailValue), LucideIcons.shoppingCart),
-        _tile("Possible Profit", currencyFormat.format(provider.allProductsTotalProfit), LucideIcons.coins, AppColor.success),
+        _tile("Total Cost Value", currencyFormat.format(provider.totalInventoryCostValue), LucideIcons.wallet),
+        _tile("Total Selling Value", currencyFormat.format(provider.totalInventoryRetailValue), LucideIcons.shoppingCart),
+        _tile("Total Potential Profit", currencyFormat.format(provider.allProductsTotalProfit), LucideIcons.coins, AppColor.success),
       ],
       icon: LucideIcons.wallet,
     );
   }
+
 
   Widget _buildLowStockSection(ProductProvider provider) {
     final lowStockProducts = provider.products.where((p) => provider.isStockLow(p.id, 10)).toList();
@@ -406,7 +414,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Text(
                 title,
                 style: const TextStyle(
-                  fontSize: 20,
+                  fontSize: 17,
                   fontWeight: FontWeight.w700,
                   color: AppColor.textPrimary,
                 ),
@@ -505,7 +513,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 const Icon(Icons.calendar_today, size: 16, color: AppColor.textSecondary),
                 const SizedBox(width: 8),
                 Text(
-                  batch['date'].toString(),
+                  "Batch Created: ${batch['date']}",
                   style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
                 ),
               ],
@@ -542,9 +550,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 const Icon(Icons.monetization_on, size: 16, color: AppColor.success),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text(
-                    "Item Profit: ${currencyFormat.format(batch['profitSacks'])}",
-                    style: const TextStyle(color: AppColor.success, fontWeight: FontWeight.w600),
+                  child: Row(
+                    children: [
+                      Text(
+                        "Potential Profit from Items: ${currencyFormat.format(batch['profitSacks'])}",
+                        style: const TextStyle(color: AppColor.success, fontWeight: FontWeight.w600),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -556,7 +568,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    "Weight Profit: ${currencyFormat.format(batch['profitKilos'])}",
+                    "Potential Profit from Weight: ${currencyFormat.format(batch['profitKilos'])}",
                     style: const TextStyle(color: AppColor.accent, fontWeight: FontWeight.w600),
                   ),
                 ),
@@ -608,7 +620,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           const SizedBox(height: 12),
           const Text(
-            "Stock Batches:",
+            "Stock Details",
             style: TextStyle(
               fontWeight: FontWeight.w600,
               color: AppColor.textSecondary,
@@ -632,7 +644,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        "Batch #${index + 1}",
+                        "Batch ${index + 1}",
                         style: const TextStyle(
                           fontWeight: FontWeight.w500,
                           color: AppColor.textPrimary,
@@ -644,7 +656,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           const Icon(Icons.calendar_today, size: 14, color: AppColor.textSecondary),
                           const SizedBox(width: 6),
                           Text(
-                            batch.date.toString(),
+                            "Added: ${batch.date}",
                             style: const TextStyle(color: AppColor.textSecondary),
                           ),
                         ],
@@ -655,7 +667,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           const Icon(Icons.inventory, size: 14, color: AppColor.textSecondary),
                           const SizedBox(width: 6),
                           Text(
-                            "Qty: ${batch.quantity} | ⚖️ ${batch.kiloQuantity} kg",
+                            "Quantity: ${batch.quantity} | Weight: ${batch.kiloQuantity} kg",
                             style: const TextStyle(color: AppColor.textSecondary),
                           ),
                         ],
@@ -679,7 +691,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      "No Stock available. Restock now!",
+                      "Out of Stock — Please Restock",
                       style: TextStyle(
                         color: AppColor.errorText,
                         fontStyle: FontStyle.italic,
@@ -695,6 +707,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+
   Widget _customDropdown<T>({
     required List<T> items,
     required T? selected,
@@ -703,25 +716,53 @@ class _DashboardScreenState extends State<DashboardScreen> {
     required String Function(T) getLabel,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
         color: AppColor.surface,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black12.withOpacity(0.06), blurRadius: 6, offset: const Offset(0, 3))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black12.withOpacity(0.06),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+        border: Border.all(color: AppColor.border.withOpacity(0.4), width: 1),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<T>(
           value: selected,
           isExpanded: true,
-          icon: const Icon(Icons.expand_more, color: AppColor.textSecondary),
+          icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColor.textSecondary),
           dropdownColor: AppColor.surface,
           borderRadius: BorderRadius.circular(12),
-          hint: Text(hint, style: const TextStyle(color: AppColor.textSecondary)),
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: AppColor.textPrimary),
+          hint: Text(
+            hint,
+            style: const TextStyle(
+              color: AppColor.textSecondary,
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: AppColor.textPrimary,
+          ),
           onChanged: items.isEmpty ? null : onChanged,
-          items: items.map((item) => DropdownMenuItem(value: item, child: Text(getLabel(item), overflow: TextOverflow.ellipsis))).toList(),
+          items: items.map((item) {
+            return DropdownMenuItem(
+              value: item,
+              child: Text(
+                getLabel(item),
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontWeight: FontWeight.w500),
+              ),
+            );
+          }).toList(),
         ),
       ),
     );
   }
+
 }
