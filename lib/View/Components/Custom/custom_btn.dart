@@ -17,33 +17,29 @@ class CustomButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: double.infinity, // 🔁 Full width
+      width: double.infinity,
       child: ElevatedButton.icon(
         icon: icon != null
-            ? Icon(icon, size: 20, color: Colors.white)
+            ? Icon(icon, size: 16, color: Colors.white) // smaller icon
             : const SizedBox.shrink(),
         label: Text(
           label,
           style: const TextStyle(
-            fontSize: 16,
+            fontSize: 13, // smaller text
             fontWeight: FontWeight.w600,
-            letterSpacing: 0.5,
+            letterSpacing: 0.4,
           ),
         ),
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
           backgroundColor: color ?? Theme.of(context).primaryColor.withOpacity(0.5),
           foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 13), // adjusted vertical
+          padding: const EdgeInsets.symmetric(vertical: 10), // smaller vertical padding
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(8), // slightly smaller radius
           ),
-          elevation: 6,
-          shadowColor: Colors.black.withOpacity(0.2),
-          textStyle: const TextStyle(
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.5,
-          ),
+          elevation: 4,
+          shadowColor: Colors.black.withOpacity(0.15),
         ),
       ),
     );

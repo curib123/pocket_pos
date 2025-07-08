@@ -13,7 +13,6 @@ import 'package:paninda/View/Components/Core/product_metrics_container.dart';
 import 'package:paninda/View/Components/Core/scalable_appbar.dart';
 import 'package:paninda/View/Components/Custom/custom_btn.dart';
 import 'package:paninda/View/Components/HelperClass/AppColor.dart';
-import 'package:paninda/View/Components/Modal/add_product_modal.dart';
 import 'package:paninda/View/Components/HelperClass/StoreCategory.dart';
 
 class ProductScreen extends StatefulWidget {
@@ -63,7 +62,7 @@ class _ProductScreenState extends State<ProductScreen> {
 
                     return Center(
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        padding: const EdgeInsets.symmetric(vertical: 0),
                         child: FadeIn(
                           duration: const Duration(milliseconds: 600),
                           child: Row(
@@ -91,7 +90,7 @@ class _ProductScreenState extends State<ProductScreen> {
                 FadeInDown(
                   duration: const Duration(milliseconds: 500),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -101,7 +100,7 @@ class _ProductScreenState extends State<ProductScreen> {
                             const Text(
                               "Product Category",
                               style: TextStyle(
-                                fontSize: 15,
+                                fontSize: 13,
                                 fontWeight: FontWeight.bold,
                                 color: AppColor.textSecondary,
                               ),
@@ -113,10 +112,11 @@ class _ProductScreenState extends State<ProductScreen> {
                                 });
                               },
                               style: TextButton.styleFrom(
+                                padding: EdgeInsets.symmetric(vertical: 3,horizontal: 10),
                                 backgroundColor: AppColor.primary,
                                 foregroundColor: AppColor.surface,
                               ),
-                              child: Text(isArchiveView ? 'Hide Archives' : 'View Archives'),
+                              child: Text(isArchiveView ? 'Hide Archives' : 'View Archives',style: TextStyle(fontSize: 13),),
                             ),
                           ],
                         ),
@@ -321,19 +321,13 @@ class _ProductScreenState extends State<ProductScreen> {
             child: FadeInUp(
               duration: const Duration(milliseconds: 500),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+
                     CustomButton(
                       color: AppColor.primary,
-                      icon: LucideIcons.plusCircle,
-                      label: "Add New Product",
-                      onPressed: () => AddProductModal.show(context, isStock: false, isEdit: false),
-                    ),
-                    const SizedBox(height: 10),
-                    CustomButton(
-                      color: AppColor.accent,
                       icon: LucideIcons.box,
                       label: "View All Product",
                       onPressed: () {

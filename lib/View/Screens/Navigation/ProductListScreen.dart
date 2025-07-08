@@ -1,6 +1,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import 'package:paninda/View/Components/Custom/ShoppingCartAnimatedWidget.dart';
+import 'package:paninda/View/Components/Custom/custom_btn.dart';
+import 'package:paninda/View/Components/Modal/add_product_modal.dart';
 import 'package:paninda/View_Model/CurrencyProvider.dart';
 import 'package:provider/provider.dart';
 import 'package:animate_do/animate_do.dart';
@@ -36,6 +39,15 @@ class _ProductListScreenState extends State<ProductListScreen> {
           ShoppingCartAnimatedwidget(iconColor: AppColor.surface),
           const SizedBox(width: 12),
         ],
+      ),
+      bottomNavigationBar:  Padding(
+        padding: const EdgeInsets.all(15.0),
+        child: CustomButton(
+          color: AppColor.accent,
+          icon: LucideIcons.plusCircle,
+          label: "Add New Product",
+          onPressed: () => AddProductModal.show(context, isStock: false, isEdit: false),
+        ),
       ),
       body: Column(
         children: [
@@ -103,7 +115,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                     crossAxisCount: 2,
                     crossAxisSpacing: 10,
                     mainAxisSpacing: 10,
-                    childAspectRatio: 1,
+                    childAspectRatio: 0.8,
                   ),
                   itemCount: filtered.length,
                   itemBuilder: (context, index) {
@@ -260,7 +272,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
   Widget _placeholderIcon(Color color) {
     return Container(
       width: _isGridView ? double.infinity : 90,
-      height: 120,
+      height: 100,
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(8),

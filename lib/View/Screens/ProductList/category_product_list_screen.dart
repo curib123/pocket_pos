@@ -103,7 +103,7 @@ class _CategoryProductListScreenState extends State<CategoryProductListScreen> {
                     crossAxisCount: 2,
                     crossAxisSpacing: 10,
                     mainAxisSpacing: 10,
-                    childAspectRatio: 1, // Adjust to your preferred height
+                    childAspectRatio: 0.8, // Adjust to your preferred height
                   ),
                   itemCount: filtered.length,
                   itemBuilder: (context, index) {
@@ -257,7 +257,7 @@ class _CategoryProductListScreenState extends State<CategoryProductListScreen> {
   Widget _placeholderIcon(Color color) {
     return Container(
       width: _isGridView ? double.infinity :90,
-      height: 120,
+      height: 100,
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(8),
