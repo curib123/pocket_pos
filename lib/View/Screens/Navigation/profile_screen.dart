@@ -172,7 +172,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                                 content:
                                                 "You’re about to unlock lifetime access. Continue to manual payment form?",
                                                 onConfirm: () {
-                                                  Navigator.pop(context); // Close dialog
                                                   Navigator.push(
                                                     context,
                                                     MaterialPageRoute(

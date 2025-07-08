@@ -40,6 +40,16 @@ class HandlePaymentVerification extends StatelessWidget {
                     _buildInfoRow('Method', latestPayment['payment_method']),
                     const SizedBox(height: 8),
                     _buildStatusBadge(latestPayment['payment_status']),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Please wait 1-3 business days for verification.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.grey,
+                        fontStyle: FontStyle.italic,
+                        fontSize: 14,
+                      ),
+                    ),
                     const SizedBox(height: 20),
                     FutureBuilder<String?>(
                       future: paymentProofPublicUrl,
@@ -100,6 +110,7 @@ class HandlePaymentVerification extends StatelessWidget {
                     ),
                 ],
               ),
+
               statusIcon: LucideIcons.checkCircle,
               buttonIcon: _getButtonIcon(),
               buttonText: _getButtonText(),
