@@ -106,7 +106,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 children: [
                   const Icon(Icons.trending_up_rounded, size: 18, color: AppColor.primary),
                   SizedBox(width: 6),
-                  const Text("Current Profit Per Stock", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColor.textPrimary)),
+                   Text("Current Profit Per Stock", style: TextStyle( fontWeight: FontWeight.w600, color: AppColor.textPrimary,fontSize: getResponsiveFontSize(context, 16))),
                 ],
               ),
               const SizedBox(height: 12),
@@ -121,6 +121,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   DateRangeType.month: 'Month',
                   DateRangeType.year: 'Year',
                 }[range]!,
+                context: context,
               ),
               const SizedBox(height: 16),
               ...profitBy.entries.toList().reversed.take(12).map((entry) =>
@@ -131,7 +132,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   children: [
                     const Icon(Icons.trending_up_rounded, size: 18, color: AppColor.primary),
                     SizedBox(width: 6),
-                    const Text("Potential Profit Per Stock", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColor.textPrimary)),
+                     Text("Potential Profit Per Stock", style: TextStyle(fontSize: getResponsiveFontSize(context, 16), fontWeight: FontWeight.w600, color: AppColor.textPrimary,)),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -146,6 +147,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   },
                   getLabel: (productId) =>
                   provider.products.firstWhere((p) => p.id == productId).name,
+                  context: context,
                 ),
               const SizedBox(height: 16),
                 ...batchProfit.map((batch) => _batchTile(batch)),
@@ -384,13 +386,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Row(
+         Row(
           children: [
             Icon(LucideIcons.arrowDownCircle, size: 20, color: AppColor.textPrimary),
             SizedBox(width: 8),
             Text(
               "Low Stock Alerts",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppColor.textPrimary),
+              style: TextStyle(fontSize:getResponsiveFontSize(context, 18) , fontWeight: FontWeight.w600, color: AppColor.textPrimary),
             ),
           ],
         ),
@@ -401,6 +403,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           hint: "Pick a Product Below",
           onChanged: (val) => setState(() => _selectedLowStockProduct = val),
           getLabel: (product) => product.name,
+          context: context,
         ),
         const SizedBox(height: 16),
         if (_selectedLowStockProduct != null) _lowStockTile(_selectedLowStockProduct!),
@@ -537,7 +540,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 Expanded(
                   child: Text(
                     "Total Items: ${numberFormat.format(batch['quantity'])}",
-                    style: const TextStyle(color: AppColor.textSecondary),
+                    style:  TextStyle(color: AppColor.textSecondary,fontSize: getResponsiveFontSize(context, 12)),
                   ),
                 ),
               ],
@@ -550,7 +553,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 Expanded(
                   child: Text(
                     "Total Weight: ${numberFormat.format(batch['kiloQuantity'])} kg",
-                    style: const TextStyle(color: AppColor.textSecondary),
+                    style:  TextStyle(color: AppColor.textSecondary,fontSize: getResponsiveFontSize(context, 12)),
                   ),
                 ),
               ],
@@ -565,7 +568,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     children: [
                       Text(
                         "Potential Profit from Items: ${currencyFormat.format(batch['profitSacks'])}",
-                        style: const TextStyle(color: AppColor.success, fontWeight: FontWeight.w600),
+                        style:  TextStyle(color: AppColor.success, fontWeight: FontWeight.w600,fontSize: getResponsiveFontSize(context, 12)),
                       ),
                     ],
                   ),
@@ -580,7 +583,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 Expanded(
                   child: Text(
                     "Potential Profit from Weight: ${currencyFormat.format(batch['profitKilos'])}",
-                    style: const TextStyle(color: AppColor.accent, fontWeight: FontWeight.w600),
+                    style:  TextStyle(color: AppColor.accent, fontWeight: FontWeight.w600,fontSize: getResponsiveFontSize(context, 12)),
                   ),
                 ),
               ],
@@ -620,9 +623,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Expanded(
                 child: Text(
                   product.name,
-                  style: const TextStyle(
+                  style:  TextStyle(
                     fontWeight: FontWeight.w600,
-                    fontSize: 16,
+                    fontSize:  getResponsiveFontSize(context, 16),
                     color: AppColor.textPrimary,
                   ),
                 ),
@@ -630,10 +633,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ],
           ),
           const SizedBox(height: 12),
-          const Text(
+           Text(
             "Stock Details",
             style: TextStyle(
               fontWeight: FontWeight.w600,
+    fontSize: getResponsiveFontSize(context, 12),
               color: AppColor.textSecondary,
             ),
           ),
@@ -656,9 +660,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     children: [
                       Text(
                         "Batch ${index + 1}",
-                        style: const TextStyle(
+                        style:  TextStyle(
                           fontWeight: FontWeight.w500,
-                          color: AppColor.textPrimary,
+                          color: AppColor.textPrimary, fontSize: getResponsiveFontSize(context, 12)
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -668,7 +672,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           const SizedBox(width: 6),
                           Text(
                             "Added: ${batch.date}",
-                            style: const TextStyle(color: AppColor.textSecondary),
+                            style:  TextStyle(color: AppColor.textSecondary,fontSize: getResponsiveFontSize(context, 12)),
                           ),
                         ],
                       ),
@@ -679,7 +683,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           const SizedBox(width: 6),
                           Text(
                             "Quantity: ${batch.quantity} | Weight: ${batch.kiloQuantity} kg",
-                            style: const TextStyle(color: AppColor.textSecondary),
+                            style:  TextStyle(color: AppColor.textSecondary,fontSize: getResponsiveFontSize(context, 12)),
                           ),
                         ],
                       ),
@@ -697,7 +701,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 border: Border.all(color: AppColor.errorText.withOpacity(0.5)),
               ),
               child: Row(
-                children: const [
+                children:  [
                   Icon(Icons.warning_amber_rounded, color: AppColor.errorText, size: 20),
                   SizedBox(width: 8),
                   Expanded(
@@ -707,6 +711,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         color: AppColor.errorText,
                         fontStyle: FontStyle.italic,
                         fontWeight: FontWeight.w500,
+                       fontSize: getResponsiveFontSize(context, 12),
                       ),
                     ),
                   ),
@@ -718,62 +723,116 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-
   Widget _customDropdown<T>({
+    required BuildContext context,
     required List<T> items,
     required T? selected,
     required String hint,
     required ValueChanged<T?> onChanged,
     required String Function(T) getLabel,
   }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: BoxDecoration(
-        color: AppColor.surface,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black12.withOpacity(0.06),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
-        border: Border.all(color: AppColor.border.withOpacity(0.4), width: 1),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<T>(
-          value: selected,
-          isExpanded: true,
-          icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColor.textSecondary),
-          dropdownColor: AppColor.surface,
-          borderRadius: BorderRadius.circular(12),
-          hint: Text(
-            hint,
-            style: const TextStyle(
-              color: AppColor.textSecondary,
-              fontSize: 15,
-              fontWeight: FontWeight.w500,
+    return GestureDetector(
+      onTap: () {
+        if (items.isNotEmpty) {
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.transparent,
+            builder: (_) {
+              return DraggableScrollableSheet(
+                initialChildSize: 0.5,
+                minChildSize: 0.3,
+                maxChildSize: 0.8,
+                builder: (context, scrollController) {
+                  return Container(
+                    decoration: BoxDecoration(
+                      color: AppColor.surface,
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                    ),
+                    child: Column(
+                      children: [
+                        Container(
+                          margin: const EdgeInsets.symmetric(vertical: 12),
+                          height: 4,
+                          width: 40,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[300],
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                        Expanded(
+                          child: ListView.builder(
+                            controller: scrollController,
+                            itemCount: items.length,
+                            itemBuilder: (context, index) {
+                              final item = items[index];
+                              final isSelected = item == selected;
+
+                              return ListTile(
+                                leading: Icon(
+                                  isSelected ? Icons.check_circle : Icons.circle_outlined,
+                                  color: isSelected ? AppColor.accent : Colors.grey[400],
+                                ),
+                                title: Text(
+                                  getLabel(item),
+                                  style: TextStyle(
+                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                    color: isSelected ? AppColor.accent : AppColor.textPrimary,
+                                    fontSize: getResponsiveFontSize(context, 15)
+                                  ),
+                                ),
+                                onTap: () {
+                                  Navigator.pop(context);
+                                  onChanged(item);
+                                },
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              );
+            },
+          );
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: AppColor.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColor.border.withOpacity(0.4), width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black12.withOpacity(0.06),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
             ),
-          ),
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: AppColor.textPrimary,
-          ),
-          onChanged: items.isEmpty ? null : onChanged,
-          items: items.map((item) {
-            return DropdownMenuItem(
-              value: item,
+          ],
+        ),
+        child: Row(
+          children: [
+            Expanded(
               child: Text(
-                getLabel(item),
+                selected != null ? getLabel(selected) : hint,
+                style: TextStyle(
+                  fontSize: getResponsiveFontSize(context, 15),
+                  fontWeight: FontWeight.w500,
+                  color: selected != null ? AppColor.textPrimary : AppColor.textSecondary,
+                ),
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontWeight: FontWeight.w500),
               ),
-            );
-          }).toList(),
+            ),
+            const Icon(Icons.keyboard_arrow_down_rounded, color: AppColor.textSecondary),
+          ],
         ),
       ),
     );
   }
+
+
+
 
 }

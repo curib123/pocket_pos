@@ -41,7 +41,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
         ],
       ),
       bottomNavigationBar:  Padding(
-        padding: const EdgeInsets.all(15.0),
+        padding: const EdgeInsets.symmetric(vertical: 20,horizontal: 15),
         child: CustomButton(
           color: AppColor.accent,
           icon: LucideIcons.plusCircle,
@@ -109,90 +109,98 @@ class _ProductListScreenState extends State<ProductListScreen> {
                 }
 
                 return _isGridView
-                    ? GridView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 10,
-                    mainAxisSpacing: 10,
-                    childAspectRatio: 0.8,
-                  ),
-                  itemCount: filtered.length,
-                  itemBuilder: (context, index) {
-                    final product = filtered[index];
-                    final imageUrl = product.imageUrl;
-
-                    return FadeInUp(
-                      duration: Duration(milliseconds: 300 + (index * 100)),
-                      child: GestureDetector(
-                        onTap: () {
-                          CartModal.show(context, product);
-                        },
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: AppColor.accent.withOpacity(0.05),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          padding: const EdgeInsets.all(10),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: imageUrl.isNotEmpty &&
-                                    File(imageUrl).existsSync()
-                                    ? Image.file(
-                                  File(imageUrl),
-                                  width: double.infinity,
-                                  height: 90,
-                                  fit: BoxFit.cover,
-                                  key: ValueKey(product.imageUrl),
-                                )
-                                    : _placeholderIcon(AppColor.accent),
-                              ),
-                              const SizedBox(height: 8),
-                              Expanded(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.end,
-                                  children: [
-                                    Text(
-                                      product.name,
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 14,
-                                        color: AppColor.textPrimary,
-                                      ),
-                                      overflow: TextOverflow.ellipsis,
-                                      textAlign: TextAlign.center,
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      'Stocks: ${product.totalSacks}',
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        color: AppColor.textSecondary,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                    Text(
-                                      'Price: ${currencyFormat.format(product.retailPrice)}',
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.green,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                    ? LayoutBuilder(
+                  builder: (context, constraints) {
+                    int crossAxisCount = (constraints.maxWidth ~/ 180).clamp(2, 6);
+                    return GridView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: crossAxisCount,
+                        crossAxisSpacing: 10,
+                        mainAxisSpacing: 10,
+                        childAspectRatio: 0.8,
                       ),
+                      itemCount: filtered.length,
+                      itemBuilder: (context, index) {
+                        final product = filtered[index];
+                        final imageUrl = product.imageUrl;
+
+                        return FadeInUp(
+                          duration: Duration(milliseconds: 300 + (index * 100)),
+                          child: GestureDetector(
+                            onTap: () {
+                              CartModal.show(context, product);
+                            },
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: AppColor.accent.withOpacity(0.05),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              padding: const EdgeInsets.all(10),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: imageUrl.isNotEmpty && File(imageUrl).existsSync()
+                                        ? Image.file(
+                                      File(imageUrl),
+                                      width: double.infinity,
+                                      height: 90,
+                                      fit: BoxFit.cover,
+                                      key: ValueKey(product.imageUrl),
+                                      errorBuilder: (context, error, stackTrace) {
+                                        return _placeholderIcon(AppColor.accent);
+                                      },
+                                    )
+                                        : _placeholderIcon(AppColor.accent),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Expanded(
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.end,
+                                      children: [
+                                        Text(
+                                          product.name,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 14,
+                                            color: AppColor.textPrimary,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                          textAlign: TextAlign.center,
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          'Stocks: ${product.totalSacks}',
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            color: AppColor.textSecondary,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                        Text(
+                                          'Price: ${currencyFormat.format(product.retailPrice)}',
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.green,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
                     );
                   },
                 )
-                    : ListView.builder(
+
+                : ListView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   itemCount: filtered.length,
                   itemBuilder: (context, index) {

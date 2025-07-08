@@ -215,10 +215,19 @@ class _CartListContentState extends State<_CartListContent> {
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
                 child: product.imageUrl.isNotEmpty
                     ? Image.file(
-                  File(product.imageUrl), // ✅ Use File for local file paths
+                  File(product.imageUrl),
                   height: 100,
-                  width: double.infinity, // ✅ Consistent width
+                  width: double.infinity,
                   fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      height: 100,
+                      width: double.infinity,
+                      color: Colors.grey.shade200,
+                      alignment: Alignment.center,
+                      child: const Icon(Icons.broken_image_outlined, size: 48, color: Colors.grey),
+                    );
+                  },
                 )
                     : Container(
                   height: 100,
