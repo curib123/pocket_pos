@@ -14,6 +14,7 @@ import 'package:paninda/View_Model/PaymentGuideProvider.dart';
 import 'package:paninda/View_Model/PaymentProvider.dart';
 import 'package:paninda/View_Model/ProductProvider.dart';
 import 'package:paninda/View_Model/StoreCategoryProvider.dart';
+import 'package:paninda/View_Model/SwitchProvider.dart';
 import 'package:paninda/View_Model/TabProvider.dart';
 import 'package:paninda/home.dart';
 import 'package:provider/provider.dart';
@@ -53,6 +54,7 @@ Future<void> main() async {
           ChangeNotifierProvider(create: (_) => AuthPaymentProvider()),
           ChangeNotifierProvider(create: (_) => PaymentProvider()),
           ChangeNotifierProvider(create: (_) => PaymentGuideProvider ()),
+          ChangeNotifierProvider(create: (_) => SwitchProvider ()),
         ],
         child: const MyApp(),
       ),

@@ -563,7 +563,7 @@ class _CartListContentState extends State<_CartListContent> {
       padding: const EdgeInsets.only(top: 12.0),
       child: Container(
         decoration: BoxDecoration(
-          color: AppColor.primary.withOpacity(0.12), // Highlighted background
+          color: AppColor.primary.withOpacity(0.03), // Highlighted background
           borderRadius: BorderRadius.circular(12),
         ),
         child: TextField(

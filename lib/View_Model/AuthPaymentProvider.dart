@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:paninda/View/Components/HelperClass/supabase_service.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 enum AuthMode { signIn, signUp }
 

@@ -2,8 +2,10 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:paninda/View/Components/Alert/custom_alert_notification.dart';
 import 'package:paninda/View/Components/Alert/custom_confirm_dialog.dart';
 import 'package:paninda/View/Components/Alert/show_quantity_edit.dart';
+import 'package:paninda/View/Components/Custom/custom_btn.dart';
 import 'package:paninda/View/Components/Modal/add_product_modal.dart';
 import 'package:paninda/View_Model/CurrencyProvider.dart';
 import 'package:provider/provider.dart';
@@ -34,7 +36,7 @@ class _ProductProfileContent extends StatefulWidget {
 }
 
 class _ProductProfileContentState extends State<_ProductProfileContent> {
-  String selectedMode = 'sacks'; // initial state
+  String selectedMode = 'Qty';  // initial state
   TextEditingController kiloController = TextEditingController();
   int quantity = 0;
   double kiloQuantity = 0.0;
@@ -79,6 +81,7 @@ class _ProductProfileContentState extends State<_ProductProfileContent> {
               // Product Header
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.start,
                 children: [
                   ClipRRect(
                     borderRadius: BorderRadius.circular(10),
@@ -125,7 +128,6 @@ class _ProductProfileContentState extends State<_ProductProfileContent> {
                             )
                           ],
                         ),
-                        const SizedBox(height: 6),
                         Text(currencyFormat.format(product.retailPrice),
                             style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColor.primary)),
                         const SizedBox(height: 6),
@@ -147,21 +149,14 @@ class _ProductProfileContentState extends State<_ProductProfileContent> {
                 ],
               ),
 
-              const SizedBox(height: 16),
-
-              // Edit/Restock Buttons
+              const SizedBox(height: 10),
               Row(
                 children: [
                   Expanded(
-                    child: ElevatedButton.icon(
-                      icon: const Icon(Icons.edit, size: 20, color: AppColor.surface),
-                      label: const Text("Edit Product"),
-                      style: ElevatedButton.styleFrom(
-                        foregroundColor: Colors.white,
-                        backgroundColor: AppColor.primary,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
+                    child: CustomButton(
+                      icon: Icons.edit,
+                      label: "Edit Product",
+                      color: AppColor.primary,
                       onPressed: () {
                         Navigator.pop(context);
                         AddProductModal.show(context, isEdit: true, product: product);
@@ -170,15 +165,10 @@ class _ProductProfileContentState extends State<_ProductProfileContent> {
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: ElevatedButton.icon(
-                      icon: const Icon(Icons.inventory_2_rounded, size: 20, color: AppColor.surface),
-                      label: const Text("Restock"),
-                      style: ElevatedButton.styleFrom(
-                        foregroundColor: Colors.white,
-                        backgroundColor: AppColor.secondary,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
+                    child: CustomButton(
+                      icon: Icons.inventory_2_rounded,
+                      label: "Restock",
+                      color: AppColor.secondary,
                       onPressed: () {
                         Navigator.pop(context);
                         AddProductModal.show(context, isStock: true, product: product);
@@ -188,7 +178,7 @@ class _ProductProfileContentState extends State<_ProductProfileContent> {
                 ],
               ),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 10),
 
               // Batch List
               if (product.batches.isNotEmpty) ...[
@@ -197,25 +187,25 @@ class _ProductProfileContentState extends State<_ProductProfileContent> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text("Stocks:", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColor.textPrimary)),
+                      const Text("Stocks Batch:", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColor.textPrimary)),
                       const SizedBox(height: 5),
                       const Text(
                         "Restocking on the same day will automatically combine with the existing stock for that date.",
                         style: TextStyle(fontSize: 13, fontStyle: FontStyle.italic, color: Colors.grey),
                       ),
+                      const SizedBox(height: 5),
                     ],
                   ),
                 ),
-                const SizedBox(height: 8),
                 ListView.separated(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: product.batches.length,
-                  separatorBuilder: (_, __) => const Divider(height: 16),
+                  separatorBuilder: (_, __) => const Divider(height: 10),
                   itemBuilder: (context, index) {
                     final batch = product.batches[index];
                     return Container(
-                      padding: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.all(5),
                       decoration: BoxDecoration(
                         color: AppColor.surface,
                         borderRadius: BorderRadius.circular(12),
@@ -277,7 +267,6 @@ class _ProductProfileContentState extends State<_ProductProfileContent> {
                 ),
               ],
 
-              const SizedBox(height: 24),
 
               // Quantity Stepper + Kilo Input with Modern UX Toggle (Borderless, Soft UI)
               Column(
@@ -304,12 +293,9 @@ class _ProductProfileContentState extends State<_ProductProfileContent> {
                     ),
                   ),
 
-                  const SizedBox(height: 20),
-
                   // Quantity or Kilo Input (Only One Shown at a Time)
                   if (selectedMode == 'Qty') ...[
-                    const Text("Quantity (Pcs)", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                    const SizedBox(height: 12),
+
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -338,8 +324,7 @@ class _ProductProfileContentState extends State<_ProductProfileContent> {
                   ],
 
                   if (selectedMode == 'kilo') ...[
-                    const Text("Kilo Quantity (kg)", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                    const SizedBox(height: 12),
+
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       decoration: BoxDecoration(
@@ -363,54 +348,42 @@ class _ProductProfileContentState extends State<_ProductProfileContent> {
                     ),
                   ],
 
-                  const SizedBox(height: 10),
-                  const Text(
-                    "Switch between Qty or kilos to adjust quantity.",
-                    style: TextStyle(color: AppColor.textSecondary, fontSize: 12, fontStyle: FontStyle.italic),
-                    textAlign: TextAlign.center,
-                  ),
                 ],
               ),
 
-
-              const SizedBox(height: 24),
 
 // Add to Cart with Reminder
               Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(5),
                     margin: const EdgeInsets.only(bottom: 12),
                     decoration: BoxDecoration(
                       color: AppColor.surface,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(10),
                       border: Border.all(color: AppColor.primary.withOpacity(0.4)),
                     ),
                     child: const Text(
                       "Reminder: Review your cart and proceed to checkout when you're ready.",
-                      style: TextStyle(color: AppColor.textSecondary, fontSize: 12, fontStyle: FontStyle.italic),
+                      style: TextStyle(color: AppColor.textSecondary, fontSize: 10, fontStyle: FontStyle.italic),
                       textAlign: TextAlign.center,
                     ),
                   ),
-                  ElevatedButton.icon(
-                    icon: const Icon(Icons.add_shopping_cart_rounded, color: Colors.white),
-                    label: const Text("Add to Cart",
-                        style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16, color: AppColor.surface)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColor.primary,
-                      minimumSize: const Size.fromHeight(50),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                      elevation: 3,
-                    ),
+                  CustomButton(
+                    icon: Icons.add_shopping_cart_rounded,
+                    label: "Add to Cart",
+                    color: AppColor.primary,
                     onPressed: () {
                       provider.addToCart(product, quantity, kiloQuantity);
                       Navigator.pop(context);
+
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text("Added $quantity ${product.unit}(s) & $kiloQuantity kg to cart")),
                       );
                     },
-                  ),
+                  )
+
                 ],
               ),
 
@@ -427,21 +400,37 @@ class _ProductProfileContentState extends State<_ProductProfileContent> {
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 5),
         decoration: BoxDecoration(
-          color: isSelected ? AppColor.primary : AppColor.surface,
-          borderRadius: BorderRadius.circular(16),
+          color: isSelected ? AppColor.primary.withOpacity(0.9) : AppColor.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? AppColor.primary : AppColor.border.withOpacity(0.5),
+            width: 1.2,
+          ),
+          boxShadow: isSelected
+              ? [
+            BoxShadow(
+              color: AppColor.primary.withOpacity(0.15),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            )
+          ]
+              : [],
         ),
         child: Text(
           label,
           style: TextStyle(
             color: isSelected ? Colors.white : AppColor.textPrimary,
             fontWeight: FontWeight.w600,
+            fontSize: 13,
+            letterSpacing: 0.2,
           ),
         ),
       ),
     );
   }
+
 
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hive/hive.dart';
+import 'package:intl/intl.dart';
 import 'package:paninda/Model/loan_person_model.dart';
 import 'package:paninda/Model/product_model.dart';
 import 'package:paninda/Model/batch_model.dart';
@@ -455,32 +456,48 @@ class ProductProvider with ChangeNotifier {
     }).toList();
   }
 
+  final dateFormat = DateFormat('MMM d, yyyy');
+
+  int getIsoWeekNumber(DateTime date) {
+    final firstDayOfYear = DateTime(date.year, 1, 1);
+    final daysOffset = firstDayOfYear.weekday - 1;
+    final firstMonday = firstDayOfYear.subtract(Duration(days: daysOffset));
+    final diff = date.difference(firstMonday).inDays;
+    return ((diff / 7).ceil()).clamp(1, 53);
+  }
+
   Map<String, double> getProfitBy(DateRangeType type) {
     final Map<String, double> grouped = {};
+
     for (final p in products) {
       for (final b in p.batches) {
         final profit = (b.quantity + b.kiloQuantity) * (p.retailPrice - p.costPrice);
         final date = b.date;
         late String key;
+
         switch (type) {
           case DateRangeType.day:
-            key = "${date.year}-${date.month}-${date.day}";
+            key = dateFormat.format(date); // e.g. "Jul 9, 2025"
             break;
           case DateRangeType.week:
-            key = "${date.year}-W${(date.day / 7).ceil()}";
+            final weekNumber = getIsoWeekNumber(date);
+            key = "Week $weekNumber of ${DateFormat('yyyy').format(date)}"; // e.g. "Week 28 of 2025"
             break;
           case DateRangeType.month:
-            key = "${date.year}-${date.month.toString().padLeft(2, '0')}";
+            key = DateFormat('MMM yyyy').format(date); // e.g. "Jul 2025"
             break;
           case DateRangeType.year:
-            key = "${date.year}";
+            key = date.year.toString();
             break;
         }
+
         grouped[key] = (grouped[key] ?? 0) + profit;
       }
     }
+
     return grouped;
   }
+
 
   Map<String, double> getCheckoutProfitBy(DateRangeType rangeType) {
     final profitBox = Hive.box('checkout_profits');
@@ -495,17 +512,17 @@ class ProductProvider with ChangeNotifier {
       late String key;
       switch (rangeType) {
         case DateRangeType.day:
-          key = "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
+          key = dateFormat.format(date); // e.g. "Jul 9, 2025"
           break;
         case DateRangeType.week:
-          final week = ((date.day - 1) / 7).floor() + 1;
-          key = "${date.year}-W$week";
+          final week = getIsoWeekNumber(date);
+          key = "Week $week of ${date.year}"; // e.g. "Week 28 of 2025"
           break;
         case DateRangeType.month:
-          key = "${date.year}-${date.month.toString().padLeft(2, '0')}";
+          key = DateFormat('MMM yyyy').format(date); // e.g. "Jul 2025"
           break;
         case DateRangeType.year:
-          key = "${date.year}";
+          key = date.year.toString();
           break;
       }
 

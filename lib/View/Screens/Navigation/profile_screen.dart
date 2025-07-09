@@ -7,7 +7,9 @@ import 'package:paninda/View/Components/Alert/custom_confirm_dialog.dart';
 import 'package:paninda/View/Components/Custom/activation_subtitle_widget.dart';
 import 'package:paninda/View/Components/Custom/custom_btn.dart';
 import 'package:paninda/View/Screens/Navigation/payment_form_screen.dart';
+import 'package:paninda/View_Model/LoanPersonProvider.dart';
 import 'package:paninda/View_Model/PaymentProvider.dart';
+import 'package:paninda/View_Model/ProductProvider.dart';
 import 'package:paninda/View_Model/TabProvider.dart';
 import 'package:provider/provider.dart';
 import 'package:paninda/View/Components/HelperClass/AppColor.dart';
@@ -303,8 +305,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const SizedBox(height: 10),
 
               // Logout Button
-              Consumer2<AuthPaymentProvider, TabProvider>(
-                builder: (context, authPaymentProvider, tabProvider, _) {
+              Consumer4<AuthPaymentProvider, TabProvider,ProductProvider,LoanProvider>(
+                builder: (context, authPaymentProvider, tabProvider,productProvider,loanProvider, _) {
                   return FadeInUp(
                     duration: const Duration(milliseconds: 500),
                     child: CustomButton(
@@ -322,6 +324,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               onConfirm: () {
                                 authPaymentProvider.logout();
                                 tabProvider.setFirstTimeFlag(true);
+                                productProvider.clearCart();
+                                productProvider.clearProducts();
+                                loanProvider.clearLoans();
                                 Phoenix.rebirth(context);
                               },
                             ),

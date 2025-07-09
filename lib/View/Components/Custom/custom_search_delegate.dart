@@ -133,7 +133,6 @@ class CustomSearchDelegate extends SearchDelegate {
                 ),
               ),
               onTap: () {
-                query = product.name;
                 CartModal.show(context, product);
               },
             ),

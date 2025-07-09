@@ -24,6 +24,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   late NumberFormat currencyFormat;
   final numberFormat = NumberFormat.decimalPattern();
+  final dateFormat = DateFormat('MMM d, yyyy');
 
   DateRangeType _selectedRange = DateRangeType.day;
   Product? _selectedProduct;
@@ -104,12 +105,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
               const SizedBox(height: 30),
               Row(
                 children: [
-                  const Icon(Icons.trending_up_rounded, size: 18, color: AppColor.primary),
+                  const Icon(LucideIcons.barChart, size: 25, color: AppColor.primary),
                   SizedBox(width: 6),
                    Text("Current Profit Per Stock", style: TextStyle( fontWeight: FontWeight.w600, color: AppColor.textPrimary,fontSize: getResponsiveFontSize(context, 16))),
                 ],
               ),
               const SizedBox(height: 12),
+
               _customDropdown<DateRangeType>(
                 items: DateRangeType.values,
                 selected: _selectedRange,
@@ -123,14 +125,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 }[range]!,
                 context: context,
               ),
+
               const SizedBox(height: 16),
-              ...profitBy.entries.toList().reversed.take(12).map((entry) =>
-                  _tile(entry.key, currencyFormat.format(entry.value), LucideIcons.lineChart, AppColor.accent)),
+
+              ...profitBy.entries.toList().reversed.take(12).map(
+                    (entry) => _tile(
+                  entry.key,
+                  currencyFormat.format(entry.value),
+                  LucideIcons.trendingUp,
+                  AppColor.accent,
+                ),
+              ),
               if (provider.products.isNotEmpty) ...[
                 const SizedBox(height: 30),
                 Row(
                   children: [
-                    const Icon(Icons.trending_up_rounded, size: 18, color: AppColor.primary),
+                    const Icon(LucideIcons.lineChart, size: 25, color: AppColor.primary),
                     SizedBox(width: 6),
                      Text("Potential Profit Per Stock", style: TextStyle(fontSize: getResponsiveFontSize(context, 16), fontWeight: FontWeight.w600, color: AppColor.textPrimary,)),
                   ],
@@ -396,7 +406,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
         _customDropdown<Product>(
           items: lowStockProducts,
           selected: _selectedLowStockProduct,
@@ -527,7 +537,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 const Icon(Icons.calendar_today, size: 16, color: AppColor.textSecondary),
                 const SizedBox(width: 8),
                 Text(
-                  "Batch Created: ${batch['date']}",
+                  "Batch Created: ${dateFormat.format(batch['date'])}",
                   style:  TextStyle(fontWeight: FontWeight.w600, fontSize: getResponsiveFontSize(context, 12)),
                 ),
               ],
@@ -600,8 +610,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     return Container(
       width: MediaQuery.of(context).size.width,
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: AppColor.surface,
         borderRadius: BorderRadius.circular(16),
@@ -616,23 +625,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              const Icon(Icons.shopping_bag, color: AppColor.textSecondary, size: 18),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  product.name,
-                  style:  TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize:  getResponsiveFontSize(context, 16),
-                    color: AppColor.textPrimary,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
            Text(
             "Stock Details",
             style: TextStyle(
@@ -671,7 +664,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           const Icon(Icons.calendar_today, size: 14, color: AppColor.textSecondary),
                           const SizedBox(width: 6),
                           Text(
-                            "Added: ${batch.date}",
+                            "Added: ${dateFormat.format(batch.date)}",
                             style:  TextStyle(color: AppColor.textSecondary,fontSize: getResponsiveFontSize(context, 12)),
                           ),
                         ],
@@ -768,24 +761,46 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               final item = items[index];
                               final isSelected = item == selected;
 
-                              return ListTile(
-                                leading: Icon(
-                                  isSelected ? Icons.check_circle : Icons.circle_outlined,
-                                  color: isSelected ? AppColor.accent : Colors.grey[400],
+                              return AnimatedContainer(
+                                duration: const Duration(milliseconds: 300),
+                                curve: Curves.easeInOut,
+                                decoration: BoxDecoration(
+                                  color: isSelected ? AppColor.accent.withOpacity(0.1) : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
-                                title: Text(
-                                  getLabel(item),
-                                  style: TextStyle(
-                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                                    color: isSelected ? AppColor.accent : AppColor.textPrimary,
-                                    fontSize: getResponsiveFontSize(context, 15)
+                                child: ListTile(
+
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
+                                  leading: Icon(
+                                    isSelected ? Icons.check_circle : Icons.circle_outlined,
+                                    color: isSelected ? AppColor.accent : Colors.grey[400],
                                   ),
+                                  title: Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          getLabel(item),
+                                          style: TextStyle(
+                                            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                            color: isSelected ? AppColor.accent : AppColor.textPrimary,
+                                            fontSize: getResponsiveFontSize(context, 15),
+                                          ),
+                                        ),
+                                      ),
+                                      const Icon(
+                                        Icons.arrow_forward_ios_rounded,
+                                        size: 16,
+                                        color: Colors.grey,
+                                      ),
+                                    ],
+                                  ),
+                                  onTap: () {
+                                    Navigator.pop(context);
+                                    onChanged(item);
+                                  },
                                 ),
-                                onTap: () {
-                                  Navigator.pop(context);
-                                  onChanged(item);
-                                },
                               );
+
                             },
                           ),
                         ),
