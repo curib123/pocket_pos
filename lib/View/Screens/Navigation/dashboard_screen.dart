@@ -107,7 +107,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
               const SizedBox(height: 30),
               Row(
                 children: [
-                  const Icon(LucideIcons.barChart, size: 25, color: AppColor.primary),
                   SizedBox(width: 6),
                    Text("Current Profit Per Stock", style: TextStyle( fontWeight: FontWeight.w600, color: AppColor.textPrimary,fontSize: getResponsiveFontSize(context, 16))),
                 ],
@@ -142,7 +141,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 const SizedBox(height: 30),
                 Row(
                   children: [
-                    const Icon(LucideIcons.lineChart, size: 25, color: AppColor.primary),
                     SizedBox(width: 6),
                      Text("Potential Profit Per Stock", style: TextStyle(fontSize: getResponsiveFontSize(context, 16), fontWeight: FontWeight.w600, color: AppColor.textPrimary,)),
                   ],

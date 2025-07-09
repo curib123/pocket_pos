@@ -56,61 +56,7 @@ class _ProductScreenState extends State<ProductScreen> {
             child: Column(
               children: [
                 SizedBox(height: 10,),
-                Consumer<SwitchProvider>(
-                  builder: (context, switchProvider, _) {
-                    return FadeInDown(
-                      duration: const Duration(milliseconds: 500),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Text(
-                                  "Product Category",
-                                  style: TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColor.textSecondary,
-                                  ),
-                                ),
-                               Row(
-                                 mainAxisAlignment: MainAxisAlignment.end,
-                                 children: [
-                                   TextButton(
-                                     onPressed: () {
-                                       switchProvider.toggleArchiveView();
-                                     },
-                                     style: TextButton.styleFrom(
-                                       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
-                                       backgroundColor: AppColor.primary,
-                                       foregroundColor: AppColor.surface,
-                                       minimumSize: Size.zero, // removes extra space
-                                       tapTargetSize: MaterialTapTargetSize.shrinkWrap, // shrink tap area
-                                     ),
-                                     child: Text(
-                                       switchProvider.isArchiveView ? 'Show Categories' : 'Hide Categories',
 
-                                       style: const TextStyle(fontSize: 14),
-                                     ),
-                                   ),
-
-
-                                 ],
-                               )
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  }
-                ),
-
-                /// Category List with animations
-                /// Category List with animations
                 Expanded(
                   child: Consumer3<ProductProvider, StoreCategoryProvider,SwitchProvider>(
                     builder: (context, productProvider, storeCategoryProvider,switchProvider, _) {
@@ -120,35 +66,57 @@ class _ProductScreenState extends State<ProductScreen> {
 
                       return Column(
                         children: [
-                          AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 400),
-                            transitionBuilder: (Widget child, Animation<double> animation) {
-                              final offsetAnimation = Tween<Offset>(
-                                begin: const Offset(0, -0.2),
-                                end: Offset.zero,
-                              ).animate(animation);
+                          Consumer<SwitchProvider>(
+                              builder: (context, switchProvider, _) {
+                                return FadeInDown(
+                                  duration: const Duration(milliseconds: 500),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 0),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            const Text(
+                                              "Product Category",
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.bold,
+                                                color: AppColor.textSecondary,
+                                              ),
+                                            ),
+                                            Row(
+                                              mainAxisAlignment: MainAxisAlignment.end,
+                                              children: [
+                                                TextButton(
+                                                  onPressed: () {
+                                                    switchProvider.toggleArchiveView();
+                                                  },
+                                                  style: TextButton.styleFrom(
+                                                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+                                                    backgroundColor: AppColor.primary,
+                                                    foregroundColor: AppColor.surface,
+                                                    minimumSize: Size.zero, // removes extra space
+                                                    tapTargetSize: MaterialTapTargetSize.shrinkWrap, // shrink tap area
+                                                  ),
+                                                  child: Text(
+                                                    switchProvider.isArchiveView ? 'Show Categories' : 'Hide Categories',
 
-                              return FadeTransition(
-                                opacity: animation,
-                                child: SlideTransition(
-                                  position: offsetAnimation,
-                                  child: child,
-                                ),
-                              );
-                            },
-                            child: Padding(
-                              key: ValueKey(switchProvider.isArchiveView),
-                              padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
-                              child: Text(
-                                switchProvider.isArchiveView
-                                    ? 'Swipe right to unhide categories →'
-                                    : 'Swipe left to hide categories ←',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: AppColor.textSecondary.withOpacity(0.7),
-                                ),
-                              ),
-                            ),
+                                                    style: const TextStyle(fontSize: 14),
+                                                  ),
+                                                ),
+
+
+                                              ],
+                                            )
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              }
                           ),
                           if (categories.isEmpty)
                             Expanded(
@@ -429,7 +397,7 @@ class _ProductScreenState extends State<ProductScreen> {
             child: FadeInUp(
               duration: const Duration(milliseconds: 500),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -482,6 +450,55 @@ class _ProductScreenState extends State<ProductScreen> {
                             iconSize: 24, // Optional: size of the icon
                             padding: const EdgeInsets.all(12), // Controls inner padding
                             constraints: const BoxConstraints(), // Removes extra constraints
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }
+          ) ,
+
+          Consumer<SwitchProvider>(
+            builder: (context,switchProvider,_) {
+              return Align(
+                alignment: Alignment.bottomCenter,
+                child: FadeInUp(
+                  duration: const Duration(milliseconds: 500),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 400),
+                          transitionBuilder: (Widget child, Animation<double> animation) {
+                            final offsetAnimation = Tween<Offset>(
+                              begin: const Offset(0, -0.2),
+                              end: Offset.zero,
+                            ).animate(animation);
+
+                            return FadeTransition(
+                              opacity: animation,
+                              child: SlideTransition(
+                                position: offsetAnimation,
+                                child: child,
+                              ),
+                            );
+                          },
+                          child: Padding(
+                            key: ValueKey(switchProvider.isArchiveView),
+                            padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
+                            child: Text(
+                              switchProvider.isArchiveView
+                                  ? 'Swipe right to unhide categories →'
+                                  : 'Swipe left to hide categories ←',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: AppColor.textSecondary.withOpacity(0.7),
+                              ),
+                            ),
                           ),
                         ),
                       ],
