@@ -10,7 +10,6 @@ import 'package:animate_do/animate_do.dart';
 import 'package:paninda/View/Screens/ProductList/category_product_list_screen.dart';
 import 'package:paninda/View_Model/StoreCategoryProvider.dart';
 import 'package:paninda/View_Model/ProductProvider.dart';
-import 'package:paninda/View/Components/Core/product_metrics_container.dart';
 import 'package:paninda/View/Components/Core/scalable_appbar.dart';
 import 'package:paninda/View/Components/Custom/custom_btn.dart';
 import 'package:paninda/View/Components/HelperClass/AppColor.dart';
@@ -36,7 +35,7 @@ class _ProductScreenState extends State<ProductScreen> {
 
     Future.delayed(Duration.zero, () async {
       await productProvider.syncProductsWithServer();
-      await productProvider.insertOrUpdateProductsToDatabase();
+      await productProvider.insertOrUpdateProductsAndProfitsToDatabase();
       await loanProvider.syncLoansWithServer();
       await loanProvider.insertOrUpdateLoansToDatabase();
 
@@ -92,7 +91,7 @@ class _ProductScreenState extends State<ProductScreen> {
                                        tapTargetSize: MaterialTapTargetSize.shrinkWrap, // shrink tap area
                                      ),
                                      child: Text(
-                                       !switchProvider.isArchiveView ? 'Show Categories' : 'Hide Categories',
+                                       switchProvider.isArchiveView ? 'Show Categories' : 'Hide Categories',
 
                                        style: const TextStyle(fontSize: 14),
                                      ),

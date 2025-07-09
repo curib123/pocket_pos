@@ -274,4 +274,55 @@ class SupabaseService {
       return [];
     }
   }
+
+
+  /// Profit
+  ///
+  ///
+  /// ✅ Profits (Auto User ID)
+  Future<void> insertProfit({
+    required List<Map<String, dynamic>> profitData,
+    DateTime? timestamp,
+  }) async {
+    final user = _client.auth.currentUser;
+    if (user == null) throw Exception("No logged-in user.");
+
+    final data = {
+      'user_id': user.id,
+      'profit': profitData,
+      'timestamp': (timestamp ?? DateTime.now()).toIso8601String(),
+    };
+
+    debugPrint('Inserting profit for user ${user.id}...');
+    try {
+      await _client
+          .from('checkout_profits')
+          .upsert(data, onConflict: 'user_id'); // ✅ specify conflict target
+      debugPrint('Profit inserted.');
+    } catch (e) {
+      debugPrint('Error inserting profit: $e');
+      throw Exception('Insert failed: $e');
+    }
+  }
+
+
+  Future<List<Map<String, dynamic>>> getProfitsByUser() async {
+    final user = _client.auth.currentUser;
+    if (user == null) throw Exception("No logged-in user.");
+
+    try {
+      final data = await _client
+          .from('checkout_profits')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('timestamp', ascending: false);
+
+      return List<Map<String, dynamic>>.from(data);
+    } catch (e) {
+      debugPrint('Error fetching profits: $e');
+      return [];
+    }
+  }
+
+
 }

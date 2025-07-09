@@ -326,6 +326,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 tabProvider.setFirstTimeFlag(true);
                                 productProvider.clearCart();
                                 productProvider.clearProducts();
+                                productProvider.clearAllProfits();
                                 loanProvider.clearLoans();
                                 Phoenix.rebirth(context);
                               },

@@ -13,6 +13,7 @@ enum DateRangeType { day, week, month, year }
 
 class ProductProvider with ChangeNotifier {
   final Box<Product> _productBox = Hive.box<Product>('products');
+  final profitBox = Hive.box('checkout_profits');
   List<Product> get products => _productBox.values.toList();
   final _supabaseService = SupabaseService();
   final supabase = Supabase.instance.client;
@@ -36,6 +37,31 @@ class ProductProvider with ChangeNotifier {
   final _secureStorage = const FlutterSecureStorage();
   DateTime? _lastSyncTime;
 
+  List<Map<String, dynamic>> getLocalProfitList() {
+    return profitBox.values
+        .map((e) => Map<String, dynamic>.from(e as Map))
+        .toList();
+  }
+
+  Future<void> clearAllProfits() async {
+    final profitBox = Hive.box('checkout_profits');
+    await profitBox.clear();
+    debugPrint('All profits have been cleared from local storage.');
+  }
+
+  Future<void> replaceAllProfits(List<Map<String, dynamic>> newProfits) async {
+    final profitBox = Hive.box('checkout_profits');
+
+    // ✅ Clear all existing records
+    await profitBox.clear();
+
+    // ✅ Add each new profit record
+    for (var profit in newProfits) {
+      await profitBox.add(profit);
+    }
+  }
+
+
   /// Load last sync time from secure storage
   Future<void> loadLastSyncTime() async {
     final stored = await _secureStorage.read(key: 'lastProductSync');
@@ -51,8 +77,9 @@ class ProductProvider with ChangeNotifier {
   }
 
   /// Insert products to database
-  Future<void> insertOrUpdateProductsToDatabase() async {
+  Future<void> insertOrUpdateProductsAndProfitsToDatabase() async {
     await _supabaseService.insertProducts(products);
+    await _supabaseService.insertProfit(profitData: getLocalProfitList());
   }
 
   /// Fetch products by user from server
@@ -65,6 +92,7 @@ class ProductProvider with ChangeNotifier {
     try {
       await loadLastSyncTime();
 
+
       final userId = supabase.auth.currentUser?.id;
       if (userId == null) {
         throw Exception('User not logged in.');
@@ -72,6 +100,16 @@ class ProductProvider with ChangeNotifier {
 
       // Step 1: Fetch all products from server
       final serverProducts = await getProductsByUserFromDatabase(userId);
+      final newProfits = getLocalProfitList().where((p) {
+        final date = DateTime.tryParse(p['timestamp'] ?? '');
+        return date != null && (_lastSnapshotDate  == null || date.isAfter(_lastSnapshotDate!));
+      }).toList();
+
+      if (newProfits.isNotEmpty) {
+        await _supabaseService.insertProfit(profitData: newProfits);
+      }
+
+
 
       // Step 2: Merge server products into local storage
       for (var serverProduct in serverProducts) {
@@ -83,6 +121,8 @@ class ProductProvider with ChangeNotifier {
           updateProduct(serverProduct.id, serverProduct);
         }
       }
+
+      await replaceAllProfits(newProfits);
 
       // Step 3: Upload local changes after last sync
       final updatedProducts = products.where((p) =>
@@ -408,11 +448,11 @@ class ProductProvider with ChangeNotifier {
         );
       }
 
-      final profitBox = Hive.box('checkout_profits');
       await profitBox.add({
         'profit': totalProfit,
         'timestamp': now.toIso8601String(),
       });
+
 
       return {
         'items': receipt,
@@ -498,13 +538,11 @@ class ProductProvider with ChangeNotifier {
     return grouped;
   }
 
-
   Map<String, double> getCheckoutProfitBy(DateRangeType rangeType) {
-    final profitBox = Hive.box('checkout_profits');
     final Map<String, double> grouped = {};
 
-    for (var record in profitBox.values) {
-      final profit = record['profit'] ?? 0.0;
+    for (var record in getLocalProfitList()) {
+      final profit = record['profit'];
       final timestampStr = record['timestamp'];
       final date = DateTime.tryParse(timestampStr);
       if (date == null) continue;
@@ -512,25 +550,32 @@ class ProductProvider with ChangeNotifier {
       late String key;
       switch (rangeType) {
         case DateRangeType.day:
-          key = dateFormat.format(date); // e.g. "Jul 9, 2025"
+          key = dateFormat.format(date);
           break;
         case DateRangeType.week:
           final week = getIsoWeekNumber(date);
-          key = "Week $week of ${date.year}"; // e.g. "Week 28 of 2025"
+          key = "Week $week of ${date.year}";
           break;
         case DateRangeType.month:
-          key = DateFormat('MMM yyyy').format(date); // e.g. "Jul 2025"
+          key = DateFormat('MMM yyyy').format(date);
           break;
         case DateRangeType.year:
           key = date.year.toString();
           break;
       }
 
-      grouped[key] = (grouped[key] ?? 0) + profit;
+      // ✅ Safely add only valid profits
+      if (profit is num) {
+        grouped[key] = (grouped[key] ?? 0) + profit;
+      } else {
+        debugPrint("Skipping invalid profit data: $profit");
+      }
     }
 
     return grouped;
   }
+
+
 
   Map<String, double>? getCartTotalsWithProfit(List<Map<String, dynamic>> cartItems) {
     double totalRetail = 0;

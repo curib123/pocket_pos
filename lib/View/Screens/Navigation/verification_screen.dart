@@ -70,7 +70,7 @@ class _VerificationStatusCardState extends State<VerificationStatusCard> {
 
     Future.delayed(Duration.zero, () async {
       await productProvider.syncProductsWithServer();
-      await productProvider.insertOrUpdateProductsToDatabase();
+      await productProvider.insertOrUpdateProductsAndProfitsToDatabase();
       await loanProvider.syncLoansWithServer();
       await loanProvider.insertOrUpdateLoansToDatabase();
     });
