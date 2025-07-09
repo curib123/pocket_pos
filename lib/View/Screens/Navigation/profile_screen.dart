@@ -6,6 +6,7 @@ import 'package:animate_do/animate_do.dart';
 import 'package:paninda/View/Components/Alert/custom_confirm_dialog.dart';
 import 'package:paninda/View/Components/Custom/activation_subtitle_widget.dart';
 import 'package:paninda/View/Components/Custom/custom_btn.dart';
+import 'package:paninda/View/Components/HelperClass/ProfitHelper.dart';
 import 'package:paninda/View/Screens/Navigation/payment_form_screen.dart';
 import 'package:paninda/View_Model/LoanPersonProvider.dart';
 import 'package:paninda/View_Model/PaymentProvider.dart';
@@ -321,12 +322,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               title: "Logout Confirmation",
                               content:
                               "Are you sure you want to log out? You will need to sign in again to access your account.",
-                              onConfirm: () {
+                              onConfirm: () async {
                                 authPaymentProvider.logout();
                                 tabProvider.setFirstTimeFlag(true);
                                 productProvider.clearCart();
+                               await ProfitHelper.clearLocalProfits();
                                 productProvider.clearProducts();
-                                productProvider.clearAllProfits();
                                 loanProvider.clearLoans();
                                 Phoenix.rebirth(context);
                               },

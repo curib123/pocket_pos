@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:paninda/Model/loan_person_model.dart';
 import 'package:paninda/Model/product_model.dart';
 import 'package:paninda/Model/batch_model.dart';
+import 'package:paninda/View/Components/HelperClass/ProfitHelper.dart';
 import 'package:paninda/View/Components/HelperClass/supabase_service.dart';
 import 'package:paninda/View_Model/LoanPersonProvider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -13,7 +14,6 @@ enum DateRangeType { day, week, month, year }
 
 class ProductProvider with ChangeNotifier {
   final Box<Product> _productBox = Hive.box<Product>('products');
-  final profitBox = Hive.box('checkout_profits');
   List<Product> get products => _productBox.values.toList();
   final _supabaseService = SupabaseService();
   final supabase = Supabase.instance.client;
@@ -26,6 +26,7 @@ class ProductProvider with ChangeNotifier {
     loadSnapshot();
   }
 
+
   // CART
   final Map<Product, int> _cartItems = {};
   final Map<Product, double> _kiloCartItems = {};
@@ -37,29 +38,6 @@ class ProductProvider with ChangeNotifier {
   final _secureStorage = const FlutterSecureStorage();
   DateTime? _lastSyncTime;
 
-  List<Map<String, dynamic>> getLocalProfitList() {
-    return profitBox.values
-        .map((e) => Map<String, dynamic>.from(e as Map))
-        .toList();
-  }
-
-  Future<void> clearAllProfits() async {
-    final profitBox = Hive.box('checkout_profits');
-    await profitBox.clear();
-    debugPrint('All profits have been cleared from local storage.');
-  }
-
-  Future<void> replaceAllProfits(List<Map<String, dynamic>> newProfits) async {
-    final profitBox = Hive.box('checkout_profits');
-
-    // ✅ Clear all existing records
-    await profitBox.clear();
-
-    // ✅ Add each new profit record
-    for (var profit in newProfits) {
-      await profitBox.add(profit);
-    }
-  }
 
 
   /// Load last sync time from secure storage
@@ -79,7 +57,6 @@ class ProductProvider with ChangeNotifier {
   /// Insert products to database
   Future<void> insertOrUpdateProductsAndProfitsToDatabase() async {
     await _supabaseService.insertProducts(products);
-    await _supabaseService.insertProfit(profitData: getLocalProfitList());
   }
 
   /// Fetch products by user from server
@@ -100,15 +77,6 @@ class ProductProvider with ChangeNotifier {
 
       // Step 1: Fetch all products from server
       final serverProducts = await getProductsByUserFromDatabase(userId);
-      final newProfits = getLocalProfitList().where((p) {
-        final date = DateTime.tryParse(p['timestamp'] ?? '');
-        return date != null && (_lastSnapshotDate  == null || date.isAfter(_lastSnapshotDate!));
-      }).toList();
-
-      if (newProfits.isNotEmpty) {
-        await _supabaseService.insertProfit(profitData: newProfits);
-      }
-
 
 
       // Step 2: Merge server products into local storage
@@ -122,7 +90,6 @@ class ProductProvider with ChangeNotifier {
         }
       }
 
-      await replaceAllProfits(newProfits);
 
       // Step 3: Upload local changes after last sync
       final updatedProducts = products.where((p) =>
@@ -404,11 +371,8 @@ class ProductProvider with ChangeNotifier {
             : useStockFIFO(item['productId'], item['quantity']);
       }
 
-      final profitBox = Hive.box('checkout_profits');
-      await profitBox.add({
-        'profit': totalProfit,
-        'timestamp': now.toIso8601String(),
-      });
+
+    await ProfitHelper.saveProfit(totalProfit);
 
       return {
         'items': receipt,
@@ -448,10 +412,7 @@ class ProductProvider with ChangeNotifier {
         );
       }
 
-      await profitBox.add({
-        'profit': totalProfit,
-        'timestamp': now.toIso8601String(),
-      });
+      await ProfitHelper.saveProfit(totalProfit);
 
 
       return {
@@ -541,8 +502,19 @@ class ProductProvider with ChangeNotifier {
   Map<String, double> getCheckoutProfitBy(DateRangeType rangeType) {
     final Map<String, double> grouped = {};
 
-    for (var record in getLocalProfitList()) {
-      final profit = record['profit'];
+    for (var record in ProfitHelper.profitBox.values) {
+      final profitRaw = record['profit'];
+
+      double profit;
+      if (profitRaw is num) {
+        profit = profitRaw.toDouble();
+      } else if (profitRaw is List) {
+        // If somehow stored as List, you can sum it or just skip:
+        profit = 0.0;  // Or sum it if needed: profitRaw.fold(0.0, (sum, e) => sum + (e as num))
+      } else {
+        profit = 0.0;
+      }
+
       final timestampStr = record['timestamp'];
       final date = DateTime.tryParse(timestampStr);
       if (date == null) continue;
@@ -564,17 +536,11 @@ class ProductProvider with ChangeNotifier {
           break;
       }
 
-      // ✅ Safely add only valid profits
-      if (profit is num) {
-        grouped[key] = (grouped[key] ?? 0) + profit;
-      } else {
-        debugPrint("Skipping invalid profit data: $profit");
-      }
+      grouped[key] = (grouped[key] ?? 0) + profit;
     }
 
     return grouped;
   }
-
 
 
   Map<String, double>? getCartTotalsWithProfit(List<Map<String, dynamic>> cartItems) {

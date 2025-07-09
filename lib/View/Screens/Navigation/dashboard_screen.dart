@@ -3,6 +3,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'package:paninda/Model/product_model.dart';
 import 'package:paninda/View/Components/Core/scalable_appbar.dart';
 import 'package:paninda/View/Components/HelperClass/CheckTrialExpired.dart';
+import 'package:paninda/View/Components/HelperClass/ProfitHelper.dart';
 import 'package:paninda/View/Components/HelperClass/responsive_text.dart';
 import 'package:paninda/View_Model/AuthPaymentProvider.dart';
 import 'package:paninda/View_Model/CurrencyProvider.dart';
@@ -54,6 +55,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       await productProvider.insertOrUpdateProductsAndProfitsToDatabase();
       await loanProvider.syncLoansWithServer();
       await loanProvider.insertOrUpdateLoansToDatabase();
+      await ProfitHelper.syncTwoWay();
     });
   }
 

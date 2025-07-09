@@ -25,7 +25,7 @@ class SwitchProvider with ChangeNotifier {
   Future<void> loadSettings() async {
     _isCategoryGridView = await _loadBool('categoryGridView', defaultValue: false);
     _isProductGridView = await _loadBool('productGridView', defaultValue: true);
-    _isArchiveView = await _loadBool('archiveCategory', defaultValue: true);
+    _isArchiveView = await _loadBool('archiveCategory', defaultValue: false);
     notifyListeners();
   }
 

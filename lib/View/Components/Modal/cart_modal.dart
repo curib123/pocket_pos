@@ -102,9 +102,17 @@ class _ProductProfileContentState extends State<_ProductProfileContent> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              product.name,
-                              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: AppColor.textPrimary,overflow: TextOverflow.ellipsis),
+                            Flexible(
+                              child: Text(
+                                product.name,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColor.textPrimary,
+                                ),
+                              ),
                             ),
                             IconButton(
                               icon: const Icon(Icons.delete_rounded, color: AppColor.errorText),
@@ -125,9 +133,10 @@ class _ProductProfileContentState extends State<_ProductProfileContent> {
                                   ),
                                 );
                               },
-                            )
+                            ),
                           ],
-                        ),
+                        )
+                        ,
                         Text(currencyFormat.format(product.retailPrice),
                             style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColor.primary)),
                         const SizedBox(height: 6),

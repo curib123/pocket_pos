@@ -4,6 +4,7 @@ import 'package:paninda/View/Components/Core/bottom_navigation.dart';
 import 'package:paninda/View/Components/Custom/handleActivationCheck.dart';
 import 'package:paninda/View/Components/Custom/handle_payment_verification.dart';
 import 'package:paninda/View/Components/HelperClass/CheckTrialExpired.dart';
+import 'package:paninda/View/Components/HelperClass/ProfitHelper.dart';
 import 'package:paninda/View/Screens/Navigation/signin_screen.dart';
 import 'package:paninda/View_Model/AuthPaymentProvider.dart';
 import 'package:paninda/View_Model/PaymentProvider.dart';
@@ -26,6 +27,10 @@ class _HomeState extends State<Home> {
     super.initState();
     _initializeApp();
     checkIfTrialExpired(context);
+
+    Future.delayed(Duration.zero,() async {
+      await ProfitHelper.syncTwoWay();
+    });
   }
 
   Future<void> _initializeApp() async {
