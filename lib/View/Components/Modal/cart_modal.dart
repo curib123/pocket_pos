@@ -6,6 +6,7 @@ import 'package:paninda/View/Components/Alert/custom_alert_notification.dart';
 import 'package:paninda/View/Components/Alert/custom_confirm_dialog.dart';
 import 'package:paninda/View/Components/Alert/show_quantity_edit.dart';
 import 'package:paninda/View/Components/Custom/custom_btn.dart';
+import 'package:paninda/View/Components/Modal/CartPaymentModal.dart';
 import 'package:paninda/View/Components/Modal/add_product_modal.dart';
 import 'package:paninda/View_Model/CurrencyProvider.dart';
 import 'package:provider/provider.dart';
@@ -383,6 +384,19 @@ class _ProductProfileContentState extends State<_ProductProfileContent> {
                     icon: Icons.add_shopping_cart_rounded,
                     label: "Add to Cart",
                     color: AppColor.primary,
+                    onPressed: () {
+                      provider.addToCart(product, quantity, kiloQuantity);
+                      Navigator.pop(context);
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text("Added $quantity ${product.unit}(s) & $kiloQuantity kg to cart")),
+                      );
+                    },
+                  ),
+                  CustomButton(
+                    icon: Icons.check_circle_rounded,
+                    label: "Checkout",
+                    color: AppColor.textPrimary,
                     onPressed: () {
                       provider.addToCart(product, quantity, kiloQuantity);
                       Navigator.pop(context);

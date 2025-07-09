@@ -25,10 +25,9 @@ class _HomeState extends State<Home> {
   @override
   void initState() {
     super.initState();
-    _initializeApp();
-    checkIfTrialExpired(context);
-
     Future.delayed(Duration.zero,() async {
+     await _initializeApp();
+     await checkIfTrialExpired(context);
       await ProfitHelper.syncTwoWay();
     });
   }
@@ -54,7 +53,14 @@ class _HomeState extends State<Home> {
           latestPayment: latestPayment,
           paymentProofPublicUrl: paymentProofPublicUrl,
         );
-      } else if (tabProvider.isFirstTime) {
+      }
+    } catch (e, stackTrace) {
+      debugPrint('❗ Error during app initialization: $e');
+      debugPrint('$stackTrace');
+      final tabProvider = Provider.of<TabProvider>(context, listen: false);
+      final authPaymentProvider = Provider.of<AuthPaymentProvider>(context, listen: false);
+
+      if (tabProvider.isFirstTime) {
         final userDetails = await authPaymentProvider.readUserDetails();
         final email = userDetails['email'];
 
@@ -67,10 +73,6 @@ class _HomeState extends State<Home> {
           }
         }
       }
-    } catch (e, stackTrace) {
-      debugPrint('❗ Error during app initialization: $e');
-      debugPrint('$stackTrace');
-      _startScreen = const SigninScreen();
     } finally {
       setState(() {
         _isLoading = false;

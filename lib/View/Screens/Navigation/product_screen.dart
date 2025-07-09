@@ -269,7 +269,7 @@ class _ProductScreenState extends State<ProductScreen> {
                                    maxCrossAxisExtent: 180, // Auto adjusts per screen size
                                    mainAxisSpacing: 16,
                                    crossAxisSpacing: 16,
-                                   childAspectRatio: 0.85,
+                                   childAspectRatio: 0.80,
                                  ),
                                  itemBuilder: (context, index) {
                                    final category = categories[index];
