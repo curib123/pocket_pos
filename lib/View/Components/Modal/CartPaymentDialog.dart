@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:paninda/View/Components/Custom/custom_btn.dart';
+import 'package:paninda/View/Components/Modal/CartSelectionModal.dart';
 import 'package:provider/provider.dart';
 import 'package:paninda/Model/loan_person_model.dart';
 import 'package:paninda/View/Components/Alert/custom_alert_notification.dart';
@@ -165,7 +166,12 @@ class _CartPaymentContentState extends State<_CartPaymentContent> {
             ),
             const SizedBox(height: 12),
             TextButton(
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () {
+                Navigator.of(context).pop();
+                Future.delayed(Duration.zero,(){
+                  CartSelectionModal.show(context);
+                });
+              },
               child: const Text("Cancel", style: TextStyle(color: Colors.red)),
             ),
           ],

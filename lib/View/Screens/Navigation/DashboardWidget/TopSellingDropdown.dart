@@ -1,9 +1,12 @@
 import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:paninda/Model/product_model.dart';
 import 'package:paninda/View/Components/HelperClass/AppColor.dart';
 import 'package:paninda/View/Components/HelperClass/responsive_text.dart';
+import 'package:paninda/View/Components/Modal/cart_modal.dart';
 import 'package:paninda/View_Model/ProductProvider.dart';
+import 'package:provider/provider.dart';
 
 class TopSellingTileDropdown extends StatefulWidget {
   final ProductProvider productProvider;
@@ -55,10 +58,10 @@ class _TopSellingTileDropdownState extends State<TopSellingTileDropdown> {
                       children: [
                         Text(
                           topProducts.isEmpty
-                              ? "No Top Products"
+                              ? "No Top-Selling Products"
                               : (selectedProduct != null
                               ? selectedProduct!['productName']
-                              : "Select a Top Product"),
+                              : "View a Top-Selling Product"),
                           style: TextStyle(
                             fontSize: getResponsiveFontSize(context, 14),
                             fontWeight: FontWeight.w500,
@@ -234,10 +237,12 @@ class _TopSellingTileDropdownState extends State<TopSellingTileDropdown> {
                     final product = topProducts[index];
                     return InkWell(
                       onTap: () {
-                        setState(() {
-                          selectedProduct = product;
-                        });
-                        Navigator.pop(context);
+
+                        final productProvider = Provider.of<ProductProvider>(context, listen: false);
+                        final productModel = productProvider.getProductByName( product['productName']);
+                        if (productModel != null) {
+                          CartModal.show(context, productModel);
+                        }
                       },
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

@@ -5,6 +5,7 @@ import 'package:paninda/View/Components/Core/product_metrics_container.dart';
 import 'package:paninda/View/Components/Core/scalable_appbar.dart';
 import 'package:paninda/View/Components/HelperClass/CheckTrialExpired.dart';
 import 'package:paninda/View/Components/HelperClass/ProfitHelper.dart';
+import 'package:paninda/View/Components/HelperClass/ReceiptHelper.dart';
 import 'package:paninda/View/Components/HelperClass/responsive_text.dart';
 import 'package:paninda/View/Screens/Navigation/DashboardWidget/CurrentProfitSummary.dart';
 import 'package:paninda/View/Screens/Navigation/DashboardWidget/GreetingsCardWidget.dart';
@@ -59,12 +60,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
       _selectedLowStockProduct = lowStockProducts.first;
     }
 
+    ReceiptHelper receiptHelper = ReceiptHelper();
     Future.delayed(Duration.zero, () async {
       await productProvider.syncProductsWithServer();
       await productProvider.insertOrUpdateProductsAndProfitsToDatabase();
       await loanProvider.syncLoansWithServer();
       await loanProvider.insertOrUpdateLoansToDatabase();
       await ProfitHelper.syncTwoWay();
+      await receiptHelper.syncReceipts();
     });
   }
 

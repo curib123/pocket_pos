@@ -188,6 +188,12 @@ class _ReceiptHistoryScreenState extends State<ReceiptHistoryScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        leading: GestureDetector(
+          onTap: () {
+            Navigator.pop(context);
+          },
+          child: const Icon(Icons.arrow_back_ios_new),
+        ),
         title: const Text('Receipt History'),
         elevation: 0,
         backgroundColor: Colors.white,
@@ -233,7 +239,7 @@ class _ReceiptHistoryScreenState extends State<ReceiptHistoryScreen> {
               ),
             ),
           ),
-
+    SizedBox(height: 10,),
           // Dropdown Filter for Type
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12),

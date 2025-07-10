@@ -29,7 +29,7 @@ class CartModal {
         final isPortrait = size.height > size.width;
 
         // Increase height factors for taller modal
-        final baseHeightFactor = size.width < 600 ? 0.76 : 0.57;
+        final baseHeightFactor = size.width < 600 ? 0.70 : 0.50;
         final adjustedFactor = isPortrait ? baseHeightFactor + 0.05 : baseHeightFactor;
 
         return FractionallySizedBox(
@@ -245,7 +245,7 @@ class _ProductProfileContentState extends State<_ProductProfileContent> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text("Qty: ${batch.quantity} ${product.unit}  •  ${batch.kiloQuantity.toStringAsFixed(2)} kg",
-                                  style: const TextStyle(fontSize: 14, color: AppColor.textSecondary)),
+                                  style: const TextStyle(fontSize: 12, color: AppColor.textSecondary)),
                               const SizedBox(height: 5),
                               Text(dateFormat.format(batch.date), style: const TextStyle(fontSize: 13, color: Colors.grey)),
                             ],
@@ -397,32 +397,43 @@ class _ProductProfileContentState extends State<_ProductProfileContent> {
                       textAlign: TextAlign.center,
                     ),
                   ),
-                  CustomButton(
-                    icon: Icons.add_shopping_cart_rounded,
-                    label: "Add to Cart",
-                    color: AppColor.primary,
-                    onPressed: () {
-                      provider.addToCart(product, quantity, kiloQuantity);
-                      Navigator.pop(context);
+                Row(
+                  children: [
+                    Expanded(
+                      child: CustomButton(
+                        icon: Icons.add_shopping_cart_rounded,
+                        label: "Add to Cart",
+                        color: AppColor.primary,
+                        onPressed: () {
+                          provider.addToCart(product, quantity, kiloQuantity);
+                          Navigator.pop(context);
 
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text("Added $quantity ${product.unit}(s) & $kiloQuantity kg to cart")),
-                      );
-                    },
-                  ),
-                  SizedBox(height: 0,),
-                  CustomButton(
-                    icon: Icons.check_circle_outline_outlined,
-                    label: "Checkout",
-                    color: AppColor.textPrimary,
-                    onPressed: () {
-                      provider.addToCart(product, quantity, kiloQuantity);
-                      CartSelectionModal.show(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text("Added $quantity ${product.unit}(s) & $kiloQuantity kg to cart")),
-                      );
-                    },
-                  )
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text("Added $quantity ${product.unit}(s) & $kiloQuantity kg to cart")),
+                          );
+                        },
+                      ),
+                    ),
+                    SizedBox(width: 10,),
+                    Expanded(
+                      child: CustomButton(
+                        icon: Icons.check_circle_outline_outlined,
+                        label: "Checkout",
+                        color: AppColor.textPrimary,
+                        onPressed: () {
+                          provider.addToCart(product, quantity, kiloQuantity);
+                          Navigator.of(context).pop();
+                          Future.delayed(Duration.zero,(){
+                            CartSelectionModal.show(context);
+                          });
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text("Added $quantity ${product.unit}(s) & $kiloQuantity kg to cart")),
+                          );
+                        },
+                      ),
+                    )
+                  ],
+                )
 
                 ],
               ),

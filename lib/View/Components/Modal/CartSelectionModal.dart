@@ -18,7 +18,7 @@ class CartSelectionModal {
       builder: (context) {
         return DraggableScrollableSheet(
           initialChildSize: 0.6,
-          minChildSize: 0.4,
+          minChildSize: 0.5,
           maxChildSize: 0.8,
           expand: false,
           builder: (context, scrollController) {
@@ -149,12 +149,15 @@ class _CartSelectionContentState extends State<_CartSelectionContent> {
                   icon: LucideIcons.checkCircle2,
                   color: AppColor.textPrimary,
                   onPressed: () {
+                    Navigator.pop(context);
+                  Future.delayed(Duration.zero,(){
                     CartPaymentDialog.show(
                       context,
                       quantities: quantities,
                       kiloQuantities: kiloControllers.map((k, v) => MapEntry(k, v.text)),
                       selectedModes: selectedModes,
                     );
+                  });
                   },
                 ),
               ],

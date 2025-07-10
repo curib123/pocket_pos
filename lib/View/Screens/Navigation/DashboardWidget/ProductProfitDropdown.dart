@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:paninda/View/Components/HelperClass/AppColor.dart';
 import 'package:paninda/View/Components/HelperClass/responsive_text.dart';
+import 'package:paninda/View/Components/Modal/cart_modal.dart';
 import 'package:paninda/View_Model/ProductProvider.dart';
+import 'package:provider/provider.dart';
 
 final currencyFormat = NumberFormat.currency(locale: 'en_PH', symbol: '₱');
 
@@ -111,7 +113,7 @@ class _ProductProfitDropdownState extends State<ProductProfitDropdown> {
         }).toList();
 
         return SizedBox(
-          height: MediaQuery.of(context).size.height * 0.50,  // ✅ 50% height
+          height: MediaQuery.of(context).size.height * 0.60,  // ✅ 50% height
           child: Column(
             children: [
               Padding(
@@ -173,8 +175,13 @@ class _ProductProfitDropdownState extends State<ProductProfitDropdown> {
 
                     return InkWell(
                       onTap: () {
-                        widget.onChanged(productId);
-                        Navigator.pop(context);
+                        final productProvider = Provider.of<ProductProvider>(context, listen: false);
+                        final productModel = productProvider.getProductByName(widget.getLabel(productId).toString());
+                        print(productModel);
+                        if (productModel != null) {
+                          CartModal.show(context, productModel);
+                        }
+
                       },
                       child: Padding(
                         padding: const EdgeInsets.symmetric(

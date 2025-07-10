@@ -36,7 +36,6 @@ class _HomeState extends State<Home> {
     try {
       final tabProvider = Provider.of<TabProvider>(context, listen: false);
       final paymentProvider = Provider.of<PaymentProvider>(context, listen: false);
-      final authPaymentProvider = Provider.of<AuthPaymentProvider>(context, listen: false);
 
       await tabProvider.loadFirstTimeStatus();
       await paymentProvider.fetchPayments();
