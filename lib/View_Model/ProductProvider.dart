@@ -6,6 +6,7 @@ import 'package:paninda/Model/loan_person_model.dart';
 import 'package:paninda/Model/product_model.dart';
 import 'package:paninda/Model/batch_model.dart';
 import 'package:paninda/View/Components/HelperClass/ProfitHelper.dart';
+import 'package:paninda/View/Components/HelperClass/ReceiptHelper.dart';
 import 'package:paninda/View/Components/HelperClass/supabase_service.dart';
 import 'package:paninda/View_Model/LoanPersonProvider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -327,6 +328,8 @@ class ProductProvider with ChangeNotifier {
     String borrowerName = '',
     LoanProvider? loanProvider,
   }) async {
+    final receiptHelper = ReceiptHelper(); // ✅ Instantiate the helper
+
     double total = 0;
     double totalProfit = 0;
     List<Map<String, dynamic>> receipt = [];
@@ -371,8 +374,15 @@ class ProductProvider with ChangeNotifier {
             : useStockFIFO(item['productId'], item['quantity']);
       }
 
-      // ✅ Save profit with items for sales report
       await ProfitHelper.saveProfit(totalProfit, receipt);
+
+      // ✅ Save to local+online receipt
+      await receiptHelper.addReceipt(
+        title: 'Cash Purchase',
+        amount: total,
+        date: now,
+        note: 'Paid in cash. Change: ${(buyerCash - total).toStringAsFixed(2)}',
+      );
 
       return {
         'items': receipt,
@@ -412,8 +422,15 @@ class ProductProvider with ChangeNotifier {
         );
       }
 
-      // ✅ Save profit with items for sales report (Loan case too)
       await ProfitHelper.saveProfit(totalProfit, receipt);
+
+      // ✅ Save loan-based receipt
+      await receiptHelper.addReceipt(
+        title: 'Loan - $borrowerName',
+        amount: total,
+        date: now,
+        note: 'Loan transaction, unpaid at checkout.',
+      );
 
       return {
         'items': receipt,

@@ -14,32 +14,32 @@ class CartSelectionModal {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColor.background,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
+      backgroundColor: Colors.transparent,
       builder: (context) {
-        final size = MediaQuery.of(context).size;
-        final isPortrait = size.height > size.width;
-
-        // Increase height factors for taller modal
-        final baseHeightFactor = size.width < 600 ? 0.76 : 0.57;
-        final adjustedFactor = isPortrait ? baseHeightFactor + 0.05 : baseHeightFactor;
-
-        return FractionallySizedBox(
-          heightFactor: adjustedFactor.clamp(0.5, 1.0),
-          child: Padding(
-            padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-            child: _CartSelectionContent(),
-          ),
+        return DraggableScrollableSheet(
+          initialChildSize: 0.6,
+          minChildSize: 0.4,
+          maxChildSize: 0.8,
+          expand: false,
+          builder: (context, scrollController) {
+            return Container(
+              decoration: const BoxDecoration(
+                color: AppColor.background,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              child: _CartSelectionContent(scrollController: scrollController), // ✅ THIS IS REQUIRED
+            );
+          },
         );
       },
     );
   }
 }
 
+
 class _CartSelectionContent extends StatefulWidget {
-  const _CartSelectionContent({super.key});
+  final ScrollController scrollController;
+  const _CartSelectionContent({super.key, required this.scrollController});
 
   @override
   State<_CartSelectionContent> createState() => _CartSelectionContentState();
@@ -100,6 +100,7 @@ class _CartSelectionContentState extends State<_CartSelectionContent> {
           top: 16,
         ),
         child: SingleChildScrollView(
+          controller: widget.scrollController,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -148,7 +149,6 @@ class _CartSelectionContentState extends State<_CartSelectionContent> {
                   icon: LucideIcons.checkCircle2,
                   color: AppColor.textPrimary,
                   onPressed: () {
-                    
                     CartPaymentDialog.show(
                       context,
                       quantities: quantities,
@@ -219,14 +219,14 @@ class _CartSelectionContentState extends State<_CartSelectionContent> {
                   ),
                   child: Text(
                     "${currencyFormat.format(product.retailPrice)} / ${product.unit}",
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600,fontSize: 13),
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13),
                   ),
                 ),
-              ), Positioned(
+              ),
+              Positioned(
                 top: 0,
                 right: 0,
-                child:  // Delete Button
-                IconButton(
+                child: IconButton(
                   icon: Icon(LucideIcons.trash2, color: AppColor.error),
                   onPressed: () {
                     setState(() {
@@ -247,22 +247,18 @@ class _CartSelectionContentState extends State<_CartSelectionContent> {
               children: [
                 Row(
                   children: [
-                    // Product Name with ellipsis
                     Expanded(
                       child: Text(
                         product.name,
                         maxLines: 1,
-                        overflow: TextOverflow.ellipsis, // ✅ Correct place
+                        overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
-
                     const SizedBox(width: 8),
-
-                    // Qty/Kilo Switch
                     Row(
                       children: [
                         _buildChoiceChip(product.id, "Quantity", 0),
@@ -270,19 +266,14 @@ class _CartSelectionContentState extends State<_CartSelectionContent> {
                         _buildChoiceChip(product.id, "Kilo", 1),
                       ],
                     ),
-
-                    const SizedBox(width: 8),
-
-
                   ],
                 ),
-
                 selectedMode == 0
                     ? Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     IconButton(
-                      icon: Icon(Icons.remove_circle_outline, color: AppColor.errorText,size: 25,),
+                      icon: Icon(Icons.remove_circle_outline, color: AppColor.errorText, size: 25),
                       onPressed: () {
                         setState(() {
                           final current = quantities[product.id] ?? 1;
@@ -295,7 +286,7 @@ class _CartSelectionContentState extends State<_CartSelectionContent> {
                       style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
                     ),
                     IconButton(
-                      icon: Icon(Icons.add_circle_outline, color: AppColor.primary,size: 25,),
+                      icon: Icon(Icons.add_circle_outline, color: AppColor.primary, size: 25),
                       onPressed: () {
                         setState(() {
                           final current = quantities[product.id] ?? 1;
@@ -322,7 +313,6 @@ class _CartSelectionContentState extends State<_CartSelectionContent> {
                   onChanged: (_) => setState(() {}),
                 ),
                 const SizedBox(height: 0),
-                // Subtotal Display
                 Builder(
                   builder: (context) {
                     final quantity = selectedMode == 1
@@ -387,8 +377,6 @@ class _CartSelectionContentState extends State<_CartSelectionContent> {
       },
     );
   }
-
-
 
   Widget _buildDragHandle() {
     return Center(

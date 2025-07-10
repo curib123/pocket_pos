@@ -26,39 +26,30 @@ class AddProductModal {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
-      builder: (_) {
-
-        final mediaQuery = MediaQuery.of(context);
-        final width = mediaQuery.size.width;
-        final height = mediaQuery.size.height;
-
-// You can adjust these values for finer control:
-        double heightFactor;
-
-        if (width < 600) {
-          // Mobile
-          heightFactor = 0.8;
-        } else if (width < 900) {
-          // Small Tablets / Foldables
-          heightFactor = 0.65;
-        } else {
-          // Large Tablets / Desktop
-          heightFactor = 0.5;
-        }
-
-// Optional: Adjust height factor based on screen's aspect ratio
-// (for better vertical responsiveness)
-        final aspectRatio = width / height;
-        if (aspectRatio < 0.75) {
-          // Very tall screen, e.g., phones with long aspect ratios
-          heightFactor += 0.05; // Slightly more height for tall screens
-        }
-        // Fix: wrap with Builder to access a valid MediaQuery context
+      builder: (context) {
         return Builder(
           builder: (innerContext) {
-            final bottomInset = MediaQuery.of(innerContext).viewInsets.bottom;
+            final mediaQuery = MediaQuery.of(innerContext); // <- FIXED here
+            final width = mediaQuery.size.width;
+            final height = mediaQuery.size.height;
+
+            // Calculate heightFactor safely
+            double heightFactor;
+            if (width < 600) {
+              heightFactor = 0.8;
+            } else if (width < 900) {
+              heightFactor = 0.65;
+            } else {
+              heightFactor = 0.5;
+            }
+
+            final aspectRatio = width / height;
+            if (aspectRatio < 0.75) heightFactor += 0.05;
+
+            final bottomInset = mediaQuery.viewInsets.bottom;
+
             return FractionallySizedBox(
-              heightFactor: heightFactor.clamp(0.3, 1.0), // Safety clamp
+              heightFactor: heightFactor.clamp(0.3, 1.0),
               child: Padding(
                 padding: EdgeInsets.only(bottom: bottomInset),
                 child: _ModalContent(
@@ -72,6 +63,7 @@ class AddProductModal {
           },
         );
       },
+
     );
   }
 }
@@ -106,35 +98,39 @@ class _ModalContentState extends State<_ModalContent> {
   int? _selectedBatchIndex;
   Product? _editingProduct;
 
+// Finalized & Null-Safe _ModalContentState Implementation
+
   @override
   void initState() {
     super.initState();
-    if (widget.isEdit && widget.product != null || widget.isStock && widget.product != null) {
-      _selectedProductToRestock = widget.product;
-      _editingProduct = widget.product;
-      final p = _editingProduct!;
+    final p = widget.product;
+    if ((widget.isEdit || widget.isStock) && p != null) {
+      _selectedProductToRestock = p;
+      _editingProduct = p;
+
       _nameController.text = p.name;
       _costController.text = p.costPrice.toString();
       _retailController.text = p.retailPrice.toString();
       _descController.text = p.description;
       _selectedCategory = p.category;
+
       if (p.imageUrl.isNotEmpty) _pickedImage = XFile(p.imageUrl);
+
       if (p.batches.isNotEmpty) {
         _selectedBatchIndex = 0;
-        if(!widget.isStock){
+        if (!widget.isStock) {
           _quantityController.text = p.batches[0].quantity.toString();
           _kiloQuantityController.text = p.batches[0].kiloQuantity.toString();
-        }else{
-          _quantityController.text = 0.toString();
-          _kiloQuantityController.text = 0.toString();
+        } else {
+          _quantityController.text = "0";
+          _kiloQuantityController.text = "0";
         }
-
-        print(_editingProduct!.imageUrl);
       }
     }
 
-    if(widget.category.isNotEmpty) _selectedCategory = widget.category;
-
+    if (widget.category.isNotEmpty) {
+      _selectedCategory = widget.category;
+    }
   }
 
   Future<void> _submit(BuildContext context) async {
@@ -142,21 +138,19 @@ class _ModalContentState extends State<_ModalContent> {
     try {
       final provider = Provider.of<ProductProvider>(context, listen: false);
       final now = DateTime.now();
-      final id = widget.isEdit ? widget.product!.id : const Uuid().v4();
+      final id = widget.isEdit ? (widget.product?.id ?? const Uuid().v4()) : const Uuid().v4();
 
       String savedImagePath = '';
-      if (_pickedImage != null && _pickedImage!.path != widget.product?.imageUrl) {
+      if (_pickedImage != null && (_pickedImage!.path != (widget.product?.imageUrl ?? ''))) {
         savedImagePath = await _savePickedImage(id);
       } else {
         savedImagePath = widget.product?.imageUrl ?? '';
       }
 
-
       if (widget.isStock && _selectedProductToRestock != null) {
         _restockProduct(context, provider, now);
       } else if (widget.isEdit && _editingProduct != null) {
         _editProduct(context, provider, savedImagePath);
-
       } else {
         _addProduct(context, provider, now, id, savedImagePath);
       }
@@ -180,8 +174,7 @@ class _ModalContentState extends State<_ModalContent> {
         if (await File(path).length() > 0) {
           return path;
         } else {
-          print("deleted");
-          await File(path).delete(); // Clean up bad file
+          await File(path).delete();
         }
       }
     }
@@ -189,7 +182,9 @@ class _ModalContentState extends State<_ModalContent> {
   }
 
   void _restockProduct(BuildContext context, ProductProvider provider, DateTime now) {
-    final u = _selectedProductToRestock!;
+    final u = _selectedProductToRestock;
+    if (u == null) return;
+
     u.name = _nameController.text.trim();
 
     provider.restockProduct(
@@ -208,7 +203,9 @@ class _ModalContentState extends State<_ModalContent> {
   }
 
   void _editProduct(BuildContext context, ProductProvider provider, String savedImagePath) {
-    final u = _editingProduct!;
+    final u = _editingProduct;
+    if (u == null) return;
+
     u.name = _nameController.text.trim();
     u.costPrice = double.tryParse(_costController.text) ?? 0;
     u.retailPrice = double.tryParse(_retailController.text) ?? 0;
@@ -218,12 +215,8 @@ class _ModalContentState extends State<_ModalContent> {
 
     provider.updateProduct(u.id, u);
 
-    // Show alert first before closing modal
     showCustomAlertBox(context, "Product updated successfully!", AlertType.success);
-
   }
-
-
 
   void _addProduct(BuildContext context, ProductProvider provider, DateTime now, String id, String savedImagePath) {
     final product = Product(
@@ -246,20 +239,7 @@ class _ModalContentState extends State<_ModalContent> {
     );
 
     provider.addProduct(product);
-    // Show alert first before closing modal
     showCustomAlertBox(context, "Product Added successfully!", AlertType.success);
-
-  }
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _costController.dispose();
-    _retailController.dispose();
-    _descController.dispose();
-    _quantityController.dispose();
-    _kiloQuantityController.dispose();
-    super.dispose();
   }
 
   Future<void> _pickImage({
@@ -276,6 +256,17 @@ class _ModalContentState extends State<_ModalContent> {
     }
   }
 
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _costController.dispose();
+    _retailController.dispose();
+    _descController.dispose();
+    _quantityController.dispose();
+    _kiloQuantityController.dispose();
+    super.dispose();
+  }
 
 
   Widget _batchDropdown() {

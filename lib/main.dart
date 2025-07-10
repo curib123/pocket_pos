@@ -37,6 +37,7 @@ Future<void> main() async {
   await Hive.openBox('snapshot');
   await Hive.openBox('checkout_profits');
   await Hive.openBox('settings_currency');
+  await Hive.openBox<Map>('receipts');
 
   const supabaseUrl = 'https://ftqrtildlcgfmfqczwle.supabase.co';
   const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ0cXJ0aWxkbGNnZm1mcWN6d2xlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE2ODU0MDIsImV4cCI6MjA2NzI2MTQwMn0.Q3I5PojjIcH4MoOQHA98BQG28HY_EatpMcElc_iXP-s';

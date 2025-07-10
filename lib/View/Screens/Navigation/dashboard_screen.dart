@@ -12,6 +12,7 @@ import 'package:paninda/View/Screens/Navigation/DashboardWidget/LeastSellingProd
 import 'package:paninda/View/Screens/Navigation/DashboardWidget/LowStockProduct.dart';
 import 'package:paninda/View/Screens/Navigation/DashboardWidget/ProductProfitDropdown.dart';
 import 'package:paninda/View/Screens/Navigation/DashboardWidget/TopSellingDropdown.dart';
+import 'package:paninda/View/Screens/Navigation/ReceiptHistoryScreen.dart';
 import 'package:paninda/View_Model/AuthPaymentProvider.dart';
 import 'package:paninda/View_Model/CurrencyProvider.dart';
 import 'package:paninda/View_Model/LoanPersonProvider.dart';
@@ -81,58 +82,95 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget build(BuildContext context) {
     final provider = Provider.of<ProductProvider>(context);
 
-    return Scaffold(
-      appBar: ScalableAppBar(),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              buildGreetingCard(ownerName.toString(),storeName.toString()),
-              Consumer<ProductProvider>(
-                builder: (context, provider, _) {
-                  final totalProducts = provider.totalProductsLength;
-                  final stockInHand = provider.totalStocksQuantity.toStringAsFixed(2);
-                  final productChange = provider.productCountChangePercent.toStringAsFixed(1);
-                  final stockChange = provider.quantityChangePercent.toStringAsFixed(1);
+    return Stack(
+      children:[
+        Scaffold(
+        appBar: ScalableAppBar(),
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                buildGreetingCard(ownerName.toString(),storeName.toString()),
+                Consumer<ProductProvider>(
+                  builder: (context, provider, _) {
+                    final totalProducts = provider.totalProductsLength;
+                    final stockInHand = provider.totalStocksQuantity.toStringAsFixed(2);
+                    final productChange = provider.productCountChangePercent.toStringAsFixed(1);
+                    final stockChange = provider.quantityChangePercent.toStringAsFixed(1);
 
-                  return Center(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      child: FadeIn(
-                        duration: const Duration(milliseconds: 600),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            ProductMetricsContainer(
-                              heading: "Total Products",
-                              value: "$totalProducts",
-                              percentage: "${productChange.startsWith('-') ? '' : '+'}$productChange%",
-                            ),
-                            const SizedBox(width: 40),
-                            ProductMetricsContainer(
-                              heading: "Stock in Hand",
-                              value: "$stockInHand",
-                              percentage: "${stockChange.startsWith('-') ? '' : '+'}$stockChange%",
-                            ),
-                          ],
+                    return Center(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        child: FadeIn(
+                          duration: const Duration(milliseconds: 600),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              ProductMetricsContainer(
+                                heading: "Total Products",
+                                value: "$totalProducts",
+                                percentage: "${productChange.startsWith('-') ? '' : '+'}$productChange%",
+                              ),
+                              const SizedBox(width: 40),
+                              ProductMetricsContainer(
+                                heading: "Stock in Hand",
+                                value: "$stockInHand",
+                                percentage: "${stockChange.startsWith('-') ? '' : '+'}$stockChange%",
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                  );
-                },
-              ),
-              const SizedBox(height: 10),
-              _buildInventoryOverview(provider),
-              _buildFinancialSummary(provider),
-              _buildMetricSummary(provider),
-              _buildProfitSummary(provider),
-              const SizedBox(height: 20),
-            ],
+                    );
+                  },
+                ),
+                const SizedBox(height: 10),
+                _buildInventoryOverview(provider),
+                _buildFinancialSummary(provider),
+                _buildMetricSummary(provider),
+                _buildProfitSummary(provider),
+                const SizedBox(height: 20),
+              ],
+            ),
           ),
         ),
       ),
+        Positioned(
+          bottom: 10,
+          right: 15,
+          child: Material(
+            color: Colors.transparent,
+            shape: const CircleBorder(),
+            elevation: 6,
+            child: InkWell(
+              onTap: () {
+                 Navigator.push(context, MaterialPageRoute(builder: (_) => const ReceiptHistoryScreen()));
+              },
+              customBorder: const CircleBorder(),
+              splashColor: Colors.white24,
+              highlightColor: Colors.white10,
+              child: Container(
+                width: 50,
+                height: 50,
+                decoration: const BoxDecoration(
+                  color: AppColor.primary,
+                  shape: BoxShape.circle,
+                ),
+                child: const Center(
+                  child: Icon(
+                    LucideIcons.receipt,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        )
+        ,
+      ],
     );
   }
 
