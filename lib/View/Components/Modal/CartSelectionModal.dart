@@ -219,7 +219,7 @@ class _CartSelectionContentState extends State<_CartSelectionContent> {
                   ),
                   child: Text(
                     "${currencyFormat.format(product.retailPrice)} / ${product.unit}",
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600,fontSize: 10),
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600,fontSize: 13),
                   ),
                 ),
               ), Positioned(
@@ -282,7 +282,7 @@ class _CartSelectionContentState extends State<_CartSelectionContent> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     IconButton(
-                      icon: Icon(Icons.remove_circle_outline, color: AppColor.errorText),
+                      icon: Icon(Icons.remove_circle_outline, color: AppColor.errorText,size: 25,),
                       onPressed: () {
                         setState(() {
                           final current = quantities[product.id] ?? 1;
@@ -292,10 +292,10 @@ class _CartSelectionContentState extends State<_CartSelectionContent> {
                     ),
                     Text(
                       '${quantities[product.id] ?? 1}',
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
                     ),
                     IconButton(
-                      icon: Icon(Icons.add_circle_outline, color: AppColor.primary),
+                      icon: Icon(Icons.add_circle_outline, color: AppColor.primary,size: 25,),
                       onPressed: () {
                         setState(() {
                           final current = quantities[product.id] ?? 1;
@@ -317,7 +317,7 @@ class _CartSelectionContentState extends State<_CartSelectionContent> {
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none,
                     ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
                   ),
                   onChanged: (_) => setState(() {}),
                 ),
@@ -362,7 +362,7 @@ class _CartSelectionContentState extends State<_CartSelectionContent> {
       label: Text(
         label,
         style: TextStyle(
-          fontSize: 10,
+          fontSize: 13,
           fontWeight: FontWeight.w600,
           color: isSelected ? Colors.white : Colors.grey.shade700,
         ),

@@ -110,7 +110,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               value: "$totalProducts",
                               percentage: "${productChange.startsWith('-') ? '' : '+'}$productChange%",
                             ),
-                            const SizedBox(width: 12),
+                            const SizedBox(width: 40),
                             ProductMetricsContainer(
                               heading: "Stock in Hand",
                               value: "$stockInHand",

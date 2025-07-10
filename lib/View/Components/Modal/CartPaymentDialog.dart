@@ -29,7 +29,7 @@ class CartPaymentDialog {
           ),
           child: ConstrainedBox(
             constraints: BoxConstraints(
-              maxWidth: isLargeScreen ? size.width * 0.5 : size.width * 0.9, // ✅ Half for large screens
+              maxWidth: isLargeScreen ? size.width * 0.5 : size.width * 1, // ✅ Half for large screens
               maxHeight: size.height * 1, // Optional: control height too
             ),
             child: _CartPaymentContent(
