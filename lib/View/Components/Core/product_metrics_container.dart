@@ -26,7 +26,7 @@ class ProductMetricsContainer extends StatelessWidget {
     final String formattedValue = _formatWithComma(value);
 
     return Container(
-      padding: const EdgeInsets.all(12), // smaller padding
+      padding: const EdgeInsets.symmetric(vertical: 10), // smaller padding
       decoration: BoxDecoration(
         color: Colors.transparent,
         borderRadius: BorderRadius.circular(12), // smaller radius
