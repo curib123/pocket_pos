@@ -614,43 +614,7 @@ class ProductProvider with ChangeNotifier {
   double get totalStocksKilos => products.fold(0, (sum, p) => sum + p.totalKilos);
   double get totalStocks => totalStocksQuantity + totalStocksKilos;
 
-  String? forecastStockDepletion(String productId, int daysAhead) {
-    final product = getProductById(productId);
-    if (product == null) return null;
 
-    // Simulated daily average sales based on recent checkout profits (last 30 days)
-    final cutoffDate = DateTime.now().subtract(Duration(days: 30));
-    double totalSold = 0;
-
-    for (var record in ProfitHelper.profitBox.values) {
-      final timestampStr = record['timestamp'];
-      final date = DateTime.tryParse(timestampStr);
-      if (date == null || date.isBefore(cutoffDate)) continue;
-
-      final items = record['items'];
-      if (items is List) {
-        for (var item in items) {
-          if (item['productId'] == productId) {
-            totalSold += item['quantity'] ?? 0;
-          }
-        }
-      }
-    }
-
-    if (totalSold == 0) return "No sales data";
-
-    final dailyAverage = totalSold / 30;
-    if (dailyAverage == 0) return "No sales trend";
-
-    final totalStock = product.totalSacks + product.totalKilos;
-    final estimatedDays = (totalStock / dailyAverage).floor();
-
-    if (estimatedDays > daysAhead) {
-      return "Safe for next $daysAhead days.";
-    } else {
-      return "Estimated to deplete in $estimatedDays days.";
-    }
-  }
 
   List<Map<String, dynamic>> getTopSellingProducts(int topN) {
     return _getSellingProducts(topN, descending: true);

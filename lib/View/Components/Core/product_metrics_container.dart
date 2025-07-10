@@ -35,7 +35,7 @@ class ProductMetricsContainer extends StatelessWidget {
         fit: BoxFit.scaleDown,
         alignment: Alignment.center,
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             FadeInDown(
               duration: const Duration(milliseconds: 500),
@@ -43,7 +43,7 @@ class ProductMetricsContainer extends StatelessWidget {
                 heading.toUpperCase(),
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: getResponsiveFontSize(context, 15),
+                  fontSize: getResponsiveFontSize(context, 14),
                   fontWeight: FontWeight.bold,
                   color: AppColor.textSecondary,
                   letterSpacing: 1,
