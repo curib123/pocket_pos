@@ -105,7 +105,7 @@ class _LowStockProductDropdownState<T> extends State<LowStockProductDropdown<T>>
                   Padding(
                     padding: const EdgeInsets.all(16),
                     child: Text(
-                      "Select a Low Stock Product",
+                      "View Low-Stock Product",
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
                         color: AppColor.textPrimary,

@@ -6,7 +6,7 @@ import 'package:paninda/View/Components/Alert/custom_alert_notification.dart';
 import 'package:paninda/View/Components/Alert/custom_confirm_dialog.dart';
 import 'package:paninda/View/Components/Alert/show_quantity_edit.dart';
 import 'package:paninda/View/Components/Custom/custom_btn.dart';
-import 'package:paninda/View/Components/Modal/CartPaymentModal.dart';
+import 'package:paninda/View/Components/Modal/CartPaymentDialog.dart';
 import 'package:paninda/View/Components/Modal/CartSelectionModal.dart';
 import 'package:paninda/View/Components/Modal/add_product_modal.dart';
 import 'package:paninda/View_Model/CurrencyProvider.dart';
@@ -24,9 +24,25 @@ class CartModal {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (context) => _ProductProfileContent(product: product),
+      builder: (context) {
+        final size = MediaQuery.of(context).size;
+        final isPortrait = size.height > size.width;
+
+        // Increase height factors for taller modal
+        final baseHeightFactor = size.width < 600 ? 0.76 : 0.57;
+        final adjustedFactor = isPortrait ? baseHeightFactor + 0.05 : baseHeightFactor;
+
+        return FractionallySizedBox(
+          heightFactor: adjustedFactor.clamp(0.5, 1.0),
+          child: Padding(
+            padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+            child: _ProductProfileContent(product: product),
+          ),
+        );
+      },
     );
   }
+
 }
 
 class _ProductProfileContent extends StatefulWidget {
@@ -394,7 +410,7 @@ class _ProductProfileContentState extends State<_ProductProfileContent> {
                       );
                     },
                   ),
-                  SizedBox(height: 10,),
+                  SizedBox(height: 0,),
                   CustomButton(
                     icon: Icons.check_circle_outline_outlined,
                     label: "Checkout",

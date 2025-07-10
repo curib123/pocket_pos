@@ -691,40 +691,6 @@ class ProductProvider with ChangeNotifier {
   }
 
 
-  double getProfitSummary({DateTime? startDate, DateTime? endDate}) {
-    double totalProfit = 0;
-
-    for (var record in ProfitHelper.profitBox.values) {
-      final timestampStr = record['timestamp'];
-      final date = DateTime.tryParse(timestampStr);
-      if (date == null) continue;
-
-      if (startDate != null && date.isBefore(startDate)) continue;
-      if (endDate != null && date.isAfter(endDate)) continue;
-
-      final profit = record['profit'];
-      if (profit is num) totalProfit += profit.toDouble();
-    }
-
-    return totalProfit;
-  }
-
-  double? simulatePriceChangeImpact(String productId, double newPrice) {
-    final product = getProductById(productId);
-    if (product == null) return null;
-
-    double simulatedProfit = 0;
-
-    for (final batch in product.batches) {
-      final totalQty = batch.quantity + batch.kiloQuantity;
-      final profit = totalQty * (newPrice - product.costPrice);
-      simulatedProfit += profit;
-    }
-
-    return simulatedProfit;
-  }
-
-
   Map<String, dynamic> exportProduct(Product product) {
     return {
       'id': product.id,

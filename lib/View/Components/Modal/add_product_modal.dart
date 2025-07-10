@@ -27,15 +27,46 @@ class AddProductModal {
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       builder: (_) {
+
+        final mediaQuery = MediaQuery.of(context);
+        final width = mediaQuery.size.width;
+        final height = mediaQuery.size.height;
+
+// You can adjust these values for finer control:
+        double heightFactor;
+
+        if (width < 600) {
+          // Mobile
+          heightFactor = 0.8;
+        } else if (width < 900) {
+          // Small Tablets / Foldables
+          heightFactor = 0.65;
+        } else {
+          // Large Tablets / Desktop
+          heightFactor = 0.5;
+        }
+
+// Optional: Adjust height factor based on screen's aspect ratio
+// (for better vertical responsiveness)
+        final aspectRatio = width / height;
+        if (aspectRatio < 0.75) {
+          // Very tall screen, e.g., phones with long aspect ratios
+          heightFactor += 0.05; // Slightly more height for tall screens
+        }
         // Fix: wrap with Builder to access a valid MediaQuery context
         return Builder(
           builder: (innerContext) {
             final bottomInset = MediaQuery.of(innerContext).viewInsets.bottom;
             return FractionallySizedBox(
-              heightFactor: 0.85,
+              heightFactor: heightFactor.clamp(0.3, 1.0), // Safety clamp
               child: Padding(
                 padding: EdgeInsets.only(bottom: bottomInset),
-                child: _ModalContent(isEdit: isEdit, isStock: isStock, product: product,category: category),
+                child: _ModalContent(
+                  isEdit: isEdit,
+                  isStock: isStock,
+                  product: product,
+                  category: category,
+                ),
               ),
             );
           },

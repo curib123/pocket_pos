@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:paninda/View/Components/Custom/custom_btn.dart';
-import 'package:paninda/View/Components/Modal/CartPaymentModal.dart';
+import 'package:paninda/View/Components/Modal/CartPaymentDialog.dart';
 import 'package:provider/provider.dart';
 import 'package:paninda/Model/product_model.dart';
 import 'package:paninda/View/Components/HelperClass/AppColor.dart';
@@ -18,10 +18,22 @@ class CartSelectionModal {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (context) => const FractionallySizedBox(
-        heightFactor: 0.85,
-        child: _CartSelectionContent(),
-      ),
+      builder: (context) {
+        final size = MediaQuery.of(context).size;
+        final isPortrait = size.height > size.width;
+
+        // Increase height factors for taller modal
+        final baseHeightFactor = size.width < 600 ? 0.76 : 0.57;
+        final adjustedFactor = isPortrait ? baseHeightFactor + 0.05 : baseHeightFactor;
+
+        return FractionallySizedBox(
+          heightFactor: adjustedFactor.clamp(0.5, 1.0),
+          child: Padding(
+            padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+            child: _CartSelectionContent(),
+          ),
+        );
+      },
     );
   }
 }
@@ -207,48 +219,64 @@ class _CartSelectionContentState extends State<_CartSelectionContent> {
                   ),
                   child: Text(
                     "${currencyFormat.format(product.retailPrice)} / ${product.unit}",
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600,fontSize: 10),
                   ),
+                ),
+              ), Positioned(
+                top: 0,
+                right: 0,
+                child:  // Delete Button
+                IconButton(
+                  icon: Icon(LucideIcons.trash2, color: AppColor.error),
+                  onPressed: () {
+                    setState(() {
+                      productProvider.removeFromCart(product);
+                      quantities.remove(product.id);
+                      kiloControllers.remove(product.id)?.dispose();
+                      selectedModes.remove(product.id);
+                    });
+                  },
                 ),
               ),
             ],
           ),
           Padding(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(5),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
+                    // Product Name with ellipsis
                     Expanded(
                       child: Text(
                         product.name,
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis, // ✅ Correct place
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
-                    IconButton(
-                      icon: Icon(LucideIcons.trash2, color: AppColor.error),
-                      onPressed: () {
-                        setState(() {
-                          productProvider.removeFromCart(product);
-                          quantities.remove(product.id);
-                          kiloControllers.remove(product.id)?.dispose();
-                          selectedModes.remove(product.id);
-                        });
-                      },
+
+                    const SizedBox(width: 8),
+
+                    // Qty/Kilo Switch
+                    Row(
+                      children: [
+                        _buildChoiceChip(product.id, "Quantity", 0),
+                        const SizedBox(width: 10),
+                        _buildChoiceChip(product.id, "Kilo", 1),
+                      ],
                     ),
+
+                    const SizedBox(width: 8),
+
+
                   ],
                 ),
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _buildChoiceChip(product.id, "Quantity", 0),
-                    const SizedBox(width: 10),
-                    _buildChoiceChip(product.id, "Kilo", 1),
-                  ],
-                ),
-                const SizedBox(height: 12),
+
                 selectedMode == 0
                     ? Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -293,7 +321,7 @@ class _CartSelectionContentState extends State<_CartSelectionContent> {
                   ),
                   onChanged: (_) => setState(() {}),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 0),
                 // Subtotal Display
                 Builder(
                   builder: (context) {
@@ -331,8 +359,24 @@ class _CartSelectionContentState extends State<_CartSelectionContent> {
   Widget _buildChoiceChip(String productId, String label, int mode) {
     final isSelected = selectedModes[productId] == mode;
     return ChoiceChip(
-      label: Text(label),
+      label: Text(
+        label,
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w600,
+          color: isSelected ? Colors.white : Colors.grey.shade700,
+        ),
+      ),
       selected: isSelected,
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      visualDensity: const VisualDensity(horizontal: -3, vertical: -3),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      selectedColor: AppColor.primary,
+      backgroundColor: Colors.grey.shade200,
+      showCheckmark: true,
+      checkmarkColor: Colors.white,
       onSelected: (val) {
         if (val) {
           setState(() {
@@ -341,13 +385,10 @@ class _CartSelectionContentState extends State<_CartSelectionContent> {
           });
         }
       },
-      selectedColor: AppColor.primary.withOpacity(0.15),
-      labelStyle: TextStyle(
-        color: isSelected ? AppColor.primary : Colors.grey.shade600,
-        fontWeight: FontWeight.w600,
-      ),
     );
   }
+
+
 
   Widget _buildDragHandle() {
     return Center(

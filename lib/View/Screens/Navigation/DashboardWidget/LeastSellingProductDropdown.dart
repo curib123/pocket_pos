@@ -111,7 +111,7 @@ class _LeastSellingTileDropdownState extends State<LeastSellingTileDropdown> {
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: Text(
-                  "Select a Least-Selling Product",
+                  "View Least-Selling Product",
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     color: AppColor.textPrimary,

@@ -3,7 +3,6 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'package:paninda/View/Components/Custom/custom_btn.dart';
 import 'package:provider/provider.dart';
 import 'package:paninda/Model/loan_person_model.dart';
-import 'package:paninda/Model/product_model.dart';
 import 'package:paninda/View/Components/Alert/custom_alert_notification.dart';
 import 'package:paninda/View/Components/HelperClass/AppColor.dart';
 import 'package:paninda/View_Model/LoanPersonProvider.dart';
@@ -19,21 +18,30 @@ class CartPaymentDialog {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => Dialog(
-        backgroundColor: AppColor.background,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxHeight: 600),
-          child: _CartPaymentContent(
-            quantities: quantities,
-            kiloQuantities: kiloQuantities,
-            selectedModes: selectedModes,
+      builder: (context) {
+        final size = MediaQuery.of(context).size;
+        final isLargeScreen = size.width >= 600; // ✅ Adjust threshold as needed
+
+        return Dialog(
+          backgroundColor: AppColor.background,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
           ),
-        ),
-      ),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: isLargeScreen ? size.width * 0.5 : size.width * 0.9, // ✅ Half for large screens
+              maxHeight: size.height * 1, // Optional: control height too
+            ),
+            child: _CartPaymentContent(
+              quantities: quantities,
+              kiloQuantities: kiloQuantities,
+              selectedModes: selectedModes,
+            ),
+          ),
+        );
+      },
     );
+
   }
 }
 
@@ -58,6 +66,9 @@ class _CartPaymentContentState extends State<_CartPaymentContent> {
   final TextEditingController borrowerController = TextEditingController();
   bool isLoan = false;
   late final currencyFormat;
+  FocusNode _cashFocusNode = FocusNode();
+
+
 
   @override
   void initState() {
@@ -68,6 +79,7 @@ class _CartPaymentContentState extends State<_CartPaymentContent> {
   @override
   void dispose() {
     cashController.dispose();
+    _cashFocusNode.dispose();
     borrowerController.dispose();
     super.dispose();
   }
@@ -111,9 +123,9 @@ class _CartPaymentContentState extends State<_CartPaymentContent> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _buildPaymentTypeSelector(),
-            const SizedBox(height: 24),
+            const SizedBox(height: 10),
             _buildSummaryCard(total, costTotal, profit),
-            const SizedBox(height: 20),
+            const SizedBox(height: 10),
             isLoan
                 ? _buildLoanAutocomplete(loanProvider)
                 : _buildCashInput(),
@@ -165,55 +177,122 @@ class _CartPaymentContentState extends State<_CartPaymentContent> {
   Widget _buildPaymentTypeSelector() {
     return Center(
       child: Wrap(
-        spacing: 14,
-        runSpacing: 10,
+        spacing: 10,
+        runSpacing: 8,
         alignment: WrapAlignment.center,
         children: [
           ChoiceChip(
-            label: const Text("Cash Payment"),
+            label: const Text("Cash"),
             selected: !isLoan,
             onSelected: (_) => setState(() => isLoan = false),
-            selectedColor: AppColor.primary.withOpacity(0.1),
+            selectedColor: AppColor.primary,
             labelStyle: TextStyle(
-              color: !isLoan ? AppColor.primary : Colors.grey.shade700,
+              color: !isLoan ? Colors.white : Colors.grey.shade700, // ✅ White text when selected
               fontWeight: FontWeight.w600,
+              fontSize: 13,
             ),
-            backgroundColor: Colors.transparent,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            showCheckmark: true,                     // ✅ Show checkmark
+            checkmarkColor: Colors.white,            // ✅ White checkmark
+            backgroundColor: Colors.grey.shade200,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(30),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
           ),
           ChoiceChip(
-            label: const Text("Loan / Credit"),
+            label: const Text("Loan"),
             selected: isLoan,
             onSelected: (_) => setState(() => isLoan = true),
-            selectedColor: AppColor.secondary.withOpacity(0.1),
+            selectedColor: AppColor.secondary,
             labelStyle: TextStyle(
-              color: isLoan ? AppColor.secondary : Colors.grey.shade700,
+              color: isLoan ? Colors.white : Colors.grey.shade700, // ✅ White text when selected
               fontWeight: FontWeight.w600,
+              fontSize: 13,
             ),
-            backgroundColor: Colors.transparent,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            showCheckmark: true,                     // ✅ Show checkmark
+            checkmarkColor: Colors.white,            // ✅ White checkmark
+            backgroundColor: Colors.grey.shade200,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(30),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
           ),
         ],
       ),
     );
   }
 
+
+
   Widget _buildCashInput() {
-    return TextField(
-      controller: cashController,
-      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-      decoration: InputDecoration(
-        labelText: "Enter Cash Payment",
-        prefixIcon: Icon(LucideIcons.wallet2, color: AppColor.primary),
-        filled: true,
-        fillColor: AppColor.primary.withOpacity(0.05),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+    final List<String> cashOptions =
+    List.generate(20000, (index) => ((index + 1) * 5).toString()); // ₱5 to ₱10,000
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: RawAutocomplete<String>(
+        textEditingController: cashController,
+        focusNode: _cashFocusNode,
+        optionsBuilder: (TextEditingValue textEditingValue) {
+          if (textEditingValue.text.isEmpty) return const Iterable<String>.empty();
+
+          return cashOptions
+              .where((option) => option.startsWith(textEditingValue.text))
+              .take(3); // limit to 3 results
+        },
+        displayStringForOption: (option) => option,
+        fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+          return TextField(
+            controller: controller,
+            focusNode: focusNode,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            decoration: InputDecoration(
+              labelText: "Enter Cash Payment",
+              prefixIcon: Icon(LucideIcons.wallet2, color: AppColor.primary),
+              filled: true,
+              fillColor: AppColor.primary.withOpacity(0.03),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide.none,
+              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            ),
+            onChanged: (_) {
+              if (mounted) setState(() {});
+            },
+            onSubmitted: (_) => onFieldSubmitted(),
+          );
+        },
+        optionsViewBuilder: (context, onSelected, options) {
+          return Align(
+            alignment: Alignment.topLeft,
+            child: Material(
+              elevation: 4,
+              borderRadius: BorderRadius.circular(10),
+              child: ListView.builder(
+                padding: EdgeInsets.zero,
+                shrinkWrap: true,
+                itemCount: options.length,
+                itemBuilder: (context, index) {
+                  final option = options.elementAt(index);
+                  return ListTile(
+                    title: Text("₱$option"),
+                    onTap: () => onSelected(option),
+                  );
+                },
+              ),
+            ),
+          );
+        },
+        onSelected: (String value) {
+          if (mounted) setState(() {});
+        },
       ),
-      onChanged: (_) => setState(() {}),
     );
   }
+
+
 
   Widget _buildChangeDisplay(double change) {
     return Container(
