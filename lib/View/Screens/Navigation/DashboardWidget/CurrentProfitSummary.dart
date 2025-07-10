@@ -125,10 +125,10 @@ class _CurrentProfitSummaryState extends State<CurrentProfitSummary> {
               ),
               DropdownButton<int>(
                 value: _selectedLimit,
-                items: [5, 10, 15, 20].map((limit) {
+                items: [5, 10, 20,30].map((limit) {
                   return DropdownMenuItem(
                     value: limit,
-                    child: Text("Top $limit"),
+                    child: Text("Latest $limit"),
                   );
                 }).toList(),
                 onChanged: (value) {

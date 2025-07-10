@@ -89,7 +89,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              buildGreetingCard(ownerName!,storeName!),
+              buildGreetingCard(ownerName.toString(),storeName.toString()),
               Consumer<ProductProvider>(
                 builder: (context, provider, _) {
                   final totalProducts = provider.totalProductsLength;
