@@ -1,7 +1,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import 'package:paninda/View/Components/Custom/ShoppingCartAnimatedWidget.dart';
+import 'package:paninda/View/Components/Custom/custom_btn.dart';
+import 'package:paninda/View/Components/Modal/add_product_modal.dart';
 import 'package:paninda/View_Model/CurrencyProvider.dart';
 import 'package:paninda/View_Model/SwitchProvider.dart';
 import 'package:provider/provider.dart';
@@ -42,6 +44,15 @@ class _CategoryProductListScreenState extends State<CategoryProductListScreen> {
           ShoppingCartAnimatedwidget(iconColor: AppColor.surface,),
           const SizedBox(width: 12),
         ],
+      ),
+      bottomNavigationBar:  Padding(
+        padding: const EdgeInsets.symmetric(vertical: 20,horizontal: 15),
+        child: CustomButton(
+          color: color,
+          icon: LucideIcons.plusCircle,
+          label: "Add New Product",
+          onPressed: () => AddProductModal.show(context, isStock: false, isEdit: false, category: widget.category),
+        ),
       ),
       body: Consumer<SwitchProvider>(
         builder: (context,switchProvider,_) {

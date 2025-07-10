@@ -49,7 +49,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
           color: AppColor.primary,
           icon: LucideIcons.plusCircle,
           label: "Add New Product",
-          onPressed: () => AddProductModal.show(context, isStock: false, isEdit: false),
+          onPressed: () => AddProductModal.show(context, isStock: false, isEdit: false, category: ''),
         ),
       ),
       body: Consumer<SwitchProvider>(

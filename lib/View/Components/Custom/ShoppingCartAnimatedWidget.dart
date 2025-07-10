@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:paninda/View/Components/Modal/CartSelectionModal.dart';
-import 'package:paninda/View/Components/Modal/cart_list_modal.dart';
 import 'package:paninda/View_Model/ProductProvider.dart';
 import 'package:provider/provider.dart';
 

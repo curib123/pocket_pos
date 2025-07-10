@@ -60,6 +60,18 @@ class _CartSelectionContentState extends State<_CartSelectionContent> {
     super.dispose();
   }
 
+  double getFinalTotal(Map<Product, int> cartItems) {
+    double total = 0;
+    for (var product in cartItems.keys) {
+      int selectedMode = selectedModes[product.id] ?? 0;
+      double quantity = selectedMode == 1
+          ? double.tryParse(kiloControllers[product.id]?.text ?? '0') ?? 0
+          : (quantities[product.id] ?? 1).toDouble();
+      total += quantity * product.retailPrice;
+    }
+    return total;
+  }
+
   @override
   Widget build(BuildContext context) {
     final productProvider = context.watch<ProductProvider>();
@@ -81,7 +93,6 @@ class _CartSelectionContentState extends State<_CartSelectionContent> {
             children: [
               _buildDragHandle(),
               const SizedBox(height: 24),
-
               if (cartItems.isEmpty) ...[
                 const SizedBox(height: 40),
                 Icon(LucideIcons.shoppingCart, size: 64, color: Colors.grey),
@@ -95,13 +106,38 @@ class _CartSelectionContentState extends State<_CartSelectionContent> {
               ] else ...[
                 ...cartItems.keys.map((product) => _buildProductCard(product, productProvider)).toList(),
                 const SizedBox(height: 24),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColor.surface,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        "Final Total:",
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                      ),
+                      Text(
+                        currencyFormat.format(getFinalTotal(cartItems)),
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: AppColor.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
                 CustomButton(
                   label: "Proceed to Payment",
                   icon: LucideIcons.checkCircle2,
                   color: AppColor.textPrimary,
                   onPressed: () {
-                    Navigator.pop(context);
-                    CartPaymentModal.show(
+                    
+                    CartPaymentDialog.show(
                       context,
                       quantities: quantities,
                       kiloQuantities: kiloControllers.map((k, v) => MapEntry(k, v.text)),
@@ -256,6 +292,33 @@ class _CartSelectionContentState extends State<_CartSelectionContent> {
                     contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
                   ),
                   onChanged: (_) => setState(() {}),
+                ),
+                const SizedBox(height: 12),
+                // Subtotal Display
+                Builder(
+                  builder: (context) {
+                    final quantity = selectedMode == 1
+                        ? double.tryParse(kiloControllers[product.id]?.text ?? '0') ?? 0
+                        : (quantities[product.id] ?? 1).toDouble();
+                    final subtotal = quantity * product.retailPrice;
+                    return Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          "Subtotal:",
+                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                        ),
+                        Text(
+                          currencyFormat.format(subtotal),
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: AppColor.primary,
+                          ),
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ],
             ),

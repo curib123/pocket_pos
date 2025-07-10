@@ -371,8 +371,8 @@ class ProductProvider with ChangeNotifier {
             : useStockFIFO(item['productId'], item['quantity']);
       }
 
-
-    await ProfitHelper.saveProfit(totalProfit);
+      // ✅ Save profit with items for sales report
+      await ProfitHelper.saveProfit(totalProfit, receipt);
 
       return {
         'items': receipt,
@@ -412,8 +412,8 @@ class ProductProvider with ChangeNotifier {
         );
       }
 
-      await ProfitHelper.saveProfit(totalProfit);
-
+      // ✅ Save profit with items for sales report (Loan case too)
+      await ProfitHelper.saveProfit(totalProfit, receipt);
 
       return {
         'items': receipt,
@@ -427,6 +427,7 @@ class ProductProvider with ChangeNotifier {
 
     return null;
   }
+
 
   // INVENTORY METRICS
   double get totalInventorySacks => products.fold(0, (sum, p) => sum + p.totalSacks);
@@ -612,6 +613,117 @@ class ProductProvider with ChangeNotifier {
   double get totalStocksQuantity => products.fold(0, (sum, p) => sum + p.totalSacks);
   double get totalStocksKilos => products.fold(0, (sum, p) => sum + p.totalKilos);
   double get totalStocks => totalStocksQuantity + totalStocksKilos;
+
+  String? forecastStockDepletion(String productId, int daysAhead) {
+    final product = getProductById(productId);
+    if (product == null) return null;
+
+    // Simulated daily average sales based on recent checkout profits (last 30 days)
+    final cutoffDate = DateTime.now().subtract(Duration(days: 30));
+    double totalSold = 0;
+
+    for (var record in ProfitHelper.profitBox.values) {
+      final timestampStr = record['timestamp'];
+      final date = DateTime.tryParse(timestampStr);
+      if (date == null || date.isBefore(cutoffDate)) continue;
+
+      final items = record['items'];
+      if (items is List) {
+        for (var item in items) {
+          if (item['productId'] == productId) {
+            totalSold += item['quantity'] ?? 0;
+          }
+        }
+      }
+    }
+
+    if (totalSold == 0) return "No sales data";
+
+    final dailyAverage = totalSold / 30;
+    if (dailyAverage == 0) return "No sales trend";
+
+    final totalStock = product.totalSacks + product.totalKilos;
+    final estimatedDays = (totalStock / dailyAverage).floor();
+
+    if (estimatedDays > daysAhead) {
+      return "Safe for next $daysAhead days.";
+    } else {
+      return "Estimated to deplete in $estimatedDays days.";
+    }
+  }
+
+  List<Map<String, dynamic>> getTopSellingProducts(int topN) {
+    return _getSellingProducts(topN, descending: true);
+  }
+
+  List<Map<String, dynamic>> getLeastSellingProducts(int bottomN) {
+    return _getSellingProducts(bottomN, descending: false);
+  }
+
+  List<Map<String, dynamic>> _getSellingProducts(int count, {required bool descending}) {
+    final Map<String, double> sales = {};
+
+    for (var record in ProfitHelper.profitBox.values) {
+      if (record is Map && record['items'] is List) {
+        for (var item in record['items']) {
+          final id = item['productId'];
+          final qty = (item['quantity'] ?? 0).toDouble();
+          if (id != null) {
+            sales[id] = (sales[id] ?? 0) + qty;
+          }
+        }
+      }
+    }
+
+    final sortedEntries = sales.entries.toList()
+      ..sort((a, b) => descending
+          ? b.value.compareTo(a.value)
+          : a.value.compareTo(b.value));
+
+    return sortedEntries.take(count).map((e) {
+      final product = getProductById(e.key);
+      return {
+        'productId': e.key,
+        'productName': product?.name ?? 'Unknown',
+        'quantitySold': e.value,
+      };
+    }).toList();
+  }
+
+
+  double getProfitSummary({DateTime? startDate, DateTime? endDate}) {
+    double totalProfit = 0;
+
+    for (var record in ProfitHelper.profitBox.values) {
+      final timestampStr = record['timestamp'];
+      final date = DateTime.tryParse(timestampStr);
+      if (date == null) continue;
+
+      if (startDate != null && date.isBefore(startDate)) continue;
+      if (endDate != null && date.isAfter(endDate)) continue;
+
+      final profit = record['profit'];
+      if (profit is num) totalProfit += profit.toDouble();
+    }
+
+    return totalProfit;
+  }
+
+  double? simulatePriceChangeImpact(String productId, double newPrice) {
+    final product = getProductById(productId);
+    if (product == null) return null;
+
+    double simulatedProfit = 0;
+
+    for (final batch in product.batches) {
+      final totalQty = batch.quantity + batch.kiloQuantity;
+      final profit = totalQty * (newPrice - product.costPrice);
+      simulatedProfit += profit;
+    }
+
+    return simulatedProfit;
+  }
+
 
   Map<String, dynamic> exportProduct(Product product) {
     return {

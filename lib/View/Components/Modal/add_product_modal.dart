@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:lucide_icons/lucide_icons.dart';
@@ -17,7 +18,7 @@ import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
 class AddProductModal {
-  static void show(BuildContext context, {bool isEdit = false, bool isStock = false, Product? product}) {
+  static void show(BuildContext context, {bool isEdit = false, bool isStock = false, Product? product,required String category}) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -34,7 +35,7 @@ class AddProductModal {
               heightFactor: 0.85,
               child: Padding(
                 padding: EdgeInsets.only(bottom: bottomInset),
-                child: _ModalContent(isEdit: isEdit, isStock: isStock, product: product),
+                child: _ModalContent(isEdit: isEdit, isStock: isStock, product: product,category: category),
               ),
             );
           },
@@ -49,8 +50,10 @@ class _ModalContent extends StatefulWidget {
   final bool isEdit;
   final bool isStock;
   final Product? product;
+  final String category ;
 
-  const _ModalContent({Key? key, this.isEdit = false, this.isStock = false, this.product}) : super(key: key);
+
+  const _ModalContent({Key? key, this.isEdit = false, this.isStock = false, this.product,  required this.category}) : super(key: key);
 
   @override
   State<_ModalContent> createState() => _ModalContentState();
@@ -99,6 +102,7 @@ class _ModalContentState extends State<_ModalContent> {
       }
     }
 
+    if(widget.category.isNotEmpty) _selectedCategory = widget.category;
 
   }
 
@@ -450,13 +454,13 @@ class _ModalContentState extends State<_ModalContent> {
                   if (!widget.isStock) ...[
                     modernInput(
                       _descController,
-                      "Product Description",                   // Label
-                      "Enter product details",                 // Hint
+                      "Product Description",
+                      "Briefly describe the product",
                       LucideIcons.stickyNote,
                       maxLines: 2,
                     ),
                     modernDropdown(
-                      "Select Category",
+                      "Choose Product Category",
                       LucideIcons.layoutGrid,
                       _selectedCategory,
                       catProv.visibleCategories,
@@ -464,36 +468,38 @@ class _ModalContentState extends State<_ModalContent> {
                     ),
                     modernInput(
                       _costController,
-                      "Purchase Price",
-                      "Enter cost per unit",
-                      LucideIcons.dollarSign,
+                      "Cost Price",
+                      "How much does it cost per unit?",
+                      LucideIcons.wallet,
                       type: TextInputType.number,
                     ),
                     modernInput(
                       _retailController,
                       "Selling Price",
-                      "Enter selling price per unit",
-                      LucideIcons.badgeDollarSign,
+                      "How much will you sell it for per unit?",
+                      LucideIcons.wallet2,
                       type: TextInputType.number,
                     ),
                     if (!widget.isEdit) ...[
                       const SizedBox(height: 5),
                       modernInput(
                         _quantityController,
-                        "Stock Quantity (pieces)",
-                        "Number of items in stock",
+                        "Stock Quantity (Pieces)",
+                        "Total number of items available",
                         LucideIcons.shoppingBag,
                         type: TextInputType.number,
                       ),
                       modernInput(
                         _kiloQuantityController,
-                        "Stock Quantity (kilograms)",
-                        "Number of kilos in stock",
+                        "Stock Quantity (Kilograms)",
+                        "Total kilos available in stock",
                         LucideIcons.scale,
                         type: TextInputType.number,
                       ),
                       const SizedBox(height: 5),
                     ],
+
+
                   if(widget.isEdit) ...[
                     SizedBox(height: 5,),
                     Text(
@@ -527,15 +533,15 @@ class _ModalContentState extends State<_ModalContent> {
                     const SizedBox(height: 5),
                     modernInput(
                       _quantityController,
-                      "Stock Quantity (pieces)",
-                      "Number of items in stock",
+                      "Stock Quantity (Pieces)",
+                      "Total number of items available",
                       LucideIcons.shoppingBag,
                       type: TextInputType.number,
                     ),
                     modernInput(
                       _kiloQuantityController,
-                      "Stock Quantity (kilograms)",
-                      "Number of kilos in stock",
+                      "Stock Quantity (Kilograms)",
+                      "Total kilos available in stock",
                       LucideIcons.scale,
                       type: TextInputType.number,
                     ),

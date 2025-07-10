@@ -43,7 +43,7 @@ class ProductMetricsContainer extends StatelessWidget {
                 heading.toUpperCase(),
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: getResponsiveFontSize(context, 12),
+                  fontSize: getResponsiveFontSize(context, 15),
                   fontWeight: FontWeight.bold,
                   color: AppColor.textSecondary,
                   letterSpacing: 1,
@@ -57,7 +57,7 @@ class ProductMetricsContainer extends StatelessWidget {
                 formattedValue,
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: getResponsiveFontSize(context, 22),
+                  fontSize: getResponsiveFontSize(context, 25),
                   fontWeight: FontWeight.bold,
                   color: AppColor.textPrimary,
                 ),
@@ -83,7 +83,7 @@ class ProductMetricsContainer extends StatelessWidget {
                       ),
                       child: Icon(
                         directionIcon,
-                        size: 10,
+                        size: 14,
                         color: AppColor.surface,
                       ),
                     ),
@@ -91,7 +91,7 @@ class ProductMetricsContainer extends StatelessWidget {
                     Text(
                       percentage,
                       style: TextStyle(
-                        fontSize: getResponsiveFontSize(context, 11),
+                        fontSize: getResponsiveFontSize(context, 14),
                         fontWeight: FontWeight.w800,
                         color: baseColor,
                       ),

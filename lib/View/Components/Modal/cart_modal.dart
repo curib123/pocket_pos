@@ -7,6 +7,7 @@ import 'package:paninda/View/Components/Alert/custom_confirm_dialog.dart';
 import 'package:paninda/View/Components/Alert/show_quantity_edit.dart';
 import 'package:paninda/View/Components/Custom/custom_btn.dart';
 import 'package:paninda/View/Components/Modal/CartPaymentModal.dart';
+import 'package:paninda/View/Components/Modal/CartSelectionModal.dart';
 import 'package:paninda/View/Components/Modal/add_product_modal.dart';
 import 'package:paninda/View_Model/CurrencyProvider.dart';
 import 'package:provider/provider.dart';
@@ -169,7 +170,7 @@ class _ProductProfileContentState extends State<_ProductProfileContent> {
                       color: AppColor.primary,
                       onPressed: () {
                         Navigator.pop(context);
-                        AddProductModal.show(context, isEdit: true, product: product);
+                        AddProductModal.show(context, isEdit: true, product: product, category: '');
                       },
                     ),
                   ),
@@ -181,7 +182,7 @@ class _ProductProfileContentState extends State<_ProductProfileContent> {
                       color: AppColor.secondary,
                       onPressed: () {
                         Navigator.pop(context);
-                        AddProductModal.show(context, isStock: true, product: product);
+                        AddProductModal.show(context, isStock: true, product: product, category: '');
                       },
                     ),
                   ),
@@ -393,14 +394,14 @@ class _ProductProfileContentState extends State<_ProductProfileContent> {
                       );
                     },
                   ),
+                  SizedBox(height: 10,),
                   CustomButton(
-                    icon: Icons.check_circle_rounded,
+                    icon: Icons.check_circle_outline_outlined,
                     label: "Checkout",
                     color: AppColor.textPrimary,
                     onPressed: () {
                       provider.addToCart(product, quantity, kiloQuantity);
-                      Navigator.pop(context);
-
+                      CartSelectionModal.show(context);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text("Added $quantity ${product.unit}(s) & $kiloQuantity kg to cart")),
                       );

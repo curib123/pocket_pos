@@ -10,25 +10,27 @@ import 'package:paninda/View_Model/LoanPersonProvider.dart';
 import 'package:paninda/View_Model/ProductProvider.dart';
 import '../../../View_Model/CurrencyProvider.dart';
 
-class CartPaymentModal {
+class CartPaymentDialog {
   static void show(BuildContext context, {
     required Map<String, int> quantities,
     required Map<String, String> kiloQuantities,
     required Map<String, int> selectedModes,
   }) {
-    showModalBottomSheet(
+    showDialog(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: AppColor.background,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (context) => FractionallySizedBox(
-        heightFactor: 0.85,
-        child: _CartPaymentContent(
-          quantities: quantities,
-          kiloQuantities: kiloQuantities,
-          selectedModes: selectedModes,
+      barrierDismissible: false,
+      builder: (context) => Dialog(
+        backgroundColor: AppColor.background,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxHeight: 600),
+          child: _CartPaymentContent(
+            quantities: quantities,
+            kiloQuantities: kiloQuantities,
+            selectedModes: selectedModes,
+          ),
         ),
       ),
     );
@@ -101,82 +103,65 @@ class _CartPaymentContentState extends State<_CartPaymentContent> {
     final profit = total - costTotal;
     final change = buyerCash - total;
 
-    return SafeArea(
-      child: Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-          left: 16,
-          right: 16,
-          top: 16,
-        ),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildDragHandle(),
-              _buildPaymentTypeSelector(),
-              const SizedBox(height: 24),
-              isLoan
-                  ? _buildLoanAutocomplete(loanProvider)
-                  : _buildCashInput(),
-              if (!isLoan) _buildChangeDisplay(change),
-              const SizedBox(height: 24),
-              _buildSummaryCard(total, costTotal, profit),
-              const SizedBox(height: 20),
-              CustomButton(
-                label: "Confirm Payment",
-                icon: LucideIcons.checkCircle2,
-                color: AppColor.textPrimary,
-                onPressed: () async {
-                  final result = await productProvider.checkoutCart(
-                    cartItems: checkoutItems,
-                    isLoan: isLoan,
-                    buyerCash: buyerCash,
-                    borrowerName: borrowerController.text.trim(),
-                    loanProvider: isLoan ? loanProvider : null,
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _buildPaymentTypeSelector(),
+            const SizedBox(height: 24),
+            _buildSummaryCard(total, costTotal, profit),
+            const SizedBox(height: 20),
+            isLoan
+                ? _buildLoanAutocomplete(loanProvider)
+                : _buildCashInput(),
+            if (!isLoan) _buildChangeDisplay(change),
+            const SizedBox(height: 24),
+            CustomButton(
+              label: "Confirm Payment",
+              icon: LucideIcons.checkCircle2,
+              color: AppColor.textPrimary,
+              onPressed: () async {
+                final result = await productProvider.checkoutCart(
+                  cartItems: checkoutItems,
+                  isLoan: isLoan,
+                  buyerCash: buyerCash,
+                  borrowerName: borrowerController.text.trim(),
+                  loanProvider: isLoan ? loanProvider : null,
+                );
+
+                if (result != null) {
+                  productProvider.clearCart();
+                  Navigator.of(context).pop();  // Close Dialog
+                  showCustomAlertBox(
+                    context,
+                    isLoan
+                        ? "Loan recorded successfully!\nProfit: \u20b1${(result['profit'] ?? 0.0).toStringAsFixed(2)}"
+                        : "Payment completed!\nChange: \u20b1${(result['change'] ?? 0.0).toStringAsFixed(2)}\nProfit: \u20b1${(result['profit'] ?? 0.0).toStringAsFixed(2)}",
+                    AlertType.success,
                   );
-
-                  if (result != null) {
-                    productProvider.clearCart();
-                    showCustomAlertBox(
-                      context,
-                      isLoan
-                          ? "Loan recorded successfully!\nProfit: \u20b1${(result['profit'] ?? 0.0).toStringAsFixed(2)}"
-                          : "Payment completed!\nChange: \u20b1${(result['change'] ?? 0.0).toStringAsFixed(2)}\nProfit: \u20b1${(result['profit'] ?? 0.0).toStringAsFixed(2)}",
-                      AlertType.success,
-                    );
-
-
-                  }
-                  else {
-                    showCustomAlertBox(
-                      context,
-                      "Transaction failed. Please try again.",
-                      AlertType.error,
-                    );
-                  }
-                },
-              ),
-
-            ],
-          ),
+                } else {
+                  showCustomAlertBox(
+                    context,
+                    "Transaction failed. Please try again.",
+                    AlertType.error,
+                  );
+                }
+              },
+            ),
+            const SizedBox(height: 12),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text("Cancel", style: TextStyle(color: Colors.red)),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildDragHandle() {
-    return Center(
-      child: Container(
-        width: 40,
-        height: 5,
-        decoration: BoxDecoration(
-          color: AppColor.border,
-          borderRadius: BorderRadius.circular(12),
-        ),
-      ),
-    );
-  }
   Widget _buildPaymentTypeSelector() {
     return Center(
       child: Wrap(
@@ -229,7 +214,6 @@ class _CartPaymentContentState extends State<_CartPaymentContent> {
       onChanged: (_) => setState(() {}),
     );
   }
-
 
   Widget _buildChangeDisplay(double change) {
     return Container(
@@ -310,8 +294,6 @@ class _CartPaymentContentState extends State<_CartPaymentContent> {
       ],
     );
   }
-
-
 
   Widget _buildLoanAutocomplete(LoanProvider loanProvider) {
     return Autocomplete<LoanPerson>(
