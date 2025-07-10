@@ -323,13 +323,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               content:
                               "Are you sure you want to log out? You will need to sign in again to access your account.",
                               onConfirm: () async {
-                                authPaymentProvider.logout();
-                                tabProvider.setFirstTimeFlag(true);
+                               await authPaymentProvider.logout();
                                 productProvider.clearCart();
-                               await ProfitHelper.clearLocalProfits();
                                 productProvider.clearProducts();
                                 loanProvider.clearLoans();
-                                Phoenix.rebirth(context);
+                               await ProfitHelper.clearLocalProfits();
+                               await tabProvider.setFirstTimeFlag(true);
+                                if(await tabProvider.isFirstTime) Phoenix.rebirth(context);
                               },
                             ),
                           ),
