@@ -1,0 +1,68 @@
+import 'package:flutter/material.dart';
+import 'package:mobile_pos_inventory/Helper/AppColor.dart';
+
+class CustomFlatDropdown<T> extends StatelessWidget {
+  final String hint;
+  final T? value;
+  final List<T> items;
+  final Function(T?) onChanged;
+  final Color iconColor;
+  final Widget Function(T val) itemBuilder;
+
+  const CustomFlatDropdown({
+    super.key,
+    required this.hint,
+    required this.value,
+    required this.items,
+    required this.onChanged,
+    required this.itemBuilder,
+    this.iconColor = Colors.black,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 50, // Set fixed height for vertical centering
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      margin: const EdgeInsets.symmetric(vertical: 5),
+      decoration: BoxDecoration(
+        color: AppColor.primary.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Center( // Vertically centers the DropdownButton
+        child: DropdownButtonHideUnderline(
+          child: DropdownButton<T>(
+            value: value,
+            isExpanded: true,
+            icon: Icon(Icons.keyboard_arrow_down_rounded, color: iconColor),
+            onChanged: onChanged,
+            hint: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                hint,
+                style: const TextStyle(color: AppColor.textSecondary),
+              ),
+            ),
+            selectedItemBuilder: (context) {
+              return items.map((item) {
+                return Align(
+                  alignment: Alignment.centerLeft,
+                  child: itemBuilder(item),
+                );
+              }).toList();
+            },
+            items: items.map((item) {
+              return DropdownMenuItem<T>(
+                value: item,
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: itemBuilder(item),
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+      ),
+    );
+  }
+}
