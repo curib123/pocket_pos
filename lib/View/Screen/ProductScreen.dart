@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:mobile_pos_inventory/Helper/AppColor.dart';
-import 'package:mobile_pos_inventory/Model/product_model.dart';
 import 'package:mobile_pos_inventory/Provider/ProductProvider.dart';
 import 'package:mobile_pos_inventory/Provider/SwitchProvider.dart';
 import 'package:mobile_pos_inventory/Provider/StoreCategoryProvider.dart';
-import 'package:mobile_pos_inventory/View/Components/Core/CustomButton.dart';
-import 'package:mobile_pos_inventory/View/Components/Modal/AddProductModal.dart';
+import 'package:mobile_pos_inventory/View/Components/Custom/CustomButton.dart';
 import 'package:mobile_pos_inventory/View/Components/SearchAndCartRow.dart';
-import 'package:mobile_pos_inventory/View/Screen/ProductScreenWidget/CategoryTileWidget.dart';
+import 'package:mobile_pos_inventory/View/Screen/ProductListScreen.dart';
+import 'package:mobile_pos_inventory/View/Screen/ProductScreenWidget/CategoryGrid.dart';
+import 'package:mobile_pos_inventory/View/Screen/ProductScreenWidget/CategoryList.dart';
 import 'package:provider/provider.dart';
 import 'package:animate_do/animate_do.dart';
 
@@ -29,38 +29,16 @@ class ProductScreen extends StatelessWidget {
             bottomNavigationBar: Padding(
               padding: const EdgeInsets.all(10.0),
               child: CustomButton(
-                text: "Add Product",
-                icon: LucideIcons.plus,
+                text: "View All Product",
+                icon: LucideIcons.box,
                 onPressed: () {
-                  // Add product logic
-                  showModalBottomSheet(
-                    context: context,
-                    isScrollControlled: true,
-                    shape: const RoundedRectangleBorder(
-                      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-                    ),
-                    builder: (context) {
-                      return Padding(
-                        // This padding pushes content up when keyboard appears
-                        padding: EdgeInsets.only(
-                          bottom: MediaQuery.of(context).viewInsets.bottom,
-                        ),
-                        child: FractionallySizedBox(
-                          heightFactor: 0.8,
-                          child: GestureDetector(
-                            // Dismiss keyboard when tapping outside
-                            onTap: () => FocusScope.of(context).unfocus(),
-                            child: ProductModalForm(
-                              onSave: (product) {
-                                // Do something with the product
-                              },
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  );
 
+                  Future.delayed(Duration.zero, () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => ProductListScreen(category: '',)),
+                    );
+                  });
 
                 },
               ),

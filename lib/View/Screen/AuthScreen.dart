@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:mobile_pos_inventory/Provider/TabProvider.dart';
 import 'package:mobile_pos_inventory/View/Components/Alert/CustomNotificationDialog.dart';
-import 'package:mobile_pos_inventory/View/Components/Core/ResponsiveText.dart';
+import 'package:mobile_pos_inventory/View/Components/ResponsiveText.dart';
 import 'package:provider/provider.dart';
 import 'package:mobile_pos_inventory/Helper/AppColor.dart';
 import 'package:mobile_pos_inventory/View/Components/AuthFormWidget.dart';

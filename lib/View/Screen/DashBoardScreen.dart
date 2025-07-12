@@ -1,9 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_pos_inventory/Provider/ProductProvider.dart';
 import 'package:mobile_pos_inventory/View/Components/SearchAndCartRow.dart';
+import 'package:provider/provider.dart';
 
-class DashBoardScreen extends StatelessWidget {
+class DashBoardScreen extends StatefulWidget {
   const DashBoardScreen({super.key});
 
+  @override
+  State<DashBoardScreen> createState() => _DashBoardScreenState();
+}
+
+class _DashBoardScreenState extends State<DashBoardScreen> {
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    Future.delayed(Duration.zero,() async {
+      ///sync local to database vice versa
+     await context.read<ProductProvider>().autoSyncProducts();
+    });
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(

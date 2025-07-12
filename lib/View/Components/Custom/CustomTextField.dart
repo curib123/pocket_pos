@@ -1,48 +1,64 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_pos_inventory/Helper/AppColor.dart';
-import 'package:mobile_pos_inventory/View/Components/Core/ResponsiveText.dart';
+import 'package:mobile_pos_inventory/View/Components/ResponsiveText.dart';
 
 class CustomTextField extends StatelessWidget {
   final String label;
-  final String? hintText; // Added hintText parameter
   final TextEditingController controller;
-  final bool obscure;
+  final String? hintText;
   final String? Function(String?)? validator;
+  final TextInputType? keyboardType;
+  final bool obscure;
   final bool isObscure;
   final VoidCallback? toggleObscure;
+  final bool isRequired;
 
   const CustomTextField({
     super.key,
     required this.label,
     required this.controller,
     this.hintText,
-    this.obscure = false,
     this.validator,
+    this.keyboardType,
+    this.obscure = false,
     this.isObscure = false,
     this.toggleObscure,
+    this.isRequired = false,
   });
 
-  InputDecoration _inputDecoration(BuildContext context) {
+  InputDecoration _buildDecoration(BuildContext context) {
     return InputDecoration(
-      labelText: label,
-      hintText: hintText,  // set hintText here
+      labelText: isRequired ? '$label *' : label,
       labelStyle: TextStyle(
         color: AppColor.textSecondary,
-        fontSize: context.rf(14), // Responsive font size
+        fontSize: context.rf(14),
+      ),
+      hintText: hintText,
+      hintStyle: TextStyle(
+        color: AppColor.textSecondary.withOpacity(0.6),
+        fontSize: context.rf(13),
       ),
       filled: true,
       fillColor: AppColor.primary.withOpacity(0.05),
       contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
         borderSide: BorderSide.none,
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
         borderSide: BorderSide(
-          color: AppColor.primary.withOpacity(0.7),
+          color: AppColor.primary.withOpacity(0.8),
           width: 1.5,
         ),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(color: Colors.red.shade400, width: 1.4),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(color: Colors.red.shade600, width: 1.8),
       ),
       suffixIcon: obscure
           ? IconButton(
@@ -59,16 +75,17 @@ class CustomTextField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6.0),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: TextFormField(
         controller: controller,
+        keyboardType: keyboardType,
         obscureText: obscure && isObscure,
         validator: validator,
         style: TextStyle(
           color: AppColor.textPrimary,
-          fontSize: context.rf(14), // Responsive font size
+          fontSize: context.rf(14),
         ),
-        decoration: _inputDecoration(context), // pass context for rf()
+        decoration: _buildDecoration(context),
       ),
     );
   }

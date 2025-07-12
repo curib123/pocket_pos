@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_pos_inventory/Helper/AppColor.dart';
-import 'package:mobile_pos_inventory/View/Components/Core/ResponsiveText.dart';
+import 'package:mobile_pos_inventory/View/Components/ResponsiveText.dart';
 
 class CustomButton extends StatelessWidget {
   final String text;
@@ -10,7 +10,7 @@ class CustomButton extends StatelessWidget {
   final double? height;
   final Color? backgroundColor;
   final Color? textColor;
-  final IconData? icon; // ✅ Optional icon
+  final IconData? icon;
   final double iconSize;
 
   const CustomButton({
@@ -22,8 +22,8 @@ class CustomButton extends StatelessWidget {
     this.height,
     this.backgroundColor,
     this.textColor,
-    this.icon, // ✅ Added
-    this.iconSize = 20, // ✅ Default icon size
+    this.icon,
+    this.iconSize = 20,
   });
 
   @override
@@ -57,15 +57,20 @@ class CustomButton extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (icon != null)
-              Icon(icon, size: iconSize, color: effectiveText), // ✅ Icon
+              Icon(icon, size: iconSize, color: effectiveText),
             if (icon != null) const SizedBox(width: 8),
-            Text(
-              text,
-              style: TextStyle(
-                fontSize: context.rf(16),
-                fontWeight: FontWeight.w300,
-                letterSpacing: 0.5,
-                color: effectiveText,
+            Flexible( // ✅ Prevents overflow
+              child: Text(
+                text,
+                overflow: TextOverflow.ellipsis, // ✅ Ellipsis if too long
+                maxLines: 1,
+                softWrap: false,
+                style: TextStyle(
+                  fontSize: context.rf(15),
+                  fontWeight: FontWeight.w300,
+                  letterSpacing: 0.6,
+                  color: effectiveText,
+                ),
               ),
             ),
           ],

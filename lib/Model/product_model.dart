@@ -1,4 +1,5 @@
 import 'package:hive/hive.dart';
+import 'batch_model.dart';
 
 part 'product_model.g.dart';
 
@@ -11,171 +12,144 @@ class Product extends HiveObject {
   String name;
 
   @HiveField(2)
-  String? description;
+  double costPrice;
 
   @HiveField(3)
-  String? category; // ← changed from categoryId to category
+  double retailPrice;
 
   @HiveField(4)
-  String type;
+  String unit;
 
   @HiveField(5)
-  String status;
+  List<Batch> batches;
 
   @HiveField(6)
-  String? sku;
+  String description;
 
   @HiveField(7)
-  String? barcode;
+  String imageUrl;
 
   @HiveField(8)
-  double? defaultPrice;
+  String category;
 
   @HiveField(9)
-  double? costPrice;
+  DateTime lastModified;
 
   @HiveField(10)
-  double? taxRate;
-
-  @HiveField(11)
-  double? discount;
-
-  @HiveField(12)
-  bool isActive;
-
-  @HiveField(13)
-  bool isDeleted;
-
-  @HiveField(14)
-  List<String>? images;
-
-  @HiveField(15)
-  String? mainImage;
-
-  @HiveField(16)
-  bool hasVariants;
-
-  @HiveField(17)
-  List<String>? variantIds;
-
-  @HiveField(18)
-  List<String>? addonIds;
-
-  @HiveField(19)
-  List<String>? stockBatchIds;
-
-  @HiveField(20)
-  String? unit;
-
-  @HiveField(21)
-  String? unitType;
-
-  @HiveField(22)
-  double? unitConversion;
-
-  @HiveField(23)
-  String? unitPriceBasis;
-
-  @HiveField(24)
-  Map<String, dynamic>? attributes;
-
-  @HiveField(25)
-  DateTime? createdAt;
-
-  @HiveField(26)
-  DateTime? updatedAt;
+  DateTime? deletedAt;
 
   Product({
     required this.id,
     required this.name,
-    required this.type,
-    required this.status,
-    this.description,
-    this.category,
-    this.sku,
-    this.barcode,
-    this.defaultPrice,
-    this.costPrice,
-    this.taxRate,
-    this.discount,
-    this.isActive = true,
-    this.isDeleted = false,
-    this.images,
-    this.mainImage,
-    this.hasVariants = false,
-    this.variantIds,
-    this.addonIds,
-    this.stockBatchIds,
-    this.unit,
-    this.unitType,
-    this.unitConversion,
-    this.unitPriceBasis,
-    this.attributes,
-    this.createdAt,
-    this.updatedAt,
+    required this.costPrice,
+    required this.retailPrice,
+    required this.unit,
+    required this.batches,
+    required this.description,
+    required this.imageUrl,
+    required this.category,
+    required this.lastModified,
+    this.deletedAt,
   });
 
-  Map<String, dynamic> toJson() {
+  Future<void> saveWithTimestamp() {
+    lastModified = DateTime.now();
+    return save();
+  }
+
+  Future<void> softDelete() {
+    deletedAt = DateTime.now();
+    lastModified = deletedAt!;
+    return save();
+  }
+
+  double get totalQuantity => batches.fold(0, (sum, batch) => sum + batch.quantity);
+
+  double get totalCostValue => totalQuantity * costPrice;
+
+  double get totalRetailValue => totalQuantity * retailPrice;
+
+  Product copyWith({
+    String? id,
+    String? name,
+    double? costPrice,
+    double? retailPrice,
+    String? unit,
+    String? description,
+    String? imageUrl,
+    String? category,
+    List<Batch>? batches,
+    DateTime? lastModified,
+    DateTime? deletedAt,
+  }) {
+    return Product(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      costPrice: costPrice ?? this.costPrice,
+      retailPrice: retailPrice ?? this.retailPrice,
+      unit: unit ?? this.unit,
+      description: description ?? this.description,
+      imageUrl: imageUrl ?? this.imageUrl,
+      category: category ?? this.category,
+      batches: batches ?? this.batches,
+      lastModified: lastModified ?? this.lastModified,
+      deletedAt: deletedAt ?? this.deletedAt,
+    );
+  }
+
+  String toString() {
+    return '''
+Product {
+  id: $id,
+  name: $name,
+  description: $description,
+  cost_price: $costPrice,
+  retail_price: $retailPrice,
+  unit: $unit,
+  category: $category,
+  image_url: $imageUrl,
+  lastModified: $lastModified,
+  deletedAt: $deletedAt,
+  batches: ${batches.map((b) => b.toString()).join(',\n           ')}
+}''';
+  }
+
+  Map<String, dynamic> toMap() {
     return {
       'id': id,
       'name': name,
-      'description': description,
-      'category': category,
-      'type': type,
-      'status': status,
-      'sku': sku,
-      'barcode': barcode,
-      'default_price': defaultPrice,
       'cost_price': costPrice,
-      'tax_rate': taxRate,
-      'discount': discount,
-      'is_active': isActive,
-      'is_deleted': isDeleted,
-      'images': images,
-      'main_image': mainImage,
-      'has_variants': hasVariants,
-      'variant_ids': variantIds,
-      'addon_ids': addonIds,
-      'stock_batch_ids': stockBatchIds,
+      'retail_price': retailPrice,
       'unit': unit,
-      'unit_type': unitType,
-      'unit_conversion': unitConversion,
-      'unit_price_basis': unitPriceBasis,
-      'attributes': attributes,
-      'created_at': createdAt?.toIso8601String(),
-      'updated_at': updatedAt?.toIso8601String(),
+      'batches': batches.map((e) => e.toMap()).toList(),
+      'description': description,
+      'image_url': imageUrl,
+      'category': category,
+      'last_modified': lastModified.toIso8601String(),
+      'deleted_at': deletedAt?.toIso8601String(),
     };
   }
 
-  factory Product.fromJson(Map<String, dynamic> json) {
+  /// ✅ Static factory method for deserialization
+  static Product fromMap(Map<String, dynamic> json) {
     return Product(
-      id: json['id'],
-      name: json['name'] ?? '',
-      description: json['description'],
-      category: json['category'],
-      type: json['type'],
-      status: json['status'],
-      sku: json['sku'],
-      barcode: json['barcode'],
-      defaultPrice: (json['default_price'] as num?)?.toDouble(),
-      costPrice: (json['cost_price'] as num?)?.toDouble(),
-      taxRate: (json['tax_rate'] as num?)?.toDouble(),
-      discount: (json['discount'] as num?)?.toDouble(),
-      isActive: json['is_active'] ?? true,
-      isDeleted: json['is_deleted'] ?? false,
-      images: (json['images'] as List?)?.map((e) => e.toString()).toList(),
-      mainImage: json['main_image'],
-      hasVariants: json['has_variants'] ?? false,
-      variantIds: (json['variant_ids'] as List?)?.map((e) => e.toString()).toList(),
-      addonIds: (json['addon_ids'] as List?)?.map((e) => e.toString()).toList(),
-      stockBatchIds: (json['stock_batch_ids'] as List?)?.map((e) => e.toString()).toList(),
-      unit: json['unit'],
-      unitType: json['unit_type'],
-      unitConversion: (json['unit_conversion'] as num?)?.toDouble(),
-      unitPriceBasis: json['unit_price_basis'],
-      attributes: json['attributes'] is Map ? Map<String, dynamic>.from(json['attributes']) : null,
-      createdAt: json['created_at'] != null ? DateTime.tryParse(json['created_at']) : null,
-      updatedAt: json['updated_at'] != null ? DateTime.tryParse(json['updated_at']) : null,
+      id: json['id'] as String,
+      name: json['name'] as String,
+      costPrice: (json['cost_price'] as num).toDouble(),
+      retailPrice: (json['retail_price'] as num).toDouble(),
+      unit: json['unit'] as String,
+      batches: (json['batches'] as List<dynamic>)
+          .map((e) => Batch.fromMap(e as Map<String, dynamic>))
+          .toList(),
+      description: json['description'] as String,
+      imageUrl: json['image_url'] as String,
+      category: json['category'] as String,
+      lastModified: json['last_modified'] != null
+          ? DateTime.parse(json['last_modified'])
+          : DateTime.now(),
+      deletedAt: json['deleted_at'] != null
+          ? DateTime.tryParse(json['deleted_at'])
+          : null,
     );
   }
 }

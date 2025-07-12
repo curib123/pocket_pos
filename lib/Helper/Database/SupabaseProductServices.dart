@@ -4,7 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class SupabaseProductServices {
   final _client = Supabase.instance.client;
 
-  // Fetch all products for current user
+  /// Fetch all products from Supabase (stored as a list in one row per user)
   Future<List<Product>> fetchProductsFromServer() async {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) {
@@ -14,37 +14,119 @@ class SupabaseProductServices {
 
     print('🔄 Fetching products for user: $userId');
 
-    final res = await _client
-        .from('products')
-        .select()
-        .eq('user_id', userId)
-        .order('updated_at', ascending: false);
+    try {
+      final res = await _client
+          .from('products')
+          .select()
+          .eq('user_id', userId)
+          .maybeSingle();
 
-    print('📦 Supabase fetched: ${res.length} items');
+      if (res == null || res['data'] == null) {
+        print('📦 Supabase fetched: 0 items');
+        return [];
+      }
 
-    return (res as List)
-        .map((item) => Product.fromJson(item['data'] as Map<String, dynamic>))
-        .toList();
+      final dataList = res['data'] as List;
+      print('📦 Supabase fetched: ${dataList.length} items');
+
+      return dataList
+          .map((item) => Product.fromMap(item as Map<String, dynamic>))
+          .where((product) => product.deletedAt == null)
+          .toList();
+    } catch (e) {
+      print('❌ Error fetching products: $e');
+      return [];
+    }
   }
 
-  // Upsert a product into Supabase
-  Future<void> upsertProductToServer(Product product) async {
+  /// Upsert all products as a single JSON list under one user_id row
+  Future<void> upsertProductsListToServer(List<Product> products) async {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) {
       print('❌ Cannot upsert: No user logged in.');
       return;
     }
 
+    final now = DateTime.now().toIso8601String();
+
     final payload = {
-      'id': product.id,
       'user_id': userId,
-      'data': product.toJson(),
-      'updated_at':
-      product.updatedAt?.toIso8601String() ?? DateTime.now().toIso8601String(),
+      'data': products.map((p) => p.toMap()).toList(),
+      'updated_at': now,
     };
 
-    print('⬆️ Uploading product: ${product.name}');
-    await _client.from('products').upsert(payload);
-    print('✅ Product uploaded: ${product.id}');
+    print('⬆️ Uploading full product list to Supabase...');
+    try {
+      await _client
+          .from('products')
+          .upsert(payload, onConflict: 'user_id');
+
+      print('✅ Upload complete!');
+    } catch (e) {
+      print('❌ Upload failed: $e');
+    }
   }
+
+
+
+  /// Clear user’s products (soft delete all by setting data = empty list)
+  Future<void> deleteAllProductsFromServer() async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) {
+      print('❌ Cannot delete: No user logged in.');
+      return;
+    }
+
+    try {
+      await _client.from('products').upsert({
+        'user_id': userId,
+        'data': [],
+        'updated_at': DateTime.now().toIso8601String(),
+      });
+
+      print('🗑 All products cleared for user $userId');
+    } catch (e) {
+      print('❌ Failed to clear products: $e');
+    }
+  }
+
+  /// Soft delete a product by marking its deletedAt timestamp
+  Future<void> softDeleteProductFromServer(String productId) async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) {
+      print('❌ Cannot soft delete: No user logged in.');
+      return;
+    }
+
+    try {
+      final res = await _client
+          .from('products')
+          .select()
+          .eq('user_id', userId)
+          .maybeSingle();
+
+      if (res == null || res['data'] == null) {
+        print('❌ Failed to fetch product list for soft delete.');
+        return;
+      }
+
+      final dataList = (res['data'] as List)
+          .map((item) => Product.fromMap(item))
+          .toList();
+
+      final updatedList = dataList.map((product) {
+        if (product.id == productId) {
+          product.deletedAt = DateTime.now();
+          product.lastModified = DateTime.now();
+        }
+        return product;
+      }).toList();
+
+      await upsertProductsListToServer(updatedList);
+      print('🗑 Soft-deleted product $productId for user $userId');
+    } catch (e) {
+      print('❌ Soft delete failed: $e');
+    }
+  }
+
 }
