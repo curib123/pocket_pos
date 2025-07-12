@@ -122,15 +122,21 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                           Row(
                             children: [
                               Expanded(
-                                child: Text(
-                                  product.name,
-                                  style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppColor.textPrimary,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 1,
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      product.name,
+                                      style: const TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w700,
+                                        color: AppColor.textPrimary,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 1,
+                                    ),
+                                  ],
                                 ),
                               ),
                               IconButton(
@@ -253,27 +259,21 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                   ],
                 ),
 
-                const SizedBox(height: 12),
+                const SizedBox(height: 5),
 
                 // Total Stock and Batches
                 if (product.batches.isNotEmpty) ...[
-                  Text(
-                    'Total Stock: ${product.totalQuantity.toStringAsFixed(2)} ${product.unit}',
-                    style: TextStyle(
-                      fontSize: context.rf(15),
-                      fontWeight: FontWeight.bold,
-                      color: AppColor.primary,
-                    ),
-                  ),
                   const SizedBox(height: 8),
                   Text(
-                    'Stock Batches:',
+                    'Stock Batches: ${product.totalQuantity} ${product.unit}',
                     style: TextStyle(
                       fontSize: context.rf(14),
                       fontWeight: FontWeight.w600,
-                      color: AppColor.textPrimary,
+                      color: AppColor.textSecondary,
+                      fontStyle: FontStyle.italic, // 👈 Add this line
                     ),
                   ),
+
                   const SizedBox(height: 4),
                 ],
 
