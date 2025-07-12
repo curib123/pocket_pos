@@ -182,13 +182,13 @@ class _ProductModalFormState extends State<ProductModalForm> {
 
     if (widget.isRestock) {
       provider.addBatchByProductName(product.name, newBatch);
-      Navigator.pop(context);
+
     } else if (isEditing) {
       provider.updateProduct(product);
     } else {
       provider.addProduct(product);
     }
-
+    Navigator.pop(context);
   }
 
 

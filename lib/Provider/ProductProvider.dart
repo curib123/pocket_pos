@@ -9,8 +9,8 @@ class ProductProvider extends ChangeNotifier {
   final Box<Product> _productBox;
   final SupabaseProductServices _supabaseService = SupabaseProductServices();
   List<Product> _products = [];
-
   List<Product> get products => _products;
+
 
   ProductProvider(this._productBox) {
     initializeProducts();
@@ -145,44 +145,6 @@ class ProductProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> importFromJsonList(List<Map<String, dynamic>> data) async {
-    try {
-      for (var item in data) {
-        final product = Product.fromMap(item);
-        product.lastModified = DateTime.now();
-        await _productBox.put(product.id, product);
-      }
-      refreshProducts();
-      SnackbarService.showSuccess('✅ Imported ${data.length} products.');
-      await autoSyncProducts();
-    } catch (e) {
-      SnackbarService.showError('❌ Import failed: $e');
-    }
-  }
-
-  Future<void> batchUpdate({
-    required List<String> ids,
-    double? retailPrice,
-    String? category,
-  }) async {
-    try {
-      for (var id in ids) {
-        final product = _productBox.get(id);
-        if (product != null) {
-          if (retailPrice != null) product.retailPrice = retailPrice;
-          if (category != null) product.category = category;
-          product.lastModified = DateTime.now();
-          await product.save();
-        }
-      }
-      refreshProducts();
-      SnackbarService.showSuccess('✅ Batch updated ${ids.length} product(s).');
-      await autoSyncProducts();
-    } catch (e) {
-      SnackbarService.showError('❌ Batch update failed: $e');
-    }
-  }
-
   Future<void> syncFromSupabase() async {
     try {
       final serverProducts = await _supabaseService.fetchProductsFromServer();
@@ -280,21 +242,13 @@ class ProductProvider extends ChangeNotifier {
     }
   }
 
+
+
   // ──────────── BATCH CRUD METHODS ────────────
 
   List<Batch> getBatchesByProductName(String productName) {
     final product = getProductByName(productName);
     return product?.batches ?? [];
-  }
-
-  Batch? getBatchByIdFromProductName(String productName, String batchId) {
-    final product = getProductByName(productName);
-    if (product == null) return null;
-    try {
-      return product.batches.firstWhere((b) => b.id == batchId);
-    } catch (_) {
-      return null;
-    }
   }
 
   Future<void> updateBatchQty({
@@ -355,25 +309,6 @@ class ProductProvider extends ChangeNotifier {
       }
     } catch (e) {
       SnackbarService.showError('❌ Failed to add batch: $e');
-    }
-  }
-
-  Future<void> updateBatchByProductName(String productName, Batch updatedBatch) async {
-    try {
-      final product = getProductByName(productName);
-      if (product != null) {
-        final index = product.batches.indexWhere((b) => b.id == updatedBatch.id);
-        if (index != -1) {
-          product.batches[index] = updatedBatch;
-          product.lastModified = DateTime.now();
-          await _productBox.put(product.id, product);
-          refreshProducts();
-          SnackbarService.showSuccess('✅ Batch updated in $productName');
-          await autoSyncProducts();
-        }
-      }
-    } catch (e) {
-      SnackbarService.showError('❌ Failed to update batch: $e');
     }
   }
 

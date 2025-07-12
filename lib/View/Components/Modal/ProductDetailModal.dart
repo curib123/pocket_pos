@@ -2,13 +2,17 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:mobile_pos_inventory/Model/batch_model.dart';
+import 'package:mobile_pos_inventory/Provider/CartProvider.dart';
 import 'package:mobile_pos_inventory/Provider/CurrencyProvider.dart';
 import 'package:mobile_pos_inventory/View/Components/Alert/CustomBatchDialog.dart';
 import 'package:mobile_pos_inventory/View/Components/Alert/CustomConfimDialog.dart';
+import 'package:mobile_pos_inventory/View/Components/Alert/CustomNotificationDialog.dart';
 import 'package:mobile_pos_inventory/View/Components/Custom/CustomButton.dart';
 import 'package:mobile_pos_inventory/View/Components/Custom/CustomSwitchPill.dart';
 import 'package:mobile_pos_inventory/View/Components/Custom/CustomTextField.dart';
 import 'package:mobile_pos_inventory/View/Components/Modal/AddProductModal.dart';
+import 'package:mobile_pos_inventory/View/Components/Modal/CartModal.dart';
 import 'package:mobile_pos_inventory/View/Components/SnackbarService.dart';
 import 'package:provider/provider.dart';
 import 'package:mobile_pos_inventory/Helper/AppColor.dart';
@@ -87,8 +91,8 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
     final currency = context.read<CurrencyProvider>().currencyFormat;
 
     return SafeArea(
-      child: Consumer<ProductProvider>(
-        builder: (context, productProvider, _) {
+      child: Consumer2<ProductProvider,CartProvider>(
+        builder: (context, productProvider,cartProvider, _) {
           return SingleChildScrollView(
             padding: const EdgeInsets.only(bottom: 12),
             child: Column(
@@ -404,17 +408,17 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         IconButton(
-                          icon: const Icon(Icons.remove_circle_outline, color: AppColor.primary),
+                          icon: const Icon(Icons.remove_circle_outline, color: AppColor.primary,size: 30,),
                           onPressed: () {
                             if (quantity > 0) setState(() => quantity--);
                           },
                         ),
                         Text(
                           '$quantity',
-                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                          style: const TextStyle(fontSize: 25, fontWeight: FontWeight.bold),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.add_circle_outline, color: AppColor.primary),
+                          icon: const Icon(Icons.add_circle_outline, color: AppColor.primary,size: 30,),
                           onPressed: () {
                             if (quantity < product.totalQuantity) {
                               setState(() => quantity++);
@@ -437,18 +441,72 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                             final maxQty = product.totalQuantity.toInt();
                             final finalQty = useTextField ? inputQty : quantity;
 
-                            if (finalQty <= 0) {
-                              SnackbarService.showWarning( 'Quantity must be greater than 0');
-                              return;
-                            }
-                            if (finalQty > maxQty) {
-                              SnackbarService.showError('Quantity exceeds available stock');
+                            if (finalQty < 0) {
+                              showDialog(
+                                context: context,
+                                builder: (_) => CustomNotificationDialog(
+                                  onConfirm: () => Navigator.pop(context),
+                                  type: "warning",
+                                  title: 'Invalid Quantity',
+                                  content: 'The quantity must be more than 0 to proceed.',
+                                ),
+                              );
                               return;
                             }
 
-                            // Add to cart logic
+                            if (finalQty > maxQty) {
+                              showDialog(
+                                context: context,
+                                builder: (_) => CustomNotificationDialog(
+                                  onConfirm: () => Navigator.pop(context),
+                                  type: "warning",
+                                  title: 'Stock Limit Exceeded',
+                                  content: 'The quantity you entered exceeds the available stock. Please adjust your input.',
+                                ),
+                              );
+                              return;
+                            }
+                            final selectedQty = useTextField
+                                ? int.tryParse(inputController.text) ?? 0
+                                : quantity;
+
+                            if (selectedQty >= 0) {
+                              final productToCart = product.copyWith(
+                                batches: [
+                                  Batch(
+                                    id: DateTime.now().toIso8601String(),
+                                    quantity: selectedQty.toDouble(),
+                                    createdAt: DateTime.now(),
+                                  ),
+                                ],
+                              );
+
+                              cartProvider.addToCart(productToCart);
+                              Navigator.pop(context); // Close modal
+                            }
+
+                            Future.delayed(Duration.zero,(){
+
+                              showModalBottomSheet(
+                                context: context,
+                                isScrollControlled: true,
+                                backgroundColor: Colors.transparent,
+                                shape: const RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                                ),
+                                builder: (context) => FractionallySizedBox(
+                                  heightFactor: 0.9,
+                                  child: ClipRRect(
+                                    borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                                    child: const CartScreen(),
+                                  ),
+                                ),
+                              );
+
+                            });
                           },
                         ),
+
                       ),
                       const SizedBox(width: 10),
                       Expanded(
@@ -461,14 +519,70 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                             final maxQty = product.totalQuantity.toInt();
                             final finalQty = useTextField ? inputQty : quantity;
 
-                            if (finalQty <= 0) {
-                              SnackbarService.showWarning( 'Quantity must be greater than 0');
+                            if (finalQty < 0) {
+                              showDialog(
+                                context: context,
+                                builder: (_) => CustomNotificationDialog(
+                                  onConfirm: () => Navigator.pop(context),
+                                  type: "warning",
+                                  title: 'Invalid Quantity',
+                                  content: 'The quantity must be more than 0 to proceed.',
+                                ),
+                              );
                               return;
                             }
+
                             if (finalQty > maxQty) {
-                              SnackbarService.showError('Quantity exceeds available stock');
+                              showDialog(
+                                context: context,
+                                builder: (_) => CustomNotificationDialog(
+                                  onConfirm: () => Navigator.pop(context),
+                                  type: "warning",
+                                  title: 'Stock Limit Exceeded',
+                                  content: 'The quantity you entered exceeds the available stock. Please adjust your input.',
+                                ),
+                              );
                               return;
                             }
+
+                            final selectedQty = useTextField
+                                ? int.tryParse(inputController.text) ?? 0
+                                : quantity;
+
+                            if (selectedQty >= 0) {
+                              final productToCart = product.copyWith(
+                                batches: [
+                                  Batch(
+                                    id: DateTime.now().toIso8601String(),
+                                    quantity: selectedQty.toDouble(),
+                                    createdAt: DateTime.now(),
+                                  ),
+                                ],
+                              );
+
+                              cartProvider.addToCart(productToCart);
+                              Navigator.pop(context); // Close modal
+                            }
+
+                            Future.delayed(Duration.zero,(){
+
+                              showModalBottomSheet(
+                                context: context,
+                                isScrollControlled: true,
+                                backgroundColor: Colors.transparent,
+                                shape: const RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                                ),
+                                builder: (context) => FractionallySizedBox(
+                                  heightFactor: 0.9,
+                                  child: ClipRRect(
+                                    borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                                    child: const CartScreen(),
+                                  ),
+                                ),
+                              );
+
+                            });
 
                             // Proceed logic
                           },

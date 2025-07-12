@@ -12,6 +12,7 @@ class CustomTextField extends StatelessWidget {
   final bool isObscure;
   final VoidCallback? toggleObscure;
   final bool isRequired;
+  final ValueChanged<String>? onChanged; // ✅ added
 
   const CustomTextField({
     super.key,
@@ -24,6 +25,7 @@ class CustomTextField extends StatelessWidget {
     this.isObscure = false,
     this.toggleObscure,
     this.isRequired = false,
+    this.onChanged, // ✅ added
   });
 
   InputDecoration _buildDecoration(BuildContext context) {
@@ -81,6 +83,7 @@ class CustomTextField extends StatelessWidget {
         keyboardType: keyboardType,
         obscureText: obscure && isObscure,
         validator: validator,
+        onChanged: onChanged, // ✅ used here
         style: TextStyle(
           color: AppColor.textPrimary,
           fontSize: context.rf(14),

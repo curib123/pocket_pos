@@ -45,7 +45,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
             title: Row(
               children: [
                 Expanded(child: Text(widget.category.isNotEmpty ? widget.category : "All Product List")),
-                 BouncingCartIcon(cartCount: 3, onTap: (){})
+                BouncingCartIcon()
               ],
             ),
             leading: GestureDetector(

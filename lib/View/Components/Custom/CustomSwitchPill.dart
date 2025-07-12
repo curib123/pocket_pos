@@ -18,8 +18,8 @@ class CustomSwitchPill extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: AppColor.background,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColor.primary.withOpacity(0.3)),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColor.primary.withOpacity(0.25)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -28,14 +28,15 @@ class CustomSwitchPill extends StatelessWidget {
           return GestureDetector(
             onTap: () => onSelected(label),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
               decoration: BoxDecoration(
                 color: isSelected ? AppColor.primary : Colors.transparent,
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(16),
               ),
               child: Text(
                 label,
                 style: TextStyle(
+                  fontSize: 13,
                   color: isSelected ? Colors.white : AppColor.textPrimary,
                   fontWeight: FontWeight.w500,
                 ),

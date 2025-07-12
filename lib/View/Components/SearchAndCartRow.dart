@@ -10,7 +10,6 @@ class SearchAndCartAppBar extends StatelessWidget implements PreferredSizeWidget
   @override
   Widget build(BuildContext context) {
     final TextEditingController searchController = TextEditingController();
-    int cartCount = 3;
 
     return SafeArea(
       child: Container(
@@ -50,12 +49,7 @@ class SearchAndCartAppBar extends StatelessWidget implements PreferredSizeWidget
             const SizedBox(width: 16),
 
             // 🛒 Reusable Bouncing Cart Icon
-            BouncingCartIcon(
-              cartCount: cartCount,
-              onTap: () {
-                debugPrint("Cart tapped!");
-              },
-            ),
+            BouncingCartIcon(),
           ],
         ),
       ),

@@ -100,19 +100,20 @@ class ProductScreen extends StatelessWidget {
                                 child: SlideTransition(position: offsetAnimation, child: child),
                               );
                             },
-                            child: Padding(
-                              key: ValueKey(switchProvider.isArchiveView),
-                              padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
-                              child: Text(
-                                switchProvider.isArchiveView
-                                    ? 'Swipe right to unhide categories →'
-                                    : 'Swipe left to hide categories ←',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: AppColor.textSecondary.withOpacity(0.7),
-                                ),
-                              ),
+                             child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
+                          child: Text(
+                            switchProvider.isArchiveView
+                                ? 'Swipe right to unhide categories →'
+                                : 'Swipe left to hide categories ←',
+                            key: ValueKey(switchProvider.isArchiveView), // ✅ Move key to Text
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: AppColor.textSecondary.withOpacity(0.7),
                             ),
+                          ),
+                        ),
+
                           ),
                         ),
                       ),
@@ -156,13 +157,21 @@ class ProductScreen extends StatelessWidget {
                           ),
                         )
                             : switchProvider.isCategoryGridView
-                            ? CategoryGrid(categories: categories)
-                            : CategoryList(categories: categories),
+                            ? CategoryList(
+                          key: ValueKey('categoryList-${switchProvider.isArchiveView}'),
+                          categories: categories,
+                        )
+
+                            : CategoryGrid(
+                          key: ValueKey('CategoryGrid-${switchProvider.isArchiveView}'),
+                          categories: categories,
+                        )
+
                       ),
                     ],
                   ),
                 ),
-          
+
                 /// Toggle View Button
                 Align(
                   alignment: Alignment.bottomRight,
