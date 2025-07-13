@@ -12,6 +12,8 @@ import 'package:mobile_pos_inventory/View/Components/Custom/CustomTextField.dart
 import 'package:mobile_pos_inventory/View/Components/Alert/CustomNotificationDialog.dart';
 import 'package:mobile_pos_inventory/Helper/AppColor.dart';
 
+// (Keep all imports as-is...)
+
 class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
 
@@ -37,17 +39,23 @@ class _CartScreenState extends State<CartScreen> {
     return Scaffold(
       backgroundColor: AppColor.surface,
       appBar: AppBar(
-        title:  Text("Cart List",style: TextStyle(color: AppColor.textPrimary,fontSize: 25,fontWeight: FontWeight.bold),),
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        title: Text(
+          "Cart List",
+          style: TextStyle(
+              color: AppColor.textPrimary,
+              fontSize: 24,
+              fontWeight: FontWeight.bold),
+        ),
         centerTitle: true,
-        leading: GestureDetector(
-          onTap: (){
-            Navigator.pop(context);
-          },
-          child: Icon(Icons.arrow_back_ios_new,color: AppColor.textPrimary,),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new, color: AppColor.textPrimary),
+          onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: Consumer3<CartProvider, CurrencyProvider,ProductProvider>(
-        builder: (context, cartProvider, currencyProvider,productProvider, _) {
+      body: Consumer3<CartProvider, CurrencyProvider, ProductProvider>(
+        builder: (context, cartProvider, currencyProvider, productProvider, _) {
           final cart = cartProvider.cartItems;
 
           if (cart.isEmpty) {
@@ -60,7 +68,10 @@ class _CartScreenState extends State<CartScreen> {
           }
 
           final totalAmount = cart.fold<double>(0, (sum, product) {
-            final qty = quantities[product.name] ?? product.totalQuantity;
+            final qty = quantities[product.name] ??
+                ((product.totalQuantity == 0 || product.totalQuantity.isNaN)
+                    ? product.subQuantity
+                    : product.totalQuantity);
             return sum + (qty * product.retailPrice);
           });
 
@@ -69,61 +80,72 @@ class _CartScreenState extends State<CartScreen> {
               children: [
                 Expanded(
                   child: ListView.separated(
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(16),
                     itemCount: cart.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    separatorBuilder: (_, __) => const SizedBox(height: 10),
                     itemBuilder: (context, index) {
                       final product = cart[index];
                       final key = product.name;
 
                       useTextField.putIfAbsent(key, () => false);
-                      controllers.putIfAbsent(key, () => TextEditingController());
-                      quantities.putIfAbsent(key, () => product.totalQuantity);
+                      controllers.putIfAbsent(
+                          key, () => TextEditingController());
+                      quantities.putIfAbsent(key, () {
+                        final totalQty = product.totalQuantity;
+                        return (totalQty == 0 || totalQty.isNaN)
+                            ? product.subQuantity
+                            : totalQty;
+                      });
 
                       final isInput = useTextField[key]!;
                       final inputCtrl = controllers[key]!;
                       final quantity = quantities[key]!;
                       final price = product.retailPrice;
                       final subtotal = quantity * price;
-                      final maxQuantity = productProvider.getProductByName(product.name)?.totalQuantity;
+                      final maxQuantity = productProvider
+                          .getProductByName(product.name)
+                          ?.totalQuantity;
 
                       return Container(
                         decoration: BoxDecoration(
-                          color: AppColor.primary.withOpacity(0.05),
-                          borderRadius: BorderRadius.circular(10),
+                          color: AppColor.primary.withOpacity(0.04),
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        padding: const EdgeInsets.all(10),
+                        padding: const EdgeInsets.all(12),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.start,
                           children: [
                             Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.start,
                               children: [
                                 ClipRRect(
-                                  borderRadius: BorderRadius.circular(6),
+                                  borderRadius: BorderRadius.circular(8),
                                   child: product.imageUrl.isNotEmpty &&
                                       File(product.imageUrl).existsSync()
                                       ? Image.file(
                                     File(product.imageUrl),
-                                    width: 36,
-                                    height: 36,
+                                    width: 80,
+                                    height: 80,
                                     fit: BoxFit.cover,
                                   )
                                       : Container(
-                                    width: 36,
-                                    height: 36,
+                                    width: 80,
+                                    height: 80,
                                     color: AppColor.border,
                                     child: const Icon(
                                       Icons.image_not_supported,
-                                      size: 16,
+                                      size: 20,
                                       color: AppColor.textSecondary,
                                     ),
                                   ),
                                 ),
-                                const SizedBox(width: 10),
+                                const SizedBox(width: 12),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                    CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         product.name,
@@ -134,7 +156,7 @@ class _CartScreenState extends State<CartScreen> {
                                           fontWeight: FontWeight.w600,
                                         ),
                                       ),
-                                      const SizedBox(height: 2),
+                                      const SizedBox(height: 4),
                                       Text(
                                         "${currencyProvider.currencyFormat.currencySymbol}${price.toStringAsFixed(2)} / ${product.unit}",
                                         style: const TextStyle(
@@ -142,25 +164,109 @@ class _CartScreenState extends State<CartScreen> {
                                           color: AppColor.textSecondary,
                                         ),
                                       ),
+                                      const SizedBox(height: 6),
+                                      CustomSwitchPill(
+                                        options: ['Stepper', 'Input'],
+                                        selected:
+                                        isInput ? 'Input' : 'Stepper',
+                                        onSelected: (label) {
+                                          setState(() {
+                                            useTextField[key] =
+                                                label == 'Input';
+                                            quantities[key] =
+                                                product.totalQuantity;
+                                            inputCtrl.text = product
+                                                .totalQuantity
+                                                .toString();
+                                          });
+                                        },
+                                      ),
+                                      const SizedBox(height: 6),
+                                      isInput
+                                          ? CustomTextField(
+                                        label: '',
+                                        controller: inputCtrl,
+                                        keyboardType:
+                                        TextInputType.number,
+                                        hintText: 'Qty',
+                                        onChanged: (value) {
+                                          final parsed =
+                                              double.tryParse(value) ?? 0;
+                                          final clamped = parsed.clamp(
+                                              0.0, maxQuantity!);
+                                          setState(() {
+                                            quantities[key] = clamped;
+                                            if (parsed != clamped) {
+                                              inputCtrl.text =
+                                                  clamped.toString();
+                                              inputCtrl.selection =
+                                                  TextSelection
+                                                      .fromPosition(
+                                                    TextPosition(
+                                                        offset: inputCtrl
+                                                            .text.length),
+                                                  );
+                                            }
+                                          });
+                                        },
+                                      )
+                                          : Row(
+                                        children: [
+                                          IconButton(
+                                            icon: const Icon(
+                                                Icons
+                                                    .remove_circle_outline,
+                                                color: AppColor.primary),
+                                            onPressed: () {
+                                              if (quantity > 0) {
+                                                setState(() {
+                                                  quantities[key] =
+                                                      quantity - 1;
+                                                });
+                                              }
+                                            },
+                                          ),
+                                          Text(
+                                            '$quantity',
+                                            style: const TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                          IconButton(
+                                            icon: const Icon(
+                                                Icons.add_circle_outline,
+                                                color: AppColor.primary),
+                                            onPressed: () {
+                                              if (quantity <
+                                                  maxQuantity!) {
+                                                setState(() {
+                                                  quantities[key] =
+                                                      quantity + 1;
+                                                });
+                                              }
+                                            },
+                                          ),
+                                        ],
+                                      ),
                                     ],
                                   ),
                                 ),
                                 IconButton(
-                                  padding: EdgeInsets.zero,
-                                  constraints: const BoxConstraints(),
                                   icon: const Icon(
                                     LucideIcons.trash,
-                                    size: 18,
                                     color: AppColor.error,
                                   ),
                                   onPressed: () {
                                     showDialog(
                                       context: context,
-                                      builder: (context) => CustomConfirmDialog(
+                                      builder: (_) => CustomConfirmDialog(
                                         title: 'Remove Item?',
-                                        content: 'Are you sure you want to remove "${product.name}" from your cart?',
+                                        content:
+                                        'Are you sure you want to remove "${product.name}" from your cart?',
                                         onConfirm: () {
-                                          cartProvider.removeFromCart(product.name);
+                                          cartProvider
+                                              .removeFromCart(product.name);
                                           setState(() {
                                             useTextField.remove(key);
                                             controllers[key]?.dispose();
@@ -168,101 +274,30 @@ class _CartScreenState extends State<CartScreen> {
                                             quantities.remove(key);
                                           });
 
-                                          cartProvider.cartItems.isEmpty ? Navigator.pop(context) : null;
+                                          if (cartProvider.cartItems.isEmpty) {
+                                            Navigator.pop(context);
+                                          }
                                         },
                                       ),
                                     );
                                   },
                                 ),
-
                               ],
                             ),
-                            const SizedBox(height: 6),
-                            Center(
-                              child: CustomSwitchPill(
-                                options: ['Stepper', 'Input'],
-                                selected: isInput ? 'Input' : 'Stepper',
-                                onSelected: (label) {
-                                  setState(() {
-                                    useTextField[key] = label == 'Input';
-                                    quantities[key] = product.totalQuantity;
-                                    inputCtrl.text = product.totalQuantity.toString();
-                                  });
-                                },
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            isInput
-                                ? CustomTextField(
-                              label: '',
-                              controller: inputCtrl,
-                              keyboardType: TextInputType.number,
-                              hintText: 'Qty',
-                              onChanged: (value) {
-                                final parsed = double.tryParse(value) ?? 0;
-                                final clamped = parsed.clamp(0.0, maxQuantity!);
-                                setState(() {
-                                  quantities[key] = clamped;
-                                  if (parsed != clamped) {
-                                    inputCtrl.text = clamped.toString();
-                                    inputCtrl.selection = TextSelection.fromPosition(
-                                      TextPosition(offset: inputCtrl.text.length),
-                                    );
-                                  }
-                                });
-                              },
-
-                            )
-                                : Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.remove_circle_outline,
-                                      size: 25, color: AppColor.primary),
-                                  onPressed: () {
-                                    if (quantity > 0) {
-                                      setState(() {
-                                        quantities[key] = quantity - 1;
-                                      });
-                                    }
-                                  },
-                                ),
-                                Text(
-                                  '$quantity',
-                                  style: const TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.add_circle_outline,
-                                      size: 25, color: AppColor.primary),
-                                  onPressed: () {
-                                    if (quantity < maxQuantity!) {
-                                      setState(() {
-                                        quantities[key] = quantity + 1;
-                                      });
-                                    }
-                                  },
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 6),
+                            const SizedBox(height: 8),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 const Text(
                                   "Subtotal:",
                                   style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w500,
-                                    color: AppColor.textSecondary,
-                                  ),
+                                      fontSize: 13,
+                                      color: AppColor.textSecondary),
                                 ),
                                 Text(
                                   "${currencyProvider.currencyFormat.currencySymbol}${subtotal.toStringAsFixed(2)}",
                                   style: const TextStyle(
-                                    fontSize: 13,
+                                    fontSize: 14,
                                     fontWeight: FontWeight.w600,
                                     color: AppColor.primary,
                                   ),
@@ -276,24 +311,24 @@ class _CartScreenState extends State<CartScreen> {
                   ),
                 ),
 
-                // Total Section
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text("Total:",
-                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-                      Text("₱${totalAmount.toStringAsFixed(2)}",
+                          style: TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold)),
+                      Text("${totalAmount.toStringAsFixed(2)}",
                           style: const TextStyle(
-                              fontSize: 14,
+                              fontSize: 16,
                               fontWeight: FontWeight.bold,
                               color: AppColor.primary)),
                     ],
                   ),
                 ),
 
-                // Proceed Button
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                   child: CustomButton(
@@ -329,12 +364,13 @@ class _CartScreenState extends State<CartScreen> {
                               ...selectedQuantities.map((e) {
                                 final product = cartProvider.cartItems
                                     .firstWhere((p) => p.name == e.key);
-                                final subtotal = product.retailPrice * e.value;
+                                final subtotal =
+                                    product.retailPrice * e.value;
                                 return Text(
-                                    "${e.key} - ${e.value} × ₱${product.retailPrice} = ₱${subtotal.toStringAsFixed(2)}");
+                                    "${e.key} - ${e.value} × ${product.retailPrice} = ${subtotal.toStringAsFixed(2)}");
                               }),
                               const SizedBox(height: 10),
-                              Text("Total: ₱${totalAmount.toStringAsFixed(2)}",
+                              Text("Total: ${totalAmount.toStringAsFixed(2)}",
                                   style: const TextStyle(
                                       fontWeight: FontWeight.bold)),
                             ],
@@ -362,3 +398,4 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 }
+

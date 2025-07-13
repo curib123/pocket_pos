@@ -32,6 +32,7 @@ class CartProvider with ChangeNotifier {
         description: '',
         imageUrl: '',
         category: '',
+        itemsPerBundle: 0,
         lastModified: DateTime.now(),
       ),
     );

@@ -38,6 +38,9 @@ class Product extends HiveObject {
   @HiveField(10)
   DateTime? deletedAt;
 
+  @HiveField(11)
+  int itemsPerBundle; // 🔥 New field
+
   Product({
     required this.id,
     required this.name,
@@ -49,6 +52,7 @@ class Product extends HiveObject {
     required this.imageUrl,
     required this.category,
     required this.lastModified,
+    required this.itemsPerBundle,
     this.deletedAt,
   });
 
@@ -63,11 +67,15 @@ class Product extends HiveObject {
     return save();
   }
 
-  double get totalQuantity => batches.fold(0, (sum, batch) => sum + batch.quantity);
+  double get totalQuantity => batches.fold(0, (sum, b) => sum + b.quantity);
 
-  double get totalCostValue => totalQuantity * costPrice;
+  double get subQuantity =>
+      batches.fold(0, (sum, b) => sum + (b.subQuantity ?? 0));
 
-  double get totalRetailValue => totalQuantity * retailPrice;
+  double get totalCostValue => costPrice;
+
+  double get costPerItem =>
+      totalQuantity == 0 ? 0 : costPrice / totalQuantity;
 
   Product copyWith({
     String? id,
@@ -81,6 +89,7 @@ class Product extends HiveObject {
     List<Batch>? batches,
     DateTime? lastModified,
     DateTime? deletedAt,
+    int? itemsPerBundle,
   }) {
     return Product(
       id: id ?? this.id,
@@ -94,24 +103,8 @@ class Product extends HiveObject {
       batches: batches ?? this.batches,
       lastModified: lastModified ?? this.lastModified,
       deletedAt: deletedAt ?? this.deletedAt,
+      itemsPerBundle: itemsPerBundle ?? this.itemsPerBundle,
     );
-  }
-
-  String toString() {
-    return '''
-Product {
-  id: $id,
-  name: $name,
-  description: $description,
-  cost_price: $costPrice,
-  retail_price: $retailPrice,
-  unit: $unit,
-  category: $category,
-  image_url: $imageUrl,
-  lastModified: $lastModified,
-  deletedAt: $deletedAt,
-  batches: ${batches.map((b) => b.toString()).join(',\n           ')}
-}''';
   }
 
   Map<String, dynamic> toMap() {
@@ -121,35 +114,48 @@ Product {
       'cost_price': costPrice,
       'retail_price': retailPrice,
       'unit': unit,
-      'batches': batches.map((e) => e.toMap()).toList(),
+      'batches': batches.map((b) => b.toMap()).toList(),
       'description': description,
       'image_url': imageUrl,
       'category': category,
       'last_modified': lastModified.toIso8601String(),
       'deleted_at': deletedAt?.toIso8601String(),
+      'items_per_bundle': itemsPerBundle,
     };
   }
 
-  /// ✅ Static factory method for deserialization
   static Product fromMap(Map<String, dynamic> json) {
     return Product(
-      id: json['id'] as String,
-      name: json['name'] as String,
+      id: json['id'],
+      name: json['name'],
       costPrice: (json['cost_price'] as num).toDouble(),
       retailPrice: (json['retail_price'] as num).toDouble(),
-      unit: json['unit'] as String,
-      batches: (json['batches'] as List<dynamic>)
-          .map((e) => Batch.fromMap(e as Map<String, dynamic>))
-          .toList(),
-      description: json['description'] as String,
-      imageUrl: json['image_url'] as String,
-      category: json['category'] as String,
-      lastModified: json['last_modified'] != null
-          ? DateTime.parse(json['last_modified'])
-          : DateTime.now(),
+      unit: json['unit'],
+      batches: (json['batches'] as List).map((e) => Batch.fromMap(e)).toList(),
+      description: json['description'],
+      imageUrl: json['image_url'],
+      category: json['category'],
+      lastModified: DateTime.parse(json['last_modified']),
       deletedAt: json['deleted_at'] != null
           ? DateTime.tryParse(json['deleted_at'])
           : null,
+      itemsPerBundle: json['items_per_bundle'] ?? 1,
     );
+  }
+
+  @override
+  String toString() {
+    return '''
+Product {
+  id: $id,
+  name: $name,
+  cost_price: $costPrice,
+  retail_price: $retailPrice,
+  unit: $unit,
+  itemsPerBundle: $itemsPerBundle,
+  totalQuantity: $totalQuantity,
+  costPerItem: $costPerItem,
+  batches: ${batches.map((b) => b.toString()).join(', ')}
+}''';
   }
 }

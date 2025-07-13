@@ -20,19 +20,22 @@ class BatchAdapter extends TypeAdapter<Batch> {
       id: fields[0] as String,
       quantity: fields[1] as double,
       createdAt: fields[2] as DateTime,
+      subQuantity: fields[3] as double?,
     );
   }
 
   @override
   void write(BinaryWriter writer, Batch obj) {
     writer
-      ..writeByte(3)
+      ..writeByte(4)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
       ..write(obj.quantity)
       ..writeByte(2)
-      ..write(obj.createdAt);
+      ..write(obj.createdAt)
+      ..writeByte(3)
+      ..write(obj.subQuantity);
   }
 
   @override

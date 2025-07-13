@@ -27,6 +27,7 @@ class ProductAdapter extends TypeAdapter<Product> {
       imageUrl: fields[7] as String,
       category: fields[8] as String,
       lastModified: fields[9] as DateTime,
+      itemsPerBundle: fields[11] as int,
       deletedAt: fields[10] as DateTime?,
     );
   }
@@ -34,7 +35,7 @@ class ProductAdapter extends TypeAdapter<Product> {
   @override
   void write(BinaryWriter writer, Product obj) {
     writer
-      ..writeByte(11)
+      ..writeByte(12)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -56,7 +57,9 @@ class ProductAdapter extends TypeAdapter<Product> {
       ..writeByte(9)
       ..write(obj.lastModified)
       ..writeByte(10)
-      ..write(obj.deletedAt);
+      ..write(obj.deletedAt)
+      ..writeByte(11)
+      ..write(obj.itemsPerBundle);
   }
 
   @override

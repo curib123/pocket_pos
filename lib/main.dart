@@ -5,9 +5,11 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:mobile_pos_inventory/Model/batch_model.dart';
 import 'package:mobile_pos_inventory/Model/product_model.dart';
 import 'package:mobile_pos_inventory/Provider/AuthProvider.dart';
+import 'package:mobile_pos_inventory/Provider/BatchProvider.dart';
 import 'package:mobile_pos_inventory/Provider/CartProvider.dart';
 import 'package:mobile_pos_inventory/Provider/CurrencyProvider.dart';
 import 'package:mobile_pos_inventory/Provider/ProductProvider.dart';
+import 'package:mobile_pos_inventory/Provider/ProductSyncProvider.dart';
 import 'package:mobile_pos_inventory/Provider/StoreCategoryProvider.dart';
 import 'package:mobile_pos_inventory/Provider/SwitchProvider.dart';
 import 'package:mobile_pos_inventory/Provider/TabProvider.dart';
@@ -40,6 +42,8 @@ Future<void> main() async {
           ChangeNotifierProvider(create: (_) => TabProvider()),
           ChangeNotifierProvider(create: (_) => AuthProvider()),
           ChangeNotifierProvider(create: (_) => ProductProvider(productBox)),
+          Provider(create: (_) => ProductSyncProvider(productBox)),
+          ChangeNotifierProvider(create: (_) => BatchProvider(productBox)),
           ChangeNotifierProvider(create: (_) => StoreCategoryProvider()),
           ChangeNotifierProvider(create: (_) => SwitchProvider()),
           ChangeNotifierProvider(create: (_) => CurrencyProvider()),

@@ -1,8 +1,11 @@
 import 'dart:io';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:mobile_pos_inventory/Helper/Enums/enum.dart';
 import 'package:mobile_pos_inventory/Model/batch_model.dart';
+import 'package:mobile_pos_inventory/Provider/BatchProvider.dart';
 import 'package:mobile_pos_inventory/Provider/CartProvider.dart';
 import 'package:mobile_pos_inventory/Provider/CurrencyProvider.dart';
 import 'package:mobile_pos_inventory/View/Components/Alert/CustomBatchDialog.dart';
@@ -60,6 +63,10 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
   final TextEditingController inputController = TextEditingController();
   int quantity = 0;
   bool useTextField = false;
+  bool usePack = true;
+  double price = 0;
+  String unit = '';
+
 
   @override
   void initState() {
@@ -76,7 +83,27 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
         );
       }
     });
+
+    // Initial values
+    if (widget.product.unit == "Per Pack") {
+      usePack = true;
+    }
+
+    final perItem = widget.product.itemsPerBundle;
+
+    if (usePack) {
+      price = widget.product.retailPrice;
+      unit = widget.product.unit;
+    } else {
+      if (perItem > 0) {
+        price = widget.product.retailPrice / perItem;
+      } else {
+        price = 0;
+      }
+      unit = 'Piece';
+    }
   }
+
 
   @override
   void dispose() {
@@ -90,15 +117,42 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
     final hasImage = product.imageUrl.isNotEmpty && File(product.imageUrl).existsSync();
     final currency = context.read<CurrencyProvider>().currencyFormat;
 
+
     return SafeArea(
-      child: Consumer2<ProductProvider,CartProvider>(
-        builder: (context, productProvider,cartProvider, _) {
+      child: Consumer3<ProductProvider,CartProvider,BatchProvider>(
+        builder: (context, productProvider,cartProvider,batchProvider, _) {
           return SingleChildScrollView(
             padding: const EdgeInsets.only(bottom: 12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Product Image and Info
+                if(product.unit == "Per Pack") ...[
+                  const SizedBox(height: 10),
+                  Center(
+                    child: CustomSwitchPill(
+                      options: ['Pack', 'Pieces'],
+                      selected: usePack ? 'Pack' : 'Pieces',
+                      onSelected: (label) => setState(() {
+                        usePack = label == 'Pack';
+
+                        if (usePack) {
+                          price = widget.product.retailPrice;
+                          unit = widget.product.unit;
+                          final maxQty = usePack ? product.totalQuantity : product.subQuantity;
+                          quantity = min(quantity, maxQty).toInt();
+
+                        } else {
+                          final perItem = widget.product.itemsPerBundle;
+                          price = perItem > 0 ? widget.product.retailPrice / perItem : 0;
+                          unit = 'Piece';
+                        }
+                      }),
+                    ),
+
+                  ),
+                  const SizedBox(height: 10),
+                ],
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -172,11 +226,11 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                             ),
                           const SizedBox(height: 4),
                           Text(
-                            'Retail: ${currency.format(product.retailPrice)} | ${product.unit}',
+                            'Retail: ${currency.format(price)} | ${unit}',
                             style: const TextStyle(color: AppColor.primary, fontWeight: FontWeight.w500),
                           ),
                           Text(
-                            'Cost: ${currency.format(product.costPrice)} | ${product.unit}',
+                            'Cost: ${ currency.format(usePack ? product.costPrice : product.costPerItem)} | ${unit}',
                             style: const TextStyle(
                               color: AppColor.textSecondary,
                               fontSize: 13,
@@ -268,8 +322,8 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                 // Total Stock and Batches
                 if (product.batches.isNotEmpty) ...[
                   const SizedBox(height: 8),
-                  Text(
-                    'Stock Batches: ${product.totalQuantity} ${product.unit}',
+                 Text(
+                    'Stock Batches: ${usePack ? product.totalQuantity  : product.subQuantity} ${unit}',
                     style: TextStyle(
                       fontSize: context.rf(14),
                       fontWeight: FontWeight.w600,
@@ -281,7 +335,7 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                   const SizedBox(height: 4),
                 ],
 
-                if (product.batches.isNotEmpty)
+                if (product.batches.isNotEmpty )
                   ...product.batches.map((batch) {
                     return Container(
                       margin: const EdgeInsets.symmetric(vertical: 4),
@@ -296,7 +350,7 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                         children: [
                           Expanded(
                             child: Text(
-                              '${batch.quantity} ${product.unit} • ${DateFormat.yMMMd().format(batch.createdAt)}',
+                              '${usePack ? batch.quantity : batch.subQuantity} ${unit} • ${DateFormat.yMMMd().format(batch.createdAt)}',
                               style: const TextStyle(color: AppColor.textSecondary, fontSize: 13),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -308,13 +362,9 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                                 onPressed: () {
                                   showChangeBatchQtyDialog(
                                     context: context,
-                                    initialQty: batch.quantity,
+                                    initialQty: usePack ? batch.quantity : batch.subQuantity!,
                                     onConfirm: (qty) {
-                                      productProvider.updateBatchQty(
-                                        productName: product.name,
-                                        batchId: batch.id,
-                                        newQuantity: qty,
-                                      );
+                                     usePack ? batchProvider.updateBatchQuantity(product.name, batch.id, qty) : batchProvider.updateSubQuantity(product.name, batch.id, qty);
                                     },
                                   );
                                 },
@@ -328,7 +378,7 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                                       title: "Delete Batch",
                                       content: "Are you sure you want to delete this batch?\nThis action cannot be undone.",
                                       onConfirm: () {
-                                        productProvider.deleteBatchByProductName(product.name, batch.id);
+                                       usePack ? batchProvider.deleteBatch(product.name, batch.id) : batchProvider.deleteSubQuantity(product.name, batch.id);
                                       },
                                     ),
                                   );
@@ -420,9 +470,10 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                         IconButton(
                           icon: const Icon(Icons.add_circle_outline, color: AppColor.primary,size: 30,),
                           onPressed: () {
-                            if (quantity < product.totalQuantity) {
+                            if (quantity < (usePack ? product.totalQuantity : product.subQuantity)) {
                               setState(() => quantity++);
                             }
+
                           },
                         ),
                       ],
@@ -438,7 +489,7 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                           isFilled: false,
                           onPressed: () {
                             final inputQty = int.tryParse(inputController.text) ?? 0;
-                            final maxQty = product.totalQuantity.toInt();
+                            final maxQty = usePack ? product.totalQuantity.toInt() : product.subQuantity.toInt();
                             final finalQty = useTextField ? inputQty : quantity;
 
                             if (finalQty < 0) {
@@ -471,11 +522,23 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                                 : quantity;
 
                             if (selectedQty >= 0) {
-                              final productToCart = product.copyWith(
+                              final productToCart = Product(
+                                id: product.id,
+                                name: product.name,
+                                description: product.description,
+                                costPrice: usePack ? product.costPrice : product.costPerItem,
+                                retailPrice: price,
+                                unit: unit,
+                                category: product.category,
+                                imageUrl: product.imageUrl,
+                                deletedAt: product.deletedAt,
+                                lastModified: DateTime.now(), // optional: use product.lastModified if needed
+                                itemsPerBundle: product.itemsPerBundle,
                                 batches: [
                                   Batch(
                                     id: DateTime.now().toIso8601String(),
-                                    quantity: selectedQty.toDouble(),
+                                    quantity: usePack ? selectedQty.toDouble() : 0.0,
+                                    subQuantity: !usePack ? selectedQty.toDouble() : 0.0,
                                     createdAt: DateTime.now(),
                                   ),
                                 ],
@@ -484,26 +547,6 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                               cartProvider.addToCart(productToCart);
                               Navigator.pop(context); // Close modal
                             }
-
-                            Future.delayed(Duration.zero,(){
-
-                              showModalBottomSheet(
-                                context: context,
-                                isScrollControlled: true,
-                                backgroundColor: Colors.transparent,
-                                shape: const RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-                                ),
-                                builder: (context) => FractionallySizedBox(
-                                  heightFactor: 0.9,
-                                  child: ClipRRect(
-                                    borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                                    child: const CartScreen(),
-                                  ),
-                                ),
-                              );
-
-                            });
                           },
                         ),
 
@@ -516,7 +559,7 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                           isFilled: true,
                           onPressed: () {
                             final inputQty = int.tryParse(inputController.text) ?? 0;
-                            final maxQty = product.totalQuantity.toInt();
+                            final maxQty = usePack ? product.totalQuantity.toInt() : product.subQuantity.toInt();
                             final finalQty = useTextField ? inputQty : quantity;
 
                             if (finalQty < 0) {
@@ -550,11 +593,23 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                                 : quantity;
 
                             if (selectedQty >= 0) {
-                              final productToCart = product.copyWith(
+                              final productToCart = Product(
+                                id: product.id,
+                                name: product.name,
+                                description: product.description,
+                                costPrice: usePack ? product.costPrice : product.costPerItem,
+                                retailPrice: price,
+                                unit: unit,
+                                category: product.category,
+                                imageUrl: product.imageUrl,
+                                deletedAt: product.deletedAt,
+                                lastModified: DateTime.now(), // optional: use product.lastModified if needed
+                                itemsPerBundle: product.itemsPerBundle,
                                 batches: [
                                   Batch(
                                     id: DateTime.now().toIso8601String(),
-                                    quantity: selectedQty.toDouble(),
+                                    quantity: usePack ? selectedQty.toDouble() : 0.0,
+                                    subQuantity: !usePack ? selectedQty.toDouble() : 0.0,
                                     createdAt: DateTime.now(),
                                   ),
                                 ],
@@ -563,7 +618,6 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                               cartProvider.addToCart(productToCart);
                               Navigator.pop(context); // Close modal
                             }
-
                             Future.delayed(Duration.zero,(){
 
                               showModalBottomSheet(

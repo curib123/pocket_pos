@@ -1,12 +1,13 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:mobile_pos_inventory/Provider/BatchProvider.dart';
 import 'package:mobile_pos_inventory/View/Components/Alert/CustomConfimDialog.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
-
 import 'package:mobile_pos_inventory/Helper/Enums/enum.dart';
 import 'package:mobile_pos_inventory/Model/product_model.dart';
 import 'package:mobile_pos_inventory/Model/batch_model.dart';
@@ -41,6 +42,7 @@ class _ProductModalFormState extends State<ProductModalForm> {
   final _retailPrice = TextEditingController();
   final _quantity = TextEditingController();
   final _newBatchQty = TextEditingController();
+  final _itemsPerBundle = TextEditingController();
 
   bool _showNewBatchInput = false;
   List<Batch> _existingBatches = [];
@@ -51,12 +53,18 @@ class _ProductModalFormState extends State<ProductModalForm> {
 
   bool get isEditing => widget.existingProduct != null;
 
+  bool get isBundleUnit => UnitTypeExtension.supportsSubQuantity(_selectedUnit);
+
   @override
   void initState() {
     super.initState();
 
     if (isEditing) {
       final p = widget.existingProduct!;
+      if (p.unit == UnitType.pack.name) {
+        _itemsPerBundle.text = p.itemsPerBundle.toString();
+      }
+
       _name.text = p.name;
       _description.text = p.description;
       _costPrice.text = p.costPrice.toString();
@@ -139,7 +147,7 @@ class _ProductModalFormState extends State<ProductModalForm> {
     );
   }
 
-  void _handleSubmit(ProductProvider provider) {
+  void _handleSubmit(ProductProvider productProvider, BatchProvider batchProvider) {
     if (!_formKey.currentState!.validate()) return;
 
     if (!widget.isRestock && (_selectedCategory == null || _selectedUnit == null)) {
@@ -156,10 +164,16 @@ class _ProductModalFormState extends State<ProductModalForm> {
       return;
     }
 
+    final rawQty = double.tryParse(widget.isRestock ? _newBatchQty.text : _quantity.text) ?? 0;
+    final itemsPerBundle = isBundleUnit ? int.tryParse(_itemsPerBundle.text) ?? 1 : 1;
+    final bundleQty = rawQty;
+    final subQty = bundleQty * itemsPerBundle;
+
     final newBatch = Batch(
       id: const Uuid().v4(),
-      quantity: double.tryParse(widget.isRestock ? _newBatchQty.text : _quantity.text) ?? 0,
+      quantity: bundleQty,
       createdAt: DateTime.now(),
+      subQuantity: subQty,
     );
 
     final product = Product(
@@ -172,33 +186,34 @@ class _ProductModalFormState extends State<ProductModalForm> {
       category: _selectedCategory ?? '',
       imageUrl: _imageFile?.path ?? '',
       batches: widget.isRestock
-          ? [..._existingBatches, newBatch] // ✅ add new batch when restocking
+          ? [..._existingBatches, newBatch]
           : isEditing
-          ? _existingBatches // ✅ keep old batches when editing
-          : [newBatch], // ✅ only use new batch when adding new product
+          ? _existingBatches
+          : [newBatch],
       lastModified: DateTime.now(),
       deletedAt: null,
+      itemsPerBundle: itemsPerBundle,
     );
 
     if (widget.isRestock) {
-      provider.addBatchByProductName(product.name, newBatch);
-
+      batchProvider.addBatch(product.name, newBatch, itemsPerBundle.toDouble());
     } else if (isEditing) {
-      provider.updateProduct(product);
+      productProvider.updateProduct(product);
     } else {
-      provider.addProduct(product);
+      productProvider.addProduct(product);
     }
+
     Navigator.pop(context);
   }
 
 
+
   @override
   Widget build(BuildContext context) {
-    return Consumer2<StoreCategoryProvider, ProductProvider>(
-      builder: (_, storeCategoryProvider, productProvider, __) {
+    return Consumer3<StoreCategoryProvider, ProductProvider, BatchProvider>(
+      builder: (_, storeCategoryProvider, productProvider, batchProvider, __) {
         final unitList = UnitTypeExtension.valuesAsString;
 
-        // Prevents errors if preselected values are not in dropdown list
         if (!storeCategoryProvider.visibleCategories.contains(_selectedCategory)) {
           _selectedCategory = null;
         }
@@ -239,21 +254,21 @@ class _ProductModalFormState extends State<ProductModalForm> {
 
                 if (!widget.isRestock) ...[
                   _buildDropdown<String>(
-                    hint: "Select Category",
+                    hint: "Select Product Category",
                     value: _selectedCategory,
                     items: storeCategoryProvider.visibleCategories,
                     onChanged: (val) => setState(() => _selectedCategory = val),
                   ),
                   _buildDropdown<String>(
-                    hint: "Select Unit",
+                    hint: "Select Product Unit",
                     value: _selectedUnit,
                     items: unitList,
                     onChanged: (val) => setState(() => _selectedUnit = val),
                   ),
                   CustomTextField(label: 'Product Name', controller: _name, validator: (v) => v!.isEmpty ? 'Required' : null),
                   CustomTextField(label: 'Description', controller: _description),
-                  CustomTextField(label: 'Cost Price', controller: _costPrice, keyboardType: TextInputType.number),
-                  CustomTextField(label: 'Retail Price', controller: _retailPrice, keyboardType: TextInputType.number),
+                  CustomTextField(label: 'Total Buying Cost ', controller: _costPrice, keyboardType: TextInputType.number),
+                  CustomTextField(label: ' Retail Price Per (${_selectedUnit})', controller: _retailPrice, keyboardType: TextInputType.number),
                   const SizedBox(height: 16),
                 ],
 
@@ -271,15 +286,31 @@ class _ProductModalFormState extends State<ProductModalForm> {
                 if (isEditing && widget.isRestock) ...[
                   const SizedBox(height: 12),
                   _showNewBatchInput
-                      ? CustomTextField(
-                    label: 'New Batch Quantity',
-                    controller: _newBatchQty,
-                    keyboardType: TextInputType.number,
-                    validator: (v) {
-                      final qty = double.tryParse(v ?? '');
-                      return (qty == null || qty <= 0) ? 'Enter a valid quantity' : null;
-                    },
-                  )
+                      ? Column(
+                        children: [
+                          CustomTextField(
+                                              label: 'New Stock Quantity',
+                                              controller: _newBatchQty,
+                                              keyboardType: TextInputType.number,
+                                              validator: (v) {
+                          final qty = double.tryParse(v ?? '');
+                          return (qty == null || qty <= 0) ? 'Enter a valid quantity' : null;
+                                              },
+                                            ),
+                          SizedBox(height: 5,),
+                         if(isBundleUnit)...[
+                           CustomTextField(
+                             label: 'How Many Items Per Pack',
+                             controller: _itemsPerBundle,
+                             keyboardType: TextInputType.number,
+                             validator: (v) {
+                               final val = int.tryParse(v ?? '');
+                               return (val == null || val <= 0) ? 'Enter a valid number' : null;
+                             },
+                           ),
+                         ]
+                        ],
+                      )
                       : CustomButton(
                     text: 'Add Batch',
                     icon: Icons.add,
@@ -291,12 +322,13 @@ class _ProductModalFormState extends State<ProductModalForm> {
                           title: 'Add New Batch',
                           content: 'Do you want to add a new stock batch?',
                           onConfirm: () {
-                            setState(() => _showNewBatchInput = true);
-
+                            setState(() {
+                              _showNewBatchInput = !_showNewBatchInput;
+                            });
                           },
                           onCancel: () {
 
-                          },
+                      },
                         ),
                       );
                       if (confirmed == true) setState(() => _showNewBatchInput = true);
@@ -306,7 +338,7 @@ class _ProductModalFormState extends State<ProductModalForm> {
 
                 if (!isEditing && !widget.isRestock)
                   CustomTextField(
-                    label: 'Stock Qty',
+                    label: 'Stock Qty (${_selectedUnit})',
                     controller: _quantity,
                     keyboardType: TextInputType.number,
                     validator: (v) {
@@ -315,10 +347,19 @@ class _ProductModalFormState extends State<ProductModalForm> {
                     },
                   ),
 
+                if (!isEditing && !widget.isRestock && isBundleUnit)
+                  CustomTextField(
+                    label: 'How Many Items Per Pack',
+                    controller: _itemsPerBundle,
+                    keyboardType: TextInputType.number,
+                    validator: (v) {
+                      final val = int.tryParse(v ?? '');
+                      return (val == null || val <= 0) ? 'Enter a valid number' : null;
+                    },
+                  ),
+
                 const SizedBox(height: 20),
-                if (!widget.isRestock) ...[
-                  _buildImageSection(),
-                ],
+                if (!widget.isRestock) _buildImageSection(),
 
                 Row(
                   children: [
@@ -335,7 +376,7 @@ class _ProductModalFormState extends State<ProductModalForm> {
                       child: CustomButton(
                         text: widget.isRestock ? "Restock" : isEditing ? "Update" : "Save",
                         icon: Icons.save,
-                        onPressed: () => _handleSubmit(productProvider),
+                        onPressed: () => _handleSubmit(productProvider, batchProvider),
                       ),
                     ),
                   ],
