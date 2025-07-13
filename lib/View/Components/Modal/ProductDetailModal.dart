@@ -87,6 +87,9 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
     // Initial values
     if (widget.product.unit == "Per Pack") {
       usePack = true;
+    }else{
+      usePack = false;
+      unit = widget.product.unit;
     }
 
     final perItem = widget.product.itemsPerBundle;
@@ -100,7 +103,6 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
       } else {
         price = 0;
       }
-      unit = 'Piece';
     }
   }
 
@@ -145,7 +147,7 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                         } else {
                           final perItem = widget.product.itemsPerBundle;
                           price = perItem > 0 ? widget.product.retailPrice / perItem : 0;
-                          unit = 'Piece';
+                          unit = product.unit;
                         }
                       }),
                     ),
