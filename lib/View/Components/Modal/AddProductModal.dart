@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:mobile_pos_inventory/Helper/AppColor.dart';
 import 'package:mobile_pos_inventory/Provider/BatchProvider.dart';
 import 'package:mobile_pos_inventory/View/Components/Alert/CustomConfimDialog.dart';
 import 'package:provider/provider.dart';
@@ -51,8 +52,10 @@ class _ProductModalFormState extends State<ProductModalForm> {
   String? _selectedUnit;
   File? _imageFile;
 
-  bool get isEditing => widget.existingProduct != null;
+  double? _selectedProfitPercent;
+  final List<double> _profitOptions = List.generate(100, (index) => (index + 1) / 100);
 
+  bool get isEditing => widget.existingProduct != null;
   bool get isBundleUnit => UnitTypeExtension.supportsSubQuantity(_selectedUnit);
 
   @override
@@ -61,21 +64,35 @@ class _ProductModalFormState extends State<ProductModalForm> {
 
     if (isEditing) {
       final p = widget.existingProduct!;
-      if (p.unit == UnitType.pack.name) {
-        _itemsPerBundle.text = p.itemsPerBundle.toString();
-      }
-
       _name.text = p.name;
       _description.text = p.description;
       _costPrice.text = p.costPrice.toString();
       _retailPrice.text = p.retailPrice.toString();
       _selectedCategory = p.category;
       _selectedUnit = p.unit;
+      if (p.unit == UnitType.pack.name) _itemsPerBundle.text = p.itemsPerBundle.toString();
       if (p.imageUrl.isNotEmpty) _imageFile = File(p.imageUrl);
       _existingBatches = List.from(p.batches);
     } else {
       _selectedCategory = widget.category;
     }
+
+    _setupProfitCalculationListener();
+  }
+
+  void _setupProfitCalculationListener() {
+    void listener() {
+      final cost = double.tryParse(_costPrice.text);
+      final qty = double.tryParse(_quantity.text);
+      if (cost != null && qty != null && qty > 0 && _selectedProfitPercent != null) {
+        final costPerItem = cost / qty;
+        final retail = (costPerItem * (1 + _selectedProfitPercent!)).toStringAsFixed(2);
+        _retailPrice.text = retail;
+      }
+    }
+
+    _costPrice.addListener(listener);
+    _quantity.addListener(listener);
   }
 
   Future<void> _pickImage(ImageSource source) async {
@@ -83,26 +100,63 @@ class _ProductModalFormState extends State<ProductModalForm> {
     if (picked != null) setState(() => _imageFile = File(picked.path));
   }
 
+  Widget _buildTextFieldWithIcon({
+    required String label,
+    required TextEditingController controller,
+    TextInputType? keyboardType,
+    String? Function(String?)? validator,
+    IconData? icon,
+    String? helperText,
+    bool obscure = false,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 15),
+      child: CustomTextField(
+        label: label,
+        controller: controller,
+        keyboardType: keyboardType,
+        validator: validator,
+        obscure: obscure,
+        prefixIcon: icon != null ? Icon(icon, color: Colors.grey) : null,
+        helperText: helperText,
+      ),
+    );
+  }
+
   Widget _buildDropdown<T>({
     required String hint,
     required T? value,
     required List<T> items,
     required void Function(T?) onChanged,
+    Widget Function(T)? itemBuilder,  // optional
+    IconData? icon,
+    String? helperText,
   }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        CustomFlatDropdown<T>(
-          hint: hint,
-          value: value,
-          items: items,
-          onChanged: onChanged,
-          itemBuilder: (val) => Text(val.toString()),
-        ),
-        const SizedBox(height: 12),
-      ],
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          CustomFlatDropdown<T>(
+            hint: hint,
+            value: value,
+            items: items,
+            onChanged: onChanged,
+            itemBuilder: itemBuilder ?? (val) => Text(val.toString()),
+            prefixIcon: icon, // icon inside
+          ),
+          if (helperText != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 15),
+              child: Text(helperText, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+            ),
+          const SizedBox(height: 12),
+        ],
+      ),
     );
   }
+
+
 
   Widget _buildImageSection() {
     return Column(
@@ -114,9 +168,7 @@ class _ProductModalFormState extends State<ProductModalForm> {
           text: _imageFile == null ? 'Upload Image' : 'Change Image',
           icon: LucideIcons.image,
           isFilled: false,
-          onPressed: () {
-            showImageSourcePicker(context: context, onPick: _pickImage);
-          },
+          onPressed: () => showImageSourcePicker(context: context, onPick: _pickImage),
         ),
         const SizedBox(height: 12),
         _imageFile != null
@@ -206,8 +258,6 @@ class _ProductModalFormState extends State<ProductModalForm> {
     Navigator.pop(context);
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     return Consumer3<StoreCategoryProvider, ProductProvider, BatchProvider>(
@@ -238,15 +288,15 @@ class _ProductModalFormState extends State<ProductModalForm> {
                     Icon(
                       isEditing
                           ? (widget.isRestock ? Icons.inventory_2_outlined : Icons.edit)
-                          : Icons.add_circle_outline,
-                      color: Theme.of(context).colorScheme.primary,
+                          : Icons.add_circle_rounded,
+                      color: AppColor.primary,
                     ),
                     const SizedBox(width: 8),
                     Text(
                       isEditing
                           ? (widget.isRestock ? 'Restock Product' : 'Edit Product')
                           : 'Add Product',
-                      style: Theme.of(context).textTheme.titleLarge,
+                      style: TextStyle(color: AppColor.primary,fontWeight: FontWeight.bold,fontSize: 22),
                     ),
                   ],
                 ),
@@ -258,18 +308,92 @@ class _ProductModalFormState extends State<ProductModalForm> {
                     value: _selectedCategory,
                     items: storeCategoryProvider.visibleCategories,
                     onChanged: (val) => setState(() => _selectedCategory = val),
+                    icon: LucideIcons.layers,
+                    helperText: 'Choose the category that best fits your product. This helps organize your inventory.',
                   ),
                   _buildDropdown<String>(
                     hint: "Select Product Unit",
                     value: _selectedUnit,
                     items: unitList,
                     onChanged: (val) => setState(() => _selectedUnit = val),
+                    icon: LucideIcons.ruler,
+                    helperText: 'Pick the unit for measuring your product (e.g., piece, pack).',
                   ),
-                  CustomTextField(label: 'Product Name', controller: _name, validator: (v) => v!.isEmpty ? 'Required' : null),
-                  CustomTextField(label: 'Description', controller: _description),
-                  CustomTextField(label: 'Total Buying Cost ', controller: _costPrice, keyboardType: TextInputType.number),
-                  CustomTextField(label: ' Retail Price Per (${_selectedUnit})', controller: _retailPrice, keyboardType: TextInputType.number),
-                  const SizedBox(height: 16),
+
+                  _buildTextFieldWithIcon(
+                    label: 'Product Name',
+                    controller: _name,
+                    validator: (v) => v!.isEmpty ? 'Required' : null,
+                    icon: LucideIcons.box,
+                    helperText: 'Enter a clear and descriptive name for the product.',
+                  ),
+
+                  _buildTextFieldWithIcon(
+                    label: 'Description (Optional)',
+                    controller: _description,
+                    icon: LucideIcons.info,
+                    helperText: 'Add any notes or details about the product (optional).',
+                  ),
+
+                  _buildTextFieldWithIcon(
+                    label: 'Cost Price (Total)',
+                    controller: _costPrice,
+                    keyboardType: TextInputType.number,
+                    icon: LucideIcons.dollarSign,
+                    helperText: 'Enter the total amount you paid for this stock. Use numbers only.',
+                  ),
+
+                 if(!isEditing) ...[
+                 _buildTextFieldWithIcon(
+                   label: 'Quantity',
+                   controller: _quantity,
+                   keyboardType: TextInputType.number,
+                   icon: LucideIcons.layers,
+                   helperText: 'Enter how many items or packs you are adding to stock.',
+                 ),
+               ],
+
+                  _buildDropdown<double>(
+                    hint: 'Select Profit Margin',
+                    value: _selectedProfitPercent,
+                    items: _profitOptions,
+                    onChanged: (val) {
+                      setState(() => _selectedProfitPercent = val);
+                      final cost = double.tryParse(_costPrice.text);
+                      final qty = double.tryParse(_quantity.text);
+                      if (cost != null && qty != null && qty > 0 && val != null) {
+                        final costPerItem = cost / qty;
+                        _retailPrice.text = (costPerItem * (1 + val)).toStringAsFixed(2);
+                      }
+                    },
+                    itemBuilder: (val) => Text('${(val * 100).toInt()}%'),
+                    icon: LucideIcons.percent,
+                    helperText: 'Choose how much profit you want to make on each item, e.g., 10% means selling 10% more than the cost.',
+                  ),
+
+                  _buildTextFieldWithIcon(
+                    label: 'Retail Price (Per Item)',
+                    controller: _retailPrice,
+                    keyboardType: TextInputType.number,
+                    icon: LucideIcons.tag,
+                    helperText: 'Price you want to sell one item for. This updates automatically based on profit margin.',
+                  ),
+
+                  if (isBundleUnit && !isEditing)
+                    _buildTextFieldWithIcon(
+                      label: 'Items Per Pack',
+                      controller: _itemsPerBundle,
+                      keyboardType: TextInputType.number,
+                      validator: (v) {
+                        final val = int.tryParse(v ?? '');
+                        return (val == null || val <= 0) ? 'Enter a valid number' : null;
+                      },
+                      icon: LucideIcons.package,
+                      helperText: 'How many individual items are inside one pack? Needed for accurate stock count.',
+                    ),
+
+                  const SizedBox(height: 20),
+                  _buildImageSection(),
                 ],
 
                 if (isEditing) ...[
@@ -287,30 +411,32 @@ class _ProductModalFormState extends State<ProductModalForm> {
                   const SizedBox(height: 12),
                   _showNewBatchInput
                       ? Column(
-                        children: [
-                          CustomTextField(
-                                              label: 'New Stock Quantity',
-                                              controller: _newBatchQty,
-                                              keyboardType: TextInputType.number,
-                                              validator: (v) {
+                    children: [
+                      _buildTextFieldWithIcon(
+                        label: 'New Stock Quantity',
+                        controller: _newBatchQty,
+                        keyboardType: TextInputType.number,
+                        validator: (v) {
                           final qty = double.tryParse(v ?? '');
                           return (qty == null || qty <= 0) ? 'Enter a valid quantity' : null;
-                                              },
-                                            ),
-                          SizedBox(height: 5,),
-                         if(isBundleUnit)...[
-                           CustomTextField(
-                             label: 'How Many Items Per Pack',
-                             controller: _itemsPerBundle,
-                             keyboardType: TextInputType.number,
-                             validator: (v) {
-                               final val = int.tryParse(v ?? '');
-                               return (val == null || val <= 0) ? 'Enter a valid number' : null;
-                             },
-                           ),
-                         ]
-                        ],
-                      )
+                        },
+                        icon: LucideIcons.layers,
+                        helperText: 'Enter quantity for new stock batch',
+                      ),
+                      if (isBundleUnit)
+                        _buildTextFieldWithIcon(
+                          label: 'Items Per Pack',
+                          controller: _itemsPerBundle,
+                          keyboardType: TextInputType.number,
+                          validator: (v) {
+                            final val = int.tryParse(v ?? '');
+                            return (val == null || val <= 0) ? 'Enter a valid number' : null;
+                          },
+                          icon: LucideIcons.package,
+                          helperText: 'How many items in one pack',
+                        ),
+                    ],
+                  )
                       : CustomButton(
                     text: 'Add Batch',
                     icon: Icons.add,
@@ -321,45 +447,14 @@ class _ProductModalFormState extends State<ProductModalForm> {
                         builder: (ctx) => CustomConfirmDialog(
                           title: 'Add New Batch',
                           content: 'Do you want to add a new stock batch?',
-                          onConfirm: () {
-                            setState(() {
-                              _showNewBatchInput = !_showNewBatchInput;
-                            });
-                          },
-                          onCancel: () {
-
-                      },
+                          onConfirm: () => setState(() => _showNewBatchInput = true),
+                          onCancel: (){},
                         ),
                       );
                       if (confirmed == true) setState(() => _showNewBatchInput = true);
                     },
                   ),
                 ],
-
-                if (!isEditing && !widget.isRestock)
-                  CustomTextField(
-                    label: 'Stock Qty (${_selectedUnit})',
-                    controller: _quantity,
-                    keyboardType: TextInputType.number,
-                    validator: (v) {
-                      final qty = double.tryParse(v ?? '');
-                      return (qty == null || qty <= 0) ? 'Enter a valid stock quantity' : null;
-                    },
-                  ),
-
-                if (!isEditing && !widget.isRestock && isBundleUnit)
-                  CustomTextField(
-                    label: 'How Many Items Per Pack',
-                    controller: _itemsPerBundle,
-                    keyboardType: TextInputType.number,
-                    validator: (v) {
-                      final val = int.tryParse(v ?? '');
-                      return (val == null || val <= 0) ? 'Enter a valid number' : null;
-                    },
-                  ),
-
-                const SizedBox(height: 20),
-                if (!widget.isRestock) _buildImageSection(),
 
                 Row(
                   children: [

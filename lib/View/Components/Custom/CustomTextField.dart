@@ -12,7 +12,10 @@ class CustomTextField extends StatelessWidget {
   final bool isObscure;
   final VoidCallback? toggleObscure;
   final bool isRequired;
-  final ValueChanged<String>? onChanged; // ✅ added
+  final ValueChanged<String>? onChanged;
+  final bool readOnly;
+  final Widget? prefixIcon; // Icon inside input box
+  final String? helperText;
 
   const CustomTextField({
     super.key,
@@ -25,7 +28,10 @@ class CustomTextField extends StatelessWidget {
     this.isObscure = false,
     this.toggleObscure,
     this.isRequired = false,
-    this.onChanged, // ✅ added
+    this.onChanged,
+    this.readOnly = false,
+    this.prefixIcon,
+    this.helperText,
   });
 
   InputDecoration _buildDecoration(BuildContext context) {
@@ -37,9 +43,16 @@ class CustomTextField extends StatelessWidget {
       ),
       hintText: hintText,
       hintStyle: TextStyle(
-        color: AppColor.textSecondary.withOpacity(0.6),
+        color: AppColor.textSecondary.withOpacity(0.3),
         fontSize: context.rf(13),
       ),
+      helperText: helperText,
+      helperStyle: const TextStyle(
+        color: Colors.grey,
+        fontSize: 12,
+        overflow: TextOverflow.visible, // Ensure it wraps, not ellipsis
+      ),
+      helperMaxLines: 3, // Allow unlimited lines
       filled: true,
       fillColor: AppColor.primary.withOpacity(0.05),
       contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
@@ -62,6 +75,7 @@ class CustomTextField extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         borderSide: BorderSide(color: Colors.red.shade600, width: 1.8),
       ),
+      prefixIcon: prefixIcon,
       suffixIcon: obscure
           ? IconButton(
         icon: Icon(
@@ -77,13 +91,14 @@ class CustomTextField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 0),
       child: TextFormField(
         controller: controller,
         keyboardType: keyboardType,
         obscureText: obscure && isObscure,
         validator: validator,
-        onChanged: onChanged, // ✅ used here
+        onChanged: onChanged,
+        readOnly: readOnly,
         style: TextStyle(
           color: AppColor.textPrimary,
           fontSize: context.rf(14),
