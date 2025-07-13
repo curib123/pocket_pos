@@ -474,8 +474,6 @@ class _ProductModalFormState extends State<ProductModalForm> {
                   ],
 
 
-
-
                   _buildTextFieldWithIcon(
                     label: 'Retail Price (Per Item)',
                     controller: _retailPrice,
