@@ -40,6 +40,7 @@ class _ProductModalFormState extends State<ProductModalForm> {
   final _name = TextEditingController();
   final _description = TextEditingController();
   final _costPrice = TextEditingController();
+  final _costPricePerItem = TextEditingController();
   final _retailPrice = TextEditingController();
   final _quantity = TextEditingController();
   final _newBatchQty = TextEditingController();
@@ -79,21 +80,86 @@ class _ProductModalFormState extends State<ProductModalForm> {
 
     _setupProfitCalculationListener();
   }
-
   void _setupProfitCalculationListener() {
-    void listener() {
-      final cost = double.tryParse(_costPrice.text);
-      final qty = double.tryParse(_quantity.text);
-      if (cost != null && qty != null && qty > 0 && _selectedProfitPercent != null) {
-        final costPerItem = cost / qty;
-        final retail = (costPerItem * (1 + _selectedProfitPercent!)).toStringAsFixed(2);
-        _retailPrice.text = retail;
+    bool _isUpdating = false;
+
+    void _updateRetailPrice() {
+      final costPerItem = double.tryParse(_costPricePerItem.text);
+      if (costPerItem != null && _selectedProfitPercent != null) {
+        final retail = costPerItem + (costPerItem * _selectedProfitPercent!);
+        _retailPrice.text = retail.toStringAsFixed(2);
+      } else {
+        _retailPrice.text = '';
       }
     }
 
-    _costPrice.addListener(listener);
-    _quantity.addListener(listener);
+    void updateFromCostPrice() {
+      if (_isUpdating) return;
+      _isUpdating = true;
+
+      final cost = double.tryParse(_costPrice.text);
+      final qty = double.tryParse(_quantity.text);
+
+      if ((_costPrice.text.trim().isEmpty && _costPricePerItem.text.trim().isEmpty) ||
+          (_costPrice.text.trim().isEmpty)) {
+        _costPricePerItem.text = '';
+        _retailPrice.text = '';
+        _isUpdating = false;
+        return;
+      }
+
+      if (_costPrice.text.trim().isEmpty && _costPricePerItem.text.trim().isNotEmpty) {
+        _costPrice.text = '0';
+      }
+
+      if (cost != null && qty != null && qty > 0) {
+        final costPerItem = cost / qty;
+        _costPricePerItem.text = costPerItem.toStringAsFixed(2);
+      }
+
+      _updateRetailPrice();
+      _isUpdating = false;
+    }
+
+    void updateFromCostPerItem() {
+      if (_isUpdating) return;
+      _isUpdating = true;
+
+      final costPerItem = double.tryParse(_costPricePerItem.text);
+      final qty = double.tryParse(_quantity.text);
+
+      if ((_costPrice.text.trim().isEmpty && _costPricePerItem.text.trim().isEmpty) ||
+          (_costPricePerItem.text.trim().isEmpty)) {
+        _costPrice.text = '';
+        _retailPrice.text = '';
+        _isUpdating = false;
+        return;
+      }
+
+      if (_costPricePerItem.text.trim().isEmpty && _costPrice.text.trim().isNotEmpty) {
+        _costPricePerItem.text = '0';
+      }
+
+      if (costPerItem != null && qty != null && qty > 0) {
+        final cost = costPerItem * qty;
+        _costPrice.text = cost.toStringAsFixed(2);
+      }
+
+      _updateRetailPrice();
+      _isUpdating = false;
+    }
+
+    _costPrice.addListener(updateFromCostPrice);
+    _quantity.addListener(() {
+      updateFromCostPrice();
+      updateFromCostPerItem(); // In case quantity is changed
+    });
+    _costPricePerItem.addListener(updateFromCostPerItem);
   }
+
+
+
+
 
   Future<void> _pickImage(ImageSource source) async {
     final picked = await ImagePicker().pickImage(source: source);
@@ -108,6 +174,7 @@ class _ProductModalFormState extends State<ProductModalForm> {
     IconData? icon,
     String? helperText,
     bool obscure = false,
+    bool readOnly = false,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 15),
@@ -119,6 +186,7 @@ class _ProductModalFormState extends State<ProductModalForm> {
         obscure: obscure,
         prefixIcon: icon != null ? Icon(icon, color: Colors.grey) : null,
         helperText: helperText,
+        readOnly: readOnly,
       ),
     );
   }
@@ -335,41 +403,78 @@ class _ProductModalFormState extends State<ProductModalForm> {
                     helperText: 'Add any notes or details about the product (optional).',
                   ),
 
-                  _buildTextFieldWithIcon(
-                    label: 'Cost Price (Total)',
-                    controller: _costPrice,
-                    keyboardType: TextInputType.number,
-                    icon: LucideIcons.dollarSign,
-                    helperText: 'Enter the total amount you paid for this stock. Use numbers only.',
-                  ),
+                  if(!isEditing) ...[
+                    _buildTextFieldWithIcon(
+                      label: 'Quantity',
+                      controller: _quantity,
+                      keyboardType: TextInputType.number,
+                      icon: LucideIcons.layers,
+                      helperText: 'Enter how many items or packs you are adding to stock.',
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '💡 Pricing Guide',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey[800],
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Enter either total or per item cost. One updates the other automatically.',
+                          style: TextStyle(
+                            fontSize: 10.5,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                        const SizedBox(height: 14),
 
-                 if(!isEditing) ...[
-                 _buildTextFieldWithIcon(
-                   label: 'Quantity',
-                   controller: _quantity,
-                   keyboardType: TextInputType.number,
-                   icon: LucideIcons.layers,
-                   helperText: 'Enter how many items or packs you are adding to stock.',
-                 ),
-               ],
+                        _buildTextFieldWithIcon(
+                          label: 'Total Cost Value',
+                          controller: _costPrice,
+                          keyboardType: TextInputType.number,
+                          icon: LucideIcons.dollarSign,
+                          helperText: 'Total amount spent for the stock.',
+                        ),
 
-                  _buildDropdown<double>(
-                    hint: 'Select Profit Margin',
-                    value: _selectedProfitPercent,
-                    items: _profitOptions,
-                    onChanged: (val) {
-                      setState(() => _selectedProfitPercent = val);
-                      final cost = double.tryParse(_costPrice.text);
-                      final qty = double.tryParse(_quantity.text);
-                      if (cost != null && qty != null && qty > 0 && val != null) {
-                        final costPerItem = cost / qty;
-                        _retailPrice.text = (costPerItem * (1 + val)).toStringAsFixed(2);
-                      }
-                    },
-                    itemBuilder: (val) => Text('${(val * 100).toInt()}%'),
-                    icon: LucideIcons.percent,
-                    helperText: 'Choose how much profit you want to make on each item, e.g., 10% means selling 10% more than the cost.',
-                  ),
+                        _buildTextFieldWithIcon(
+                          label: 'Cost per Item',
+                          controller: _costPricePerItem,
+                          keyboardType: TextInputType.number,
+                          icon: LucideIcons.dollarSign,
+                          helperText: 'Auto-filled if total cost and quantity are set.',
+                        ),
+                      ],
+                    ),
+
+                    _buildDropdown<double>(
+                      hint: 'Select Profit Margin',
+                      value: _selectedProfitPercent,
+                      items: _profitOptions,
+                      onChanged: (val) {
+                        setState(() {
+                          _selectedProfitPercent = val;
+                          final costPerItem = double.tryParse(_costPricePerItem.text);
+                          if (costPerItem != null && val != null) {
+                            final retail = costPerItem * (1 + val); // val is already 0.10, 0.20, etc.
+                            _retailPrice.text = retail.toStringAsFixed(2);
+                          } else {
+                            _retailPrice.clear();
+                          }
+                        });
+                      },
+                      itemBuilder: (val) => Text('${(val * 100).toInt()}%'),
+                      icon: LucideIcons.percent,
+                      helperText: 'Choose how much profit you want to add, e.g., 10% markup on cost per item.',
+                    ),
+
+                  ],
+
+
+
 
                   _buildTextFieldWithIcon(
                     label: 'Retail Price (Per Item)',
