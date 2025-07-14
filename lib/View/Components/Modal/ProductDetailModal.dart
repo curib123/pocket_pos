@@ -1,6 +1,6 @@
 // ✅ FINALIZED PRODUCT DETAIL MODAL
+
 import 'dart:io';
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons/lucide_icons.dart';
@@ -14,8 +14,11 @@ import 'package:mobile_pos_inventory/Provider/CurrencyProvider.dart';
 import 'package:mobile_pos_inventory/Provider/ProductProvider.dart';
 import 'package:mobile_pos_inventory/View/Components/Alert/CustomBatchDialog.dart';
 import 'package:mobile_pos_inventory/View/Components/Alert/CustomConfimDialog.dart';
+import 'package:mobile_pos_inventory/View/Components/Alert/CustomNotificationDialog.dart';
 import 'package:mobile_pos_inventory/View/Components/Custom/CustomButton.dart';
 import 'package:mobile_pos_inventory/View/Components/Custom/CustomSwitchPill.dart';
+import 'package:mobile_pos_inventory/View/Components/Custom/CustomTextField.dart';
+import 'package:mobile_pos_inventory/View/Components/Modal/CartModal.dart';
 import 'package:mobile_pos_inventory/View/Components/ResponsiveText.dart';
 import 'package:mobile_pos_inventory/View/Components/Modal/AddProductModal.dart';
 import 'package:provider/provider.dart';
@@ -58,8 +61,11 @@ class _ProductDetailContent extends StatefulWidget {
 
 class _ProductDetailContentState extends State<_ProductDetailContent> {
   bool usePack = true;
+  bool useTextField = false;
   double price = 0;
   String unit = '';
+  int quantity = 1;
+  final TextEditingController inputController = TextEditingController();
 
   @override
   void initState() {
@@ -71,6 +77,84 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
         : (widget.product.packItems > 0
         ? widget.product.packItemsRetail / widget.product.packItems
         : 0);
+  }
+
+  void _addToCart(CartProvider cartProvider) {
+    final inputQty = int.tryParse(inputController.text) ?? 0;
+    final maxQty = usePack ? widget.product.totalQuantity.toInt() : widget.product.subQuantity.toInt();
+    final finalQty = useTextField ? inputQty : quantity;
+
+    if (finalQty <= 0) {
+      _showWarning('Invalid Quantity', 'The quantity must be more than 0 to proceed.');
+      return;
+    }
+
+    if (finalQty > maxQty) {
+      _showWarning('Stock Limit Exceeded', 'The quantity exceeds available stock.');
+      return;
+    }
+    final productToCart = Product(
+      id: widget.product.id,
+      name: widget.product.name,
+      unit: unit,
+      batches: [
+        Batch(
+          id: DateTime.now().toIso8601String(),
+          quantity: usePack ? finalQty.toDouble() : 0.0,
+          subQuantity: !usePack ? finalQty.toDouble() : 0.0,
+          createdAt: DateTime.now(),
+        ),
+      ],
+      description: widget.product.description,
+      imageUrl: widget.product.imageUrl,
+      category: widget.product.category,
+      lastModified: DateTime.now(),
+      deletedAt: widget.product.deletedAt,
+      defaultCost: usePack ? widget.product.packItemsCost : widget.product.costPerItem,
+      defaultRetail: price,
+      isPack: usePack,
+      packItems: widget.product.packItems,
+      packItemsCost: widget.product.packItemsCost,
+      packItemsRetail: widget.product.packItemsRetail,
+      profitMargin: widget.product.profitMargin,
+    );
+
+
+    cartProvider.addToCart(productToCart);
+    Navigator.pop(context);
+  }
+
+  void _proceedToCart(CartProvider cartProvider) {
+    _addToCart(cartProvider);
+    Future.delayed(Duration.zero, () {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        builder: (context) => FractionallySizedBox(
+          heightFactor: 0.9,
+          child: ClipRRect(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            child: const CartScreen(),
+          ),
+        ),
+      );
+    });
+  }
+
+  void _showWarning(String title, String message) {
+    showDialog(
+      context: context,
+      builder: (_) => CustomNotificationDialog(
+        type: "warning",
+        title: title,
+        content: message,
+        onConfirm: () => Navigator.pop(context),
+      ),
+    );
   }
 
   @override
@@ -115,7 +199,7 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                     ClipRRect(
                       borderRadius: BorderRadius.circular(12),
                       child: hasImage
-                          ? Image.file(File(product.imageUrl), width: 100, height: 100, fit: BoxFit.cover)
+                          ? Image.file(File(product.imageUrl), key: UniqueKey(), width: 100, height: 100, fit: BoxFit.cover)
                           : Container(
                         width: 100,
                         height: 100,
@@ -133,11 +217,14 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                             Text(product.category, style: const TextStyle(color: AppColor.textSecondary, fontSize: 13)),
                           const SizedBox(height: 4),
                           Text('Retail: ${currency.format(price)} | $unit', style: const TextStyle(color: AppColor.primary)),
-                          Text('Cost: ${currency.format(usePack ? product.packItemsCost : product.costPerItem)} | $unit',
-                              style: const TextStyle(
-                                  color: AppColor.textSecondary,
-                                  fontSize: 13,
-                                  decoration: TextDecoration.lineThrough)),
+                          Text(
+                            'Cost: ${currency.format(usePack ? product.packItemsCost : product.costPerItem)} | $unit',
+                            style: const TextStyle(
+                              color: AppColor.textSecondary,
+                              fontSize: 13,
+                              decoration: TextDecoration.lineThrough,
+                            ),
+                          ),
                           Text(product.description, style: const TextStyle(color: AppColor.textSecondary, fontSize: 13)),
                         ],
                       ),
@@ -151,17 +238,19 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                       child: CustomButton(
                         text: 'Edit',
                         icon: Icons.edit,
-                        onPressed: () => showModalBottomSheet(
-                          context: context,
-                          isScrollControlled: true,
-                          shape: const RoundedRectangleBorder(
-                            borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-                          ),
-                          builder: (context) => FractionallySizedBox(
-                            heightFactor: 0.8,
-                            child: ProductModalForm(existingProduct: product, category: ''),
-                          ),
-                        ),
+                        onPressed: () {
+                          showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            shape: const RoundedRectangleBorder(
+                              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                            ),
+                            builder: (context) => FractionallySizedBox(
+                              heightFactor: 0.8,
+                              child: ProductModalForm(existingProduct: product, category: ''),
+                            ),
+                          );
+                        },
                       ),
                     ),
                     const SizedBox(width: 5),
@@ -170,17 +259,19 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                         text: 'Restock',
                         icon: Icons.inventory_2,
                         isFilled: false,
-                        onPressed: () => showModalBottomSheet(
-                          context: context,
-                          isScrollControlled: true,
-                          shape: const RoundedRectangleBorder(
-                            borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-                          ),
-                          builder: (context) => FractionallySizedBox(
-                            heightFactor: 0.8,
-                            child: ProductModalForm(existingProduct: product, category: '', isRestock: true),
-                          ),
-                        ),
+                        onPressed: () {
+                          showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            shape: const RoundedRectangleBorder(
+                              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                            ),
+                            builder: (context) => FractionallySizedBox(
+                              heightFactor: 0.8,
+                              child: ProductModalForm(existingProduct: product, category: '', isRestock: true),
+                            ),
+                          );
+                        },
                       ),
                     ),
                   ],
@@ -193,10 +284,11 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                       Text(
                         'Stock Batches: ${usePack ? product.totalQuantity : product.subQuantity} $unit',
                         style: TextStyle(
-                            fontSize: context.rf(14),
-                            fontWeight: FontWeight.w600,
-                            color: AppColor.textSecondary,
-                            fontStyle: FontStyle.italic),
+                          fontSize: context.rf(14),
+                          fontWeight: FontWeight.w600,
+                          color: AppColor.textSecondary,
+                          fontStyle: FontStyle.italic,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       ...product.batches.map((batch) {
@@ -242,8 +334,7 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                                         context: context,
                                         builder: (context) => CustomConfirmDialog(
                                           title: "Delete Batch",
-                                          content:
-                                          "Are you sure you want to delete this batch?\nThis action cannot be undone.",
+                                          content: "Are you sure you want to delete this batch?\nThis action cannot be undone.",
                                           onConfirm: () {
                                             usePack
                                                 ? batchProvider.deleteBatch(product.name, batch.id)
@@ -276,11 +367,14 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                         children: [
                           Icon(LucideIcons.box, size: 48, color: Colors.grey.withOpacity(0.7)),
                           const SizedBox(height: 12),
-                          Text('No Batches Available',
-                              style: TextStyle(
-                                  color: AppColor.textSecondary,
-                                  fontSize: context.rf(14),
-                                  fontWeight: FontWeight.w600)),
+                          Text(
+                            'No Batches Available',
+                            style: TextStyle(
+                              color: AppColor.textSecondary,
+                              fontSize: context.rf(14),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                           const SizedBox(height: 4),
                           Text(
                             'Try restocking this product to add batches.',
@@ -294,6 +388,68 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                       ),
                     ),
                   ),
+                if (product.batches.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  Center(
+                    child: CustomSwitchPill(
+                      options: ['Stepper', 'Input'],
+                      selected: useTextField ? 'Input' : 'Stepper',
+                      onSelected: (label) => setState(() => useTextField = label == 'Input'),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  useTextField
+                      ? CustomTextField(
+                    label: 'Enter Quantity',
+                    controller: inputController,
+                    keyboardType: TextInputType.number,
+                    hintText: 'e.g. 15',
+                  )
+                      : Center(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.remove_circle_outline, color: AppColor.primary, size: 30),
+                          onPressed: () => setState(() => quantity = quantity > 0 ? quantity - 1 : 0),
+                        ),
+                        Text('$quantity', style: const TextStyle(fontSize: 25, fontWeight: FontWeight.bold)),
+                        IconButton(
+                          icon: const Icon(Icons.add_circle_outline, color: AppColor.primary, size: 30),
+                          onPressed: () {
+                            final maxQty = usePack ? product.totalQuantity : product.subQuantity;
+                            if (quantity < maxQty) {
+                              setState(() => quantity++);
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: CustomButton(
+                          text: 'Add to Cart',
+                          icon: Icons.shopping_cart_outlined,
+                          isFilled: false,
+                          onPressed: () => _addToCart(cartProvider),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: CustomButton(
+                          text: 'Proceed',
+                          icon: Icons.check_circle_outline,
+                          isFilled: true,
+                          onPressed: () => _proceedToCart(cartProvider),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                ],
               ],
             ),
           );

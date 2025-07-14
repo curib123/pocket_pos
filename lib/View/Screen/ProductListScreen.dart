@@ -305,7 +305,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
   Widget _placeholderIcon(Color color, SwitchProvider switchProvider) {
     return Container(
       width: switchProvider.isProductGridView ? double.infinity : 90,
-      height: 100,
+      height: 90,
       decoration: BoxDecoration(
         color: color.withOpacity(0.06),
         borderRadius: BorderRadius.circular(8),
