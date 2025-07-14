@@ -19,47 +19,59 @@ class ProductAdapter extends TypeAdapter<Product> {
     return Product(
       id: fields[0] as String,
       name: fields[1] as String,
-      costPrice: fields[2] as double,
-      retailPrice: fields[3] as double,
-      unit: fields[4] as String,
-      batches: (fields[5] as List).cast<Batch>(),
-      description: fields[6] as String,
-      imageUrl: fields[7] as String,
-      category: fields[8] as String,
-      lastModified: fields[9] as DateTime,
-      itemsPerBundle: fields[11] as int,
-      deletedAt: fields[10] as DateTime?,
+      unit: fields[2] as String,
+      batches: (fields[3] as List).cast<Batch>(),
+      description: fields[4] as String,
+      imageUrl: fields[5] as String,
+      category: fields[6] as String,
+      lastModified: fields[7] as DateTime,
+      defaultCost: fields[9] as double,
+      defaultRetail: fields[10] as double,
+      isPack: fields[11] as bool,
+      packItems: fields[12] as double,
+      packItemsCost: fields[13] as double,
+      packItemsRetail: fields[14] as double,
+      profitMargin: fields[15] as double,
+      deletedAt: fields[8] as DateTime?,
     );
   }
 
   @override
   void write(BinaryWriter writer, Product obj) {
     writer
-      ..writeByte(12)
+      ..writeByte(16)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
       ..write(obj.name)
       ..writeByte(2)
-      ..write(obj.costPrice)
-      ..writeByte(3)
-      ..write(obj.retailPrice)
-      ..writeByte(4)
       ..write(obj.unit)
-      ..writeByte(5)
+      ..writeByte(3)
       ..write(obj.batches)
-      ..writeByte(6)
+      ..writeByte(4)
       ..write(obj.description)
-      ..writeByte(7)
+      ..writeByte(5)
       ..write(obj.imageUrl)
-      ..writeByte(8)
+      ..writeByte(6)
       ..write(obj.category)
-      ..writeByte(9)
+      ..writeByte(7)
       ..write(obj.lastModified)
-      ..writeByte(10)
+      ..writeByte(8)
       ..write(obj.deletedAt)
+      ..writeByte(9)
+      ..write(obj.defaultCost)
+      ..writeByte(10)
+      ..write(obj.defaultRetail)
       ..writeByte(11)
-      ..write(obj.itemsPerBundle);
+      ..write(obj.isPack)
+      ..writeByte(12)
+      ..write(obj.packItems)
+      ..writeByte(13)
+      ..write(obj.packItemsCost)
+      ..writeByte(14)
+      ..write(obj.packItemsRetail)
+      ..writeByte(15)
+      ..write(obj.profitMargin);
   }
 
   @override

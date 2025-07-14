@@ -189,6 +189,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
       ),
     );
   }
+// your existing imports remain unchanged
 
   Widget _buildGridView(List products, currencyFormat, SwitchProvider switchProvider) {
     return LayoutBuilder(
@@ -206,13 +207,16 @@ class _ProductListScreenState extends State<ProductListScreen> {
           itemBuilder: (context, index) {
             final product = products[index];
             final imageUrl = product.imageUrl;
+            final isPack = product.isPack;
+            final unit = isPack ? product.unit : 'pcs';
+            final price = isPack
+                ? product.packItemsRetail
+                : (product.packItems > 0 ? product.packItemsRetail / product.packItems : 0);
 
             return FadeInUp(
               duration: Duration(milliseconds: 300 + (index * 100)),
               child: GestureDetector(
-                onTap: () {
-                  ProductDetailModal.show(context, product);
-                },
+                onTap: () => ProductDetailModal.show(context, product),
                 child: Container(
                   decoration: BoxDecoration(
                     color: AppColor.primary.withOpacity(0.03),
@@ -236,7 +240,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                             Text(product.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: AppColor.textPrimary), overflow: TextOverflow.ellipsis, textAlign: TextAlign.center),
                             const SizedBox(height: 4),
                             Text('Stocks: ${product.totalQuantity}', style: const TextStyle(fontSize: 12, color: AppColor.textSecondary), textAlign: TextAlign.center),
-                            Text('Price: ${currencyFormat.format(product.retailPrice)}', style: const TextStyle(fontSize: 12, color: Colors.green), textAlign: TextAlign.center),
+                            Text('Price: ${currencyFormat.format(price)} | $unit', style: const TextStyle(fontSize: 12, color: Colors.green), textAlign: TextAlign.center),
                           ],
                         ),
                       ),
@@ -258,13 +262,18 @@ class _ProductListScreenState extends State<ProductListScreen> {
       itemBuilder: (context, index) {
         final product = products[index];
         final imageUrl = product.imageUrl;
+        final isPack = product.isPack;
+        final unit = isPack ? product.unit : 'pcs';
+        final price = isPack
+            ? product.packItemsRetail
+            : (product.packItems > 0 ? product.packItemsRetail / product.packItems : 0);
 
         return FadeInUp(
           duration: Duration(milliseconds: 300 + (index * 100)),
           child: Container(
             margin: const EdgeInsets.symmetric(vertical: 5),
             child: ListTile(
-              tileColor: AppColor.accent.withOpacity(0.05 ),
+              tileColor: AppColor.accent.withOpacity(0.05),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               leading: ClipRRect(
                 borderRadius: BorderRadius.circular(8),
@@ -279,20 +288,19 @@ class _ProductListScreenState extends State<ProductListScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('Stocks: ${product.totalQuantity}', style: const TextStyle(fontSize: 13, color: AppColor.textSecondary)),
-                    Text('Price: ${currencyFormat.format(product.retailPrice)}', style: const TextStyle(fontSize: 13, color: Colors.green)),
+                    Text('Price: ${currencyFormat.format(price)} | $unit', style: const TextStyle(fontSize: 13, color: Colors.green)),
                   ],
                 ),
               ),
               trailing: const Icon(Icons.chevron_right, color: AppColor.textSecondary),
-              onTap: () {
-                ProductDetailModal.show(context, product);
-              },
+              onTap: () => ProductDetailModal.show(context, product),
             ),
           ),
         );
       },
     );
   }
+
 
   Widget _placeholderIcon(Color color, SwitchProvider switchProvider) {
     return Container(

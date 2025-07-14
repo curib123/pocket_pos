@@ -12,47 +12,64 @@ class Product extends HiveObject {
   String name;
 
   @HiveField(2)
-  double costPrice;
-
-  @HiveField(3)
-  double retailPrice;
-
-  @HiveField(4)
   String unit;
 
-  @HiveField(5)
+  @HiveField(3)
   List<Batch> batches;
 
-  @HiveField(6)
+  @HiveField(4)
   String description;
 
-  @HiveField(7)
+  @HiveField(5)
   String imageUrl;
 
-  @HiveField(8)
+  @HiveField(6)
   String category;
 
-  @HiveField(9)
+  @HiveField(7)
   DateTime lastModified;
 
-  @HiveField(10)
+  @HiveField(8)
   DateTime? deletedAt;
 
+  // 🔥 New pricing and packaging logic
+  @HiveField(9)
+  double defaultCost;
+
+  @HiveField(10)
+  double defaultRetail;
+
   @HiveField(11)
-  int itemsPerBundle; // 🔥 New field
+  bool isPack;
+
+  @HiveField(12)
+  double packItems;
+
+  @HiveField(13)
+  double packItemsCost;
+
+  @HiveField(14)
+  double packItemsRetail;
+
+  @HiveField(15)
+  double profitMargin;
 
   Product({
     required this.id,
     required this.name,
-    required this.costPrice,
-    required this.retailPrice,
     required this.unit,
     required this.batches,
     required this.description,
     required this.imageUrl,
     required this.category,
     required this.lastModified,
-    required this.itemsPerBundle,
+    required this.defaultCost,
+    required this.defaultRetail,
+    required this.isPack,
+    required this.packItems,
+    required this.packItemsCost,
+    required this.packItemsRetail,
+    required this.profitMargin,
     this.deletedAt,
   });
 
@@ -68,42 +85,45 @@ class Product extends HiveObject {
   }
 
   double get totalQuantity => batches.fold(0, (sum, b) => sum + b.quantity);
+  double get subQuantity => batches.fold(0, (sum, b) => sum + (b.subQuantity ?? 0));
+  double get costPerItem => totalQuantity == 0 ? 0 : defaultCost / totalQuantity;
 
-  double get subQuantity =>
-      batches.fold(0, (sum, b) => sum + (b.subQuantity ?? 0));
-
-  double get totalCostValue => costPrice;
-
-  double get costPerItem =>
-      totalQuantity == 0 ? 0 : costPrice / totalQuantity;
 
   Product copyWith({
     String? id,
     String? name,
-    double? costPrice,
-    double? retailPrice,
     String? unit,
+    List<Batch>? batches,
     String? description,
     String? imageUrl,
     String? category,
-    List<Batch>? batches,
     DateTime? lastModified,
     DateTime? deletedAt,
-    int? itemsPerBundle,
+    double? defaultCost,
+    double? defaultRetail,
+    bool? isPack,
+    double? packItems,
+    double? packItemsCost,
+    double? packItemsRetail,
+    double? profitMargin,
   }) {
     return Product(
       id: id ?? this.id,
       name: name ?? this.name,
-      costPrice: costPrice ?? this.costPrice,
-      retailPrice: retailPrice ?? this.retailPrice,
       unit: unit ?? this.unit,
+      batches: batches ?? this.batches,
       description: description ?? this.description,
       imageUrl: imageUrl ?? this.imageUrl,
       category: category ?? this.category,
-      batches: batches ?? this.batches,
       lastModified: lastModified ?? this.lastModified,
       deletedAt: deletedAt ?? this.deletedAt,
-      itemsPerBundle: itemsPerBundle ?? this.itemsPerBundle,
+      defaultCost: defaultCost ?? this.defaultCost,
+      defaultRetail: defaultRetail ?? this.defaultRetail,
+      isPack: isPack ?? this.isPack,
+      packItems: packItems ?? this.packItems,
+      packItemsCost: packItemsCost ?? this.packItemsCost,
+      packItemsRetail: packItemsRetail ?? this.packItemsRetail,
+      profitMargin: profitMargin ?? this.profitMargin,
     );
   }
 
@@ -111,8 +131,6 @@ class Product extends HiveObject {
     return {
       'id': id,
       'name': name,
-      'cost_price': costPrice,
-      'retail_price': retailPrice,
       'unit': unit,
       'batches': batches.map((b) => b.toMap()).toList(),
       'description': description,
@@ -120,7 +138,13 @@ class Product extends HiveObject {
       'category': category,
       'last_modified': lastModified.toIso8601String(),
       'deleted_at': deletedAt?.toIso8601String(),
-      'items_per_bundle': itemsPerBundle,
+      'default_cost': defaultCost,
+      'default_retail': defaultRetail,
+      'is_pack': isPack,
+      'pack_items': packItems,
+      'pack_items_cost': packItemsCost,
+      'pack_items_retail': packItemsRetail,
+      'profit_margin': profitMargin,
     };
   }
 
@@ -128,8 +152,6 @@ class Product extends HiveObject {
     return Product(
       id: json['id'],
       name: json['name'],
-      costPrice: (json['cost_price'] as num).toDouble(),
-      retailPrice: (json['retail_price'] as num).toDouble(),
       unit: json['unit'],
       batches: (json['batches'] as List).map((e) => Batch.fromMap(e)).toList(),
       description: json['description'],
@@ -139,7 +161,13 @@ class Product extends HiveObject {
       deletedAt: json['deleted_at'] != null
           ? DateTime.tryParse(json['deleted_at'])
           : null,
-      itemsPerBundle: json['items_per_bundle'] ?? 1,
+      defaultCost: (json['default_cost'] ?? 0).toDouble(),
+      defaultRetail: (json['default_retail'] ?? 0).toDouble(),
+      isPack: json['is_pack'] ?? false,
+      packItems: (json['pack_items'] ?? 0).toDouble(),
+      packItemsCost: (json['pack_items_cost'] ?? 0).toDouble(),
+      packItemsRetail: (json['pack_items_retail'] ?? 0).toDouble(),
+      profitMargin: (json['profit_margin'] ?? 0).toDouble(),
     );
   }
 
@@ -149,10 +177,14 @@ class Product extends HiveObject {
 Product {
   id: $id,
   name: $name,
-  cost_price: $costPrice,
-  retail_price: $retailPrice,
+  defaultCost: $defaultCost,
+  defaultRetail: $defaultRetail,
   unit: $unit,
-  itemsPerBundle: $itemsPerBundle,
+  isPack: $isPack,
+  packItems: $packItems,
+  packItemsCost: $packItemsCost,
+  packItemsRetail: $packItemsRetail,
+  profitMargin: $profitMargin,
   totalQuantity: $totalQuantity,
   costPerItem: $costPerItem,
   batches: ${batches.map((b) => b.toString()).join(', ')}

@@ -63,11 +63,14 @@ class _AuthFormWidgetState extends State<AuthFormWidget> {
             color: AppColor.primary,
           ),
           const SizedBox(height: 12),
+          // Inside AuthFormWidget build method
+
           if (isSignUp)
             CustomTextField(
               label: "Store Name",
               controller: _storeNameController,
               validator: (val) => val!.isEmpty ? "Enter store name" : null,
+              prefixIcon: Icon(Icons.store),
             ),
 
           if (isSignUp)
@@ -75,6 +78,7 @@ class _AuthFormWidgetState extends State<AuthFormWidget> {
               label: "Owner Name",
               controller: _ownerNameController,
               validator: (val) => val!.isEmpty ? "Enter owner name" : null,
+              prefixIcon: Icon(Icons.person),
             ),
 
           CustomTextField(
@@ -82,6 +86,8 @@ class _AuthFormWidgetState extends State<AuthFormWidget> {
             controller: _emailController,
             validator: (val) =>
             val != null && val.contains('@') ? null : "Enter valid email",
+            keyboardType: TextInputType.emailAddress,
+            prefixIcon: Icon(Icons.email),
           ),
 
           CustomTextField(
@@ -92,6 +98,7 @@ class _AuthFormWidgetState extends State<AuthFormWidget> {
             toggleObscure: () => setState(() => _isObscure = !_isObscure),
             validator: (val) =>
             val != null && val.length >= 6 ? null : "Min 6 characters",
+            prefixIcon: Icon(Icons.lock),
           ),
 
           if (isSignUp)
@@ -101,12 +108,11 @@ class _AuthFormWidgetState extends State<AuthFormWidget> {
               obscure: true,
               isObscure: _isObscure,
               toggleObscure: () => setState(() => _isObscure = !_isObscure),
-              validator: (val) => val == _passwordController.text
-                  ? null
-                  : "Passwords don't match",
+              validator: (val) =>
+              val == _passwordController.text ? null : "Passwords don't match",
+              prefixIcon: Icon(Icons.lock_outline),
             ),
 
-          const SizedBox(height: 24),
 
           CustomButton(
             text: isSignUp ? "Sign Up" : "Sign In",

@@ -12,8 +12,6 @@ import 'package:mobile_pos_inventory/View/Components/Custom/CustomTextField.dart
 import 'package:mobile_pos_inventory/View/Components/Alert/CustomNotificationDialog.dart';
 import 'package:mobile_pos_inventory/Helper/AppColor.dart';
 
-// (Keep all imports as-is...)
-
 class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
 
@@ -41,13 +39,11 @@ class _CartScreenState extends State<CartScreen> {
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.transparent,
-        title: Text(
-          "Cart List",
-          style: TextStyle(
-              color: AppColor.textPrimary,
-              fontSize: 24,
-              fontWeight: FontWeight.bold),
-        ),
+        title: Text("Cart List",
+            style: TextStyle(
+                color: AppColor.textPrimary,
+                fontSize: 24,
+                fontWeight: FontWeight.bold)),
         centerTitle: true,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios_new, color: AppColor.textPrimary),
@@ -69,10 +65,13 @@ class _CartScreenState extends State<CartScreen> {
 
           final totalAmount = cart.fold<double>(0, (sum, product) {
             final qty = quantities[product.name] ??
-                ((product.totalQuantity == 0 || product.totalQuantity.isNaN)
-                    ? product.subQuantity
-                    : product.totalQuantity);
-            return sum + (qty * product.retailPrice);
+                (product.isPack ? product.totalQuantity : product.subQuantity);
+            final price = product.isPack
+                ? product.packItemsRetail
+                : (product.packItems > 0
+                ? product.packItemsRetail / product.packItems
+                : 0.0);
+            return sum + (qty * price);
           });
 
           return SafeArea(
@@ -90,21 +89,26 @@ class _CartScreenState extends State<CartScreen> {
                       useTextField.putIfAbsent(key, () => false);
                       controllers.putIfAbsent(
                           key, () => TextEditingController());
-                      quantities.putIfAbsent(key, () {
-                        final totalQty = product.totalQuantity;
-                        return (totalQty == 0 || totalQty.isNaN)
-                            ? product.subQuantity
-                            : totalQty;
-                      });
+                      quantities.putIfAbsent(
+                        key,
+                            () => product.isPack
+                            ? product.totalQuantity
+                            : product.subQuantity,
+                      );
 
                       final isInput = useTextField[key]!;
                       final inputCtrl = controllers[key]!;
                       final quantity = quantities[key]!;
-                      final price = product.retailPrice;
+                      final price = product.isPack
+                          ? product.packItemsRetail
+                          : (product.packItems > 0
+                          ? product.packItemsRetail / product.packItems
+                          : 0.0);
                       final subtotal = quantity * price;
-                      final maxQuantity = productProvider
-                          .getProductByName(product.name)
-                          ?.totalQuantity;
+
+                      final maxQuantity = product.isPack
+                          ? product.totalQuantity
+                          : product.subQuantity;
 
                       return Container(
                         decoration: BoxDecoration(
@@ -114,11 +118,9 @@ class _CartScreenState extends State<CartScreen> {
                         padding: const EdgeInsets.all(12),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.start,
                           children: [
                             Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.start,
                               children: [
                                 ClipRRect(
                                   borderRadius: BorderRadius.circular(8),
@@ -158,7 +160,7 @@ class _CartScreenState extends State<CartScreen> {
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
-                                        "${currencyProvider.currencyFormat.currencySymbol}${price.toStringAsFixed(2)} / ${product.unit}",
+                                        "${currencyProvider.currencyFormat.currencySymbol}${price.toStringAsFixed(2)} / ${product.isPack ? product.unit : "pcs"}",
                                         style: const TextStyle(
                                           fontSize: 13,
                                           color: AppColor.textSecondary,
@@ -167,17 +169,16 @@ class _CartScreenState extends State<CartScreen> {
                                       const SizedBox(height: 6),
                                       CustomSwitchPill(
                                         options: ['Stepper', 'Input'],
-                                        selected:
-                                        isInput ? 'Input' : 'Stepper',
+                                        selected: isInput ? 'Input' : 'Stepper',
                                         onSelected: (label) {
                                           setState(() {
                                             useTextField[key] =
                                                 label == 'Input';
-                                            quantities[key] =
-                                                product.totalQuantity;
-                                            inputCtrl.text = product
-                                                .totalQuantity
-                                                .toString();
+                                            final maxQty = product.isPack
+                                                ? product.totalQuantity
+                                                : product.subQuantity;
+                                            quantities[key] = maxQty;
+                                            inputCtrl.text = maxQty.toString();
                                           });
                                         },
                                       ),
@@ -191,9 +192,11 @@ class _CartScreenState extends State<CartScreen> {
                                         hintText: 'Qty',
                                         onChanged: (value) {
                                           final parsed =
-                                              double.tryParse(value) ?? 0;
-                                          final clamped = parsed.clamp(
-                                              0.0, maxQuantity!);
+                                              double.tryParse(value) ??
+                                                  0;
+                                          final clamped =
+                                          parsed.clamp(0.0,
+                                              maxQuantity.toDouble());
                                           setState(() {
                                             quantities[key] = clamped;
                                             if (parsed != clamped) {
@@ -214,9 +217,10 @@ class _CartScreenState extends State<CartScreen> {
                                         children: [
                                           IconButton(
                                             icon: const Icon(
-                                                Icons
-                                                    .remove_circle_outline,
-                                                color: AppColor.primary),
+                                              Icons
+                                                  .remove_circle_outline,
+                                              color: AppColor.primary,
+                                            ),
                                             onPressed: () {
                                               if (quantity > 0) {
                                                 setState(() {
@@ -235,11 +239,12 @@ class _CartScreenState extends State<CartScreen> {
                                           ),
                                           IconButton(
                                             icon: const Icon(
-                                                Icons.add_circle_outline,
-                                                color: AppColor.primary),
+                                              Icons.add_circle_outline,
+                                              color: AppColor.primary,
+                                            ),
                                             onPressed: () {
                                               if (quantity <
-                                                  maxQuantity!) {
+                                                  maxQuantity) {
                                                 setState(() {
                                                   quantities[key] =
                                                       quantity + 1;
@@ -310,7 +315,6 @@ class _CartScreenState extends State<CartScreen> {
                     },
                   ),
                 ),
-
                 Padding(
                   padding:
                   const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -328,7 +332,6 @@ class _CartScreenState extends State<CartScreen> {
                     ],
                   ),
                 ),
-
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                   child: CustomButton(
@@ -364,10 +367,15 @@ class _CartScreenState extends State<CartScreen> {
                               ...selectedQuantities.map((e) {
                                 final product = cartProvider.cartItems
                                     .firstWhere((p) => p.name == e.key);
-                                final subtotal =
-                                    product.retailPrice * e.value;
+                                final price = product.isPack
+                                    ? product.packItemsRetail
+                                    : (product.packItems > 0
+                                    ? product.packItemsRetail /
+                                    product.packItems
+                                    : 0.0);
+                                final subtotal = price * e.value;
                                 return Text(
-                                    "${e.key} - ${e.value} × ${product.retailPrice} = ${subtotal.toStringAsFixed(2)}");
+                                    "${e.key} - ${e.value} × ${price.toStringAsFixed(2)} = ${subtotal.toStringAsFixed(2)}");
                               }),
                               const SizedBox(height: 10),
                               Text("Total: ${totalAmount.toStringAsFixed(2)}",
@@ -398,4 +406,3 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 }
-

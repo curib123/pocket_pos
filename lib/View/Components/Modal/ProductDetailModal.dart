@@ -1,27 +1,24 @@
+// ✅ FINALIZED PRODUCT DETAIL MODAL
 import 'dart:io';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:mobile_pos_inventory/Helper/AppColor.dart';
 import 'package:mobile_pos_inventory/Helper/Enums/enum.dart';
 import 'package:mobile_pos_inventory/Model/batch_model.dart';
+import 'package:mobile_pos_inventory/Model/product_model.dart';
 import 'package:mobile_pos_inventory/Provider/BatchProvider.dart';
 import 'package:mobile_pos_inventory/Provider/CartProvider.dart';
 import 'package:mobile_pos_inventory/Provider/CurrencyProvider.dart';
+import 'package:mobile_pos_inventory/Provider/ProductProvider.dart';
 import 'package:mobile_pos_inventory/View/Components/Alert/CustomBatchDialog.dart';
 import 'package:mobile_pos_inventory/View/Components/Alert/CustomConfimDialog.dart';
-import 'package:mobile_pos_inventory/View/Components/Alert/CustomNotificationDialog.dart';
 import 'package:mobile_pos_inventory/View/Components/Custom/CustomButton.dart';
 import 'package:mobile_pos_inventory/View/Components/Custom/CustomSwitchPill.dart';
-import 'package:mobile_pos_inventory/View/Components/Custom/CustomTextField.dart';
-import 'package:mobile_pos_inventory/View/Components/Modal/AddProductModal.dart';
-import 'package:mobile_pos_inventory/View/Components/Modal/CartModal.dart';
-import 'package:mobile_pos_inventory/View/Components/SnackbarService.dart';
-import 'package:provider/provider.dart';
-import 'package:mobile_pos_inventory/Helper/AppColor.dart';
-import 'package:mobile_pos_inventory/Model/product_model.dart';
-import 'package:mobile_pos_inventory/Provider/ProductProvider.dart';
 import 'package:mobile_pos_inventory/View/Components/ResponsiveText.dart';
+import 'package:mobile_pos_inventory/View/Components/Modal/AddProductModal.dart';
+import 'package:provider/provider.dart';
 
 class ProductDetailModal {
   static void show(BuildContext context, Product product) {
@@ -60,57 +57,20 @@ class _ProductDetailContent extends StatefulWidget {
 }
 
 class _ProductDetailContentState extends State<_ProductDetailContent> {
-  final TextEditingController inputController = TextEditingController();
-  int quantity = 0;
-  bool useTextField = false;
   bool usePack = true;
   double price = 0;
   String unit = '';
 
-
   @override
   void initState() {
     super.initState();
-
-    inputController.addListener(() {
-      final parsed = int.tryParse(inputController.text);
-      final maxQty = widget.product.totalQuantity.toInt();
-
-      if (parsed != null && parsed > maxQty) {
-        inputController.text = maxQty.toString();
-        inputController.selection = TextSelection.fromPosition(
-          TextPosition(offset: inputController.text.length),
-        );
-      }
-    });
-
-    // Initial values
-    if (widget.product.unit == "Per Pack") {
-      usePack = true;
-    }else{
-      usePack = false;
-      unit = widget.product.unit;
-    }
-
-    final perItem = widget.product.itemsPerBundle;
-
-    if (usePack) {
-      price = widget.product.retailPrice;
-      unit = widget.product.unit;
-    } else {
-      if (perItem > 0) {
-        price = widget.product.retailPrice / perItem;
-      } else {
-        price = 0;
-      }
-    }
-  }
-
-
-  @override
-  void dispose() {
-    inputController.dispose();
-    super.dispose();
+    usePack = widget.product.isPack;
+    unit = usePack ? widget.product.unit : UnitType.pcs.label;
+    price = usePack
+        ? widget.product.packItemsRetail
+        : (widget.product.packItems > 0
+        ? widget.product.packItemsRetail / widget.product.packItems
+        : 0);
   }
 
   @override
@@ -119,54 +79,43 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
     final hasImage = product.imageUrl.isNotEmpty && File(product.imageUrl).existsSync();
     final currency = context.read<CurrencyProvider>().currencyFormat;
 
-
     return SafeArea(
-      child: Consumer3<ProductProvider,CartProvider,BatchProvider>(
-        builder: (context, productProvider,cartProvider,batchProvider, _) {
+      child: Consumer3<ProductProvider, CartProvider, BatchProvider>(
+        builder: (context, productProvider, cartProvider, batchProvider, _) {
           return SingleChildScrollView(
             padding: const EdgeInsets.only(bottom: 12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Product Image and Info
-                if(product.unit == "Per Pack") ...[
-                  const SizedBox(height: 10),
-                  Center(
-                    child: CustomSwitchPill(
-                      options: ['Pack', 'Pieces'],
-                      selected: usePack ? 'Pack' : 'Pieces',
-                      onSelected: (label) => setState(() {
-                        usePack = label == 'Pack';
-
-                        if (usePack) {
-                          price = widget.product.retailPrice;
-                          unit = widget.product.unit;
-                          final maxQty = usePack ? product.totalQuantity : product.subQuantity;
-                          quantity = min(quantity, maxQty).toInt();
-
-                        } else {
-                          final perItem = widget.product.itemsPerBundle;
-                          price = perItem > 0 ? widget.product.retailPrice / perItem : 0;
-                          unit = product.unit;
-                        }
-                      }),
-                    ),
-
+                if (product.isPack)
+                  Column(
+                    children: [
+                      const SizedBox(height: 10),
+                      Center(
+                        child: CustomSwitchPill(
+                          options: ['Pack', 'Pieces'],
+                          selected: usePack ? 'Pack' : 'Pieces',
+                          onSelected: (label) => setState(() {
+                            usePack = label == 'Pack';
+                            unit = usePack ? product.unit : UnitType.pcs.label;
+                            price = usePack
+                                ? product.packItemsRetail
+                                : (product.packItems > 0
+                                ? product.packItemsRetail / product.packItems
+                                : 0);
+                          }),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                    ],
                   ),
-                  const SizedBox(height: 10),
-                ],
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     ClipRRect(
                       borderRadius: BorderRadius.circular(12),
                       child: hasImage
-                          ? Image.file(
-                        File(product.imageUrl),
-                        width: 100,
-                        height: 100,
-                        fit: BoxFit.cover,
-                      )
+                          ? Image.file(File(product.imageUrl), width: 100, height: 100, fit: BoxFit.cover)
                           : Container(
                         width: 100,
                         height: 100,
@@ -179,79 +128,22 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.start,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      product.name,
-                                      style: const TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.w700,
-                                        color: AppColor.textPrimary,
-                                      ),
-                                      overflow: TextOverflow.ellipsis,
-                                      maxLines: 1,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.delete_outline_outlined, color: AppColor.error),
-                                onPressed: () {
-                                  showDialog(
-                                    context: context,
-                                    builder: (context) => CustomConfirmDialog(
-                                      title: "Delete Product",
-                                      content: "Are you sure you want to delete this product?\nThis action cannot be undone.",
-                                      onConfirm: () {
-                                        productProvider.deleteProduct(product.id);
-                                        Navigator.pop(context);
-                                      },
-                                    ),
-                                  );
-                                },
-                              )
-                            ],
-                          ),
+                          Text(product.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
                           if (product.category.isNotEmpty)
-                            Text(
-                              product.category,
-                              style: const TextStyle(
-                                color: AppColor.textSecondary,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
+                            Text(product.category, style: const TextStyle(color: AppColor.textSecondary, fontSize: 13)),
                           const SizedBox(height: 4),
-                          Text(
-                            'Retail: ${currency.format(price)} | ${unit}',
-                            style: const TextStyle(color: AppColor.primary, fontWeight: FontWeight.w500),
-                          ),
-                          Text(
-                            'Cost: ${ currency.format(usePack ? product.costPrice : product.costPerItem)} | ${unit}',
-                            style: const TextStyle(
-                              color: AppColor.textSecondary,
-                              fontSize: 13,
-                              decoration: TextDecoration.lineThrough,
-                            ),
-                          ),
-                          Text(
-                            product.description,
-                            style: const TextStyle(color: AppColor.textSecondary, fontSize: 13),
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 2,
-                          ),
+                          Text('Retail: ${currency.format(price)} | $unit', style: const TextStyle(color: AppColor.primary)),
+                          Text('Cost: ${currency.format(usePack ? product.packItemsCost : product.costPerItem)} | $unit',
+                              style: const TextStyle(
+                                  color: AppColor.textSecondary,
+                                  fontSize: 13,
+                                  decoration: TextDecoration.lineThrough)),
+                          Text(product.description, style: const TextStyle(color: AppColor.textSecondary, fontSize: 13)),
                         ],
                       ),
                     ),
                   ],
                 ),
-
-                const SizedBox(height: 12),
                 const SizedBox(height: 12),
                 Row(
                   children: [
@@ -259,29 +151,17 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                       child: CustomButton(
                         text: 'Edit',
                         icon: Icons.edit,
-                        onPressed: () {
-                          Future.delayed(Duration.zero, () {
-                            showModalBottomSheet(
-                              context: context,
-                              isScrollControlled: true,
-                              shape: const RoundedRectangleBorder(
-                                borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-                              ),
-                              builder: (context) {
-                                return Padding(
-                                  padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-                                  child: FractionallySizedBox(
-                                    heightFactor: 0.8,
-                                    child: ProductModalForm(
-                                      existingProduct: product,
-                                      category: '',
-                                    ),
-                                  ),
-                                );
-                              },
-                            );
-                          });
-                        },
+                        onPressed: () => showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                          ),
+                          builder: (context) => FractionallySizedBox(
+                            heightFactor: 0.8,
+                            child: ProductModalForm(existingProduct: product, category: ''),
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 5),
@@ -290,111 +170,98 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                         text: 'Restock',
                         icon: Icons.inventory_2,
                         isFilled: false,
-                        onPressed: () {
-                          Future.delayed(Duration.zero, () {
-                            showModalBottomSheet(
-                              context: context,
-                              isScrollControlled: true,
-                              shape: const RoundedRectangleBorder(
-                                borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-                              ),
-                              builder: (context) {
-                                return Padding(
-                                  padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-                                  child: FractionallySizedBox(
-                                    heightFactor: 0.8,
-                                    child: ProductModalForm(
-                                      existingProduct: product,
-                                      category: '',
-                                      isRestock: true,
-                                    ),
-                                  ),
-                                );
-                              },
-                            );
-                          });
-                        },
+                        onPressed: () => showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                          ),
+                          builder: (context) => FractionallySizedBox(
+                            heightFactor: 0.8,
+                            child: ProductModalForm(existingProduct: product, category: '', isRestock: true),
+                          ),
+                        ),
                       ),
                     ),
                   ],
                 ),
-
-                const SizedBox(height: 5),
-
-                // Total Stock and Batches
-                if (product.batches.isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                 Text(
-                    'Stock Batches: ${usePack ? product.totalQuantity  : product.subQuantity} ${unit}',
-                    style: TextStyle(
-                      fontSize: context.rf(14),
-                      fontWeight: FontWeight.w600,
-                      color: AppColor.textSecondary,
-                      fontStyle: FontStyle.italic, // 👈 Add this line
-                    ),
-                  ),
-
-                  const SizedBox(height: 4),
-                ],
-
-                if (product.batches.isNotEmpty )
-                  ...product.batches.map((batch) {
-                    return Container(
-                      margin: const EdgeInsets.symmetric(vertical: 4),
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: AppColor.surface,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.shade300),
+                const SizedBox(height: 12),
+                if (product.batches.isNotEmpty)
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Stock Batches: ${usePack ? product.totalQuantity : product.subQuantity} $unit',
+                        style: TextStyle(
+                            fontSize: context.rf(14),
+                            fontWeight: FontWeight.w600,
+                            color: AppColor.textSecondary,
+                            fontStyle: FontStyle.italic),
                       ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              '${usePack ? batch.quantity : batch.subQuantity} ${unit} • ${DateFormat.yMMMd().format(batch.createdAt)}',
-                              style: const TextStyle(color: AppColor.textSecondary, fontSize: 13),
-                              overflow: TextOverflow.ellipsis,
-                            ),
+                      const SizedBox(height: 4),
+                      ...product.batches.map((batch) {
+                        final stock = usePack ? batch.quantity : (batch.subQuantity ?? 0);
+                        return Container(
+                          margin: const EdgeInsets.symmetric(vertical: 4),
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: AppColor.surface,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey.shade300),
                           ),
-                          Row(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              IconButton(
-                                icon: const Icon(LucideIcons.edit, color: AppColor.primary),
-                                onPressed: () {
-                                  showChangeBatchQtyDialog(
-                                    context: context,
-                                    initialQty: usePack ? batch.quantity : batch.subQuantity!,
-                                    onConfirm: (qty) {
-                                     usePack ? batchProvider.updateBatchQuantity(product.name, batch.id, qty) : batchProvider.updateSubQuantity(product.name, batch.id, qty);
-                                    },
-                                  );
-                                },
+                              Expanded(
+                                child: Text(
+                                  '$stock $unit • ${DateFormat.yMMMd().format(batch.createdAt)}',
+                                  style: const TextStyle(color: AppColor.textSecondary, fontSize: 13),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
-                              IconButton(
-                                icon: const Icon(LucideIcons.trash, color: AppColor.errorText),
-                                onPressed: () {
-                                  showDialog(
-                                    context: context,
-                                    builder: (context) => CustomConfirmDialog(
-                                      title: "Delete Batch",
-                                      content: "Are you sure you want to delete this batch?\nThis action cannot be undone.",
-                                      onConfirm: () {
-                                       usePack ? batchProvider.deleteBatch(product.name, batch.id) : batchProvider.deleteSubQuantity(product.name, batch.id);
-                                      },
-                                    ),
-                                  );
-                                },
+                              Row(
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(LucideIcons.edit, color: AppColor.primary),
+                                    onPressed: () {
+                                      showChangeBatchQtyDialog(
+                                        context: context,
+                                        initialQty: stock,
+                                        onConfirm: (qty) {
+                                          usePack
+                                              ? batchProvider.updateBatchQuantity(product.name, batch.id, qty)
+                                              : batchProvider.updateSubQuantity(product.name, batch.id, qty);
+                                        },
+                                      );
+                                    },
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(LucideIcons.trash, color: AppColor.errorText),
+                                    onPressed: () {
+                                      showDialog(
+                                        context: context,
+                                        builder: (context) => CustomConfirmDialog(
+                                          title: "Delete Batch",
+                                          content:
+                                          "Are you sure you want to delete this batch?\nThis action cannot be undone.",
+                                          onConfirm: () {
+                                            usePack
+                                                ? batchProvider.deleteBatch(product.name, batch.id)
+                                                : batchProvider.deleteSubQuantity(product.name, batch.id);
+                                          },
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ],
                               ),
                             ],
-                          )
-                        ],
-                      ),
-                    );
-                  }).toList(),
-
-                if (product.batches.isEmpty) ...[
-                  const SizedBox(height: 20),
+                          ),
+                        );
+                      }).toList(),
+                    ],
+                  )
+                else
                   Center(
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 40),
@@ -407,20 +274,13 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(
-                            LucideIcons.box,
-                            size: 48,
-                            color: Colors.grey.withOpacity(0.7),
-                          ),
+                          Icon(LucideIcons.box, size: 48, color: Colors.grey.withOpacity(0.7)),
                           const SizedBox(height: 12),
-                          Text(
-                            'No Batches Available',
-                            style: TextStyle(
-                              color: AppColor.textSecondary,
-                              fontSize: context.rf(14),
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
+                          Text('No Batches Available',
+                              style: TextStyle(
+                                  color: AppColor.textSecondary,
+                                  fontSize: context.rf(14),
+                                  fontWeight: FontWeight.w600)),
                           const SizedBox(height: 4),
                           Text(
                             'Try restocking this product to add batches.',
@@ -434,220 +294,6 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                       ),
                     ),
                   ),
-                ],
-
-
-                // Input / Stepper / Buttons - Only if batches exist
-                if (product.batches.isNotEmpty) ...[
-                  const SizedBox(height: 10),
-                  Center(
-                    child: CustomSwitchPill(
-                      options: ['Stepper', 'Input'],
-                      selected: useTextField ? 'Input' : 'Stepper',
-                      onSelected: (label) => setState(() => useTextField = label == 'Input'),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  useTextField
-                      ? CustomTextField(
-                    label: 'Enter Quantity',
-                    controller: inputController,
-                    keyboardType: TextInputType.number,
-                    hintText: 'e.g. 15',
-                  )
-                      : Center(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.remove_circle_outline, color: AppColor.primary,size: 30,),
-                          onPressed: () {
-                            if (quantity > 0) setState(() => quantity--);
-                          },
-                        ),
-                        Text(
-                          '$quantity',
-                          style: const TextStyle(fontSize: 25, fontWeight: FontWeight.bold),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.add_circle_outline, color: AppColor.primary,size: 30,),
-                          onPressed: () {
-                            if (quantity < (usePack ? product.totalQuantity : product.subQuantity)) {
-                              setState(() => quantity++);
-                            }
-
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: CustomButton(
-                          text: 'Add to Cart',
-                          icon: Icons.shopping_cart_outlined,
-                          isFilled: false,
-                          onPressed: () {
-                            final inputQty = int.tryParse(inputController.text) ?? 0;
-                            final maxQty = usePack ? product.totalQuantity.toInt() : product.subQuantity.toInt();
-                            final finalQty = useTextField ? inputQty : quantity;
-
-                            if (finalQty < 0) {
-                              showDialog(
-                                context: context,
-                                builder: (_) => CustomNotificationDialog(
-                                  onConfirm: () => Navigator.pop(context),
-                                  type: "warning",
-                                  title: 'Invalid Quantity',
-                                  content: 'The quantity must be more than 0 to proceed.',
-                                ),
-                              );
-                              return;
-                            }
-
-                            if (finalQty > maxQty) {
-                              showDialog(
-                                context: context,
-                                builder: (_) => CustomNotificationDialog(
-                                  onConfirm: () => Navigator.pop(context),
-                                  type: "warning",
-                                  title: 'Stock Limit Exceeded',
-                                  content: 'The quantity you entered exceeds the available stock. Please adjust your input.',
-                                ),
-                              );
-                              return;
-                            }
-                            final selectedQty = useTextField
-                                ? int.tryParse(inputController.text) ?? 0
-                                : quantity;
-
-                            if (selectedQty >= 0) {
-                              final productToCart = Product(
-                                id: product.id,
-                                name: product.name,
-                                description: product.description,
-                                costPrice: usePack ? product.costPrice : product.costPerItem,
-                                retailPrice: price,
-                                unit: unit,
-                                category: product.category,
-                                imageUrl: product.imageUrl,
-                                deletedAt: product.deletedAt,
-                                lastModified: DateTime.now(), // optional: use product.lastModified if needed
-                                itemsPerBundle: product.itemsPerBundle,
-                                batches: [
-                                  Batch(
-                                    id: DateTime.now().toIso8601String(),
-                                    quantity: usePack ? selectedQty.toDouble() : 0.0,
-                                    subQuantity: !usePack ? selectedQty.toDouble() : 0.0,
-                                    createdAt: DateTime.now(),
-                                  ),
-                                ],
-                              );
-
-                              cartProvider.addToCart(productToCart);
-                              Navigator.pop(context); // Close modal
-                            }
-                          },
-                        ),
-
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: CustomButton(
-                          text: 'Proceed',
-                          icon: Icons.check_circle_outline,
-                          isFilled: true,
-                          onPressed: () {
-                            final inputQty = int.tryParse(inputController.text) ?? 0;
-                            final maxQty = usePack ? product.totalQuantity.toInt() : product.subQuantity.toInt();
-                            final finalQty = useTextField ? inputQty : quantity;
-
-                            if (finalQty < 0) {
-                              showDialog(
-                                context: context,
-                                builder: (_) => CustomNotificationDialog(
-                                  onConfirm: () => Navigator.pop(context),
-                                  type: "warning",
-                                  title: 'Invalid Quantity',
-                                  content: 'The quantity must be more than 0 to proceed.',
-                                ),
-                              );
-                              return;
-                            }
-
-                            if (finalQty > maxQty) {
-                              showDialog(
-                                context: context,
-                                builder: (_) => CustomNotificationDialog(
-                                  onConfirm: () => Navigator.pop(context),
-                                  type: "warning",
-                                  title: 'Stock Limit Exceeded',
-                                  content: 'The quantity you entered exceeds the available stock. Please adjust your input.',
-                                ),
-                              );
-                              return;
-                            }
-
-                            final selectedQty = useTextField
-                                ? int.tryParse(inputController.text) ?? 0
-                                : quantity;
-
-                            if (selectedQty >= 0) {
-                              final productToCart = Product(
-                                id: product.id,
-                                name: product.name,
-                                description: product.description,
-                                costPrice: usePack ? product.costPrice : product.costPerItem,
-                                retailPrice: price,
-                                unit: unit,
-                                category: product.category,
-                                imageUrl: product.imageUrl,
-                                deletedAt: product.deletedAt,
-                                lastModified: DateTime.now(), // optional: use product.lastModified if needed
-                                itemsPerBundle: product.itemsPerBundle,
-                                batches: [
-                                  Batch(
-                                    id: DateTime.now().toIso8601String(),
-                                    quantity: usePack ? selectedQty.toDouble() : 0.0,
-                                    subQuantity: !usePack ? selectedQty.toDouble() : 0.0,
-                                    createdAt: DateTime.now(),
-                                  ),
-                                ],
-                              );
-
-                              cartProvider.addToCart(productToCart);
-                              Navigator.pop(context); // Close modal
-                            }
-                            Future.delayed(Duration.zero,(){
-
-                              showModalBottomSheet(
-                                context: context,
-                                isScrollControlled: true,
-                                backgroundColor: Colors.transparent,
-                                shape: const RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-                                ),
-                                builder: (context) => FractionallySizedBox(
-                                  heightFactor: 0.9,
-                                  child: ClipRRect(
-                                    borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                                    child: const CartScreen(),
-                                  ),
-                                ),
-                              );
-
-                            });
-
-                            // Proceed logic
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                ],
               ],
             ),
           );

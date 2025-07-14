@@ -4,6 +4,7 @@ import 'package:mobile_pos_inventory/View/Components/SnackbarService.dart';
 
 class CartProvider with ChangeNotifier {
   final List<Product> _cart = [];
+
   List<Product> get cartItems => List.unmodifiable(_cart);
 
   void addToCart(Product product) {
@@ -12,12 +13,11 @@ class CartProvider with ChangeNotifier {
       _cart.add(product);
       SnackbarService.showSuccess('🛒 Added to cart: ${product.name}');
     } else {
-      _cart[index] = product; // Replace with updated product
+      _cart[index] = product;
       SnackbarService.showInfo('🔁 Updated cart item: ${product.name}');
     }
     notifyListeners();
   }
-
 
   double getQuantityByProductName(String productName) {
     final product = _cart.firstWhere(
@@ -25,18 +25,23 @@ class CartProvider with ChangeNotifier {
       orElse: () => Product(
         id: '',
         name: '',
-        costPrice: 0,
-        retailPrice: 0,
         unit: '',
         batches: [],
         description: '',
         imageUrl: '',
         category: '',
-        itemsPerBundle: 0,
         lastModified: DateTime.now(),
+        defaultCost: 0,
+        defaultRetail: 0,
+        isPack: false,
+        packItems: 0,
+        packItemsCost: 0,
+        packItemsRetail: 0,
+        profitMargin: 0,
       ),
     );
-    return product.totalQuantity;
+
+    return product.isPack ? product.totalQuantity : product.subQuantity;
   }
 
   void removeFromCart(String productName) {

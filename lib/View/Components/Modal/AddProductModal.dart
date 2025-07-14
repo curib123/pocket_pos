@@ -45,6 +45,8 @@ class _ProductModalFormState extends State<ProductModalForm> {
   final _quantity = TextEditingController();
   final _newBatchQty = TextEditingController();
   final _itemsPerBundle = TextEditingController();
+  final _retailPricePerItem = TextEditingController();
+
 
   bool _showNewBatchInput = false;
   List<Batch> _existingBatches = [];
@@ -65,14 +67,24 @@ class _ProductModalFormState extends State<ProductModalForm> {
 
     if (isEditing) {
       final p = widget.existingProduct!;
+
       _name.text = p.name;
       _description.text = p.description;
-      _costPrice.text = p.costPrice.toString();
-      _retailPrice.text = p.retailPrice.toString();
+      _costPrice.text = p.defaultCost.toStringAsFixed(2);
+      _retailPrice.text = p.defaultRetail.toStringAsFixed(2);
+      _costPricePerItem.text = p.costPerItem.toStringAsFixed(2);
+      _retailPricePerItem.text = p.packItemsRetail.toStringAsFixed(2);
+
+      _itemsPerBundle.text = p.packItems.toStringAsFixed(0);
+      _selectedProfitPercent = p.profitMargin;
+
       _selectedCategory = p.category;
       _selectedUnit = p.unit;
-      if (p.unit == UnitType.pack.name) _itemsPerBundle.text = p.itemsPerBundle.toString();
-      if (p.imageUrl.isNotEmpty) _imageFile = File(p.imageUrl);
+
+      if (p.imageUrl.isNotEmpty) {
+        _imageFile = File(p.imageUrl);
+      }
+
       _existingBatches = List.from(p.batches);
     } else {
       _selectedCategory = widget.category;
@@ -80,15 +92,24 @@ class _ProductModalFormState extends State<ProductModalForm> {
 
     _setupProfitCalculationListener();
   }
+
   void _setupProfitCalculationListener() {
     bool _isUpdating = false;
 
-    void _updateRetailPrice() {
+    void _updateRetailPriceFromCost() {
       final costPerItem = double.tryParse(_costPricePerItem.text);
+      final qty = double.tryParse(_quantity.text);
+
       if (costPerItem != null && _selectedProfitPercent != null) {
-        final retail = costPerItem + (costPerItem * _selectedProfitPercent!);
-        _retailPrice.text = retail.toStringAsFixed(2);
+        final retailPerItem = costPerItem + (costPerItem * _selectedProfitPercent!);
+        _retailPricePerItem.text = retailPerItem.toStringAsFixed(2);
+
+        if (qty != null && qty > 0) {
+          final retailTotal = retailPerItem * qty;
+          _retailPrice.text = retailTotal.toStringAsFixed(2);
+        }
       } else {
+        _retailPricePerItem.text = '';
         _retailPrice.text = '';
       }
     }
@@ -104,12 +125,9 @@ class _ProductModalFormState extends State<ProductModalForm> {
           (_costPrice.text.trim().isEmpty)) {
         _costPricePerItem.text = '';
         _retailPrice.text = '';
+        _retailPricePerItem.text = '';
         _isUpdating = false;
         return;
-      }
-
-      if (_costPrice.text.trim().isEmpty && _costPricePerItem.text.trim().isNotEmpty) {
-        _costPrice.text = '0';
       }
 
       if (cost != null && qty != null && qty > 0) {
@@ -117,7 +135,7 @@ class _ProductModalFormState extends State<ProductModalForm> {
         _costPricePerItem.text = costPerItem.toStringAsFixed(2);
       }
 
-      _updateRetailPrice();
+      _updateRetailPriceFromCost();
       _isUpdating = false;
     }
 
@@ -132,12 +150,9 @@ class _ProductModalFormState extends State<ProductModalForm> {
           (_costPricePerItem.text.trim().isEmpty)) {
         _costPrice.text = '';
         _retailPrice.text = '';
+        _retailPricePerItem.text = '';
         _isUpdating = false;
         return;
-      }
-
-      if (_costPricePerItem.text.trim().isEmpty && _costPrice.text.trim().isNotEmpty) {
-        _costPricePerItem.text = '0';
       }
 
       if (costPerItem != null && qty != null && qty > 0) {
@@ -145,19 +160,62 @@ class _ProductModalFormState extends State<ProductModalForm> {
         _costPrice.text = cost.toStringAsFixed(2);
       }
 
-      _updateRetailPrice();
+      _updateRetailPriceFromCost();
       _isUpdating = false;
     }
 
+    void updateFromRetailTotal() {
+      if (_isUpdating) return;
+      _isUpdating = true;
+
+      final retailTotal = double.tryParse(_retailPrice.text);
+      final qty = double.tryParse(_quantity.text);
+
+      if (retailTotal != null && qty != null && qty > 0) {
+        final perItem = retailTotal / qty;
+        _retailPricePerItem.text = perItem.toStringAsFixed(2);
+      }
+
+      _isUpdating = false;
+    }
+
+    void updateFromRetailPerItem() {
+      if (_isUpdating) return;
+      _isUpdating = true;
+
+      final retailPerItem = double.tryParse(_retailPricePerItem.text);
+      final qty = double.tryParse(_quantity.text);
+
+      if (retailPerItem != null && qty != null && qty > 0) {
+        final total = retailPerItem * qty;
+        _retailPrice.text = total.toStringAsFixed(2);
+      }
+
+      _isUpdating = false;
+    }
+
+    // Listeners
     _costPrice.addListener(updateFromCostPrice);
-    _quantity.addListener(() {
-      updateFromCostPrice();
-      updateFromCostPerItem(); // In case quantity is changed
-    });
     _costPricePerItem.addListener(updateFromCostPerItem);
+    _retailPrice.addListener(updateFromRetailTotal);
+    _retailPricePerItem.addListener(updateFromRetailPerItem);
+
+    _quantity.addListener(() {
+      if (_costPrice.text.isNotEmpty) {
+        updateFromCostPrice();
+      } else if (_costPricePerItem.text.isNotEmpty) {
+        updateFromCostPerItem();
+      }
+
+      if (_retailPrice.text.isNotEmpty) {
+        updateFromRetailTotal();
+      } else if (_retailPricePerItem.text.isNotEmpty) {
+        updateFromRetailPerItem();
+      }
+    });
+
+
   }
-
-
 
 
 
@@ -285,26 +343,29 @@ class _ProductModalFormState extends State<ProductModalForm> {
     }
 
     final rawQty = double.tryParse(widget.isRestock ? _newBatchQty.text : _quantity.text) ?? 0;
-    final itemsPerBundle = isBundleUnit ? int.tryParse(_itemsPerBundle.text) ?? 1 : 1;
-    final bundleQty = rawQty;
-    final subQty = bundleQty * itemsPerBundle;
+    final itemsPerPack = isBundleUnit ? double.tryParse(_itemsPerBundle.text) ?? 1 : 1;
+    final packQty = rawQty;
+    final subQty = packQty * itemsPerPack;
 
     final newBatch = Batch(
       id: const Uuid().v4(),
-      quantity: bundleQty,
-      createdAt: DateTime.now(),
+      quantity: packQty,
       subQuantity: subQty,
+      createdAt: DateTime.now(),
     );
+
+    final defaultCost = double.tryParse(_costPrice.text) ?? 0;
+    final defaultRetail = double.tryParse(_retailPrice.text) ?? 0;
+    final packCost = itemsPerPack > 0 ? defaultCost / itemsPerPack : 0;
+    final packRetail = itemsPerPack > 0 ? defaultRetail / itemsPerPack : 0;
 
     final product = Product(
       id: isEditing ? widget.existingProduct!.id : const Uuid().v4(),
       name: _name.text.trim(),
       description: _description.text.trim(),
-      costPrice: double.tryParse(_costPrice.text) ?? 0,
-      retailPrice: double.tryParse(_retailPrice.text) ?? 0,
+      imageUrl: _imageFile?.path ?? '',
       unit: _selectedUnit ?? '',
       category: _selectedCategory ?? '',
-      imageUrl: _imageFile?.path ?? '',
       batches: widget.isRestock
           ? [..._existingBatches, newBatch]
           : isEditing
@@ -312,11 +373,17 @@ class _ProductModalFormState extends State<ProductModalForm> {
           : [newBatch],
       lastModified: DateTime.now(),
       deletedAt: null,
-      itemsPerBundle: itemsPerBundle,
+      defaultCost: defaultCost,
+      defaultRetail: defaultRetail,
+      isPack: isBundleUnit,
+      packItems: itemsPerPack.toDouble(),
+      packItemsCost: packCost.toDouble(),
+      packItemsRetail: packRetail.toDouble(),
+      profitMargin: _selectedProfitPercent ?? 0,
     );
 
     if (widget.isRestock) {
-      batchProvider.addBatch(product.name, newBatch, itemsPerBundle.toDouble());
+      batchProvider.addBatch(product.name, newBatch, itemsPerPack.toDouble());
     } else if (isEditing) {
       productProvider.updateProduct(product);
     } else {
@@ -325,6 +392,7 @@ class _ProductModalFormState extends State<ProductModalForm> {
 
     Navigator.pop(context);
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -411,6 +479,19 @@ class _ProductModalFormState extends State<ProductModalForm> {
                       icon: LucideIcons.layers,
                       helperText: 'Enter how many items or packs you are adding to stock.',
                     ),
+
+                    if (isBundleUnit)
+                      _buildTextFieldWithIcon(
+                        label: 'Items Per Pack',
+                        controller: _itemsPerBundle,
+                        keyboardType: TextInputType.number,
+                        validator: (v) {
+                          final val = int.tryParse(v ?? '');
+                          return (val == null || val <= 0) ? 'Enter a valid number' : null;
+                        },
+                        icon: LucideIcons.package,
+                        helperText: 'How many items in one pack',
+                      ),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -455,17 +536,26 @@ class _ProductModalFormState extends State<ProductModalForm> {
                       value: _selectedProfitPercent,
                       items: _profitOptions,
                       onChanged: (val) {
-                        setState(() {
-                          _selectedProfitPercent = val;
-                          final costPerItem = double.tryParse(_costPricePerItem.text);
-                          if (costPerItem != null && val != null) {
-                            final retail = costPerItem * (1 + val); // val is already 0.10, 0.20, etc.
-                            _retailPrice.text = retail.toStringAsFixed(2);
+                        setState(() => _selectedProfitPercent = val);
+
+                        final costPerItem = double.tryParse(_costPricePerItem.text);
+                        final qty = double.tryParse(_quantity.text);
+
+                        if (costPerItem != null && val != null) {
+                          final retailPerItem = costPerItem * (1 + val);
+                          _retailPricePerItem.text = retailPerItem.toStringAsFixed(2);
+
+                          if (qty != null && qty > 0) {
+                            _retailPrice.text = retailPerItem.toString();
                           } else {
-                            _retailPrice.clear();
+                            _retailPrice.text = '';
                           }
-                        });
+                        } else {
+                          _retailPrice.clear();
+                          _retailPricePerItem.clear();
+                        }
                       },
+
                       itemBuilder: (val) => Text('${(val * 100).toInt()}%'),
                       icon: LucideIcons.percent,
                       helperText: 'Choose how much profit you want to add, e.g., 10% markup on cost per item.',
@@ -473,27 +563,27 @@ class _ProductModalFormState extends State<ProductModalForm> {
 
                   ],
 
-
-                  _buildTextFieldWithIcon(
-                    label: 'Retail Price (Per Item)',
-                    controller: _retailPrice,
-                    keyboardType: TextInputType.number,
-                    icon: LucideIcons.tag,
-                    helperText: 'Price you want to sell one item for. This updates automatically based on profit margin.',
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildTextFieldWithIcon(
+                        label: 'Retail Price (Per Pack)', // ✅ updated
+                        controller: _retailPrice,
+                        keyboardType: TextInputType.number,
+                        icon: LucideIcons.dollarSign,
+                        helperText: 'Total price for one whole pack. This is based on items per pack.', // ✅ updated
+                      ),
+                      _buildTextFieldWithIcon(
+                        label: 'Retail Price (Per Item)',
+                        controller: _retailPricePerItem,
+                        keyboardType: TextInputType.number,
+                        icon: LucideIcons.tag,
+                        helperText: 'Price per single item. This auto-fills based on cost and profit margin.',
+                      ),
+                    ],
                   ),
 
-                  if (isBundleUnit && !isEditing)
-                    _buildTextFieldWithIcon(
-                      label: 'Items Per Pack',
-                      controller: _itemsPerBundle,
-                      keyboardType: TextInputType.number,
-                      validator: (v) {
-                        final val = int.tryParse(v ?? '');
-                        return (val == null || val <= 0) ? 'Enter a valid number' : null;
-                      },
-                      icon: LucideIcons.package,
-                      helperText: 'How many individual items are inside one pack? Needed for accurate stock count.',
-                    ),
+
 
                   const SizedBox(height: 20),
                   _buildImageSection(),
@@ -526,18 +616,7 @@ class _ProductModalFormState extends State<ProductModalForm> {
                         icon: LucideIcons.layers,
                         helperText: 'Enter quantity for new stock batch',
                       ),
-                      if (isBundleUnit)
-                        _buildTextFieldWithIcon(
-                          label: 'Items Per Pack',
-                          controller: _itemsPerBundle,
-                          keyboardType: TextInputType.number,
-                          validator: (v) {
-                            final val = int.tryParse(v ?? '');
-                            return (val == null || val <= 0) ? 'Enter a valid number' : null;
-                          },
-                          icon: LucideIcons.package,
-                          helperText: 'How many items in one pack',
-                        ),
+
                     ],
                   )
                       : CustomButton(
