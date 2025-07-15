@@ -8,7 +8,8 @@ class CustomFlatDropdown<T> extends StatelessWidget {
   final Function(T?) onChanged;
   final Color iconColor;
   final Widget Function(T val) itemBuilder;
-  final IconData? prefixIcon; // renamed from leadingIcon
+  final IconData? prefixIcon;
+  final bool readOnly; // ✅ New property
 
   const CustomFlatDropdown({
     super.key,
@@ -19,12 +20,13 @@ class CustomFlatDropdown<T> extends StatelessWidget {
     required this.itemBuilder,
     this.iconColor = Colors.grey,
     this.prefixIcon,
+    this.readOnly = false, // ✅ Default to false
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 50, // Fixed height for vertical centering
+      height: 50,
       padding: const EdgeInsets.symmetric(horizontal: 12),
       margin: const EdgeInsets.symmetric(vertical: 5),
       decoration: BoxDecoration(
@@ -43,12 +45,12 @@ class CustomFlatDropdown<T> extends StatelessWidget {
                 value: value,
                 isExpanded: true,
                 icon: Icon(Icons.keyboard_arrow_down_rounded, color: iconColor),
-                onChanged: onChanged,
+                onChanged: readOnly ? null : onChanged, // ✅ Disable if readOnly
                 hint: Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
                     hint,
-                    style: const TextStyle(color: AppColor.textSecondary,fontSize: 14),
+                    style: const TextStyle(color: AppColor.textSecondary, fontSize: 14),
                   ),
                 ),
                 selectedItemBuilder: (context) {

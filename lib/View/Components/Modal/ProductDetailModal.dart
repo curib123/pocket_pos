@@ -60,23 +60,23 @@ class _ProductDetailContent extends StatefulWidget {
 }
 
 class _ProductDetailContentState extends State<_ProductDetailContent> {
-  bool usePack = true;
+  bool usePack = false ;
+   bool usePieces = false ;
   bool useTextField = false;
   double price = 0;
   String unit = '';
   int quantity = 1;
+  double cost = 0;
   final TextEditingController inputController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     usePack = widget.product.isPack;
-    unit = usePack ? widget.product.unit : UnitType.pcs.label;
-    price = usePack
-        ? widget.product.packItemsRetail
-        : (widget.product.packItems > 0
-        ? widget.product.packItemsRetail / widget.product.packItems
-        : 0);
+    usePieces = !widget.product.isPack;
+    unit = usePack ? UnitType.pack.label : UnitType.pcs.label;
+    price = usePieces ? widget.product.defaultRetail : usePack ? widget.product.defaultRetail : widget.product.packItemsRetail;
+    cost = usePieces ? widget.product.defaultCost : usePack ? (widget.product.defaultCost ): widget.product.costPerItem;
   }
 
   void _addToCart(CartProvider cartProvider) {
@@ -110,7 +110,7 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
       category: widget.product.category,
       lastModified: DateTime.now(),
       deletedAt: widget.product.deletedAt,
-      defaultCost: usePack ? widget.product.packItemsCost : widget.product.costPerItem,
+      defaultCost: cost,
       defaultRetail: price,
       isPack: usePack,
       packItems: widget.product.packItems,
@@ -177,16 +177,13 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                       const SizedBox(height: 10),
                       Center(
                         child: CustomSwitchPill(
-                          options: ['Pack', 'Pieces'],
-                          selected: usePack ? 'Pack' : 'Pieces',
+                          options: [UnitType.pack.label, UnitType.pcs.label],
+                          selected: usePack ? UnitType.pack.label : UnitType.pcs.label,
                           onSelected: (label) => setState(() {
-                            usePack = label == 'Pack';
-                            unit = usePack ? product.unit : UnitType.pcs.label;
-                            price = usePack
-                                ? product.packItemsRetail
-                                : (product.packItems > 0
-                                ? product.packItemsRetail / product.packItems
-                                : 0);
+                            usePack = label == UnitType.pack.label;
+                            unit = usePack ? UnitType.pack.label : UnitType.pcs.label;
+                            price = usePieces ? widget.product.defaultRetail : usePack ? widget.product.defaultRetail : widget.product.packItemsRetail;
+                            cost = usePieces ? widget.product.defaultCost : usePack ? widget.product.defaultCost : widget.product.costPerItem;
                           }),
                         ),
                       ),
@@ -211,20 +208,65 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.start,
                         children: [
-                          Text(product.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-                          if (product.category.isNotEmpty)
-                            Text(product.category, style: const TextStyle(color: AppColor.textSecondary, fontSize: 13)),
-                          const SizedBox(height: 4),
-                          Text('Retail: ${currency.format(price)} | $unit', style: const TextStyle(color: AppColor.primary)),
-                          Text(
-                            'Cost: ${currency.format(usePack ? product.packItemsCost : product.costPerItem)} | $unit',
-                            style: const TextStyle(
-                              color: AppColor.textSecondary,
-                              fontSize: 13,
-                              decoration: TextDecoration.lineThrough,
-                            ),
+                          Row(
+                            children: [
+                              Expanded(child: Text(product.name, style: const TextStyle(color: AppColor.textPrimary,fontWeight: FontWeight.bold, fontSize: 18))),
+                              Align(alignment : Alignment.topLeft ,child: Expanded(child: IconButton(onPressed: (){
+                                showDialog(
+                                  context: context,
+                                  builder: (context) => CustomConfirmDialog(
+                                    title: "Delete Product",
+                                    content: "Are you sure you want to delete this product?\nThis action cannot be undone.",
+                                    onConfirm: () {
+                                      productProvider.deleteProduct(product.id);
+                                      Navigator.pop(context);
+                                    },
+                                  ),
+                                );
+                              }, icon: Icon(LucideIcons.delete,color: AppColor.errorText,))))
+                            ],
                           ),
+                          Text(product.category, style: const TextStyle(color: AppColor.textSecondary, fontSize: 13)),
+                          const SizedBox(height: 4),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              RichText(
+                                text: TextSpan(
+                                  style: const TextStyle(fontSize: 14, color: AppColor.primary),
+                                  children: [
+                                    const TextSpan(text: 'Retail: ', style: TextStyle(fontWeight: FontWeight.w500)),
+                                    TextSpan(text: currency.format(price)),
+                                    const TextSpan(text: '  |  '),
+                                    TextSpan(text: unit),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                '${(product.profitMargin * 100).toStringAsFixed(0)}% Profit Margin',
+                                style: const TextStyle(
+                                  color: AppColor.primary,
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Cost: ${currency.format(cost)} | $unit',
+                                style: const TextStyle(
+                                  color: AppColor.textSecondary,
+                                  fontSize: 12.5,
+                                  fontStyle: FontStyle.italic,
+                                  decoration: TextDecoration.lineThrough,
+                                ),
+                              ),
+                            ],
+                          ),
+
+
                           Text(product.description, style: const TextStyle(color: AppColor.textSecondary, fontSize: 13)),
                         ],
                       ),

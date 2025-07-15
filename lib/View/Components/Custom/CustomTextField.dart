@@ -14,7 +14,7 @@ class CustomTextField extends StatelessWidget {
   final bool isRequired;
   final ValueChanged<String>? onChanged;
   final bool readOnly;
-  final Widget? prefixIcon; // Icon inside input box
+  final Widget? prefixIcon;
   final String? helperText;
 
   const CustomTextField({
@@ -50,9 +50,10 @@ class CustomTextField extends StatelessWidget {
       helperStyle: const TextStyle(
         color: Colors.grey,
         fontSize: 12,
-        overflow: TextOverflow.visible, // Ensure it wraps, not ellipsis
+        fontStyle: FontStyle.italic, // ✅ Italicized helper text
+        overflow: TextOverflow.visible,
       ),
-      helperMaxLines: 3, // Allow unlimited lines
+      helperMaxLines: 3,
       filled: true,
       fillColor: AppColor.primary.withOpacity(0.05),
       contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),

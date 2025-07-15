@@ -1,3 +1,5 @@
+// ✅ FINALIZED ProductModalForm — ALL CODE INCLUDED
+
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -5,19 +7,19 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:mobile_pos_inventory/Helper/AppColor.dart';
-import 'package:mobile_pos_inventory/Provider/BatchProvider.dart';
-import 'package:mobile_pos_inventory/View/Components/Alert/CustomConfimDialog.dart';
-import 'package:provider/provider.dart';
-import 'package:uuid/uuid.dart';
 import 'package:mobile_pos_inventory/Helper/Enums/enum.dart';
 import 'package:mobile_pos_inventory/Model/product_model.dart';
 import 'package:mobile_pos_inventory/Model/batch_model.dart';
+import 'package:mobile_pos_inventory/Provider/BatchProvider.dart';
 import 'package:mobile_pos_inventory/Provider/ProductProvider.dart';
 import 'package:mobile_pos_inventory/Provider/StoreCategoryProvider.dart';
+import 'package:mobile_pos_inventory/View/Components/Alert/CustomConfimDialog.dart';
 import 'package:mobile_pos_inventory/View/Components/Custom/CustomButton.dart';
 import 'package:mobile_pos_inventory/View/Components/Custom/CustomFlatDropdown.dart';
 import 'package:mobile_pos_inventory/View/Components/Custom/CustomTextField.dart';
 import 'package:mobile_pos_inventory/View/Components/showImageSourcePicker.dart';
+import 'package:provider/provider.dart';
+import 'package:uuid/uuid.dart';
 
 class ProductModalForm extends StatefulWidget {
   final Product? existingProduct;
@@ -37,66 +39,56 @@ class ProductModalForm extends StatefulWidget {
 
 class _ProductModalFormState extends State<ProductModalForm> {
   final _formKey = GlobalKey<FormState>();
+
   final _name = TextEditingController();
   final _description = TextEditingController();
   final _costPrice = TextEditingController();
   final _costPricePerItem = TextEditingController();
   final _retailPrice = TextEditingController();
+  final _retailPricePerItem = TextEditingController();
   final _quantity = TextEditingController();
   final _newBatchQty = TextEditingController();
   final _itemsPerBundle = TextEditingController();
-  final _retailPricePerItem = TextEditingController();
 
-
-  bool _showNewBatchInput = false;
-  List<Batch> _existingBatches = [];
-
+  File? _imageFile;
   String? _selectedCategory;
   String? _selectedUnit;
-  File? _imageFile;
-
   double? _selectedProfitPercent;
-  final List<double> _profitOptions = List.generate(100, (index) => (index + 1) / 100);
+  List<Batch> _existingBatches = [];
+  bool _showNewBatchInput = false;
 
   bool get isEditing => widget.existingProduct != null;
   bool get isBundleUnit => UnitTypeExtension.supportsSubQuantity(_selectedUnit);
 
+  final List<double> _profitOptions = List.generate(100, (index) => (index + 1) / 100);
+
   @override
   void initState() {
     super.initState();
-
     if (isEditing) {
       final p = widget.existingProduct!;
-
       _name.text = p.name;
       _description.text = p.description;
       _costPrice.text = p.defaultCost.toStringAsFixed(2);
       _retailPrice.text = p.defaultRetail.toStringAsFixed(2);
       _costPricePerItem.text = p.costPerItem.toStringAsFixed(2);
       _retailPricePerItem.text = p.packItemsRetail.toStringAsFixed(2);
-
       _itemsPerBundle.text = p.packItems.toStringAsFixed(0);
       _selectedProfitPercent = p.profitMargin;
-
       _selectedCategory = p.category;
       _selectedUnit = p.unit;
-
-      if (p.imageUrl.isNotEmpty) {
-        _imageFile = File(p.imageUrl);
-      }
-
+      if (p.imageUrl.isNotEmpty) _imageFile = File(p.imageUrl);
       _existingBatches = List.from(p.batches);
     } else {
       _selectedCategory = widget.category;
     }
-
     _setupProfitCalculationListener();
   }
 
   void _setupProfitCalculationListener() {
     bool _isUpdating = false;
 
-    void _updateRetailPriceFromCost() {
+    void updateRetailFromCost() {
       final costPerItem = double.tryParse(_costPricePerItem.text);
       final qty = double.tryParse(_quantity.text);
 
@@ -105,12 +97,11 @@ class _ProductModalFormState extends State<ProductModalForm> {
         _retailPricePerItem.text = retailPerItem.toStringAsFixed(2);
 
         if (qty != null && qty > 0) {
-          final retailTotal = retailPerItem * qty;
-          _retailPrice.text = retailTotal.toStringAsFixed(2);
+          _retailPrice.text = (retailPerItem * qty).toStringAsFixed(2);
         }
       } else {
-        _retailPricePerItem.text = '';
-        _retailPrice.text = '';
+        _retailPricePerItem.clear();
+        _retailPrice.clear();
       }
     }
 
@@ -121,21 +112,16 @@ class _ProductModalFormState extends State<ProductModalForm> {
       final cost = double.tryParse(_costPrice.text);
       final qty = double.tryParse(_quantity.text);
 
-      if ((_costPrice.text.trim().isEmpty && _costPricePerItem.text.trim().isEmpty) ||
-          (_costPrice.text.trim().isEmpty)) {
-        _costPricePerItem.text = '';
-        _retailPrice.text = '';
-        _retailPricePerItem.text = '';
+      if ((cost == null || qty == null || qty <= 0)) {
+        _costPricePerItem.clear();
+        _retailPrice.clear();
+        _retailPricePerItem.clear();
         _isUpdating = false;
         return;
       }
 
-      if (cost != null && qty != null && qty > 0) {
-        final costPerItem = cost / qty;
-        _costPricePerItem.text = costPerItem.toStringAsFixed(2);
-      }
-
-      _updateRetailPriceFromCost();
+      _costPricePerItem.text = (cost / qty).toStringAsFixed(2);
+      updateRetailFromCost();
       _isUpdating = false;
     }
 
@@ -146,21 +132,16 @@ class _ProductModalFormState extends State<ProductModalForm> {
       final costPerItem = double.tryParse(_costPricePerItem.text);
       final qty = double.tryParse(_quantity.text);
 
-      if ((_costPrice.text.trim().isEmpty && _costPricePerItem.text.trim().isEmpty) ||
-          (_costPricePerItem.text.trim().isEmpty)) {
-        _costPrice.text = '';
-        _retailPrice.text = '';
-        _retailPricePerItem.text = '';
+      if ((costPerItem == null || qty == null || qty <= 0)) {
+        _costPrice.clear();
+        _retailPrice.clear();
+        _retailPricePerItem.clear();
         _isUpdating = false;
         return;
       }
 
-      if (costPerItem != null && qty != null && qty > 0) {
-        final cost = costPerItem * qty;
-        _costPrice.text = cost.toStringAsFixed(2);
-      }
-
-      _updateRetailPriceFromCost();
+      _costPrice.text = (costPerItem * qty).toStringAsFixed(2);
+      updateRetailFromCost();
       _isUpdating = false;
     }
 
@@ -168,12 +149,11 @@ class _ProductModalFormState extends State<ProductModalForm> {
       if (_isUpdating) return;
       _isUpdating = true;
 
-      final retailTotal = double.tryParse(_retailPrice.text);
+      final retail = double.tryParse(_retailPrice.text);
       final qty = double.tryParse(_quantity.text);
 
-      if (retailTotal != null && qty != null && qty > 0) {
-        final perItem = retailTotal / qty;
-        _retailPricePerItem.text = perItem.toStringAsFixed(2);
+      if (retail != null && qty != null && qty > 0) {
+        _retailPricePerItem.text = (retail / qty).toStringAsFixed(2);
       }
 
       _isUpdating = false;
@@ -187,14 +167,12 @@ class _ProductModalFormState extends State<ProductModalForm> {
       final qty = double.tryParse(_quantity.text);
 
       if (retailPerItem != null && qty != null && qty > 0) {
-        final total = retailPerItem * qty;
-        _retailPrice.text = total.toStringAsFixed(2);
+        _retailPrice.text = (retailPerItem * qty).toStringAsFixed(2);
       }
 
       _isUpdating = false;
     }
 
-    // Listeners
     _costPrice.addListener(updateFromCostPrice);
     _costPricePerItem.addListener(updateFromCostPerItem);
     _retailPrice.addListener(updateFromRetailTotal);
@@ -213,11 +191,7 @@ class _ProductModalFormState extends State<ProductModalForm> {
         updateFromRetailPerItem();
       }
     });
-
-
   }
-
-
 
   Future<void> _pickImage(ImageSource source) async {
     final picked = await ImagePicker().pickImage(source: source);
@@ -248,15 +222,15 @@ class _ProductModalFormState extends State<ProductModalForm> {
       ),
     );
   }
-
   Widget _buildDropdown<T>({
     required String hint,
     required T? value,
     required List<T> items,
     required void Function(T?) onChanged,
-    Widget Function(T)? itemBuilder,  // optional
+    Widget Function(T)? itemBuilder,
     IconData? icon,
     String? helperText,
+    bool readOnly = false,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
@@ -269,19 +243,26 @@ class _ProductModalFormState extends State<ProductModalForm> {
             items: items,
             onChanged: onChanged,
             itemBuilder: itemBuilder ?? (val) => Text(val.toString()),
-            prefixIcon: icon, // icon inside
+            prefixIcon: icon,
+            readOnly: readOnly,
           ),
           if (helperText != null)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 15),
-              child: Text(helperText, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+              child: Text(
+                helperText,
+                style: const TextStyle(
+                  color: Colors.grey,
+                  fontSize: 12,
+                  fontStyle: FontStyle.italic, // ✅ Italicized helper text
+                ),
+              ),
             ),
           const SizedBox(height: 12),
         ],
       ),
     );
   }
-
 
 
   Widget _buildImageSection() {
@@ -328,25 +309,31 @@ class _ProductModalFormState extends State<ProductModalForm> {
   void _handleSubmit(ProductProvider productProvider, BatchProvider batchProvider) {
     if (!_formKey.currentState!.validate()) return;
 
-    if (!widget.isRestock && (_selectedCategory == null || _selectedUnit == null)) {
+    // Validate required selections when not restocking
+    if (!widget.isRestock && (_selectedCategory?.isEmpty ?? true )) {
+      ScaffoldMessenger.of(context).clearSnackBars();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select both Category and Unit')),
       );
       return;
     }
 
-    if (widget.isRestock && !_showNewBatchInput) {
+    // Validate new batch input for restocking
+    if (widget.isRestock && (!_showNewBatchInput || _newBatchQty.text.isEmpty || double.tryParse(_newBatchQty.text) == 0)) {
+      ScaffoldMessenger.of(context).clearSnackBars();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please confirm and enter new batch quantity')),
       );
       return;
     }
 
+    // Quantity handling
     final rawQty = double.tryParse(widget.isRestock ? _newBatchQty.text : _quantity.text) ?? 0;
     final itemsPerPack = isBundleUnit ? double.tryParse(_itemsPerBundle.text) ?? 1 : 1;
     final packQty = rawQty;
     final subQty = packQty * itemsPerPack;
 
+    // Create new batch
     final newBatch = Batch(
       id: const Uuid().v4(),
       quantity: packQty,
@@ -354,11 +341,14 @@ class _ProductModalFormState extends State<ProductModalForm> {
       createdAt: DateTime.now(),
     );
 
-    final defaultCost = double.tryParse(_costPrice.text) ?? 0;
-    final defaultRetail = double.tryParse(_retailPrice.text) ?? 0;
-    final packCost = itemsPerPack > 0 ? defaultCost / itemsPerPack : 0;
-    final packRetail = itemsPerPack > 0 ? defaultRetail / itemsPerPack : 0;
+    // Prices
+    final defaultCostTotal = double.tryParse(_costPrice.text) ?? 0;
+    final defaultCostPerItem = double.tryParse(_costPricePerItem.text) ?? 0;
+    final defaultRetailTotal = double.tryParse(_retailPrice.text) ?? 0;
+    final defaultRetailPerItem = double.tryParse(_retailPricePerItem.text) ?? 0;
+    final packCost = defaultCostPerItem * itemsPerPack;
 
+    // Final product creation
     final product = Product(
       id: isEditing ? widget.existingProduct!.id : const Uuid().v4(),
       name: _name.text.trim(),
@@ -373,15 +363,16 @@ class _ProductModalFormState extends State<ProductModalForm> {
           : [newBatch],
       lastModified: DateTime.now(),
       deletedAt: null,
-      defaultCost: defaultCost,
-      defaultRetail: defaultRetail,
+      defaultCost: _selectedUnit == UnitType.pack.label ? packCost : defaultCostTotal,
+      defaultRetail: defaultRetailTotal,
       isPack: isBundleUnit,
       packItems: itemsPerPack.toDouble(),
-      packItemsCost: packCost.toDouble(),
-      packItemsRetail: packRetail.toDouble(),
+      packItemsCost: defaultCostPerItem,
+      packItemsRetail: defaultRetailPerItem,
       profitMargin: _selectedProfitPercent ?? 0,
     );
 
+    // Final action
     if (widget.isRestock) {
       batchProvider.addBatch(product.name, newBatch, itemsPerPack.toDouble());
     } else if (isEditing) {
@@ -395,6 +386,20 @@ class _ProductModalFormState extends State<ProductModalForm> {
 
 
   @override
+  void dispose() {
+    _name.dispose();
+    _description.dispose();
+    _costPrice.dispose();
+    _costPricePerItem.dispose();
+    _retailPrice.dispose();
+    _retailPricePerItem.dispose();
+    _quantity.dispose();
+    _newBatchQty.dispose();
+    _itemsPerBundle.dispose();
+    super.dispose();
+  }
+
+@override
   Widget build(BuildContext context) {
     return Consumer3<StoreCategoryProvider, ProductProvider, BatchProvider>(
       builder: (_, storeCategoryProvider, productProvider, batchProvider, __) {
@@ -479,6 +484,7 @@ class _ProductModalFormState extends State<ProductModalForm> {
                       icon: LucideIcons.layers,
                       helperText: 'Enter how many items or packs you are adding to stock.',
                     ),
+                  ],
 
                     if (isBundleUnit)
                       _buildTextFieldWithIcon(
@@ -496,98 +502,133 @@ class _ProductModalFormState extends State<ProductModalForm> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '💡 Pricing Guide',
+                          'Pricing Guide',
                           style: TextStyle(
-                            fontSize: 13,
+                            fontSize: 12,
                             fontWeight: FontWeight.bold,
-                            color: Colors.grey[800],
+                            color: Colors.grey,
                           ),
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Enter either total or per item cost. One updates the other automatically.',
+                          'Enter quantity first. Then enter total or per item cost — the other auto-fills.',
                           style: TextStyle(
                             fontSize: 10.5,
                             color: Colors.grey[600],
                           ),
                         ),
+
                         const SizedBox(height: 14),
 
                         _buildTextFieldWithIcon(
-                          label: 'Total Cost Value',
+                          label: 'Total Buying Cost ',
                           controller: _costPrice,
                           keyboardType: TextInputType.number,
+                          readOnly: _quantity.text.isEmpty,
                           icon: LucideIcons.dollarSign,
                           helperText: 'Total amount spent for the stock.',
                         ),
 
                         _buildTextFieldWithIcon(
-                          label: 'Cost per Item',
+                          label: 'Buying Cost Per ${_selectedUnit == UnitType.pack.label ? UnitType.pack.label : UnitType.pcs.label}',
                           controller: _costPricePerItem,
                           keyboardType: TextInputType.number,
+                          readOnly: _quantity.text.isEmpty,
                           icon: LucideIcons.dollarSign,
                           helperText: 'Auto-filled if total cost and quantity are set.',
                         ),
+
                       ],
                     ),
-
-                    _buildDropdown<double>(
-                      hint: 'Select Profit Margin',
-                      value: _selectedProfitPercent,
-                      items: _profitOptions,
-                      onChanged: (val) {
-                        setState(() => _selectedProfitPercent = val);
-
-                        final costPerItem = double.tryParse(_costPricePerItem.text);
-                        final qty = double.tryParse(_quantity.text);
-
-                        if (costPerItem != null && val != null) {
-                          final retailPerItem = costPerItem * (1 + val);
-                          _retailPricePerItem.text = retailPerItem.toStringAsFixed(2);
-
-                          if (qty != null && qty > 0) {
-                            _retailPrice.text = retailPerItem.toString();
-                          } else {
-                            _retailPrice.text = '';
-                          }
-                        } else {
-                          _retailPrice.clear();
-                          _retailPricePerItem.clear();
-                        }
-                      },
-
-                      itemBuilder: (val) => Text('${(val * 100).toInt()}%'),
-                      icon: LucideIcons.percent,
-                      helperText: 'Choose how much profit you want to add, e.g., 10% markup on cost per item.',
-                    ),
-
-                  ],
 
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildTextFieldWithIcon(
-                        label: 'Retail Price (Per Pack)', // ✅ updated
-                        controller: _retailPrice,
-                        keyboardType: TextInputType.number,
-                        icon: LucideIcons.dollarSign,
-                        helperText: 'Total price for one whole pack. This is based on items per pack.', // ✅ updated
+                      const Text(
+                        'Retail Price Guide',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12,color: Colors.grey),
                       ),
-                      _buildTextFieldWithIcon(
-                        label: 'Retail Price (Per Item)',
-                        controller: _retailPricePerItem,
-                        keyboardType: TextInputType.number,
-                        icon: LucideIcons.tag,
-                        helperText: 'Price per single item. This auto-fills based on cost and profit margin.',
+                      const SizedBox(height: 4),
+                      Text(
+                        'Profit margin adds markup to cost. Enter cost, select margin, and prices are auto-generated.',
+                        style: TextStyle(fontSize: 10.3, color: Colors.grey),
                       ),
+
+
+                      const SizedBox(height: 12),
+
+                      _buildDropdown<double>(
+                        hint: 'Select Profit Margin',
+                        value: _selectedProfitPercent,
+                        items: _profitOptions,
+                        readOnly: _costPrice.text.trim().isEmpty && _costPricePerItem.text.trim().isEmpty,
+                        onChanged: (val) {
+                          setState(() => _selectedProfitPercent = val);
+
+                          final costPerItem = double.tryParse(_costPricePerItem.text);
+                          final qty = double.tryParse(_quantity.text);
+
+                          if (costPerItem != null && val != null) {
+                            final retailPerItem = costPerItem * (1 + val);
+                            _retailPricePerItem.text = retailPerItem.toStringAsFixed(2);
+                            _retailPrice.text = (qty != null && qty > 0)
+                                ? retailPerItem.toStringAsFixed(2)
+                                : '';
+                          } else {
+                            _retailPrice.clear();
+                            _retailPricePerItem.clear();
+                          }
+                        },
+                        itemBuilder: (val) => Text('${(val * 100).toInt()}%'),
+                        icon: LucideIcons.percent,
+                        helperText: 'Enter cost first. Then choose profit % to get price.',
+                      ),
+
+                      const SizedBox(height: 6),
+
+                      if (_selectedUnit == UnitType.pack.label) ...[
+                        const Padding(
+                          padding: EdgeInsets.only(bottom: 8.0),
+                          child: Text(
+                            'You can enter either the total pack price or the per-item price:',
+                            style: TextStyle(fontSize: 12, color: Colors.grey),
+                          ),
+                        ),
+                        _buildTextFieldWithIcon(
+                          label: 'Selling Price (Per Pack)',
+                          controller: _retailPrice,
+                          keyboardType: TextInputType.number,
+                          icon: LucideIcons.tag,
+                          helperText: 'Selling price for one full pack. Auto or manual.',
+                        ),
+                        _buildTextFieldWithIcon(
+                          label: 'Selling Price (Per Item)',
+                          controller: _retailPricePerItem,
+                          keyboardType: TextInputType.number,
+                          icon: LucideIcons.tag,
+                          helperText: 'Auto-calculated price for 1 item in the pack.',
+                        ),
+                      ] else ...[
+                        _buildTextFieldWithIcon(
+                          label: 'Selling Price',
+                          controller: _retailPrice,
+                          keyboardType: TextInputType.number,
+                          icon: LucideIcons.tag,
+                          helperText: 'Selling price for 1 item. Auto or manual.',
+                        ),
+                      ],
+
                     ],
-                  ),
+                  )
 
 
-
-                  const SizedBox(height: 20),
-                  _buildImageSection(),
                 ],
+
+               if(!widget.isRestock)...[
+                 const SizedBox(height: 20),
+                 _buildImageSection(),
+
+               ],
 
                 if (isEditing) ...[
                   Align(
@@ -596,7 +637,7 @@ class _ProductModalFormState extends State<ProductModalForm> {
                   ),
                   const SizedBox(height: 8),
                   ..._existingBatches.map((b) => ListTile(
-                    title: Text('Quantity: ${b.quantity}'),
+                    title: Text('Quantity: ${ b.quantity} | ${widget.existingProduct!.unit}'),
                     subtitle: Text('Added: ${DateFormat('MMM d, y').format(b.createdAt.toLocal())}'),
                   )),
                 ],
@@ -616,6 +657,18 @@ class _ProductModalFormState extends State<ProductModalForm> {
                         icon: LucideIcons.layers,
                         helperText: 'Enter quantity for new stock batch',
                       ),
+
+                        _buildTextFieldWithIcon(
+                          label: 'Items Per Pack',
+                          controller: _itemsPerBundle,
+                          keyboardType: TextInputType.number,
+                          validator: (v) {
+                            final val = int.tryParse(v ?? '');
+                            return (val == null || val <= 0) ? 'Enter a valid number' : null;
+                          },
+                          icon: LucideIcons.package,
+                          helperText: 'How many items in one pack',
+                        ),
 
                     ],
                   )

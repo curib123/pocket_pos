@@ -8,9 +8,9 @@ extension UnitTypeExtension on UnitType {
   String get label {
     switch (this) {
       case UnitType.pcs:
-        return 'Per Piece';
+        return 'Pieces';
       case UnitType.pack:
-        return 'Per Pack';
+        return 'Packs';
     }
   }
 
