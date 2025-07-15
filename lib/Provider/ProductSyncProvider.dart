@@ -8,9 +8,11 @@ class ProductSyncProvider {
 
   ProductSyncProvider(this._productBox);
 
+  /// 🡇 Pull from Supabase, push to Hive
   Future<void> syncFromSupabase() async {
     try {
       final serverProducts = await _supabaseService.fetchProductsFromServer();
+
       if (serverProducts.isEmpty) {
         print("⚠️ No products fetched from Supabase.");
         return;
@@ -30,28 +32,33 @@ class ProductSyncProvider {
         serverIds.add(serverProduct.id);
       }
 
+      // Handle soft-deleting local items not found on server
       final localIds = _productBox.keys.cast<String>().toSet();
       final toDelete = localIds.difference(serverIds);
 
       for (final id in toDelete) {
         final product = _productBox.get(id);
         if (product != null && product.deletedAt == null) {
-          product.deletedAt = DateTime.now();
-          product.lastModified = DateTime.now();
-          await product.save();
+          final updated = product.copyWith(
+            deletedAt: DateTime.now(),
+            lastModified: DateTime.now(),
+          );
+          await _productBox.put(id, updated);
         }
       }
 
       print('☁️ Synced ${serverProducts.length} product(s) from Supabase.');
     } catch (e) {
-      print('❌ Supabase sync failed: $e');
+      print('❌ Supabase sync (download) failed: $e');
     }
   }
 
+  /// 🡅 Push from Hive to Supabase
   Future<void> syncToSupabase() async {
     try {
       final serverProducts = await _supabaseService.fetchProductsFromServer();
       final serverMap = {for (var p in serverProducts) p.id: p};
+
       final localProducts = _productBox.values.toList();
       final localMap = {for (var p in localProducts) p.id: p};
 
@@ -64,11 +71,10 @@ class ProductSyncProvider {
 
         if (server == null || localTime.isAfter(serverTime)) {
           mergedProducts.add(local);
-        } else {
-          mergedProducts.add(server);
         }
       }
 
+      // Add new server entries that don't exist locally and aren't deleted
       for (final server in serverProducts) {
         if (!localMap.containsKey(server.id) && server.deletedAt == null) {
           mergedProducts.add(server);
@@ -79,13 +85,14 @@ class ProductSyncProvider {
         print('ℹ️ No changes to sync. All products are up to date.');
       } else {
         await _supabaseService.upsertProductsListToServer(mergedProducts);
-        print('✅ Synced ${mergedProducts.length} products to Supabase.');
+        print('✅ Synced ${mergedProducts.length} product(s) to Supabase.');
       }
     } catch (e) {
-      print('❌ Supabase sync failed: $e');
+      print('❌ Supabase sync (upload) failed: $e');
     }
   }
 
+  /// 🔁 Sync both ways (recommended for initial launch or manual sync)
   Future<void> autoSync() async {
     await syncToSupabase();
     await syncFromSupabase();

@@ -24,11 +24,6 @@ class ProductProvider extends ChangeNotifier {
   void refreshProducts() {
     _products = _productBox.values
         .where((p) => p.deletedAt == null)
-        .map((product) {
-      product.batches.removeWhere((batch) => batch.quantity == 0);
-      product.save();
-      return product;
-    })
         .toList();
     notifyListeners();
   }
@@ -58,16 +53,18 @@ class ProductProvider extends ChangeNotifier {
   Future<void> addProduct(Product product) async {
     try {
       final nameExists = _products.any(
-            (p) => p.name.trim().toLowerCase() == product.name.trim().toLowerCase() && p.deletedAt == null,
+            (p) =>
+        p.name.trim().toLowerCase() == product.name.trim().toLowerCase() &&
+            p.deletedAt == null,
       );
       if (nameExists) {
         SnackbarService.showWarning('⚠️ Product already exists: ${product.name}');
         return;
       }
 
-      product.lastModified = DateTime.now();
-      await _productBox.put(product.id, product);
-      _products.add(product);
+      final newProduct = product.copyWith(lastModified: DateTime.now());
+      await _productBox.put(newProduct.id, newProduct);
+      _products.add(newProduct);
       notifyListeners();
       SnackbarService.showSuccess('✅ Product added: ${product.name}');
     } catch (e) {
@@ -77,12 +74,12 @@ class ProductProvider extends ChangeNotifier {
 
   Future<void> updateProduct(Product product) async {
     try {
-      product.lastModified = DateTime.now();
-      await _productBox.put(product.id, product);
-      final index = _products.indexWhere((p) => p.id == product.id);
-      if (index != -1) _products[index] = product;
+      final updated = product.copyWith(lastModified: DateTime.now());
+      await _productBox.put(updated.id, updated);
+      final index = _products.indexWhere((p) => p.id == updated.id);
+      if (index != -1) _products[index] = updated;
       notifyListeners();
-      SnackbarService.showSuccess('✅ Product updated: ${product.name}');
+      SnackbarService.showSuccess('✅ Product updated: ${updated.name}');
     } catch (e) {
       SnackbarService.showError('❌ Failed to update product: $e');
     }
@@ -92,9 +89,11 @@ class ProductProvider extends ChangeNotifier {
     try {
       final product = _productBox.get(id);
       if (product != null) {
-        product.deletedAt = DateTime.now();
-        product.lastModified = DateTime.now();
-        await product.save();
+        final deleted = product.copyWith(
+          deletedAt: DateTime.now(),
+          lastModified: DateTime.now(),
+        );
+        await _productBox.put(id, deleted);
         _products.removeWhere((p) => p.id == id);
         notifyListeners();
         SnackbarService.showSuccess('🗑️ Product deleted: ${product.name}');
@@ -108,10 +107,12 @@ class ProductProvider extends ChangeNotifier {
     try {
       final product = _productBox.get(id);
       if (product != null && product.deletedAt != null) {
-        product.deletedAt = null;
-        product.lastModified = DateTime.now();
-        await product.save();
-        _products.add(product);
+        final restored = product.copyWith(
+          deletedAt: null,
+          lastModified: DateTime.now(),
+        );
+        await _productBox.put(id, restored);
+        _products.add(restored);
         notifyListeners();
         SnackbarService.showSuccess('✅ Product restored: ${product.name}');
       }

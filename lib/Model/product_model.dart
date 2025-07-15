@@ -1,193 +1,144 @@
 import 'package:hive/hive.dart';
-import 'batch_model.dart';
+import 'product_stock.dart';
+import 'loose_stock.dart';
+import 'stock_log.dart';
 
 part 'product_model.g.dart';
 
 @HiveType(typeId: 0)
 class Product extends HiveObject {
   @HiveField(0)
-  String id;
+  final String id;
 
   @HiveField(1)
-  String name;
+  final String name;
 
   @HiveField(2)
-  String unit;
+  final String? category;
 
   @HiveField(3)
-  List<Batch> batches;
+  final bool isSoldByPack;
 
   @HiveField(4)
-  String description;
+  final bool isSoldByPiece;
 
   @HiveField(5)
-  String imageUrl;
+  final int? piecesPerPack;
 
   @HiveField(6)
-  String category;
+  final String? unit;
 
   @HiveField(7)
-  DateTime lastModified;
+  final String? imagePath;
 
   @HiveField(8)
-  DateTime? deletedAt;
+  final DateTime createdAt;
 
-  // 🔥 New pricing and packaging logic
   @HiveField(9)
-  double defaultCost;
+  final DateTime lastModified;
 
   @HiveField(10)
-  double defaultRetail;
+  final DateTime? deletedAt;
 
   @HiveField(11)
-  bool isPack;
+  final List<ProductStock> stocks;
 
   @HiveField(12)
-  double packItems;
+  final LooseStock? looseStock;
 
   @HiveField(13)
-  double packItemsCost;
-
-  @HiveField(14)
-  double packItemsRetail;
-
-  @HiveField(15)
-  double profitMargin;
+  final List<StockLog> logs;
 
   Product({
     required this.id,
     required this.name,
-    required this.unit,
-    required this.batches,
-    required this.description,
-    required this.imageUrl,
-    required this.category,
-    required this.lastModified,
-    required this.defaultCost,
-    required this.defaultRetail,
-    required this.isPack,
-    required this.packItems,
-    required this.packItemsCost,
-    required this.packItemsRetail,
-    required this.profitMargin,
-    this.deletedAt,
-  });
-
-  Future<void> saveWithTimestamp() {
-    lastModified = DateTime.now();
-    return save();
-  }
-
-  Future<void> softDelete() {
-    deletedAt = DateTime.now();
-    lastModified = deletedAt!;
-    return save();
-  }
-
-  double get totalQuantity => batches.fold(0, (sum, b) => sum + b.quantity);
-  double get subQuantity => batches.fold(0, (sum, b) => sum + (b.subQuantity ?? 0));
-  double get costPerItem => totalQuantity == 0 ? 0 : defaultCost / totalQuantity;
-
-
-  Product copyWith({
-    String? id,
-    String? name,
-    String? unit,
-    List<Batch>? batches,
-    String? description,
-    String? imageUrl,
-    String? category,
+    required this.isSoldByPack,
+    required this.isSoldByPiece,
+    this.piecesPerPack,
+    this.category,
+    this.unit,
+    this.imagePath,
+    DateTime? createdAt,
     DateTime? lastModified,
-    DateTime? deletedAt,
-    double? defaultCost,
-    double? defaultRetail,
-    bool? isPack,
-    double? packItems,
-    double? packItemsCost,
-    double? packItemsRetail,
-    double? profitMargin,
-  }) {
-    return Product(
-      id: id ?? this.id,
-      name: name ?? this.name,
-      unit: unit ?? this.unit,
-      batches: batches ?? this.batches,
-      description: description ?? this.description,
-      imageUrl: imageUrl ?? this.imageUrl,
-      category: category ?? this.category,
-      lastModified: lastModified ?? this.lastModified,
-      deletedAt: deletedAt ?? this.deletedAt,
-      defaultCost: defaultCost ?? this.defaultCost,
-      defaultRetail: defaultRetail ?? this.defaultRetail,
-      isPack: isPack ?? this.isPack,
-      packItems: packItems ?? this.packItems,
-      packItemsCost: packItemsCost ?? this.packItemsCost,
-      packItemsRetail: packItemsRetail ?? this.packItemsRetail,
-      profitMargin: profitMargin ?? this.profitMargin,
-    );
-  }
+    this.deletedAt,
+    this.stocks = const [],
+    this.looseStock,
+    this.logs = const [],
+  })  : createdAt = createdAt ?? DateTime.now(),
+        lastModified = lastModified ?? DateTime.now();
 
+  // ✅ toMap()
   Map<String, dynamic> toMap() {
     return {
       'id': id,
       'name': name,
-      'unit': unit,
-      'batches': batches.map((b) => b.toMap()).toList(),
-      'description': description,
-      'image_url': imageUrl,
       'category': category,
-      'last_modified': lastModified.toIso8601String(),
-      'deleted_at': deletedAt?.toIso8601String(),
-      'default_cost': defaultCost,
-      'default_retail': defaultRetail,
-      'is_pack': isPack,
-      'pack_items': packItems,
-      'pack_items_cost': packItemsCost,
-      'pack_items_retail': packItemsRetail,
-      'profit_margin': profitMargin,
+      'isSoldByPack': isSoldByPack,
+      'isSoldByPiece': isSoldByPiece,
+      'piecesPerPack': piecesPerPack,
+      'unit': unit,
+      'imagePath': imagePath,
+      'createdAt': createdAt.toIso8601String(),
+      'lastModified': lastModified.toIso8601String(),
+      'deletedAt': deletedAt?.toIso8601String(),
+      'stocks': stocks.map((s) => s.toMap()).toList(),
+      'looseStock': looseStock?.toMap(),
+      'logs': logs.map((l) => l.toMap()).toList(),
     };
   }
 
-  static Product fromMap(Map<String, dynamic> json) {
+  // ✅ fromMap()
+  factory Product.fromMap(Map<String, dynamic> map) {
     return Product(
-      id: json['id'],
-      name: json['name'],
-      unit: json['unit'],
-      batches: (json['batches'] as List).map((e) => Batch.fromMap(e)).toList(),
-      description: json['description'],
-      imageUrl: json['image_url'],
-      category: json['category'],
-      lastModified: DateTime.parse(json['last_modified']),
-      deletedAt: json['deleted_at'] != null
-          ? DateTime.tryParse(json['deleted_at'])
-          : null,
-      defaultCost: (json['default_cost'] ?? 0).toDouble(),
-      defaultRetail: (json['default_retail'] ?? 0).toDouble(),
-      isPack: json['is_pack'] ?? false,
-      packItems: (json['pack_items'] ?? 0).toDouble(),
-      packItemsCost: (json['pack_items_cost'] ?? 0).toDouble(),
-      packItemsRetail: (json['pack_items_retail'] ?? 0).toDouble(),
-      profitMargin: (json['profit_margin'] ?? 0).toDouble(),
+      id: map['id'],
+      name: map['name'],
+      category: map['category'],
+      isSoldByPack: map['isSoldByPack'],
+      isSoldByPiece: map['isSoldByPiece'],
+      piecesPerPack: map['piecesPerPack'],
+      unit: map['unit'],
+      imagePath: map['imagePath'],
+      createdAt: DateTime.parse(map['createdAt']),
+      lastModified: DateTime.parse(map['lastModified']),
+      deletedAt: map['deletedAt'] != null ? DateTime.parse(map['deletedAt']) : null,
+      stocks: (map['stocks'] as List?)?.map((s) => ProductStock.fromMap(s)).toList() ?? [],
+      looseStock: map['looseStock'] != null ? LooseStock.fromMap(map['looseStock']) : null,
+      logs: (map['logs'] as List?)?.map((l) => StockLog.fromMap(l)).toList() ?? [],
     );
   }
 
-  @override
-  String toString() {
-    return '''
-Product {
-  id: $id,
-  name: $name,
-  defaultCost: $defaultCost,
-  defaultRetail: $defaultRetail,
-  unit: $unit,
-  isPack: $isPack,
-  packItems: $packItems,
-  packItemsCost: $packItemsCost,
-  packItemsRetail: $packItemsRetail,
-  profitMargin: $profitMargin,
-  totalQuantity: $totalQuantity,
-  costPerItem: $costPerItem,
-  batches: ${batches.map((b) => b.toString()).join(', ')}
-}''';
+  // ✅ copyWith()
+  Product copyWith({
+    String? id,
+    String? name,
+    String? category,
+    bool? isSoldByPack,
+    bool? isSoldByPiece,
+    int? piecesPerPack,
+    String? unit,
+    String? imagePath,
+    DateTime? createdAt,
+    DateTime? lastModified,
+    DateTime? deletedAt,
+    List<ProductStock>? stocks,
+    LooseStock? looseStock,
+    List<StockLog>? logs,
+  }) {
+    return Product(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      category: category ?? this.category,
+      isSoldByPack: isSoldByPack ?? this.isSoldByPack,
+      isSoldByPiece: isSoldByPiece ?? this.isSoldByPiece,
+      piecesPerPack: piecesPerPack ?? this.piecesPerPack,
+      unit: unit ?? this.unit,
+      imagePath: imagePath ?? this.imagePath,
+      createdAt: createdAt ?? this.createdAt,
+      lastModified: lastModified ?? this.lastModified,
+      deletedAt: deletedAt ?? this.deletedAt,
+      stocks: stocks ?? this.stocks,
+      looseStock: looseStock ?? this.looseStock,
+      logs: logs ?? this.logs,
+    );
   }
 }

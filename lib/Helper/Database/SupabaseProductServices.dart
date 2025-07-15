@@ -4,7 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class SupabaseProductServices {
   final _client = Supabase.instance.client;
 
-  /// Fetch all products from Supabase (stored as a list in one row per user)
+  /// 📥 Fetch products from Supabase where each user has one row with a `data` list
   Future<List<Product>> fetchProductsFromServer() async {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) {
@@ -26,10 +26,15 @@ class SupabaseProductServices {
         return [];
       }
 
-      final dataList = res['data'] as List;
-      print('📦 Supabase fetched: ${dataList.length} items');
+      final rawData = res['data'];
+      if (rawData is! List) {
+        print('⚠️ Invalid data format from Supabase.');
+        return [];
+      }
 
-      return dataList
+      print('📦 Supabase fetched: ${rawData.length} item(s)');
+
+      return rawData
           .map((item) => Product.fromMap(item as Map<String, dynamic>))
           .where((product) => product.deletedAt == null)
           .toList();
@@ -39,7 +44,7 @@ class SupabaseProductServices {
     }
   }
 
-  /// Upsert all products as a single JSON list under one user_id row
+  /// ⬆️ Upsert full list of products into a single row for this user
   Future<void> upsertProductsListToServer(List<Product> products) async {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) {
@@ -55,7 +60,8 @@ class SupabaseProductServices {
       'updated_at': now,
     };
 
-    print('⬆️ Uploading full product list to Supabase...');
+    print('⬆️ Uploading ${products.length} product(s) to Supabase...');
+
     try {
       await _client
           .from('products')
@@ -67,9 +73,7 @@ class SupabaseProductServices {
     }
   }
 
-
-
-  /// Clear user’s products (soft delete all by setting data = empty list)
+  /// 🗑 Soft delete all products (clear product list on server)
   Future<void> deleteAllProductsFromServer() async {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) {
@@ -90,7 +94,7 @@ class SupabaseProductServices {
     }
   }
 
-  /// Soft delete a product by marking its deletedAt timestamp
+  /// ❌ Soft delete a single product by setting its `deletedAt` and `lastModified`
   Future<void> softDeleteProductFromServer(String productId) async {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) {
@@ -105,19 +109,22 @@ class SupabaseProductServices {
           .eq('user_id', userId)
           .maybeSingle();
 
-      if (res == null || res['data'] == null) {
-        print('❌ Failed to fetch product list for soft delete.');
+      final rawData = res?['data'];
+      if (rawData == null || rawData is! List) {
+        print('❌ No product list found for user.');
         return;
       }
 
-      final dataList = (res['data'] as List)
-          .map((item) => Product.fromMap(item))
+      final productList = rawData
+          .map((item) => Product.fromMap(item as Map<String, dynamic>))
           .toList();
 
-      final updatedList = dataList.map((product) {
+      final updatedList = productList.map((product) {
         if (product.id == productId) {
-          product.deletedAt = DateTime.now();
-          product.lastModified = DateTime.now();
+          return product.copyWith(
+            deletedAt: DateTime.now(),
+            lastModified: DateTime.now(),
+          );
         }
         return product;
       }).toList();
@@ -128,5 +135,4 @@ class SupabaseProductServices {
       print('❌ Soft delete failed: $e');
     }
   }
-
 }

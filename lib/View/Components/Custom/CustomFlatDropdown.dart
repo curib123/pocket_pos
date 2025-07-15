@@ -9,7 +9,7 @@ class CustomFlatDropdown<T> extends StatelessWidget {
   final Color iconColor;
   final Widget Function(T val) itemBuilder;
   final IconData? prefixIcon;
-  final bool readOnly; // ✅ New property
+  final bool readOnly;
 
   const CustomFlatDropdown({
     super.key,
@@ -20,7 +20,7 @@ class CustomFlatDropdown<T> extends StatelessWidget {
     required this.itemBuilder,
     this.iconColor = Colors.grey,
     this.prefixIcon,
-    this.readOnly = false, // ✅ Default to false
+    this.readOnly = false,
   });
 
   @override
@@ -41,11 +41,11 @@ class CustomFlatDropdown<T> extends StatelessWidget {
           ],
           Expanded(
             child: DropdownButtonHideUnderline(
-              child: DropdownButton<T>(
+              child: DropdownButton<T?>(
                 value: value,
                 isExpanded: true,
                 icon: Icon(Icons.keyboard_arrow_down_rounded, color: iconColor),
-                onChanged: readOnly ? null : onChanged, // ✅ Disable if readOnly
+                onChanged: readOnly ? null : onChanged,
                 hint: Align(
                   alignment: Alignment.centerLeft,
                   child: Text(

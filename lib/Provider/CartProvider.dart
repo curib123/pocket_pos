@@ -19,30 +19,6 @@ class CartProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  double getQuantityByProductName(String productName) {
-    final product = _cart.firstWhere(
-          (p) => p.name.toLowerCase() == productName.toLowerCase(),
-      orElse: () => Product(
-        id: '',
-        name: '',
-        unit: '',
-        batches: [],
-        description: '',
-        imageUrl: '',
-        category: '',
-        lastModified: DateTime.now(),
-        defaultCost: 0,
-        defaultRetail: 0,
-        isPack: false,
-        packItems: 0,
-        packItemsCost: 0,
-        packItemsRetail: 0,
-        profitMargin: 0,
-      ),
-    );
-
-    return product.isPack ? product.totalQuantity : product.subQuantity;
-  }
 
   void removeFromCart(String productName) {
     _cart.removeWhere((p) => p.name.toLowerCase() == productName.toLowerCase());

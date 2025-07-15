@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:mobile_pos_inventory/Provider/CartProvider.dart';
-import 'package:mobile_pos_inventory/View/Components/Modal/CartModal.dart';
 import 'package:provider/provider.dart';
 
 class BouncingCartIcon extends StatelessWidget {
@@ -24,21 +23,7 @@ class BouncingCartIcon extends StatelessWidget {
               InkWell(
                 borderRadius: BorderRadius.circular(30),
                 onTap: (){
-                  showModalBottomSheet(
-                    context: context,
-                    isScrollControlled: true,
-                    backgroundColor: Colors.transparent,
-                    shape: const RoundedRectangleBorder(
-                      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-                    ),
-                    builder: (context) => FractionallySizedBox(
-                      heightFactor: 0.9,
-                      child: ClipRRect(
-                        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                        child: const CartScreen(),
-                      ),
-                    ),
-                  );
+
                 },
                 child: const Padding(
                   padding: EdgeInsets.all(8.0),

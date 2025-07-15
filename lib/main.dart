@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:mobile_pos_inventory/Model/batch_model.dart';
+import 'package:mobile_pos_inventory/Model/loose_stock.dart';
 import 'package:mobile_pos_inventory/Model/product_model.dart';
+import 'package:mobile_pos_inventory/Model/product_stock.dart';
+import 'package:mobile_pos_inventory/Model/stock_log.dart';
 import 'package:mobile_pos_inventory/Provider/AuthProvider.dart';
-import 'package:mobile_pos_inventory/Provider/BatchProvider.dart';
 import 'package:mobile_pos_inventory/Provider/CartProvider.dart';
 import 'package:mobile_pos_inventory/Provider/CurrencyProvider.dart';
 import 'package:mobile_pos_inventory/Provider/ProductProvider.dart';
@@ -24,7 +25,9 @@ Future<void> main() async {
 
   // Register Hive adapters
   Hive.registerAdapter(ProductAdapter());
-  Hive.registerAdapter(BatchAdapter());
+  Hive.registerAdapter(ProductStockAdapter());
+  Hive.registerAdapter(LooseStockAdapter());
+  Hive.registerAdapter(StockLogAdapter());
 
   final productBox = await Hive.openBox<Product>('products');
 
@@ -43,7 +46,6 @@ Future<void> main() async {
           ChangeNotifierProvider(create: (_) => AuthProvider()),
           ChangeNotifierProvider(create: (_) => ProductProvider(productBox)),
           Provider(create: (_) => ProductSyncProvider(productBox)),
-          ChangeNotifierProvider(create: (_) => BatchProvider(productBox)),
           ChangeNotifierProvider(create: (_) => StoreCategoryProvider()),
           ChangeNotifierProvider(create: (_) => SwitchProvider()),
           ChangeNotifierProvider(create: (_) => CurrencyProvider()),

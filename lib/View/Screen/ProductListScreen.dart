@@ -9,7 +9,6 @@ import 'package:mobile_pos_inventory/Provider/SwitchProvider.dart';
 import 'package:mobile_pos_inventory/View/Components/BouncingCartIcon.dart';
 import 'package:mobile_pos_inventory/View/Components/Custom/CustomButton.dart';
 import 'package:mobile_pos_inventory/View/Components/Modal/AddProductModal.dart';
-import 'package:mobile_pos_inventory/View/Components/Modal/ProductDetailModal.dart';
 import 'package:provider/provider.dart';
 import 'package:animate_do/animate_do.dart';
 
@@ -59,29 +58,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
               text: "Add Product",
               icon: LucideIcons.plus,
               onPressed: () {
-                showModalBottomSheet(
-                  context: context,
-                  isScrollControlled: true,
-                  shape: const RoundedRectangleBorder(
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-                  ),
-                  builder: (context) {
-                    return Padding(
-                      padding: EdgeInsets.only(
-                        bottom: MediaQuery.of(context).viewInsets.bottom,
-                      ),
-                      child: FractionallySizedBox(
-                        heightFactor: 0.8,
-                        child: GestureDetector(
-                          onTap: () => FocusScope.of(context).unfocus(),
-                          child: ProductModalForm(
-                            category: widget.category,
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                );
+
               },
             ),
           ),
@@ -216,7 +193,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
             return FadeInUp(
               duration: Duration(milliseconds: 300 + (index * 100)),
               child: GestureDetector(
-                onTap: () => ProductDetailModal.show(context, product),
+                onTap: () {},
                 child: Container(
                   decoration: BoxDecoration(
                     color: AppColor.primary.withOpacity(0.03),
@@ -293,7 +270,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                 ),
               ),
               trailing: const Icon(Icons.chevron_right, color: AppColor.textSecondary),
-              onTap: () => ProductDetailModal.show(context, product),
+              onTap: (){},
             ),
           ),
         );
