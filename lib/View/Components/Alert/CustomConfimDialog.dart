@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mobile_pos_inventory/View/Components/ResponsiveText.dart'; // ✅ Responsive text
+import 'package:mobile_stock_inventory/View/Components/ResponsiveText.dart'; // ✅ Responsive text
 
 class CustomConfirmDialog extends StatelessWidget {
   final String title;

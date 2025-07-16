@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:mobile_pos_inventory/Helper/AppColor.dart';
-import 'package:mobile_pos_inventory/View/Components/Custom/CustomButton.dart';
-import 'package:mobile_pos_inventory/View/Components/Custom/CustomTextField.dart';
-import 'package:mobile_pos_inventory/View/Components/ResponsiveText.dart';
+import 'package:mobile_stock_inventory/Helper/AppColor.dart';
+import 'package:mobile_stock_inventory/View/Components/Custom/CustomButton.dart';
+import 'package:mobile_stock_inventory/View/Components/Custom/CustomTextField.dart';
+import 'package:mobile_stock_inventory/View/Components/ResponsiveText.dart';
 
 class AuthFormWidget extends StatefulWidget {
   final void Function({

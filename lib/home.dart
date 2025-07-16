@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:mobile_pos_inventory/View/Screen/AuthScreen.dart';
+import 'package:mobile_stock_inventory/View/Screen/AuthScreen.dart';
 import 'package:provider/provider.dart';
-import 'package:mobile_pos_inventory/Provider/TabProvider.dart';
-import 'package:mobile_pos_inventory/View/Components/BottomNavigation.dart';
-import 'package:mobile_pos_inventory/View/Screen/DashBoardScreen.dart';    // <-- Example main screen
+import 'package:mobile_stock_inventory/Provider/TabProvider.dart';
+import 'package:mobile_stock_inventory/View/Components/BottomNavigation.dart';
+import 'package:mobile_stock_inventory/View/Screen/DashBoardScreen.dart';    // <-- Example main screen
 
 class Home extends StatefulWidget {
   const Home({super.key});

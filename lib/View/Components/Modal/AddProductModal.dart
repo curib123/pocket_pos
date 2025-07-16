@@ -2,11 +2,11 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:mobile_pos_inventory/View/Components/Custom/CustomFlatDropdown.dart';
-import 'package:mobile_pos_inventory/View/Components/Custom/CustomSearchField.dart';
-import 'package:mobile_pos_inventory/View/Components/Custom/CustomTextField.dart';
-import 'package:mobile_pos_inventory/Helper/AppColor.dart';
-import 'package:mobile_pos_inventory/Model/product_model.dart';
+import 'package:mobile_stock_inventory/View/Components/Custom/CustomFlatDropdown.dart';
+import 'package:mobile_stock_inventory/View/Components/Custom/CustomSearchField.dart';
+import 'package:mobile_stock_inventory/View/Components/Custom/CustomTextField.dart';
+import 'package:mobile_stock_inventory/Helper/AppColor.dart';
+import 'package:mobile_stock_inventory/Model/product_model.dart';
 
 class AddProductModal extends StatefulWidget {
   const AddProductModal({super.key});

@@ -1,6 +1,6 @@
 {
-    "name": "mobile_pos_inventory",
-    "short_name": "mobile_pos_inventory",
+    "name": "mobile_stock_inventory",
+    "short_name": "mobile_stock_inventory",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

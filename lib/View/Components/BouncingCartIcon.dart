@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:animate_do/animate_do.dart';
-import 'package:mobile_pos_inventory/Provider/CartProvider.dart';
+import 'package:mobile_stock_inventory/Provider/CartProvider.dart';
 import 'package:provider/provider.dart';
 
 class BouncingCartIcon extends StatelessWidget {

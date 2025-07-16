@@ -4,10 +4,10 @@ project(runner LANGUAGES CXX)
 
 # The name of the executable created for the application. Change this to change
 # the on-disk name of your application.
-set(BINARY_NAME "mobile_pos_inventory")
+set(BINARY_NAME "mobile_stock_inventory")
 # The unique GTK application identifier for this application. See:
 # https://wiki.gnome.org/HowDoI/ChooseApplicationID
-set(APPLICATION_ID "com.nexttech.mobile_pos_inventory.mobile_pos_inventory")
+set(APPLICATION_ID "com.nexttech.mobile_stock_inventory.mobile_stock_inventory")
 
 # Explicitly opt in to modern CMake behaviors to avoid warnings with recent
 # versions of CMake.

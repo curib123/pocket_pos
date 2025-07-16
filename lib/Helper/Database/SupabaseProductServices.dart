@@ -1,4 +1,4 @@
-import 'package:mobile_pos_inventory/Model/product_model.dart';
+import 'package:mobile_stock_inventory/Model/product_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SupabaseProductServices {

@@ -1,7 +1,7 @@
-import 'package:mobile_pos_inventory/Model/loose_stock.dart';
-import 'package:mobile_pos_inventory/Model/product_model.dart';
-import 'package:mobile_pos_inventory/Model/product_stock.dart';
-import 'package:mobile_pos_inventory/Model/stock_log.dart';
+import 'package:mobile_stock_inventory/Model/loose_stock.dart';
+import 'package:mobile_stock_inventory/Model/product_model.dart';
+import 'package:mobile_stock_inventory/Model/product_stock.dart';
+import 'package:mobile_stock_inventory/Model/stock_log.dart';
 
 final sampleProduct = Product(
   id: 'prod001',

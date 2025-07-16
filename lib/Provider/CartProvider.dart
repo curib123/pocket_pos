@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:mobile_pos_inventory/Model/product_model.dart';
-import 'package:mobile_pos_inventory/View/Components/SnackbarService.dart';
+import 'package:mobile_stock_inventory/Model/product_model.dart';
+import 'package:mobile_stock_inventory/View/Components/SnackbarService.dart';
 
 class CartProvider with ChangeNotifier {
   final List<Product> _cart = [];

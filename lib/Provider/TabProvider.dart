@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:mobile_pos_inventory/View/Screen/DashBoardScreen.dart';
-import 'package:mobile_pos_inventory/View/Screen/ProductScreen.dart';
+import 'package:mobile_stock_inventory/View/Screen/DashBoardScreen.dart';
+import 'package:mobile_stock_inventory/View/Screen/ProductScreen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class TabProvider extends ChangeNotifier {

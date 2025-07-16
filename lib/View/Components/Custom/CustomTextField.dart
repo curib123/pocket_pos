@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:mobile_pos_inventory/Helper/AppColor.dart';
-import 'package:mobile_pos_inventory/View/Components/ResponsiveText.dart';
+import 'package:mobile_stock_inventory/Helper/AppColor.dart';
+import 'package:mobile_stock_inventory/View/Components/ResponsiveText.dart';
 
 class CustomTextField extends StatelessWidget {
   final String label;

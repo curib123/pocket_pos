@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mobile_pos_inventory/View/Components/BouncingCartIcon.dart';
+import 'package:mobile_stock_inventory/View/Components/BouncingCartIcon.dart';
 
 class SearchAndCartAppBar extends StatelessWidget implements PreferredSizeWidget {
   const SearchAndCartAppBar({super.key});

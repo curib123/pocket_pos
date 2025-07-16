@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import 'package:mobile_pos_inventory/Helper/AppColor.dart';
-import 'package:mobile_pos_inventory/Provider/ProductProvider.dart';
-import 'package:mobile_pos_inventory/Provider/SwitchProvider.dart';
-import 'package:mobile_pos_inventory/Provider/StoreCategoryProvider.dart';
-import 'package:mobile_pos_inventory/View/Components/Custom/CustomButton.dart';
-import 'package:mobile_pos_inventory/View/Components/SearchAndCartRow.dart';
-import 'package:mobile_pos_inventory/View/Screen/ProductListScreen.dart';
-import 'package:mobile_pos_inventory/View/Screen/ProductScreenWidget/CategoryGrid.dart';
-import 'package:mobile_pos_inventory/View/Screen/ProductScreenWidget/CategoryList.dart';
+import 'package:mobile_stock_inventory/Helper/AppColor.dart';
+import 'package:mobile_stock_inventory/Provider/ProductProvider.dart';
+import 'package:mobile_stock_inventory/Provider/SwitchProvider.dart';
+import 'package:mobile_stock_inventory/Provider/StoreCategoryProvider.dart';
+import 'package:mobile_stock_inventory/View/Components/Custom/CustomButton.dart';
+import 'package:mobile_stock_inventory/View/Components/SearchAndCartRow.dart';
+import 'package:mobile_stock_inventory/View/Screen/ProductListScreen.dart';
+import 'package:mobile_stock_inventory/View/Screen/ProductScreenWidget/CategoryGrid.dart';
+import 'package:mobile_stock_inventory/View/Screen/ProductScreenWidget/CategoryList.dart';
 import 'package:provider/provider.dart';
 import 'package:animate_do/animate_do.dart';
 

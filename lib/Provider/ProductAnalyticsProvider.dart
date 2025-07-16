@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
-import 'package:mobile_pos_inventory/Model/product_analytics.dart';
-import 'package:mobile_pos_inventory/Model/product_model.dart';
-import 'package:mobile_pos_inventory/Model/stock_log.dart';
-import 'package:mobile_pos_inventory/View/Components/SnackbarService.dart';
+import 'package:mobile_stock_inventory/Model/product_analytics.dart';
+import 'package:mobile_stock_inventory/Model/product_model.dart';
+import 'package:mobile_stock_inventory/Model/stock_log.dart';
+import 'package:mobile_stock_inventory/View/Components/SnackbarService.dart';
 
 enum DateFilterType { day, week, month, year }
 
