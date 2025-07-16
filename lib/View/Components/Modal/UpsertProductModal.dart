@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
 import 'package:mobile_stock_inventory/Helper/ProductUnits.dart';
 import 'package:mobile_stock_inventory/Model/product_model.dart';
 import 'package:mobile_stock_inventory/Model/product_stock.dart';
@@ -148,6 +149,11 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
     }
   }
 
+  String get unitType {
+    if (_isSoldByPack) return 'pack';
+    if (_isSoldByPiece) return 'piece';
+    return 'unit';
+  }
 
   Future<void> _openAddVariantDialog() async {
     final Product? newVariant = await showModalBottomSheet<Product>(
@@ -503,7 +509,6 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
                             ),
                           ),
 
-                          const SizedBox(height: 10),
                           ..._stock.map(
                                 (stock) => Container(
                                   margin: const EdgeInsets.symmetric(vertical: 6),
@@ -519,24 +524,6 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
                                   child: Row(
                                     crossAxisAlignment: CrossAxisAlignment.center,
                                     children: [
-                                      // 📦 Icon
-                                      Container(
-                                        padding: const EdgeInsets.all(6),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white,
-                                          shape: BoxShape.circle,
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: Colors.black.withOpacity(0.04),
-                                              blurRadius: 3,
-                                              offset: const Offset(0, 1),
-                                            ),
-                                          ],
-                                        ),
-                                        child: const Icon(Icons.inventory_2_outlined, size: 20, color: Colors.black54),
-                                      ),
-                                      const SizedBox(width: 12),
-
                                       // 📊 Stock Details
                                       Expanded(
                                         child: Column(
@@ -551,16 +538,25 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
                                             ),
                                             const SizedBox(height: 4),
                                             Text(
-                                              "Cost: ${currencyProvider.currencyFormat.format(stock.costPrice)} • "
-                                                  "Retail: ${currencyProvider.currencyFormat.format(stock.retailPrice)}",
+                                              "Cost: ${currencyProvider.currencyFormat.format(stock.costPrice)} | $unitType \n "
+                                                  "Retail: ${currencyProvider.currencyFormat.format(stock.retailPrice)} | $unitType",
                                               style: TextStyle(
                                                 fontSize: 12,
                                                 color: Colors.grey.shade600,
                                               ),
                                             ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              "Date Added: ${DateFormat('MMM dd, yyyy').format(stock.lastModified)}",
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.grey.shade500,
+                                              ),
+                                            ),
                                           ],
                                         ),
                                       ),
+
                                       const SizedBox(width: 8),
 
                                       // ✏️ Edit & Delete Buttons
@@ -709,54 +705,58 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
                         ),
                         const SizedBox(height: 16),
                       ],
-                      Row(
-                        children: [
-                          Expanded(
-                            child: CustomButton(
-                              icon: Icons.check_circle_outline,
-                              text: _isSubmitting
-                                  ? (widget.existingProduct != null
-                                  ? "Saving..."
-                                  : "Adding...")
-                                  : (widget.existingProduct != null
-                                  ? (widget.isVariant ? "Update " : "Update ")
-                                  : (widget.isVariant ? "Add " : "Add ")),
-                              isDisabled: _isSubmitting,
-                              onPressed: () async {
-                                if (_nameController.text.trim().isEmpty) {
-                                  showDialog(
-                                    context: context,
-                                    builder: (context) => CustomNotificationDialog(
-                                      title: "Missing Product Name",
-                                      content: "Please enter a name for this product.",
-                                      onConfirm: () => Navigator.pop(context),
-                                    ),
+                      const SizedBox(height: 10,),
+                      Align(
+                        alignment: Alignment.bottomCenter,
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: CustomButton(
+                                icon: Icons.check_circle_outline,
+                                text: _isSubmitting
+                                    ? (widget.existingProduct != null
+                                    ? "Saving..."
+                                    : "Adding...")
+                                    : (widget.existingProduct != null
+                                    ? (widget.isVariant ? "Update " : "Update ")
+                                    : (widget.isVariant ? "Add " : "Add ")),
+                                isDisabled: _isSubmitting,
+                                onPressed: () async {
+                                  if (_nameController.text.trim().isEmpty) {
+                                    showDialog(
+                                      context: context,
+                                      builder: (context) => CustomNotificationDialog(
+                                        title: "Missing Product Name",
+                                        content: "Please enter a name for this product.",
+                                        onConfirm: () => Navigator.pop(context),
+                                      ),
+                                    );
+                                    return;
+                                  }
+
+                                  setState(() => _isSubmitting = true);
+                                  await Future.delayed(const Duration(milliseconds: 300));
+                                  _submitProduct(
+                                    productProvider,
+                                    variantProductProvider,
+                                    looseStockProvider,
+                                    productStockProvider,
                                   );
-                                  return;
-                                }
-
-                                setState(() => _isSubmitting = true);
-                                await Future.delayed(const Duration(milliseconds: 300));
-                                _submitProduct(
-                                  productProvider,
-                                  variantProductProvider,
-                                  looseStockProvider,
-                                  productStockProvider,
-                                );
-                              },
+                                },
+                              ),
                             ),
-                          ),
-                          SizedBox(width: 10,),
-                          Expanded(
-                            child: CustomButton(
-                              isFilled: false,
-                              icon: Icons.cancel_rounded,
-                              text: "Cancel",
-                              onPressed: () => Navigator.pop(context),
+                            SizedBox(width: 10,),
+                            Expanded(
+                              child: CustomButton(
+                                isFilled: false,
+                                icon: Icons.cancel_rounded,
+                                text: "Cancel",
+                                onPressed: () => Navigator.pop(context),
+                              ),
                             ),
-                          ),
 
-                        ],
+                          ],
+                        ),
                       ),
 
                     ],
