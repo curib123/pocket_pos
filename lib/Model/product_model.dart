@@ -56,6 +56,21 @@ class Product extends HiveObject {
   @HiveField(15)
   final List<Product> variants;
 
+  // 🧠 Total Quantity Computation
+  int get totalQuantity {
+    final packQty = stocks.fold<int>(0, (sum, stock) => sum + stock.quantity);
+    final looseQty = looseStock?.remainingPieces ?? 0;
+    return packQty + looseQty;
+  }
+
+  int get totalPackQuantityByPiece {
+    final packQty = stocks.fold<int>(0, (sum, stock) => sum + stock.quantity);
+    final looseQty = looseStock?.remainingPieces ?? 0;
+    final perPack = piecesPerPack ?? 1;
+    return (packQty * perPack) + looseQty;
+  }
+
+
   Product({
     required this.id,
     required this.name,

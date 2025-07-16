@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:mobile_stock_inventory/Helper/AppColor.dart';
+import 'package:mobile_stock_inventory/Model/product_model.dart';
 import 'package:mobile_stock_inventory/Provider/CurrencyProvider.dart';
 import 'package:mobile_stock_inventory/Provider/ProductProvider.dart';
 import 'package:mobile_stock_inventory/Provider/SwitchProvider.dart';
@@ -201,59 +202,115 @@ class _ProductListScreenState extends State<ProductListScreen> {
       ),
     );
   }
-// your existing imports remain unchanged
 
-  Widget _buildGridView(List products, currencyFormat, SwitchProvider switchProvider) {
+  Widget _buildGridView(List<Product> products, currencyFormat, SwitchProvider switchProvider) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        int crossAxisCount = (constraints.maxWidth ~/ 180).clamp(2, 6);
+        int crossAxisCount = (constraints.maxWidth ~/ 160).clamp(2, 6);
+        double imageHeight = constraints.maxWidth < 500 ? 80 : 100;
+        double fontSize = constraints.maxWidth < 500 ? 13 : 14;
+        double priceFontSize = constraints.maxWidth < 500 ? 13 : 14.5;
+
         return GridView.builder(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: crossAxisCount,
             crossAxisSpacing: 10,
             mainAxisSpacing: 10,
-            childAspectRatio: 0.8,
+            childAspectRatio: 0.72,
           ),
           itemCount: products.length,
           itemBuilder: (context, index) {
             final product = products[index];
-            final imageUrl = product.imageUrl;
-            final isPack = product.isPack;
-            final unit = isPack ? product.unit : 'pcs';
-            final price = isPack
-                ? product.packItemsRetail
-                : (product.packItems > 0 ? product.packItemsRetail / product.packItems : 0);
+            final imageUrl = product.imagePath ?? '';
+            final isPack = product.isSoldByPack;
+            final isPiece = product.isSoldByPiece;
+            final unit = isPack ? (product.unit ?? 'pack') : 'pcs';
+            final price = product.stocks.isNotEmpty
+                ? product.stocks.first.retailPrice
+                : 0;
 
             return FadeInUp(
-              duration: Duration(milliseconds: 300 + (index * 100)),
+              duration: Duration(milliseconds: 250 + (index * 60)),
               child: GestureDetector(
                 onTap: () {},
                 child: Container(
                   decoration: BoxDecoration(
-                    color: AppColor.primary.withOpacity(0.03),
+                    color: AppColor.primary.withOpacity(0.035),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   padding: const EdgeInsets.all(10),
                   child: Column(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       ClipRRect(
                         borderRadius: BorderRadius.circular(8),
                         child: imageUrl.isNotEmpty && File(imageUrl).existsSync()
-                            ? Image.file(File(imageUrl), width: double.infinity, height: 90, fit: BoxFit.cover)
+                            ? Image.file(
+                          File(imageUrl),
+                          width: double.infinity,
+                          height: imageHeight,
+                          fit: BoxFit.cover,
+                        )
                             : _placeholderIcon(AppColor.primary, switchProvider),
                       ),
-                      const SizedBox(height: 8),
-                      Expanded(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.end,
+                      const SizedBox(height: 15),
+
+                      // Tags
+                      if (isPack || isPiece) ...[
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: -4,
+                          alignment: WrapAlignment.center,
                           children: [
-                            Text(product.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: AppColor.textPrimary), overflow: TextOverflow.ellipsis, textAlign: TextAlign.center),
-                            const SizedBox(height: 4),
-                            Text('Stocks: ${product.totalQuantity}', style: const TextStyle(fontSize: 12, color: AppColor.textSecondary), textAlign: TextAlign.center),
-                            Text('Price: ${currencyFormat.format(price)} | $unit', style: const TextStyle(fontSize: 12, color: Colors.green), textAlign: TextAlign.center),
+                            if (isPack) _buildTag('Pack'),
+                            if (isPiece) _buildTag('Piece'),
                           ],
+                        ),
+                        const SizedBox(height: 6),
+                      ],
+
+                      // Name
+                      Text(
+                        product.name,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: fontSize,
+                          color: AppColor.textPrimary,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                      ),
+
+                      const SizedBox(height: 4),
+
+                      // Stock
+                      Text(
+                        'Stocks: ${product.totalQuantity}',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: AppColor.textSecondary,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+
+                      const SizedBox(height: 5),
+
+                      // Price badge
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.green.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          '${currencyFormat.format(price)} | $unit',
+                          style: TextStyle(
+                            fontSize: priceFontSize,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.green.shade700,
+                          ),
                         ),
                       ),
                     ],
@@ -267,45 +324,119 @@ class _ProductListScreenState extends State<ProductListScreen> {
     );
   }
 
-  Widget _buildListView(List products, currencyFormat, SwitchProvider switchProvider) {
+
+  Widget _buildListView(List<Product> products, currencyFormat, SwitchProvider switchProvider) {
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       itemCount: products.length,
       itemBuilder: (context, index) {
         final product = products[index];
-        final imageUrl = product.imageUrl;
-        final isPack = product.isPack;
-        final unit = isPack ? product.unit : 'pcs';
-        final price = isPack
-            ? product.packItemsRetail
-            : (product.packItems > 0 ? product.packItemsRetail / product.packItems : 0);
+        final imageUrl = product.imagePath ?? '';
+        final isPack = product.isSoldByPack;
+        final isPiece = product.isSoldByPiece;
+        final unit = product.unit ?? "unit" ;
+        final price = product.stocks.isNotEmpty
+            ? product.stocks.first.retailPrice
+            : 0;
 
         return FadeInUp(
-          duration: Duration(milliseconds: 300 + (index * 100)),
+          duration: Duration(milliseconds: 200 + (index * 60)),
           child: Container(
             margin: const EdgeInsets.symmetric(vertical: 5),
             child: ListTile(
-              tileColor: AppColor.accent.withOpacity(0.05),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
+              tileColor: AppColor.accent.withOpacity(0.04),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               leading: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(6),
                 child: imageUrl.isNotEmpty && File(imageUrl).existsSync()
-                    ? Image.file(File(imageUrl), width: 48, height: 48, fit: BoxFit.cover)
+                    ? Image.file(
+                  File(imageUrl),
+                  width: 60,
+                  height: 100,
+                  fit: BoxFit.cover,
+                )
                     : _placeholderIcon(AppColor.accent, switchProvider),
               ),
-              title: Text(product.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: AppColor.textPrimary)),
+              title: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    product.name,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                      color: AppColor.textPrimary,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
+                  // Selling Type Tags
+                  if (isPack || isPiece) ...[
+                    const SizedBox(height: 4),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: -4,
+                      children: [
+                        if (isPack) _buildTag('Pack'),
+                        if (isPiece) _buildTag('Piece'),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
               subtitle: Padding(
-                padding: const EdgeInsets.only(top: 4),
+                padding: const EdgeInsets.only(top: 3),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Stocks: ${product.totalQuantity}', style: const TextStyle(fontSize: 13, color: AppColor.textSecondary)),
-                    Text('Price: ${currencyFormat.format(price)} | $unit', style: const TextStyle(fontSize: 13, color: Colors.green)),
+                    // Price + unit
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.green.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            currencyFormat.format(price),
+                            style: const TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.green,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          '| $unit',
+                          style: const TextStyle(
+                            fontSize: 12.5,
+                            color: AppColor.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 3),
+                    // Stock Info
+                    Text(
+                      'Stocks: ${product.totalQuantity}',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: AppColor.textSecondary,
+                      ),
+                    ),
                   ],
                 ),
               ),
-              trailing: const Icon(Icons.chevron_right, color: AppColor.textSecondary),
-              onTap: (){},
+              trailing: const Icon(
+                Icons.chevron_right,
+                color: AppColor.textSecondary,
+                size: 40,
+              ),
+              onTap: () {},
             ),
           ),
         );
@@ -314,10 +445,12 @@ class _ProductListScreenState extends State<ProductListScreen> {
   }
 
 
+
+
   Widget _placeholderIcon(Color color, SwitchProvider switchProvider) {
     return Container(
       width: switchProvider.isProductGridView ? double.infinity : 90,
-      height: 90,
+      height: 100,
       decoration: BoxDecoration(
         color: color.withOpacity(0.06),
         borderRadius: BorderRadius.circular(8),
@@ -325,4 +458,22 @@ class _ProductListScreenState extends State<ProductListScreen> {
       child: Icon(Icons.image_not_supported, color: color),
     );
   }
+}
+
+Widget _buildTag(String label) {
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+    decoration: BoxDecoration(
+      color: AppColor.primary.withOpacity(0.1),
+      borderRadius: BorderRadius.circular(6),
+    ),
+    child: Text(
+      label,
+      style: const TextStyle(
+        fontSize: 11,
+        fontWeight: FontWeight.w500,
+        color: AppColor.primary,
+      ),
+    ),
+  );
 }
