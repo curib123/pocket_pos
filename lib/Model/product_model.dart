@@ -49,6 +49,13 @@ class Product extends HiveObject {
   @HiveField(13)
   final List<StockLog> logs;
 
+
+  @HiveField(14)
+  final bool hasVariant;
+
+  @HiveField(15)
+  final List<Product> variants;
+
   Product({
     required this.id,
     required this.name,
@@ -64,10 +71,11 @@ class Product extends HiveObject {
     this.stocks = const [],
     this.looseStock,
     this.logs = const [],
+    this.hasVariant = false,
+    this.variants = const [], // 👈 default empty
   })  : createdAt = createdAt ?? DateTime.now(),
         lastModified = lastModified ?? DateTime.now();
 
-  // ✅ toMap()
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -84,10 +92,11 @@ class Product extends HiveObject {
       'stocks': stocks.map((s) => s.toMap()).toList(),
       'looseStock': looseStock?.toMap(),
       'logs': logs.map((l) => l.toMap()).toList(),
+      'hasVariant': hasVariant,
+      'variants': variants.map((v) => v.toMap()).toList(), // 🆕
     };
   }
 
-  // ✅ fromMap()
   factory Product.fromMap(Map<String, dynamic> map) {
     return Product(
       id: map['id'],
@@ -104,10 +113,11 @@ class Product extends HiveObject {
       stocks: (map['stocks'] as List?)?.map((s) => ProductStock.fromMap(s)).toList() ?? [],
       looseStock: map['looseStock'] != null ? LooseStock.fromMap(map['looseStock']) : null,
       logs: (map['logs'] as List?)?.map((l) => StockLog.fromMap(l)).toList() ?? [],
+      variants: (map['variants'] as List?)?.map((v) => Product.fromMap(v)).toList() ?? [],
+      hasVariant: map['hasVariant'] ?? false,
     );
   }
 
-  // ✅ copyWith()
   Product copyWith({
     String? id,
     String? name,
@@ -123,6 +133,8 @@ class Product extends HiveObject {
     List<ProductStock>? stocks,
     LooseStock? looseStock,
     List<StockLog>? logs,
+    List<Product>? variants,
+    bool? hasVariant,
   }) {
     return Product(
       id: id ?? this.id,
@@ -139,6 +151,9 @@ class Product extends HiveObject {
       stocks: stocks ?? this.stocks,
       looseStock: looseStock ?? this.looseStock,
       logs: logs ?? this.logs,
+      variants: variants ?? this.variants,
+      hasVariant: hasVariant ?? this.hasVariant,
     );
   }
 }
+

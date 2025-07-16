@@ -24,13 +24,14 @@ class ProductStockAdapter extends TypeAdapter<ProductStock> {
       dateReceived: fields[4] as DateTime,
       lastModified: fields[5] as DateTime?,
       deletedAt: fields[6] as DateTime?,
+      retailPrice: fields[7] as double,
     );
   }
 
   @override
   void write(BinaryWriter writer, ProductStock obj) {
     writer
-      ..writeByte(7)
+      ..writeByte(8)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -44,7 +45,9 @@ class ProductStockAdapter extends TypeAdapter<ProductStock> {
       ..writeByte(5)
       ..write(obj.lastModified)
       ..writeByte(6)
-      ..write(obj.deletedAt);
+      ..write(obj.deletedAt)
+      ..writeByte(7)
+      ..write(obj.retailPrice);
   }
 
   @override

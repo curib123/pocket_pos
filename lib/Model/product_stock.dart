@@ -25,6 +25,9 @@ class ProductStock extends HiveObject {
   @HiveField(6)
   final DateTime? deletedAt;
 
+  @HiveField(7) // 👈 new field
+  final double retailPrice;
+
   ProductStock({
     required this.id,
     required this.productId,
@@ -33,6 +36,7 @@ class ProductStock extends HiveObject {
     required this.dateReceived,
     DateTime? lastModified,
     this.deletedAt,
+    required this.retailPrice, // 👈 required for consistency
   }) : lastModified = lastModified ?? DateTime.now();
 
   // ✅ toMap
@@ -42,6 +46,7 @@ class ProductStock extends HiveObject {
       'productId': productId,
       'quantity': quantity,
       'costPrice': costPrice,
+      'retailPrice': retailPrice,
       'dateReceived': dateReceived.toIso8601String(),
       'lastModified': lastModified.toIso8601String(),
       'deletedAt': deletedAt?.toIso8601String(),
@@ -55,10 +60,10 @@ class ProductStock extends HiveObject {
       productId: map['productId'],
       quantity: map['quantity'],
       costPrice: map['costPrice'],
+      retailPrice: map['retailPrice'] ?? 0.0, // 👈 fallback to 0.0 if missing
       dateReceived: DateTime.parse(map['dateReceived']),
       lastModified: DateTime.parse(map['lastModified']),
-      deletedAt:
-      map['deletedAt'] != null ? DateTime.parse(map['deletedAt']) : null,
+      deletedAt: map['deletedAt'] != null ? DateTime.parse(map['deletedAt']) : null,
     );
   }
 
@@ -68,6 +73,7 @@ class ProductStock extends HiveObject {
     String? productId,
     int? quantity,
     double? costPrice,
+    double? retailPrice,
     DateTime? dateReceived,
     DateTime? lastModified,
     DateTime? deletedAt,
@@ -77,6 +83,7 @@ class ProductStock extends HiveObject {
       productId: productId ?? this.productId,
       quantity: quantity ?? this.quantity,
       costPrice: costPrice ?? this.costPrice,
+      retailPrice: retailPrice ?? this.retailPrice,
       dateReceived: dateReceived ?? this.dateReceived,
       lastModified: lastModified ?? this.lastModified,
       deletedAt: deletedAt ?? this.deletedAt,
