@@ -29,51 +29,34 @@ class LooseStockProvider extends ChangeNotifier {
     return product?.looseStock;
   }
 
-  /// ➕ Initialize loose stock if it doesn't exist
-  Future<void> createLooseStock(String idOrName, {int initialPieces = 0}) async {
+  /// 🔄 Add or update loose stock
+  Future<void> upsertLooseStock(String idOrName, int quantity) async {
     final product = _getProduct(idOrName);
     if (product == null) return;
 
-    if (product.looseStock != null) {
-      SnackbarService.showWarning("⚠️ Loose stock already exists.");
-      return;
-    }
+    final now = DateTime.now();
 
     final newLoose = LooseStock(
       productId: product.id,
-      remainingPieces: initialPieces,
+      remainingPieces: quantity,
+      lastModified: now,
     );
 
     final updatedProduct = product.copyWith(
       looseStock: newLoose,
-      lastModified: DateTime.now(),
+      lastModified: now,
     );
 
     await _productBox.put(product.id, updatedProduct);
     notifyListeners();
-    SnackbarService.showSuccess("✅ Loose stock initialized.");
+
+    final msg = product.looseStock == null
+        ? "✅ Loose stock created with $quantity piece(s)."
+        : "✅ Loose stock updated to $quantity piece(s).";
+
+    SnackbarService.showSuccess(msg);
   }
 
-  /// ➕ Add sticks
-  Future<void> addLoosePieces(String idOrName, int qty) async {
-    final product = _getProduct(idOrName);
-    if (product == null || product.looseStock == null) return;
-
-    final loose = product.looseStock!;
-    final updated = loose.copyWith(
-      remainingPieces: loose.remainingPieces + qty,
-      lastModified: DateTime.now(),
-    );
-
-    final updatedProduct = product.copyWith(
-      looseStock: updated,
-      lastModified: DateTime.now(),
-    );
-
-    await _productBox.put(product.id, updatedProduct);
-    notifyListeners();
-    SnackbarService.showSuccess("✅ Added $qty loose piece(s).");
-  }
 
   /// ➖ Remove sticks
   Future<void> deductLoosePieces(String idOrName, int qty) async {

@@ -8,7 +8,7 @@ import 'package:mobile_stock_inventory/Provider/ProductProvider.dart';
 import 'package:mobile_stock_inventory/Provider/SwitchProvider.dart';
 import 'package:mobile_stock_inventory/View/Components/BouncingCartIcon.dart';
 import 'package:mobile_stock_inventory/View/Components/Custom/CustomButton.dart';
-import 'package:mobile_stock_inventory/View/Components/Modal/AddProductModal.dart';
+import 'package:mobile_stock_inventory/View/Components/Modal/UpsertProductModal.dart';
 import 'package:provider/provider.dart';
 import 'package:animate_do/animate_do.dart';
 
@@ -58,6 +58,41 @@ class _ProductListScreenState extends State<ProductListScreen> {
               text: "Add Product",
               icon: LucideIcons.plus,
               onPressed: () {
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+                  ),
+                  builder: (context) {
+                    return DraggableScrollableSheet(
+                      expand: false,
+                      maxChildSize: 0.95,
+                      initialChildSize: 0.9,
+                      minChildSize: 0.6,
+                      builder: (_, controller) => Padding(
+                        padding: EdgeInsets.only(
+                          bottom: MediaQuery.of(context).viewInsets.bottom,
+                        ),
+                        child: Material(
+                          borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
+                          color: Colors.white,
+                          child: SafeArea(
+                            top: false,
+                            child: SingleChildScrollView(
+                              controller: controller,
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                              child: UpsertProductModal(Category: widget.category,), // put your form here
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                );
+
+
 
               },
             ),

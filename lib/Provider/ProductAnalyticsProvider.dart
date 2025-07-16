@@ -43,8 +43,9 @@ class ProductAnalyticsProvider extends ChangeNotifier {
 
     for (final log in logs) {
       final qty = log.quantity;
+
       switch (log.reason) {
-        case StockOutType.sold:
+        case StockLogReason.sold:
           timesSold++;
           if (log.isPiece) {
             soldPieces += qty;
@@ -54,23 +55,26 @@ class ProductAnalyticsProvider extends ChangeNotifier {
           totalRevenue += latestRetail * qty;
           totalCost += avgCost * qty;
           break;
-        case StockOutType.expired:
+        case StockLogReason.expired:
           expired += qty;
           break;
-        case StockOutType.damaged:
+        case StockLogReason.damaged:
           damaged += qty;
           break;
-        case StockOutType.donated:
+        case StockLogReason.donated:
           donated += qty;
           break;
-        case StockOutType.borrowed:
+        case StockLogReason.borrowed:
           borrowed += qty;
+          break;
+        case StockLogReason.added:
+        case StockLogReason.restocked:
+        // Do nothing – inbound logs
           break;
       }
     }
 
-    final totalUnitsSold =
-        (soldPacks * (product.piecesPerPack ?? 1)) + soldPieces;
+    final totalUnitsSold = (soldPacks * (product.piecesPerPack ?? 1)) + soldPieces;
     final totalProfit = totalRevenue - totalCost;
 
     final analytics = ProductAnalytics(

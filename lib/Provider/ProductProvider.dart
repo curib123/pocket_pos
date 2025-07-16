@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:mobile_stock_inventory/Model/product_model.dart';
+import 'package:mobile_stock_inventory/Model/stock_log.dart';
 import 'package:mobile_stock_inventory/View/Components/SnackbarService.dart';
 
 class ProductProvider extends ChangeNotifier {
@@ -62,7 +63,47 @@ class ProductProvider extends ChangeNotifier {
         return;
       }
 
-      final newProduct = product.copyWith(lastModified: DateTime.now());
+      // 🔁 Prepare logs if initial stock exists
+      final List<StockLog> logs = [];
+
+      // ➕ Log initial pack stocks
+      if (product.stocks.isNotEmpty) {
+        for (final stock in product.stocks) {
+          if (stock.quantity > 0) {
+            logs.add(
+              StockLog(
+                id: 'log-${stock.id}',
+                productId: product.id,
+                quantity: stock.quantity,
+                isPiece: false,
+                reason: StockLogReason.added,
+                remarks: 'Initial stock (pack)',
+              ),
+            );
+          }
+        }
+      }
+
+      // ➕ Log initial loose pieces
+      if (product.looseStock?.remainingPieces != null &&
+          product.looseStock!.remainingPieces > 0) {
+        logs.add(
+          StockLog(
+            id: 'log-${product.id}-loose',
+            productId: product.id,
+            quantity: product.looseStock!.remainingPieces,
+            isPiece: true,
+            reason: StockLogReason.added,
+            remarks: 'Initial stock (loose)',
+          ),
+        );
+      }
+
+      final newProduct = product.copyWith(
+        lastModified: DateTime.now(),
+        logs: [...product.logs, ...logs],
+      );
+
       await _productBox.put(newProduct.id, newProduct);
       _products.add(newProduct);
       notifyListeners();

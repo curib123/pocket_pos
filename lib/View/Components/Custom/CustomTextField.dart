@@ -77,11 +77,12 @@ class CustomTextField extends StatelessWidget {
         borderSide: BorderSide(color: Colors.red.shade600, width: 1.8),
       ),
       prefixIcon: prefixIcon,
+      prefixIconColor: AppColor.accent,
       suffixIcon: obscure
           ? IconButton(
         icon: Icon(
           isObscure ? Icons.visibility_off : Icons.visibility,
-          color: AppColor.textSecondary,
+          color: AppColor.accent,
         ),
         onPressed: toggleObscure,
       )

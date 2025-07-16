@@ -21,7 +21,7 @@ class StockLogAdapter extends TypeAdapter<StockLog> {
       productId: fields[1] as String,
       quantity: fields[2] as int,
       isPiece: fields[3] as bool,
-      reason: fields[4] as StockOutType,
+      reason: fields[4] as StockLogReason,
       remarks: fields[5] as String?,
       dateLogged: fields[6] as DateTime?,
       lastModified: fields[7] as DateTime?,
@@ -64,45 +64,55 @@ class StockLogAdapter extends TypeAdapter<StockLog> {
           typeId == other.typeId;
 }
 
-class StockOutTypeAdapter extends TypeAdapter<StockOutType> {
+class StockLogReasonAdapter extends TypeAdapter<StockLogReason> {
   @override
   final int typeId = 3;
 
   @override
-  StockOutType read(BinaryReader reader) {
+  StockLogReason read(BinaryReader reader) {
     switch (reader.readByte()) {
       case 0:
-        return StockOutType.sold;
+        return StockLogReason.sold;
       case 1:
-        return StockOutType.expired;
+        return StockLogReason.expired;
       case 2:
-        return StockOutType.damaged;
+        return StockLogReason.damaged;
       case 3:
-        return StockOutType.donated;
+        return StockLogReason.donated;
       case 4:
-        return StockOutType.borrowed;
+        return StockLogReason.borrowed;
+      case 5:
+        return StockLogReason.added;
+      case 6:
+        return StockLogReason.restocked;
       default:
-        return StockOutType.sold;
+        return StockLogReason.sold;
     }
   }
 
   @override
-  void write(BinaryWriter writer, StockOutType obj) {
+  void write(BinaryWriter writer, StockLogReason obj) {
     switch (obj) {
-      case StockOutType.sold:
+      case StockLogReason.sold:
         writer.writeByte(0);
         break;
-      case StockOutType.expired:
+      case StockLogReason.expired:
         writer.writeByte(1);
         break;
-      case StockOutType.damaged:
+      case StockLogReason.damaged:
         writer.writeByte(2);
         break;
-      case StockOutType.donated:
+      case StockLogReason.donated:
         writer.writeByte(3);
         break;
-      case StockOutType.borrowed:
+      case StockLogReason.borrowed:
         writer.writeByte(4);
+        break;
+      case StockLogReason.added:
+        writer.writeByte(5);
+        break;
+      case StockLogReason.restocked:
+        writer.writeByte(6);
         break;
     }
   }
@@ -113,7 +123,7 @@ class StockOutTypeAdapter extends TypeAdapter<StockOutType> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is StockOutTypeAdapter &&
+      other is StockLogReasonAdapter &&
           runtimeType == other.runtimeType &&
           typeId == other.typeId;
 }

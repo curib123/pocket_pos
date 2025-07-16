@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
+import 'package:mobile_stock_inventory/Model/loose_stock.dart';
 import 'package:mobile_stock_inventory/Model/product_model.dart';
 import 'package:mobile_stock_inventory/Model/product_stock.dart';
 import 'package:mobile_stock_inventory/Model/stock_log.dart';
@@ -65,7 +66,7 @@ class ProductStockProvider extends ChangeNotifier {
       productId: product.id,
       quantity: packs,
       isPiece: false,
-      reason: StockOutType.sold,
+      reason: StockLogReason.sold,
       remarks: 'Sold $packs pack(s)',
     );
 
@@ -104,7 +105,7 @@ class ProductStockProvider extends ChangeNotifier {
       productId: product.id,
       quantity: qty,
       isPiece: true,
-      reason: StockOutType.sold,
+      reason: StockLogReason.sold,
       remarks: 'Sold $qty piece(s)',
     );
 
@@ -125,8 +126,7 @@ class ProductStockProvider extends ChangeNotifier {
     return product?.stocks.reversed.toList() ?? [];
   }
 
-  /// ➕ Add new stock entry
-  Future<void> addStock(String idOrName, ProductStock newStock) async {
+  Future<void> upsertStock(String idOrName, ProductStock newStock) async {
     try {
       final product = _getProduct(idOrName);
       if (product == null) {
@@ -134,20 +134,110 @@ class ProductStockProvider extends ChangeNotifier {
         return;
       }
 
-      final updated = product.copyWith(
-        stocks: [...product.stocks, newStock],
-        lastModified: DateTime.now(),
-      );
+      final now = DateTime.now();
 
-      await _productBox.put(updated.id, updated);
-      notifyListeners();
-      SnackbarService.showSuccess("✅ Stock added.");
+      // Check if this stock already exists by id in product.stocks
+      final existingIndex = product.stocks.indexWhere((s) => s.id == newStock.id);
+
+      // Calculate addedPieces only if new stock quantity increases the pack count or it's a new stock
+      int addedPieces = 0;
+      ProductStock? updatedStock;
+
+      if (existingIndex >= 0) {
+        // If found, update the existing stock quantity & other fields
+        final existingStock = product.stocks[existingIndex];
+        // You can decide if you want to replace fully or merge quantity (I'll merge quantity here)
+        updatedStock = existingStock.copyWith(
+          quantity: newStock.quantity,
+          // Add other fields to update as needed, e.g. price, expiryDate, etc.
+        );
+        // Calculate added pieces difference
+        if (product.isSoldByPiece && product.piecesPerPack != null) {
+          addedPieces = (newStock.quantity - existingStock.quantity) * product.piecesPerPack!;
+        }
+      } else {
+        // New stock, just add it
+        updatedStock = newStock;
+        if (product.isSoldByPiece && product.piecesPerPack != null) {
+          addedPieces = newStock.quantity * product.piecesPerPack!;
+        }
+      }
+
+      // Update loose stock if needed
+      LooseStock? updatedLoose;
+      if (addedPieces != 0) {
+        updatedLoose = product.looseStock?.copyWith(
+          remainingPieces: (product.looseStock?.remainingPieces ?? 0) + addedPieces,
+          lastModified: now,
+        ) ??
+            LooseStock(
+              productId: product.id,
+              remainingPieces: addedPieces,
+              lastModified: now,
+            );
+      } else {
+        updatedLoose = product.looseStock;
+      }
+
+      // Update stocks list with upserted stock
+      final updatedStocks = [...product.stocks];
+      if (existingIndex >= 0) {
+        updatedStocks[existingIndex] = updatedStock;
+      } else {
+        updatedStocks.add(updatedStock);
+      }
+
+      // Create a restock log for the difference (only if addedPieces or quantity > 0)
+      final logQuantity = (existingIndex >= 0)
+          ? newStock.quantity - product.stocks[existingIndex].quantity
+          : newStock.quantity;
+
+      if (logQuantity > 0) {
+        final log = StockLog(
+          id: now.millisecondsSinceEpoch.toString(),
+          productId: product.id,
+          quantity: logQuantity,
+          isPiece: false,
+          reason: StockLogReason.restocked,
+          remarks: 'Restocked $logQuantity pack(s)' +
+              (addedPieces > 0 ? ' (+$addedPieces pcs)' : ''),
+        );
+
+        final updatedLogs = [...product.logs, log];
+
+        final updatedProduct = product.copyWith(
+          stocks: updatedStocks,
+          logs: updatedLogs,
+          looseStock: updatedLoose,
+          lastModified: now,
+        );
+
+        await _productBox.put(updatedProduct.id, updatedProduct);
+        notifyListeners();
+
+        SnackbarService.showSuccess("✅ Stock upserted" +
+            (addedPieces > 0 ? " and $addedPieces pcs unpacked." : "."));
+      } else {
+        // No positive quantity change -> just update without log
+        final updatedProduct = product.copyWith(
+          stocks: updatedStocks,
+          looseStock: updatedLoose,
+          lastModified: now,
+        );
+
+        await _productBox.put(updatedProduct.id, updatedProduct);
+        notifyListeners();
+
+        SnackbarService.showSuccess("✅ Stock upserted (no quantity change).");
+      }
     } catch (e) {
-      SnackbarService.showError("❌ Failed to add stock: $e");
+      SnackbarService.showError("❌ Failed to upsert stock: $e");
     }
   }
 
-  /// 🛠️ Update a specific stock (quantity, cost, retail)
+
+
+
   Future<void> updateStockDetails({
     required String productIdOrName,
     required String stockId,
@@ -163,11 +253,15 @@ class ProductStockProvider extends ChangeNotifier {
       }
 
       final List<ProductStock> updatedStocks = [];
+      LooseStock? updatedLoose = product.looseStock;
+      final piecesPerPack = product.piecesPerPack;
 
       for (var stock in product.stocks) {
         if (stock.id == stockId) {
-          final updatedQty = newQuantity ?? stock.quantity;
-          if (updatedQty <= 0) continue; // Remove 0-qty stock
+          final oldQty = stock.quantity;
+          final updatedQty = newQuantity ?? oldQty;
+
+          if (updatedQty <= 0) continue; // Skip or delete if zero
 
           final updatedStock = stock.copyWith(
             quantity: updatedQty,
@@ -176,6 +270,19 @@ class ProductStockProvider extends ChangeNotifier {
             lastModified: DateTime.now(),
           );
           updatedStocks.add(updatedStock);
+
+          // 🧠 Optional loose sync: adjust remainingPieces if soldByPiece
+          if (product.isSoldByPiece && piecesPerPack != null) {
+            final diff = (updatedQty - oldQty) * piecesPerPack;
+
+            // apply to loose stock only if diff is non-zero
+            if (diff != 0) {
+              updatedLoose = (product.looseStock ?? LooseStock(remainingPieces: 0, productId: product.id)).copyWith(
+                remainingPieces: (product.looseStock?.remainingPieces ?? 0) + diff,
+                lastModified: DateTime.now(),
+              );
+            }
+          }
         } else {
           updatedStocks.add(stock);
         }
@@ -183,12 +290,13 @@ class ProductStockProvider extends ChangeNotifier {
 
       final updatedProduct = product.copyWith(
         stocks: updatedStocks,
+        looseStock: updatedLoose,
         lastModified: DateTime.now(),
       );
 
       await _productBox.put(updatedProduct.id, updatedProduct);
       notifyListeners();
-      SnackbarService.showSuccess("✅ Stock updated.");
+      SnackbarService.showSuccess("✅ Stock updated and loose pieces synced.");
     } catch (e) {
       SnackbarService.showError("❌ Failed to update stock: $e");
     }

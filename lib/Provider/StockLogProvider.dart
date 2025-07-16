@@ -26,7 +26,12 @@ class StockLogProvider extends ChangeNotifier {
   /// 📜 Get all logs (latest first)
   List<StockLog> getLogs(String idOrName) {
     final product = _getProduct(idOrName);
-    return product?.logs.reversed.toList() ?? [];
+    return product?.logs
+        .where((log) => log.deletedAt == null)
+        .toList()
+        .reversed
+        .toList() ??
+        [];
   }
 
   /// ➕ Add new log
@@ -106,30 +111,37 @@ class StockLogProvider extends ChangeNotifier {
     SnackbarService.showSuccess("🧹 Logs cleared.");
   }
 
-  /// 📊 Get total stock out (filtered)
-  int getTotalByReason(String idOrName, StockOutType type) {
+  /// 📊 Get total quantity by reason
+  int getTotalByReason(String idOrName, StockLogReason reason) {
     final product = _getProduct(idOrName);
     if (product == null) return 0;
 
     return product.logs
-        .where((log) => log.reason == type && log.deletedAt == null)
+        .where((log) => log.reason == reason && log.deletedAt == null)
         .fold(0, (sum, log) => sum + log.quantity);
   }
 
   /// 📊 Get total quantity sold
-  int getTotalSold(String idOrName) => getTotalByReason(idOrName, StockOutType.sold);
+  int getTotalSold(String idOrName) =>
+      getTotalByReason(idOrName, StockLogReason.sold);
 
   /// 🕰️ Get latest log
   StockLog? getLatestLog(String idOrName) {
     final product = _getProduct(idOrName);
     if (product == null || product.logs.isEmpty) return null;
-    return product.logs.last;
+
+    final logs = product.logs
+        .where((log) => log.deletedAt == null)
+        .toList();
+
+    return logs.isEmpty ? null : logs.last;
   }
 
   /// 🔎 Get logs by reason
-  List<StockLog> getLogsByReason(String idOrName, StockOutType reason) {
+  List<StockLog> getLogsByReason(String idOrName, StockLogReason reason) {
     final product = _getProduct(idOrName);
     if (product == null) return [];
+
     return product.logs
         .where((log) => log.reason == reason && log.deletedAt == null)
         .toList();

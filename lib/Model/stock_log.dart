@@ -3,7 +3,7 @@ import 'package:hive/hive.dart';
 part 'stock_log.g.dart';
 
 @HiveType(typeId: 3)
-enum StockOutType {
+enum StockLogReason {
   @HiveField(0)
   sold,
 
@@ -18,6 +18,12 @@ enum StockOutType {
 
   @HiveField(4)
   borrowed,
+
+  @HiveField(5)
+  added,      // ➕ First stock entry
+
+  @HiveField(6)
+  restocked,  // 🔁 Manual restock
 }
 
 @HiveType(typeId: 4)
@@ -35,7 +41,7 @@ class StockLog extends HiveObject {
   final bool isPiece;
 
   @HiveField(4)
-  final StockOutType reason;
+  final StockLogReason reason;
 
   @HiveField(5)
   final String? remarks;
@@ -84,14 +90,16 @@ class StockLog extends HiveObject {
       productId: map['productId'],
       quantity: map['quantity'],
       isPiece: map['isPiece'],
-      reason: StockOutType.values.firstWhere(
+      reason: StockLogReason.values.firstWhere(
             (e) => e.name == map['reason'],
-        orElse: () => StockOutType.sold,
+        orElse: () => StockLogReason.sold,
       ),
       remarks: map['remarks'],
       dateLogged: DateTime.parse(map['dateLogged']),
       lastModified: DateTime.parse(map['lastModified']),
-      deletedAt: map['deletedAt'] != null ? DateTime.parse(map['deletedAt']) : null,
+      deletedAt: map['deletedAt'] != null
+          ? DateTime.parse(map['deletedAt'])
+          : null,
     );
   }
 
@@ -101,7 +109,7 @@ class StockLog extends HiveObject {
     String? productId,
     int? quantity,
     bool? isPiece,
-    StockOutType? reason,
+    StockLogReason? reason,
     String? remarks,
     DateTime? dateLogged,
     DateTime? lastModified,

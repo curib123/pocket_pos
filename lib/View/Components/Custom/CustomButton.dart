@@ -6,6 +6,7 @@ class CustomButton extends StatelessWidget {
   final String text;
   final VoidCallback onPressed;
   final bool isFilled;
+  final bool isDisabled; // 🚨 New
   final double? width;
   final double? height;
   final Color? backgroundColor;
@@ -18,6 +19,7 @@ class CustomButton extends StatelessWidget {
     required this.text,
     required this.onPressed,
     this.isFilled = true,
+    this.isDisabled = false, // ✅ Default to false
     this.width,
     this.height,
     this.backgroundColor,
@@ -28,52 +30,63 @@ class CustomButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color effectiveBackground =
-        backgroundColor ?? (isFilled ? AppColor.primary : Colors.transparent);
-    final Color effectiveText =
-        textColor ?? (isFilled ? AppColor.surface : AppColor.primary);
+    final Color effectiveBackground = isDisabled
+        ? AppColor.border.withOpacity(0.5)
+        : backgroundColor ?? (isFilled ? AppColor.primary : Colors.transparent);
+
+    final Color effectiveText = isDisabled
+        ? AppColor.textSecondary.withOpacity(0.5)
+        : textColor ?? (isFilled ? AppColor.surface : AppColor.primary);
 
     final buttonStyle = ElevatedButton.styleFrom(
       backgroundColor: effectiveBackground,
       foregroundColor: effectiveText,
-      elevation: isFilled ? 2 : 0,
-      side: isFilled
+      elevation: isFilled && !isDisabled ? 2 : 0,
+      shadowColor: isFilled && !isDisabled ? Colors.black26 : Colors.transparent,
+      side: isFilled || isDisabled
           ? null
           : BorderSide(color: effectiveText.withOpacity(0.7), width: 1.5),
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
       ),
     );
 
     return SizedBox(
       width: width ?? double.infinity,
       height: height,
-      child: ElevatedButton(
-        onPressed: onPressed,
-        style: buttonStyle,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (icon != null)
-              Icon(icon, size: iconSize, color: effectiveText),
-            if (icon != null) const SizedBox(width: 8),
-            Flexible( // ✅ Prevents overflow
-              child: Text(
-                text,
-                overflow: TextOverflow.ellipsis, // ✅ Ellipsis if too long
-                maxLines: 1,
-                softWrap: false,
-                style: TextStyle(
-                  fontSize: context.rf(15),
-                  fontWeight: FontWeight.w300,
-                  letterSpacing: 0.6,
-                  color: effectiveText,
+      child: TweenAnimationBuilder<double>(
+        tween: Tween(begin: 1.0, end: 1.0),
+        duration: const Duration(milliseconds: 150),
+        builder: (context, scale, child) => Transform.scale(
+          scale: scale,
+          child: ElevatedButton(
+            onPressed: isDisabled ? null : onPressed,
+            style: buttonStyle,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (icon != null)
+                  Icon(icon, size: iconSize, color: effectiveText),
+                if (icon != null) const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    text,
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                    softWrap: false,
+                    style: TextStyle(
+                      fontSize: context.rf(15),
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: 0.4,
+                      color: effectiveText,
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:mobile_stock_inventory/Model/product_model.dart';
+import 'package:mobile_stock_inventory/Model/stock_log.dart';
 import 'package:mobile_stock_inventory/View/Components/SnackbarService.dart';
 
 class VariantProductProvider extends ChangeNotifier {
@@ -46,9 +47,49 @@ class VariantProductProvider extends ChangeNotifier {
         return;
       }
 
+      // 🧾 Generate stock logs for variant's initial stock
+      final List<StockLog> logs = [];
+
+      // 📦 For pack stock
+      for (final stock in variant.stocks) {
+        if (stock.quantity > 0) {
+          logs.add(
+            StockLog(
+              id: 'log-${stock.id}',
+              productId: variant.id,
+              quantity: stock.quantity,
+              isPiece: false,
+              reason: StockLogReason.added,
+              remarks: 'Initial stock (pack)',
+            ),
+          );
+        }
+      }
+
+      // 🍬 For loose stock
+      if (variant.looseStock?.remainingPieces != null &&
+          variant.looseStock!.remainingPieces > 0) {
+        logs.add(
+          StockLog(
+            id: 'log-${variant.id}-loose',
+            productId: variant.id,
+            quantity: variant.looseStock!.remainingPieces,
+            isPiece: true,
+            reason: StockLogReason.added,
+            remarks: 'Initial stock (loose)',
+          ),
+        );
+      }
+
+      // 🛠️ Attach logs to the variant
+      final newVariant = variant.copyWith(
+        logs: [...variant.logs, ...logs],
+        lastModified: DateTime.now(),
+      );
+
       final updatedParent = parent.copyWith(
         hasVariant: true,
-        variants: [...parent.variants, variant],
+        variants: [...parent.variants, newVariant],
         lastModified: DateTime.now(),
       );
 
