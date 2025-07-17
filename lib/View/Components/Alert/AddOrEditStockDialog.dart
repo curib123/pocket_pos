@@ -58,19 +58,7 @@ class _AddOrEditStockDialogState extends State<AddOrEditStockDialog> {
     }
   }
 
-  Future<void> _pickDateReceived() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _dateReceived,
-      firstDate: DateTime(2000),
-      lastDate: DateTime.now().add(const Duration(days: 365 * 5)),
-    );
-    if (picked != null && picked != _dateReceived) {
-      setState(() {
-        _dateReceived = picked;
-      });
-    }
-  }
+
 
   void _submit() {
     final qty = int.tryParse(_qtyController.text.trim()) ?? 0;
@@ -127,7 +115,7 @@ class _AddOrEditStockDialogState extends State<AddOrEditStockDialog> {
               hintText: "e.g. 25",
               isRequired: true,
               helperText: "Total number of ${unitType}s received",
-              prefixIcon: const Icon(Icons.numbers),
+              prefixIcon: const Icon(Icons.layers),
             ),
             CustomTextField(
               label: "Cost Price",

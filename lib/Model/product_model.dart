@@ -64,6 +64,11 @@ class Product extends HiveObject {
     return packQty;
   }
 
+  int get totalQuantityByPieces {
+    final packQty = stocks.fold<int>(0, (sum, stock) => sum + stock.quantity);
+    final totalQtyByPieces = packQty * (piecesPerPack ?? 1);
+    return totalQtyByPieces;
+  }
   Product({
     required this.id,
     required this.name,

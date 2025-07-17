@@ -1,4 +1,4 @@
-import 'dart:convert';
+
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -259,15 +259,16 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
     if (!_isSoldByPack && !_isSoldByPiece) {
       showDialog(
         context: context,
-        builder: (context) => CustomNotificationDialog(
-          title: "Missing Selling Method",
-          content: "Please select at least one selling method: Pack, Piece, or both.",
-          onConfirm: () {
-            Navigator.pop(context);
-            setState(() => _isSubmitting = false);
-          },
-          type: 'warning',
-        ),
+        builder: (context) =>
+            CustomNotificationDialog(
+              title: "Missing Selling Method",
+              content: "Please select at least one selling method: Pack, Piece, or both.",
+              type: 'warning',
+              onConfirm: () {
+                Navigator.pop(context);
+                setState(() => _isSubmitting = false);
+              },
+            ),
       );
       return;
     }
@@ -275,10 +276,16 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
     final isEditing = widget.existingProduct != null;
     final productId = isEditing
         ? widget.existingProduct!.id
-        : DateTime.now().millisecondsSinceEpoch.toString();
+        : DateTime
+        .now()
+        .millisecondsSinceEpoch
+        .toString();
 
-    final updatedStocks = _stock.map((stock) => stock.copyWith(productId: productId)).toList();
-    final updatedVariants = _variants.map((variant) => variant.copyWith(isVariant: true)).toList();
+
+    final updatedStocks = _stock.map((stock) =>
+        stock.copyWith(productId: productId)).toList();
+    final updatedVariants = _variants.map((variant) =>
+        variant.copyWith(isVariant: true)).toList();
 
     final product = Product(
       id: productId,
@@ -294,28 +301,30 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
       createdAt: isEditing ? widget.existingProduct!.createdAt : DateTime.now(),
       lastModified: DateTime.now(),
       deletedAt: null,
-      stocks: updatedStocks, // ✅ Preserve updated stocks
+      stocks: updatedStocks,
+      // ✅ Preserve updated stocks
       logs: widget.existingProduct?.logs ?? [],
       hasVariant: _hasVariant,
       variants: _hasVariant ? updatedVariants : [],
       looseStock: null, // Will be handled separately
     );
 
-
     try {
-      if (widget.isVariant || widget.existingProduct!.isVariant) {
-        final parentId = widget.existingProduct!.isVariant
-            ? variantProductProvider.getParentProductIdFromVariantId(productId)
-            : widget.existingProduct?.id ?? _selectedCategory ?? 'unknown';
-
-        print("Parent ID: $parentId");
-        print("Product ID: $productId");
-        print("Prouct : ${product.toMap()}");
-        await variantProductProvider.upsertVariant(parentId.toString(), product);
-
+      if (widget.isVariant) {
+        // Case 1: New variant, no existing product necessarily
+        final parentId = _selectedCategory ?? 'unknown';
+        await variantProductProvider.upsertVariant(parentId, product);
+        Navigator.pop(context, product);
+      } else
+      if (widget.existingProduct != null && widget.existingProduct!.isVariant) {
+        // Case 2: Editing an existing variant product
+        final rawParentId = variantProductProvider
+            .getParentProductIdFromVariantId(productId);
+        final parentId = (rawParentId ?? 'unknown').toString();
+        await variantProductProvider.upsertVariant(parentId, product);
         Navigator.pop(context, product);
       } else {
-
+        // Case 3: Regular product (not variant)
         await productProvider.upsertProduct(product);
 
         if (_isSoldByPiece) {
@@ -329,26 +338,28 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
 
         showDialog(
           context: context,
-          builder: (context) => CustomNotificationDialog(
-            onConfirm: () => Navigator.pop(context),
-            type: 'success',
-            title: isEditing ? "Product Updated" : "Product Added",
-            content: isEditing
-                ? "The product was successfully updated!"
-                : "The product was successfully added!",
-          ),
+          builder: (context) =>
+              CustomNotificationDialog(
+                onConfirm: () => Navigator.pop(context),
+                type: 'success',
+                title: isEditing ? "Product Updated" : "Product Added",
+                content: isEditing
+                    ? "The product was successfully updated!"
+                    : "The product was successfully added!",
+              ),
         );
       }
     } catch (e) {
       debugPrint("❌ Error saving product: $e");
       showDialog(
         context: context,
-        builder: (context) => CustomNotificationDialog(
-          onConfirm: () => Navigator.pop(context),
-          type: 'error',
-          title: "Failed to Save",
-          content: "Something went wrong while saving the product.\nError: $e",
-        ),
+        builder: (context) =>
+            CustomNotificationDialog(
+              onConfirm: () => Navigator.pop(context),
+              type: 'error',
+              title: "Failed to Save",
+              content: "Something went wrong while saving the product.\nError: $e",
+            ),
       );
     }
   }
@@ -395,9 +406,41 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
                             color: AppColor.background.withOpacity(0.5),
                           ),
                           child: _selectedImage != null
-                              ? ClipRRect(
-                            borderRadius: BorderRadius.circular(10),
-                            child: Image.file(_selectedImage!, fit: BoxFit.cover),
+                              ? Stack(
+                            children: [
+                              // Image Layer
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(10),
+                                child: Image.file(
+                                  _selectedImage!,
+                                  fit: BoxFit.fill,
+                                  width: double.infinity,
+                                  height: double.infinity,
+                                ),
+                              ),
+                              // Overlay Icon + Text
+                              Container(
+                                width: double.infinity,
+                                height: double.infinity,
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withOpacity(0.3),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.camera_alt_outlined, size: 24, color: Colors.white),
+                                      SizedBox(height: 6),
+                                      Text(
+                                        'Tap to change image',
+                                        style: TextStyle(color: Colors.white),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
                           )
                               : const Center(
                             child: Column(
@@ -414,6 +457,7 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
                           ),
                         ),
                       ),
+
                       const SizedBox(height: 16),
                       CustomTextField(
                         label: 'Product Name',
@@ -434,7 +478,7 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
                       const SizedBox(height: 20),
                       CustomFlatDropdown<String>(
                         hint: 'Choose unit',
-                        helperText: 'e.g. pcs, ml, kg',
+                        helperText: 'e.g. pcs, ml, kg (optional)',
                         value: _selectedUnit,
                         items: _units,
                         onChanged: (val) => setState(() => _selectedUnit = val),
@@ -830,7 +874,7 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
                                               final index = _variants.indexWhere((variant) => variant.id == editedVariant.id);
                                               if (index != -1) _variants[index] = editedVariant;
                                             });
-                                            SnackbarService.showSuccess("✅ Variant updated!");
+
                                           }
                                         },
                                       ),
@@ -897,6 +941,7 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
                                       builder: (context) => CustomNotificationDialog(
                                         title: "Missing Product Name",
                                         content: "Please enter a name for this product.",
+                                        type: 'warning',
                                         onConfirm: () => Navigator.pop(context),
                                       ),
                                     );
