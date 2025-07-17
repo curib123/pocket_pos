@@ -55,18 +55,13 @@ class Product extends HiveObject {
   @HiveField(15)
   final List<Product> variants;
 
-  // 🧠 Total Quantity Computation
+  @HiveField(16)
+  final bool isVariant;
+
+  // 👨‍🔬 Computed
   int get totalQuantity {
     final packQty = stocks.fold<int>(0, (sum, stock) => sum + stock.quantity);
-    final looseQty = looseStock?.remainingPieces ?? 0;
-    return packQty + looseQty;
-  }
-
-  int get totalPackQuantityByPiece {
-    final packQty = stocks.fold<int>(0, (sum, stock) => sum + stock.quantity);
-    final looseQty = looseStock?.remainingPieces ?? 0;
-    final perPack = piecesPerPack ?? 1;
-    return (packQty * perPack) + looseQty;
+    return packQty;
   }
 
   Product({
@@ -86,6 +81,7 @@ class Product extends HiveObject {
     this.logs = const [],
     this.hasVariant = false,
     this.variants = const [],
+    this.isVariant = false,
   });
 
   Map<String, dynamic> toMap() {
@@ -106,6 +102,7 @@ class Product extends HiveObject {
       'logs': logs.map((l) => l.toMap()).toList(),
       'hasVariant': hasVariant,
       'variants': variants.map((v) => v.toMap()).toList(),
+      'isVariant': isVariant,
     };
   }
 
@@ -127,6 +124,7 @@ class Product extends HiveObject {
       logs: (map['logs'] as List?)?.map((l) => StockLog.fromMap(l)).toList() ?? [],
       hasVariant: map['hasVariant'] ?? false,
       variants: (map['variants'] as List?)?.map((v) => Product.fromMap(v)).toList() ?? [],
+      isVariant: map['isVariant'] ?? false,
     );
   }
 
@@ -147,6 +145,7 @@ class Product extends HiveObject {
     List<StockLog>? logs,
     List<Product>? variants,
     bool? hasVariant,
+    bool? isVariant,
   }) {
     return Product(
       id: id ?? this.id,
@@ -165,6 +164,7 @@ class Product extends HiveObject {
       logs: logs ?? this.logs,
       variants: variants ?? this.variants,
       hasVariant: hasVariant ?? this.hasVariant,
+      isVariant: isVariant ?? this.isVariant,
     );
   }
 }

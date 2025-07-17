@@ -35,7 +35,49 @@ class ProductProvider extends ChangeNotifier {
   List<Product> getProductsByCategory(String category) =>
       _products.where((product) => product.category == category).toList();
 
-  Product? getProductById(String id) => _productBox.get(id);
+  Product? getProductById(String id) {
+    for (final product in _products) {
+      if (product.id == id) return product;
+
+      for (final variant in product.variants) {
+        if (variant.id == id) return variant;
+      }
+    }
+    return null;
+  }
+
+  /// Returns all products including nested variant products
+  List<Product> getAllProductsWithVariants() {
+    final List<Product> all = [];
+
+    for (final product in _products) {
+      all.add(product);
+      all.addAll(product.variants);
+    }
+
+    return all;
+  }
+
+  /// Returns all products and variants that match the given category
+  List<Product> getAllProductsWithVariantsByCategory(String category) {
+    final List<Product> all = [];
+
+    for (final product in _products) {
+      if (product.category == category) {
+        all.add(product);
+      }
+
+      // Include variants that match the category too
+      for (final variant in product.variants) {
+        if (variant.category == category) {
+          all.add(variant);
+        }
+      }
+    }
+
+    return all;
+  }
+
 
   Product? getProductByName(String name) {
     try {
@@ -53,83 +95,86 @@ class ProductProvider extends ChangeNotifier {
 
   List<Map<String, dynamic>> exportToJsonList() =>
       _products.map((p) => p.toMap()).toList();
-  Future<void> addProduct(Product product) async {
+  Future<void> upsertProduct(Product product) async {
     try {
-      final nameExists = _products.any((p) =>
-      p.name.trim().toLowerCase() == product.name.trim().toLowerCase() &&
-          p.deletedAt == null,
-      );
-      if (nameExists) {
-        SnackbarService.showWarning('⚠️ Product already exists: ${product.name}');
-        return;
-      }
+      final existingIndex = _products.indexWhere((p) => p.id == product.id);
+      final bool isNew = existingIndex == -1;
 
-      final List<StockLog> logs = [];
+      if (isNew) {
+        // Check duplicate name for new products only
+        final nameExists = _products.any((p) =>
+        p.name.trim().toLowerCase() == product.name.trim().toLowerCase() &&
+            p.deletedAt == null,
+        );
 
-      for (final stock in product.stocks) {
-        if (stock.quantity > 0) {
+        if (nameExists) {
+          SnackbarService.showWarning('⚠️ Product already exists: ${product.name}');
+          return;
+        }
+
+        final List<StockLog> logs = [];
+
+        for (final stock in product.stocks) {
+          if (stock.quantity > 0) {
+            logs.add(StockLog(
+              id: 'log-${stock.id}',
+              productId: product.id,
+              quantity: stock.quantity,
+              isPiece: false,
+              reason: StockLogReason.added,
+              remarks: 'Initial stock (pack)',
+            ));
+          }
+        }
+
+        final loose = product.looseStock;
+        if (loose != null && loose.remainingPieces > 0) {
           logs.add(StockLog(
-            id: 'log-${stock.id}',
+            id: 'log-${product.id}-loose',
             productId: product.id,
-            quantity: stock.quantity,
-            isPiece: false,
+            quantity: loose.remainingPieces,
+            isPiece: true,
             reason: StockLogReason.added,
-            remarks: 'Initial stock (pack)',
+            remarks: 'Initial stock (loose)',
           ));
         }
-      }
 
-      final loose = product.looseStock;
-      if (loose != null && loose.remainingPieces > 0) {
-        logs.add(StockLog(
-          id: 'log-${product.id}-loose',
+        final newProduct = product.copyWith(
+          lastModified: DateTime.now(),
+          logs: [...product.logs, ...logs],
+        );
+
+        await _productBox.put(newProduct.id, newProduct);
+        _products.add(newProduct);
+        notifyListeners();
+        SnackbarService.showSuccess('✅ Product added: ${product.name}');
+      } else {
+        // Update existing product
+
+        final log = StockLog(
+          id: 'log-${product.id}-adjust-${DateTime.now().millisecondsSinceEpoch}',
           productId: product.id,
-          quantity: loose.remainingPieces,
-          isPiece: true,
-          reason: StockLogReason.added,
-          remarks: 'Initial stock (loose)',
-        ));
+          quantity: 0,
+          isPiece: false,
+          reason: StockLogReason.adjusted,
+          remarks: 'Product details manually updated',
+        );
+
+        final updatedProduct = product.copyWith(
+          lastModified: DateTime.now(),
+          logs: [...product.logs, log],
+        );
+
+        await _productBox.put(updatedProduct.id, updatedProduct);
+        _products[existingIndex] = updatedProduct;
+        notifyListeners();
+        SnackbarService.showSuccess('✅ Product updated: ${updatedProduct.name}');
       }
-
-      final newProduct = product.copyWith(
-        lastModified: DateTime.now(),
-        logs: [...product.logs, ...logs],
-      );
-
-      await _productBox.put(newProduct.id, newProduct);
-      _products.add(newProduct);
-      notifyListeners();
-      SnackbarService.showSuccess('✅ Product added: ${product.name}');
     } catch (e) {
-      SnackbarService.showError('❌ Failed to add product: $e');
+      SnackbarService.showError('❌ Failed to upsert product: $e');
     }
   }
 
-  Future<void> updateProduct(Product product) async {
-    try {
-      final log = StockLog(
-        id: 'log-${product.id}-adjust',
-        productId: product.id,
-        quantity: 0,
-        isPiece: false,
-        reason: StockLogReason.adjusted,
-        remarks: 'Product details manually updated',
-      );
-
-      final updated = product.copyWith(
-        lastModified: DateTime.now(),
-        logs: [...product.logs, log],
-      );
-
-      await _productBox.put(updated.id, updated);
-      final index = _products.indexWhere((p) => p.id == updated.id);
-      if (index != -1) _products[index] = updated;
-      notifyListeners();
-      SnackbarService.showSuccess('✅ Product updated: ${updated.name}');
-    } catch (e) {
-      SnackbarService.showError('❌ Failed to update product: $e');
-    }
-  }
 
   Future<void> deleteProduct(String id) async {
     try {

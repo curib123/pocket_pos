@@ -9,6 +9,7 @@ import 'package:mobile_stock_inventory/Provider/ProductProvider.dart';
 import 'package:mobile_stock_inventory/Provider/SwitchProvider.dart';
 import 'package:mobile_stock_inventory/View/Components/BouncingCartIcon.dart';
 import 'package:mobile_stock_inventory/View/Components/Custom/CustomButton.dart';
+import 'package:mobile_stock_inventory/View/Components/Modal/ProductDetailScreenModal.dart';
 import 'package:mobile_stock_inventory/View/Components/Modal/UpsertProductModal.dart';
 import 'package:provider/provider.dart';
 import 'package:animate_do/animate_do.dart';
@@ -102,10 +103,10 @@ class _ProductListScreenState extends State<ProductListScreen> {
             builder: (context, switchProvider, _) {
               // All filtering logic
               final allFiltered = widget.category.isNotEmpty
-                  ? productProvider.getProductsByCategory(widget.category).where(
+                  ? productProvider.getAllProductsWithVariantsByCategory(widget.category).where(
                     (p) => p.name.toLowerCase().contains(_searchQuery.toLowerCase()),
               ).toList()
-                  : productProvider.products.where(
+                  : productProvider.getAllProductsWithVariants().where(
                     (p) => p.name.toLowerCase().contains(_searchQuery.toLowerCase()),
               ).toList();
 
@@ -207,7 +208,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
     return LayoutBuilder(
       builder: (context, constraints) {
         int crossAxisCount = (constraints.maxWidth ~/ 160).clamp(2, 6);
-        double imageHeight = constraints.maxWidth < 500 ? 80 : 100;
+        double imageHeight = constraints.maxWidth + 50 < 500 ? 110 : 150;
         double fontSize = constraints.maxWidth < 500 ? 13 : 14;
         double priceFontSize = constraints.maxWidth < 500 ? 13 : 14.5;
 
@@ -217,12 +218,11 @@ class _ProductListScreenState extends State<ProductListScreen> {
             crossAxisCount: crossAxisCount,
             crossAxisSpacing: 10,
             mainAxisSpacing: 10,
-            childAspectRatio: 0.72,
+            childAspectRatio: 0.60,
           ),
           itemCount: products.length,
           itemBuilder: (context, index) {
             final product = products[index];
-            final imageUrl = product.imagePath ?? '';
             final isPack = product.isSoldByPack;
             final isPiece = product.isSoldByPiece;
             final unit = isPack ? (product.unit ?? 'pack') : 'pcs';
@@ -230,10 +230,14 @@ class _ProductListScreenState extends State<ProductListScreen> {
                 ? product.stocks.first.retailPrice
                 : 0;
 
+            print(product.isVariant);
+
             return FadeInUp(
               duration: Duration(milliseconds: 250 + (index * 60)),
               child: GestureDetector(
-                onTap: () {},
+                onTap: () {
+                  ProductDetailModal.show(context, product.id,false);
+                },
                 child: Container(
                   decoration: BoxDecoration(
                     color: AppColor.primary.withOpacity(0.035),
@@ -243,17 +247,48 @@ class _ProductListScreenState extends State<ProductListScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: imageUrl.isNotEmpty && File(imageUrl).existsSync()
-                            ? Image.file(
-                          File(imageUrl),
-                          width: double.infinity,
-                          height: imageHeight,
-                          fit: BoxFit.cover,
-                        )
-                            : _placeholderIcon(AppColor.primary, switchProvider),
+                      Stack(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: (product.imagePath != null &&
+                                product.imagePath!.isNotEmpty &&
+                                File(product.imagePath!).existsSync())
+                                ? Image.file(
+                              File(product.imagePath!),
+                              width: double.infinity,
+                              height: imageHeight,
+                              fit: BoxFit.fill,
+                            )
+                                : _placeholderIcon(AppColor.primary, switchProvider),
+                          ),
+
+                          // 🏷 Badge based on isVariant
+                          Positioned(
+                            bottom: 8,
+                            right: 8,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: product.isVariant == true
+                                    ? AppColor.success.withOpacity(0.8)
+                                    : AppColor.warning.withOpacity(0.7),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                product.isVariant == true ? 'Variant' : 'Main',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
+
+
                       const SizedBox(height: 15),
 
                       // Tags
@@ -323,6 +358,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
       },
     );
   }
+
 
 
   Widget _buildListView(List<Product> products, currencyFormat, SwitchProvider switchProvider) {
@@ -436,7 +472,9 @@ class _ProductListScreenState extends State<ProductListScreen> {
                 color: AppColor.textSecondary,
                 size: 30,
               ),
-              onTap: () {},
+              onTap: () {
+                ProductDetailModal.show(context,product.id,false);
+              },
             ),
           ),
         );

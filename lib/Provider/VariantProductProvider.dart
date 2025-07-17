@@ -2,12 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:mobile_stock_inventory/Model/product_model.dart';
 import 'package:mobile_stock_inventory/Model/stock_log.dart';
+import 'package:mobile_stock_inventory/Provider/ProductProvider.dart';
 import 'package:mobile_stock_inventory/View/Components/SnackbarService.dart';
 
 class VariantProductProvider extends ChangeNotifier {
   final Box<Product> _productBox;
+  late ProductProvider _productProvider;
 
   VariantProductProvider(this._productBox);
+
+  void attachProductProvider(ProductProvider provider) {
+    _productProvider = provider;
+  }
+
+  ProductProvider get productProvider => _productProvider;
 
   Product? _getParent(String idOrName) {
     try {
@@ -27,145 +35,149 @@ class VariantProductProvider extends ChangeNotifier {
     return parent?.variants ?? [];
   }
 
-  Future<void> addVariant(String idOrName, Product variant) async {
+  String? getParentProductIdFromVariantId(String variantId) {
     try {
-      final parent = _getParent(idOrName);
+      final parent = _productBox.values.firstWhere(
+            (product) =>
+        product.deletedAt == null &&
+            product.hasVariant &&
+            product.variants.any((v) => v.id == variantId),
+      );
+      return parent.id;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> upsertVariant(String parentId, Product variant) async {
+    try {
+      final parent = _getParent(parentId);
+
       if (parent == null) {
         SnackbarService.showWarning("❌ Parent product not found.");
         return;
       }
 
-      final variantExists = parent.variants.any(
-            (v) => v.name.trim().toLowerCase() == variant.name.trim().toLowerCase(),
+      Product updatedVariant = variant.copyWith(
+        isVariant: true,
+        lastModified: DateTime.now(),
       );
 
-      if (variantExists) {
-        SnackbarService.showWarning("⚠️ Variant already exists.");
-        return;
-      }
+      final int existingIndex =
+      parent.variants.indexWhere((v) => v.id == updatedVariant.id);
+      List<StockLog> logs = [];
 
-      final List<StockLog> logs = [];
-
-      for (final stock in variant.stocks) {
-        if (stock.quantity > 0) {
-          logs.add(
-            StockLog(
-              id: 'log-${stock.id}',
-              productId: variant.id,
-              quantity: stock.quantity,
-              isPiece: false,
-              reason: StockLogReason.added,
-              remarks: 'Initial stock (pack)',
-            ),
-          );
+      if (existingIndex == -1) {
+        // ➕ NEW VARIANT
+        for (final stock in updatedVariant.stocks) {
+          if (stock.quantity > 0) {
+            logs.add(
+              StockLog(
+                id: 'log-${stock.id}',
+                productId: updatedVariant.id,
+                quantity: stock.quantity,
+                isPiece: false,
+                reason: StockLogReason.added,
+                remarks: 'Initial stock (pack)',
+              ),
+            );
+          }
         }
-      }
 
-      if (variant.looseStock?.remainingPieces != null &&
-          variant.looseStock!.remainingPieces > 0) {
-        logs.add(
-          StockLog(
-            id: 'log-${variant.id}-loose',
-            productId: variant.id,
-            quantity: variant.looseStock!.remainingPieces,
-            isPiece: true,
-            reason: StockLogReason.added,
-            remarks: 'Initial stock (loose)',
-          ),
-        );
-      }
-
-      final newVariant = variant.copyWith(
-        logs: [...variant.logs, ...logs],
-        lastModified: DateTime.now(),
-      );
-
-      final updatedParent = parent.copyWith(
-        hasVariant: true,
-        variants: [...parent.variants, newVariant],
-        lastModified: DateTime.now(),
-      );
-
-      await _productBox.put(updatedParent.id, updatedParent);
-      notifyListeners();
-
-      SnackbarService.showSuccess("✅ Variant added: ${variant.name}");
-    } catch (e) {
-      SnackbarService.showError("❌ Failed to add variant: $e");
-    }
-  }
-
-  Future<void> updateVariant(String idOrName, Product updatedVariant) async {
-    try {
-      final parent = _getParent(idOrName);
-      if (parent == null) return;
-
-      final oldVariant = parent.variants.firstWhere(
-            (v) => v.id == updatedVariant.id,
-        orElse: () => updatedVariant,
-      );
-
-      final List<StockLog> logs = [];
-
-      // Compare stocks
-      for (final newStock in updatedVariant.stocks) {
-        final oldStock = oldVariant.stocks.firstWhere(
-              (s) => s.id == newStock.id,
-          orElse: () => newStock,
-        );
-
-        if (newStock.quantity != oldStock.quantity) {
+        final loose = updatedVariant.looseStock?.remainingPieces ?? 0;
+        if (loose > 0) {
           logs.add(
             StockLog(
-              id: 'log-${newStock.id}-${DateTime.now().millisecondsSinceEpoch}',
+              id: 'log-${updatedVariant.id}-loose',
               productId: updatedVariant.id,
-              quantity: newStock.quantity,
-              isPiece: false,
-              reason: StockLogReason.adjusted,
-              remarks:
-              'Updated stock qty: ${oldStock.quantity} → ${newStock.quantity}',
+              quantity: loose,
+              isPiece: true,
+              reason: StockLogReason.added,
+              remarks: 'Initial stock (loose)',
             ),
           );
         }
-      }
 
-      // Compare loose stock
-      final oldLoose = oldVariant.looseStock?.remainingPieces ?? 0;
-      final newLoose = updatedVariant.looseStock?.remainingPieces ?? 0;
-
-      if (oldLoose != newLoose) {
-        logs.add(
-          StockLog(
-            id: 'log-${updatedVariant.id}-loose-${DateTime.now().millisecondsSinceEpoch}',
-            productId: updatedVariant.id,
-            quantity: newLoose,
-            isPiece: true,
-            reason: StockLogReason.adjusted,
-            remarks: 'Updated loose stock: $oldLoose → $newLoose',
-          ),
+        updatedVariant = updatedVariant.copyWith(
+          logs: [...updatedVariant.logs, ...logs],
         );
+
+        final updatedParent = parent.copyWith(
+          hasVariant: true,
+          variants: [...parent.variants, updatedVariant],
+          lastModified: DateTime.now(),
+        );
+
+        await _productBox.put(updatedParent.id, updatedParent);
+        _productProvider.refreshProducts();
+        notifyListeners();
+
+        SnackbarService.showSuccess("✅ Variant added: ${variant.name}");
+      } else {
+        // 🔁 UPDATE EXISTING VARIANT
+        final oldVariant = parent.variants[existingIndex];
+
+        for (final newStock in updatedVariant.stocks) {
+          final oldStock = oldVariant.stocks.firstWhere(
+                (s) => s.id == newStock.id,
+            orElse: () => newStock,
+          );
+
+          if (newStock.quantity != oldStock.quantity) {
+            logs.add(
+              StockLog(
+                id: 'log-${newStock.id}-${DateTime.now().millisecondsSinceEpoch}',
+                productId: updatedVariant.id,
+                quantity: newStock.quantity,
+                isPiece: false,
+                reason: StockLogReason.adjusted,
+                remarks: 'Updated stock: ${oldStock.quantity} → ${newStock.quantity}',
+              ),
+            );
+          }
+        }
+
+        final oldLoose = oldVariant.looseStock?.remainingPieces ?? 0;
+        final newLoose = updatedVariant.looseStock?.remainingPieces ?? 0;
+        if (oldLoose != newLoose) {
+          logs.add(
+            StockLog(
+              id: 'log-${updatedVariant.id}-loose-${DateTime.now().millisecondsSinceEpoch}',
+              productId: updatedVariant.id,
+              quantity: newLoose,
+              isPiece: true,
+              reason: StockLogReason.adjusted,
+              remarks: 'Updated loose: $oldLoose → $newLoose',
+            ),
+          );
+        }
+
+        updatedVariant = updatedVariant.copyWith(
+          logs: [...updatedVariant.logs, ...logs],
+        );
+
+        final updatedVariants = [...parent.variants];
+        updatedVariants[existingIndex] = updatedVariant;
+
+        final updatedParent = parent.copyWith(
+          variants: updatedVariants,
+          lastModified: DateTime.now(),
+        );
+
+        await _productBox.put(updatedParent.id, updatedParent);
+        _productProvider.refreshProducts();
+        notifyListeners();
+
+        SnackbarService.showSuccess("✅ Variant updated: ${variant.name}");
+
+        final savedParent = _productBox.get(parent.id);
+        if (savedParent != null) {
+          debugPrint("🧠 Parent updated: ${savedParent.name}, Variants: ${savedParent.variants.map((v) => v.name).toList()}");
+        }
       }
-
-      final newVariant = updatedVariant.copyWith(
-        logs: [...updatedVariant.logs, ...logs],
-        lastModified: DateTime.now(),
-      );
-
-      final updatedVariants = parent.variants.map((v) {
-        return v.id == updatedVariant.id ? newVariant : v;
-      }).toList();
-
-      final updatedParent = parent.copyWith(
-        variants: updatedVariants,
-        lastModified: DateTime.now(),
-      );
-
-      await _productBox.put(updatedParent.id, updatedParent);
-      notifyListeners();
-
-      SnackbarService.showSuccess("✅ Variant updated: ${updatedVariant.name}");
     } catch (e) {
-      SnackbarService.showError("❌ Failed to update variant: $e");
+      SnackbarService.showError("❌ Failed to upsert variant: $e");
+      debugPrint("❌ Variant upsert error: $e");
     }
   }
 
@@ -182,7 +194,6 @@ class VariantProductProvider extends ChangeNotifier {
       }
 
       final variantToDelete = matchingVariants.first;
-
 
       final List<StockLog> logs = [];
 
@@ -225,6 +236,7 @@ class VariantProductProvider extends ChangeNotifier {
       );
 
       await _productBox.put(updatedParent.id, updatedParent);
+      _productProvider.refreshProducts();
       notifyListeners();
 
       SnackbarService.showSuccess("🗑️ Variant deleted.");
@@ -232,6 +244,4 @@ class VariantProductProvider extends ChangeNotifier {
       SnackbarService.showError("❌ Failed to delete variant: $e");
     }
   }
-
 }
-

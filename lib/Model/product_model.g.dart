@@ -33,13 +33,14 @@ class ProductAdapter extends TypeAdapter<Product> {
       logs: (fields[13] as List).cast<StockLog>(),
       hasVariant: fields[14] as bool,
       variants: (fields[15] as List).cast<Product>(),
+      isVariant: fields[16] as bool,
     );
   }
 
   @override
   void write(BinaryWriter writer, Product obj) {
     writer
-      ..writeByte(16)
+      ..writeByte(17)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -71,7 +72,9 @@ class ProductAdapter extends TypeAdapter<Product> {
       ..writeByte(14)
       ..write(obj.hasVariant)
       ..writeByte(15)
-      ..write(obj.variants);
+      ..write(obj.variants)
+      ..writeByte(16)
+      ..write(obj.isVariant);
   }
 
   @override

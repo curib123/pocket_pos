@@ -56,7 +56,12 @@ Future<void> main() async {
           ChangeNotifierProvider(create: (_) => AuthProvider()),
           ChangeNotifierProvider(create: (_) => ProductProvider(productBox)),
           ChangeNotifierProvider(create: (_) => ProductStockProvider(productBox)),
-          ChangeNotifierProvider(create: (_) => VariantProductProvider(productBox)),
+          ChangeNotifierProxyProvider<ProductProvider, VariantProductProvider>(
+            create: (context) => VariantProductProvider(productBox),
+            update: (context, productProvider, previous) =>
+            previous!..attachProductProvider(productProvider),
+          ),
+
           ChangeNotifierProvider(create: (_) => LooseStockProvider(productBox)),
           ChangeNotifierProvider(create: (_) => ProductAnalyticsProvider(productBox,analyticsBox)),
           Provider(create: (_) => ProductSync(productBox)),

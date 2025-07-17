@@ -15,6 +15,7 @@ class StockLogProvider extends ChangeNotifier {
     _productSync = sync;
   }
 
+
   Product? _getProduct(String idOrName) {
     try {
       return _productBox.values.firstWhere(

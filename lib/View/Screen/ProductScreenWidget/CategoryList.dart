@@ -51,7 +51,7 @@ class _CategoryListState extends State<CategoryList> {
             final category = visibleCategories[index];
             final icon = StoreCategory.icons[category] ?? LucideIcons.tag;
             final color = StoreCategory.colors[category] ?? Colors.grey;
-            final count = productProvider.getProductsByCategory(category).length.toString();
+            final count = productProvider.getAllProductsWithVariantsByCategory(category).length.toString();
 
             return FadeInLeft(
               duration: const Duration(milliseconds: 300),
