@@ -20,14 +20,16 @@ import 'package:mobile_stock_inventory/View/Components/Custom/CustomFlatDropdown
 import 'package:mobile_stock_inventory/View/Components/Custom/CustomPillToggle.dart';
 import 'package:mobile_stock_inventory/View/Components/Custom/CustomTextField.dart';
 import 'package:mobile_stock_inventory/Helper/AppColor.dart';
+import 'package:mobile_stock_inventory/View/Components/SnackbarService.dart';
 import 'package:provider/provider.dart';
 
 class UpsertProductModal extends StatefulWidget {
   final bool isVariant;
   final String Category;
   final Product? existingProduct;
+  final Product? parentProduct;
 
-  const UpsertProductModal({super.key, this.isVariant = false, this.existingProduct, required this.Category});
+  const UpsertProductModal({super.key, this.isVariant = false, this.existingProduct, required this.Category, this.parentProduct});
 
   @override
   State<UpsertProductModal> createState() => _UpsertProductModalState();
@@ -55,9 +57,17 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
   @override
   void initState() {
     super.initState();
-     widget.Category.isNotEmpty ? _selectedCategory = widget.Category : null;
+
+    // 👀 Set category from widget param (legacy)
+    if (widget.Category.isNotEmpty) {
+      _selectedCategory = widget.Category;
+    }
+
     final p = widget.existingProduct;
+    final parent = widget.parentProduct;
+
     if (p != null) {
+      // 🛠️ Editing an existing product or variant
       _nameController.text = p.name;
       _selectedCategory = p.category;
       _selectedUnit = p.unit;
@@ -69,22 +79,34 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
       _piecesPerPackController.text = p.piecesPerPack.toString();
       _looseStockController.text = p.looseStock?.toString() ?? '';
       _stock.addAll(p.stocks);
+
+      // 📦 Keep loose stock auto-calc in sync
       _piecesPerPackController.addListener(() {
         final piecesPerPack = int.tryParse(_piecesPerPackController.text) ?? 0;
         final totalPacks = _stock.fold<int>(0, (sum, s) => sum + s.quantity);
         _looseStockController.text = (piecesPerPack * totalPacks).toString();
       });
 
+    } else if (widget.isVariant && parent != null) {
+      // 🧬 Adding a new variant, inherit from parent
+      _selectedCategory = parent.category;
+      _selectedUnit = parent.unit;
+      _isSoldByPack = parent.isSoldByPack;
+      _isSoldByPiece = parent.isSoldByPiece;
+      _piecesPerPackController.text = parent.piecesPerPack.toString();
+
     } else {
+      // 🆕 Brand new base product
       _piecesPerPackController.text = '0';
     }
 
-    // 🧩 Listen for changes in Pieces per Pack
+    // 🔁 Always sync loose stock on changes
     _piecesPerPackController.addListener(_updateLooseStock);
 
-    // If editing, and you want it to populate immediately:
+    // 🚀 Initialize loose stock from the get-go
     _updateLooseStock();
   }
+
 
   void _updateLooseStock() {
     final piecesPerPack = int.tryParse(_piecesPerPackController.text);
@@ -156,6 +178,24 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
   }
 
   Future<void> _openAddVariantDialog() async {
+    final parent = Product(
+      id: widget.existingProduct?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
+      name: _nameController.text.trim(),
+      unit: _selectedUnit ?? 'pcs',
+      isSoldByPack: _isSoldByPack,
+      isSoldByPiece: _isSoldByPiece,
+      category: _selectedCategory ?? "Uncategorized",
+      piecesPerPack: int.tryParse(_piecesPerPackController.text.trim()) ?? 1,
+      createdAt: DateTime.now(),
+      lastModified: DateTime.now(),
+      imagePath: _selectedImage?.path ?? '',
+      hasVariant: true,
+      variants: [],
+      stocks: [],
+      logs: [],
+      looseStock: null,
+    );
+
     final Product? newVariant = await showModalBottomSheet<Product>(
       context: context,
       isScrollControlled: true,
@@ -182,8 +222,10 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
                   controller: controller,
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
                   child: UpsertProductModal(
-                    Category: _selectedCategory?.toString() ?? '', // ✅ fix key name
-                    isVariant: true, // ✅ optional flag for variant behavior
+                    Category: widget.Category,
+                    isVariant: true,
+                    existingProduct: null, // optional if you want fresh variant
+                    parentProduct: parent,  // ✅ this will be the new param
                   ),
                 ),
               ),
@@ -201,6 +243,7 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
   }
 
 
+
   void _submitProduct(
       ProductProvider productProvider,
       VariantProductProvider variantProductProvider,
@@ -215,9 +258,7 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
           content: "Please select at least one selling method: Pack or Piece or Pick Both.",
           onConfirm: () {
             Navigator.pop(context);
-           setState(() {
-             _isSubmitting = false;
-           });
+            setState(() => _isSubmitting = false);
           },
           type: 'warning',
         ),
@@ -229,12 +270,6 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
     final productId = isEditing
         ? widget.existingProduct!.id
         : DateTime.now().millisecondsSinceEpoch.toString();
-
-    // Upsert all stocks with updated productId before saving the product
-    for (var stock in _stock) {
-      final updatedStock = stock.copyWith(productId: productId);
-      await productStockProvider.upsertStock(productId, updatedStock);
-    }
 
     final product = Product(
       id: productId,
@@ -250,8 +285,7 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
       createdAt: isEditing ? widget.existingProduct!.createdAt : DateTime.now(),
       lastModified: DateTime.now(),
       deletedAt: null,
-      // use the updated stocks with synced productId
-      stocks: _stock.map((s) => s.copyWith(productId: productId)).toList(),
+      stocks: [], // ❌ Don't attach stocks here yet
       logs: widget.existingProduct?.logs ?? [],
       hasVariant: _hasVariant,
       variants: _hasVariant ? _variants : [],
@@ -277,6 +311,12 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
           await productProvider.updateProduct(product);
         } else {
           await productProvider.addProduct(product);
+        }
+
+        // ✅ Now that product is saved, upsert stocks
+        for (var stock in _stock) {
+          final updatedStock = stock.copyWith(productId: productId);
+          await productStockProvider.upsertStock(productId, updatedStock);
         }
 
         if (_isSoldByPiece) {
@@ -313,6 +353,7 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
       );
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -560,11 +601,11 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
                                       const SizedBox(width: 8),
 
                                       // ✏️ Edit & Delete Buttons
-                                      Row(
+                                      Column(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
                                           IconButton(
-                                            icon: const Icon(Icons.edit, size: 30, color: Colors.orange),
+                                            icon: const Icon(Icons.edit, size: 25, color: Colors.orange),
                                             tooltip: 'Edit Stock',
                                             splashRadius: 20,
                                             onPressed: () async {
@@ -588,7 +629,7 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
                                             },
                                           ),
                                           IconButton(
-                                            icon: const Icon(Icons.delete_outline, size: 30, color: Colors.red),
+                                            icon: const Icon(Icons.delete_outline, size: 25, color: Colors.red),
                                             tooltip: 'Delete Stock',
                                             splashRadius: 20,
                                             onPressed: () async {
@@ -686,18 +727,145 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
                       // 🧩 Show Variant List & Add Button
                       if (_hasVariant && !widget.isVariant) ...[
                         if (_variants.isNotEmpty) ...[
-                          const Text("Added Variants"),
+                          const Text("Added Variants", style: TextStyle(fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 8),
+
                           ..._variants.map(
-                                (v) => ListTile(
-                              leading: (v.imagePath != null && v.imagePath!.isNotEmpty)
-                                  ? Image.file(File(v.imagePath!), width: 40)
-                                  : const Icon(Icons.image_not_supported_outlined),
-                              title: Text(v.name),
-                              subtitle: Text(v.unit ?? ''),
+                                (v) => Container(
+                              margin: const EdgeInsets.symmetric(vertical: 6),
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: AppColor.surface,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: Colors.grey.shade300),
+                              ),
+                              child: Row(
+                                children: [
+                                  // 📸 Image preview
+                                  (v.imagePath != null && v.imagePath!.isNotEmpty)
+                                      ? ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Image.file(
+                                      File(v.imagePath!),
+                                      width: 50,
+                                      height: 50,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  )
+                                      : const Icon(Icons.image_not_supported_outlined, size: 50),
+
+                                  const SizedBox(width: 12),
+
+                                  // 🧾 Variant Info
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          v.name,
+                                          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          "Unit: ${v.unit}",
+                                          style: const TextStyle(fontSize: 12, color: AppColor.textSecondary),
+                                        ),
+                                        if (v.stocks.isNotEmpty) ...[
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            "Qty: ${v.stocks.first.quantity}",
+                                            style: const TextStyle(fontSize: 12, color: AppColor.textSecondary),
+                                          ),
+                                        ]
+                                      ],
+                                    ),
+                                  ),
+
+                                  // ✏️ Actions
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(Icons.edit, color: Colors.orange),
+                                        tooltip: "Edit Variant",
+                                        onPressed: () async {
+                                          final editedVariant = await showModalBottomSheet<Product>(
+                                            context: context,
+                                            isScrollControlled: true,
+                                            backgroundColor: Colors.transparent,
+                                            shape: const RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+                                            ),
+                                            builder: (_) => DraggableScrollableSheet(
+                                              expand: false,
+                                              maxChildSize: 0.80,
+                                              initialChildSize: 0.75,
+                                              minChildSize: 0.6,
+                                              builder: (_, controller) => Padding(
+                                                padding: EdgeInsets.only(
+                                                  bottom: MediaQuery.of(context).viewInsets.bottom,
+                                                ),
+                                                child: Material(
+                                                  borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
+                                                  color: Colors.white,
+                                                  child: SafeArea(
+                                                    top: false,
+                                                    child: SingleChildScrollView(
+                                                      controller: controller,
+                                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                                                      child: UpsertProductModal(
+                                                        Category: _selectedCategory ?? '',
+                                                        isVariant: true,
+                                                        existingProduct: v,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          );
+
+                                          if (editedVariant != null) {
+                                            setState(() {
+                                              final index = _variants.indexWhere((variant) => variant.id == editedVariant.id);
+                                              if (index != -1) _variants[index] = editedVariant;
+                                            });
+                                            SnackbarService.showSuccess("✅ Variant updated!");
+                                          }
+                                        },
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(Icons.delete_outline_outlined, color: Colors.redAccent),
+                                        tooltip: "Delete Variant",
+                                        onPressed: () async {
+                                          await showDialog<bool>(
+                                            context: context,
+                                            builder: (context) => CustomConfirmDialog(
+                                              title: "Delete Variant?",
+                                              content: "Are you sure you want to delete '${v.name}'?",
+                                              onCancel: () => Navigator.pop(context),
+                                              onConfirm: () {
+                                                setState(() {
+                                                  _variants.removeWhere((variant) => variant.id == v.id);
+                                                });
+                                                Navigator.pop(context);
+                                                SnackbarService.showSuccess("🗑️ Variant deleted!");
+                                              },
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
+
+
                           const SizedBox(height: 5),
                         ],
+
                         CustomButton(
                           icon: Icons.add_circle_outline,
                           text: "Add Variant",
@@ -705,6 +873,7 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
                         ),
                         const SizedBox(height: 16),
                       ],
+
                       const SizedBox(height: 10,),
                       Align(
                         alignment: Alignment.bottomCenter,
@@ -719,7 +888,7 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
                                     : "Adding...")
                                     : (widget.existingProduct != null
                                     ? (widget.isVariant ? "Update " : "Update ")
-                                    : (widget.isVariant ? "Add " : "Add ")),
+                                    : (widget.isVariant ? "Add Variant " : "Add Product ")),
                                 isDisabled: _isSubmitting,
                                 onPressed: () async {
                                   if (_nameController.text.trim().isEmpty) {

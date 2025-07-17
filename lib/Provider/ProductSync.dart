@@ -2,11 +2,11 @@ import 'package:hive/hive.dart';
 import 'package:mobile_stock_inventory/Model/product_model.dart';
 import 'package:mobile_stock_inventory/Helper/Database/SupabaseProductServices.dart';
 
-class ProductSyncProvider {
+class ProductSync {
   final Box<Product> _productBox;
   final SupabaseProductServices _supabaseService = SupabaseProductServices();
 
-  ProductSyncProvider(this._productBox);
+  ProductSync(this._productBox);
 
   /// 🡇 Pull from Supabase, push to Hive
   Future<void> syncFromSupabase() async {
@@ -32,13 +32,19 @@ class ProductSyncProvider {
         serverIds.add(serverProduct.id);
       }
 
-      // Handle soft-deleting local items not found on server
+      // 🧠 Handle soft-deleting local items not found on server
       final localIds = _productBox.keys.cast<String>().toSet();
       final toDelete = localIds.difference(serverIds);
 
       for (final id in toDelete) {
         final product = _productBox.get(id);
-        if (product != null && product.deletedAt == null) {
+
+        // 🛡️ Skip deleting local products that have never been synced
+        final isUnsyncedLocalOnly = product?.lastModified != null &&
+            (product!.createdAt == product.lastModified ||
+                product.lastModified.difference(product.createdAt).inSeconds <= 5);
+
+        if (product != null && product.deletedAt == null && !isUnsyncedLocalOnly) {
           final updated = product.copyWith(
             deletedAt: DateTime.now(),
             lastModified: DateTime.now(),

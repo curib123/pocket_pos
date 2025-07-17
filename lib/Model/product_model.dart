@@ -49,7 +49,6 @@ class Product extends HiveObject {
   @HiveField(13)
   final List<StockLog> logs;
 
-
   @HiveField(14)
   final bool hasVariant;
 
@@ -70,7 +69,6 @@ class Product extends HiveObject {
     return (packQty * perPack) + looseQty;
   }
 
-
   Product({
     required this.id,
     required this.name,
@@ -80,16 +78,15 @@ class Product extends HiveObject {
     this.category,
     this.unit,
     this.imagePath,
-    DateTime? createdAt,
-    DateTime? lastModified,
+    required this.createdAt,
+    required this.lastModified,
     this.deletedAt,
     this.stocks = const [],
     this.looseStock,
     this.logs = const [],
     this.hasVariant = false,
-    this.variants = const [], // 👈 default empty
-  })  : createdAt = createdAt ?? DateTime.now(),
-        lastModified = lastModified ?? DateTime.now();
+    this.variants = const [],
+  });
 
   Map<String, dynamic> toMap() {
     return {
@@ -108,7 +105,7 @@ class Product extends HiveObject {
       'looseStock': looseStock?.toMap(),
       'logs': logs.map((l) => l.toMap()).toList(),
       'hasVariant': hasVariant,
-      'variants': variants.map((v) => v.toMap()).toList(), // 🆕
+      'variants': variants.map((v) => v.toMap()).toList(),
     };
   }
 
@@ -128,8 +125,8 @@ class Product extends HiveObject {
       stocks: (map['stocks'] as List?)?.map((s) => ProductStock.fromMap(s)).toList() ?? [],
       looseStock: map['looseStock'] != null ? LooseStock.fromMap(map['looseStock']) : null,
       logs: (map['logs'] as List?)?.map((l) => StockLog.fromMap(l)).toList() ?? [],
-      variants: (map['variants'] as List?)?.map((v) => Product.fromMap(v)).toList() ?? [],
       hasVariant: map['hasVariant'] ?? false,
+      variants: (map['variants'] as List?)?.map((v) => Product.fromMap(v)).toList() ?? [],
     );
   }
 
@@ -171,4 +168,3 @@ class Product extends HiveObject {
     );
   }
 }
-

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mobile_stock_inventory/Provider/ProductSyncProvider.dart';
+import 'package:mobile_stock_inventory/Provider/ProductSync.dart';
 import 'package:mobile_stock_inventory/View/Components/SearchAndCartRow.dart';
 import 'package:provider/provider.dart';
 
@@ -17,7 +17,7 @@ class _DashBoardScreenState extends State<DashBoardScreen> {
     super.initState();
     Future.delayed(Duration.zero,() async {
       ///sync local to database vice versa
-      final syncProvider = Provider.of<ProductSyncProvider>(context, listen: false);
+      final syncProvider = Provider.of<ProductSync>(context, listen: false);
       await syncProvider.autoSync();
 
 

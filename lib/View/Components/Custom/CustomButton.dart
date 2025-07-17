@@ -77,8 +77,8 @@ class CustomButton extends StatelessWidget {
                     maxLines: 1,
                     softWrap: false,
                     style: TextStyle(
-                      fontSize: context.rf(15),
-                      fontWeight: FontWeight.w500,
+                      fontSize: context.rf(12),
+                      fontWeight: FontWeight.w700,
                       letterSpacing: 0.4,
                       color: effectiveText,
                     ),

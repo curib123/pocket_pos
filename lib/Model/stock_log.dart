@@ -20,10 +20,22 @@ enum StockLogReason {
   borrowed,
 
   @HiveField(5)
-  added,      // ➕ First stock entry
+  added,       // ➕ Initial stock entry
 
   @HiveField(6)
-  restocked,  // 🔁 Manual restock
+  restocked,   // 🔁 Manual stock in
+
+  @HiveField(7)
+  adjusted,    // ✏️ Manual stock update/edit
+
+  @HiveField(8)
+  deleted,     // ❌ Product archived or deleted
+
+  @HiveField(9)
+  restored,    // ♻️ Product restored from archive
+
+  @HiveField(10)
+  cleared,     // 🧹 Product wiped in bulk clear
 }
 
 @HiveType(typeId: 4)
@@ -68,7 +80,6 @@ class StockLog extends HiveObject {
   })  : dateLogged = dateLogged ?? DateTime.now(),
         lastModified = lastModified ?? DateTime.now();
 
-  // ✅ toMap
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -83,7 +94,6 @@ class StockLog extends HiveObject {
     };
   }
 
-  // ✅ fromMap
   factory StockLog.fromMap(Map<String, dynamic> map) {
     return StockLog(
       id: map['id'],
@@ -103,7 +113,6 @@ class StockLog extends HiveObject {
     );
   }
 
-  // ✅ copyWith
   StockLog copyWith({
     String? id,
     String? productId,

@@ -13,7 +13,8 @@ import 'package:mobile_stock_inventory/Provider/CurrencyProvider.dart';
 import 'package:mobile_stock_inventory/Provider/LooseStockProvider.dart';
 import 'package:mobile_stock_inventory/Provider/ProductAnalyticsProvider.dart';
 import 'package:mobile_stock_inventory/Provider/ProductProvider.dart';
-import 'package:mobile_stock_inventory/Provider/ProductSyncProvider.dart';
+import 'package:mobile_stock_inventory/Provider/ProductSync.dart';
+import 'package:mobile_stock_inventory/Provider/StockLogProvider.dart';
 import 'package:mobile_stock_inventory/Provider/StoreCategoryProvider.dart';
 import 'package:mobile_stock_inventory/Provider/SwitchProvider.dart';
 import 'package:mobile_stock_inventory/Provider/TabProvider.dart';
@@ -34,6 +35,7 @@ Future<void> main() async {
   Hive.registerAdapter(LooseStockAdapter());
   Hive.registerAdapter(ProductAnalyticsAdapter());
   Hive.registerAdapter(StockLogAdapter());
+  Hive.registerAdapter(StockLogReasonAdapter());
 
   final productBox = await Hive.openBox<Product>('products');
   final analyticsBox = await Hive.openBox<ProductAnalytics>('product_analytics');
@@ -57,7 +59,16 @@ Future<void> main() async {
           ChangeNotifierProvider(create: (_) => VariantProductProvider(productBox)),
           ChangeNotifierProvider(create: (_) => LooseStockProvider(productBox)),
           ChangeNotifierProvider(create: (_) => ProductAnalyticsProvider(productBox,analyticsBox)),
-          Provider(create: (_) => ProductSyncProvider(productBox)),
+          Provider(create: (_) => ProductSync(productBox)),
+          ChangeNotifierProxyProvider<ProductSync, StockLogProvider>(
+            create: (_) => StockLogProvider(productBox),
+            update: (_, sync, provider) {
+              provider!.attachSync(sync);
+              return provider;
+            },
+          ),
+
+
           ChangeNotifierProvider(create: (_) => StoreCategoryProvider()),
           ChangeNotifierProvider(create: (_) => SwitchProvider()),
           ChangeNotifierProvider(create: (_) => CurrencyProvider()),
@@ -85,7 +96,6 @@ class MyApp extends StatelessWidget {
         textTheme: GoogleFonts.workSansTextTheme(),
         colorScheme: ColorScheme.fromSeed(
           seedColor: Colors.blue,
-          background: Colors.white,
           surface: Colors.white,
         ),
         useMaterial3: true,

@@ -28,7 +28,8 @@ class ProductAnalyticsProvider extends ChangeNotifier {
     final List<StockLog> logs = product.logs
         .where((log) =>
     log.deletedAt == null &&
-        (filterType == null || _isWithinRange(log.dateLogged, now, filterType)))
+        (filterType == null ||
+            _isWithinRange(log.dateLogged, now, filterType)))
         .toList();
 
     final int totalQty = product.stocks.fold(0, (sum, s) => sum + s.quantity);
@@ -55,21 +56,30 @@ class ProductAnalyticsProvider extends ChangeNotifier {
           totalRevenue += latestRetail * qty;
           totalCost += avgCost * qty;
           break;
+
         case StockLogReason.expired:
           expired += qty;
           break;
+
         case StockLogReason.damaged:
           damaged += qty;
           break;
+
         case StockLogReason.donated:
           donated += qty;
           break;
+
         case StockLogReason.borrowed:
           borrowed += qty;
           break;
+
         case StockLogReason.added:
         case StockLogReason.restocked:
-        // Do nothing – inbound logs
+        case StockLogReason.adjusted:
+        case StockLogReason.deleted:
+        case StockLogReason.restored:
+        case StockLogReason.cleared:
+        // 🔇 These reasons don’t affect analytics totals (for now)
           break;
       }
     }
@@ -110,7 +120,7 @@ class ProductAnalyticsProvider extends ChangeNotifier {
             date.day == now.day;
       case DateFilterType.week:
         final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
-        final endOfWeek = startOfWeek.add(Duration(days: 6));
+        final endOfWeek = startOfWeek.add(const Duration(days: 6));
         return date.isAfter(startOfWeek.subtract(const Duration(seconds: 1))) &&
             date.isBefore(endOfWeek.add(const Duration(days: 1)));
       case DateFilterType.month:

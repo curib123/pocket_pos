@@ -85,6 +85,14 @@ class StockLogReasonAdapter extends TypeAdapter<StockLogReason> {
         return StockLogReason.added;
       case 6:
         return StockLogReason.restocked;
+      case 7:
+        return StockLogReason.adjusted;
+      case 8:
+        return StockLogReason.deleted;
+      case 9:
+        return StockLogReason.restored;
+      case 10:
+        return StockLogReason.cleared;
       default:
         return StockLogReason.sold;
     }
@@ -113,6 +121,18 @@ class StockLogReasonAdapter extends TypeAdapter<StockLogReason> {
         break;
       case StockLogReason.restocked:
         writer.writeByte(6);
+        break;
+      case StockLogReason.adjusted:
+        writer.writeByte(7);
+        break;
+      case StockLogReason.deleted:
+        writer.writeByte(8);
+        break;
+      case StockLogReason.restored:
+        writer.writeByte(9);
+        break;
+      case StockLogReason.cleared:
+        writer.writeByte(10);
         break;
     }
   }

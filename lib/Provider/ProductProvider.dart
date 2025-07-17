@@ -6,11 +6,13 @@ import 'package:mobile_stock_inventory/View/Components/SnackbarService.dart';
 
 class ProductProvider extends ChangeNotifier {
   final Box<Product> _productBox;
+
   List<Product> _products = [];
   List<Product> get products => _products;
 
   ProductProvider(this._productBox) {
     initializeProducts();
+
   }
 
   Future<void> initializeProducts() async {
@@ -19,6 +21,7 @@ class ProductProvider extends ChangeNotifier {
     } else {
       print("📦 Loading products from Hive.");
       refreshProducts();
+      // Removed autoSync() ✅
     }
   }
 
@@ -50,53 +53,42 @@ class ProductProvider extends ChangeNotifier {
 
   List<Map<String, dynamic>> exportToJsonList() =>
       _products.map((p) => p.toMap()).toList();
-
   Future<void> addProduct(Product product) async {
     try {
-      final nameExists = _products.any(
-            (p) =>
-        p.name.trim().toLowerCase() == product.name.trim().toLowerCase() &&
-            p.deletedAt == null,
+      final nameExists = _products.any((p) =>
+      p.name.trim().toLowerCase() == product.name.trim().toLowerCase() &&
+          p.deletedAt == null,
       );
       if (nameExists) {
         SnackbarService.showWarning('⚠️ Product already exists: ${product.name}');
         return;
       }
 
-      // 🔁 Prepare logs if initial stock exists
       final List<StockLog> logs = [];
 
-      // ➕ Log initial pack stocks
-      if (product.stocks.isNotEmpty) {
-        for (final stock in product.stocks) {
-          if (stock.quantity > 0) {
-            logs.add(
-              StockLog(
-                id: 'log-${stock.id}',
-                productId: product.id,
-                quantity: stock.quantity,
-                isPiece: false,
-                reason: StockLogReason.added,
-                remarks: 'Initial stock (pack)',
-              ),
-            );
-          }
+      for (final stock in product.stocks) {
+        if (stock.quantity > 0) {
+          logs.add(StockLog(
+            id: 'log-${stock.id}',
+            productId: product.id,
+            quantity: stock.quantity,
+            isPiece: false,
+            reason: StockLogReason.added,
+            remarks: 'Initial stock (pack)',
+          ));
         }
       }
 
-      // ➕ Log initial loose pieces
-      if (product.looseStock?.remainingPieces != null &&
-          product.looseStock!.remainingPieces > 0) {
-        logs.add(
-          StockLog(
-            id: 'log-${product.id}-loose',
-            productId: product.id,
-            quantity: product.looseStock!.remainingPieces,
-            isPiece: true,
-            reason: StockLogReason.added,
-            remarks: 'Initial stock (loose)',
-          ),
-        );
+      final loose = product.looseStock;
+      if (loose != null && loose.remainingPieces > 0) {
+        logs.add(StockLog(
+          id: 'log-${product.id}-loose',
+          productId: product.id,
+          quantity: loose.remainingPieces,
+          isPiece: true,
+          reason: StockLogReason.added,
+          remarks: 'Initial stock (loose)',
+        ));
       }
 
       final newProduct = product.copyWith(
@@ -115,7 +107,20 @@ class ProductProvider extends ChangeNotifier {
 
   Future<void> updateProduct(Product product) async {
     try {
-      final updated = product.copyWith(lastModified: DateTime.now());
+      final log = StockLog(
+        id: 'log-${product.id}-adjust',
+        productId: product.id,
+        quantity: 0,
+        isPiece: false,
+        reason: StockLogReason.adjusted,
+        remarks: 'Product details manually updated',
+      );
+
+      final updated = product.copyWith(
+        lastModified: DateTime.now(),
+        logs: [...product.logs, log],
+      );
+
       await _productBox.put(updated.id, updated);
       final index = _products.indexWhere((p) => p.id == updated.id);
       if (index != -1) _products[index] = updated;
@@ -130,10 +135,21 @@ class ProductProvider extends ChangeNotifier {
     try {
       final product = _productBox.get(id);
       if (product != null) {
+        final log = StockLog(
+          id: 'log-${id}-deleted',
+          productId: id,
+          quantity: 0,
+          isPiece: false,
+          reason: StockLogReason.deleted,
+          remarks: 'Product was deleted',
+        );
+
         final deleted = product.copyWith(
           deletedAt: DateTime.now(),
           lastModified: DateTime.now(),
+          logs: [...product.logs, log],
         );
+
         await _productBox.put(id, deleted);
         _products.removeWhere((p) => p.id == id);
         notifyListeners();
@@ -148,10 +164,21 @@ class ProductProvider extends ChangeNotifier {
     try {
       final product = _productBox.get(id);
       if (product != null && product.deletedAt != null) {
+        final log = StockLog(
+          id: 'log-${id}-restored',
+          productId: id,
+          quantity: 0,
+          isPiece: false,
+          reason: StockLogReason.restored,
+          remarks: 'Product was restored',
+        );
+
         final restored = product.copyWith(
           deletedAt: null,
           lastModified: DateTime.now(),
+          logs: [...product.logs, log],
         );
+
         await _productBox.put(id, restored);
         _products.add(restored);
         notifyListeners();
@@ -164,6 +191,24 @@ class ProductProvider extends ChangeNotifier {
 
   Future<void> clearAll() async {
     try {
+      for (final product in _products) {
+        final log = StockLog(
+          id: 'log-${product.id}-cleared',
+          productId: product.id,
+          quantity: 0,
+          isPiece: false,
+          reason: StockLogReason.cleared,
+          remarks: 'Cleared from system',
+        );
+
+        final cleared = product.copyWith(
+          lastModified: DateTime.now(),
+          logs: [...product.logs, log],
+        );
+
+        await _productBox.put(cleared.id, cleared);
+      }
+
       await _productBox.clear();
       _products.clear();
       notifyListeners();
@@ -172,4 +217,5 @@ class ProductProvider extends ChangeNotifier {
       SnackbarService.showError('❌ Clear all failed: $e');
     }
   }
+
 }
