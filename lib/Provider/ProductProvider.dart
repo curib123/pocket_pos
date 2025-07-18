@@ -12,7 +12,6 @@ class ProductProvider extends ChangeNotifier {
 
   ProductProvider(this._productBox) {
     initializeProducts();
-
   }
 
   Future<void> initializeProducts() async {
@@ -21,14 +20,11 @@ class ProductProvider extends ChangeNotifier {
     } else {
       print("📦 Loading products from Hive.");
       refreshProducts();
-      // Removed autoSync() ✅
     }
   }
 
   void refreshProducts() {
-    _products = _productBox.values
-        .where((p) => p.deletedAt == null)
-        .toList();
+    _products = _productBox.values.where((p) => p.deletedAt == null).toList();
     notifyListeners();
   }
 
@@ -38,7 +34,6 @@ class ProductProvider extends ChangeNotifier {
   Product? getProductById(String id) {
     for (final product in _products) {
       if (product.id == id) return product;
-
       for (final variant in product.variants) {
         if (variant.id == id) return variant;
       }
@@ -46,38 +41,25 @@ class ProductProvider extends ChangeNotifier {
     return null;
   }
 
-  /// Returns all products including nested variant products
   List<Product> getAllProductsWithVariants() {
     final List<Product> all = [];
-
     for (final product in _products) {
       all.add(product);
       all.addAll(product.variants);
     }
-
     return all;
   }
 
-  /// Returns all products and variants that match the given category
   List<Product> getAllProductsWithVariantsByCategory(String category) {
     final List<Product> all = [];
-
     for (final product in _products) {
-      if (product.category == category) {
-        all.add(product);
-      }
-
-      // Include variants that match the category too
+      if (product.category == category) all.add(product);
       for (final variant in product.variants) {
-        if (variant.category == category) {
-          all.add(variant);
-        }
+        if (variant.category == category) all.add(variant);
       }
     }
-
     return all;
   }
-
 
   Product? getProductByName(String name) {
     try {
@@ -95,17 +77,16 @@ class ProductProvider extends ChangeNotifier {
 
   List<Map<String, dynamic>> exportToJsonList() =>
       _products.map((p) => p.toMap()).toList();
+
   Future<void> upsertProduct(Product product) async {
     try {
       final existingIndex = _products.indexWhere((p) => p.id == product.id);
       final bool isNew = existingIndex == -1;
 
       if (isNew) {
-        // Check duplicate name for new products only
         final nameExists = _products.any((p) =>
         p.name.trim().toLowerCase() == product.name.trim().toLowerCase() &&
-            p.deletedAt == null,
-        );
+            p.deletedAt == null);
 
         if (nameExists) {
           SnackbarService.showWarning('⚠️ Product already exists: ${product.name}');
@@ -145,12 +126,9 @@ class ProductProvider extends ChangeNotifier {
         );
 
         await _productBox.put(newProduct.id, newProduct);
-        _products.add(newProduct);
-        notifyListeners();
+        refreshProducts();
         SnackbarService.showSuccess('✅ Product added: ${product.name}');
       } else {
-        // Update existing product
-
         final log = StockLog(
           id: 'log-${product.id}-adjust-${DateTime.now().millisecondsSinceEpoch}',
           productId: product.id,
@@ -166,15 +144,13 @@ class ProductProvider extends ChangeNotifier {
         );
 
         await _productBox.put(updatedProduct.id, updatedProduct);
-        _products[existingIndex] = updatedProduct;
-        notifyListeners();
+        refreshProducts();
         SnackbarService.showSuccess('✅ Product updated: ${updatedProduct.name}');
       }
     } catch (e) {
       SnackbarService.showError('❌ Failed to upsert product: $e');
     }
   }
-
 
   Future<void> deleteProduct(String id) async {
     try {
@@ -196,8 +172,7 @@ class ProductProvider extends ChangeNotifier {
         );
 
         await _productBox.put(id, deleted);
-        _products.removeWhere((p) => p.id == id);
-        notifyListeners();
+        refreshProducts();
         SnackbarService.showSuccess('🗑️ Product deleted: ${product.name}');
       }
     } catch (e) {
@@ -225,8 +200,7 @@ class ProductProvider extends ChangeNotifier {
         );
 
         await _productBox.put(id, restored);
-        _products.add(restored);
-        notifyListeners();
+        refreshProducts();
         SnackbarService.showSuccess('✅ Product restored: ${product.name}');
       }
     } catch (e) {
@@ -255,12 +229,10 @@ class ProductProvider extends ChangeNotifier {
       }
 
       await _productBox.clear();
-      _products.clear();
-      notifyListeners();
+      refreshProducts();
       SnackbarService.showSuccess('🧹 All products cleared.');
     } catch (e) {
       SnackbarService.showError('❌ Clear all failed: $e');
     }
   }
-
 }

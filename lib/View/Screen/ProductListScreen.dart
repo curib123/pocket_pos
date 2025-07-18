@@ -6,6 +6,7 @@ import 'package:mobile_stock_inventory/Helper/AppColor.dart';
 import 'package:mobile_stock_inventory/Model/product_model.dart';
 import 'package:mobile_stock_inventory/Provider/CurrencyProvider.dart';
 import 'package:mobile_stock_inventory/Provider/ProductProvider.dart';
+import 'package:mobile_stock_inventory/Provider/StoreCategoryProvider.dart';
 import 'package:mobile_stock_inventory/Provider/SwitchProvider.dart';
 import 'package:mobile_stock_inventory/View/Components/BouncingCartIcon.dart';
 import 'package:mobile_stock_inventory/View/Components/Custom/CustomButton.dart';
@@ -24,16 +25,73 @@ class ProductListScreen extends StatefulWidget {
 }
 
 class _ProductListScreenState extends State<ProductListScreen> {
-  String _searchQuery = '';
   Timer? _debounce;
+  String _searchQuery = '';
   int _loadedCount = 50;
   final int _loadIncrement = 50;
+
+// Dropdown filter state:
+  String _selectedCategoryFilter =  'All';
+  String _selectedSort = 'Newest';
+  String _selectedStockStatus = 'All';
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    widget.category.isNotEmpty ? _selectedCategoryFilter = widget.category : _selectedCategoryFilter = 'All';
+  }
+
 
   @override
   void dispose() {
     _debounce?.cancel();
     super.dispose();
   }
+
+  InputDecoration _dropdownDecoration(String label) {
+    return InputDecoration(
+      labelText: label,
+      filled: true,
+      fillColor: Colors.grey[100],
+      contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+    );
+  }
+
+  Widget _buildFilterDropdown({
+    required String label,
+    required String value,
+    required List<String> items,
+    required void Function(String?) onChanged,
+    required double width,
+  }) {
+    return SizedBox(
+      width: width,
+      child: DropdownButtonFormField<String>(
+        value: value,
+        isExpanded: true, // <--- Important for preventing overflow
+        items: items.map((e) {
+          return DropdownMenuItem(
+            value: e,
+            child: Text(
+              e,
+              overflow: TextOverflow.ellipsis, // Avoids overflow for long text
+              style:  TextStyle(fontSize: 14,color: Colors.grey,fontWeight: FontWeight.w300),
+            ),
+          );
+        }).toList(),
+        onChanged: onChanged,
+        decoration: _dropdownDecoration(label),
+        style: const TextStyle(fontSize: 12),
+      ),
+    );
+  }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -70,9 +128,9 @@ class _ProductListScreenState extends State<ProductListScreen> {
                   builder: (context) {
                     return DraggableScrollableSheet(
                       expand: false,
-                      maxChildSize: 0.95,
-                      initialChildSize: 0.9,
-                      minChildSize: 0.6,
+                      maxChildSize: 0.8,
+                      initialChildSize: 0.7,
+                      minChildSize: 0.65,
                       builder: (_, controller) => Padding(
                         padding: EdgeInsets.only(
                           bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -99,21 +157,77 @@ class _ProductListScreenState extends State<ProductListScreen> {
               },
             ),
           ),
-          body: Consumer<SwitchProvider>(
-            builder: (context, switchProvider, _) {
-              // All filtering logic
-              final allFiltered = widget.category.isNotEmpty
-                  ? productProvider.getAllProductsWithVariantsByCategory(widget.category).where(
-                    (p) => p.name.toLowerCase().contains(_searchQuery.toLowerCase()),
-              ).toList()
-                  : productProvider.getAllProductsWithVariants().where(
-                    (p) => p.name.toLowerCase().contains(_searchQuery.toLowerCase()),
-              ).toList();
+          body: Consumer2<SwitchProvider,StoreCategoryProvider>(
+            builder: (context, switchProvider,storeCategoryProvider, _) {
+              final allProducts = widget.category.isNotEmpty
+                  ? productProvider.getAllProductsWithVariantsByCategory(widget.category)
+                  : productProvider.getAllProductsWithVariants();
 
-              final filtered = allFiltered.take(_loadedCount).toList();
+              // Start with all products
+              List<Product> filteredProducts = allProducts;
+
+                    // Apply search query filter
+              if (_searchQuery.isNotEmpty) {
+                filteredProducts = filteredProducts.where((p) {
+                  return p.name.toLowerCase().contains(_searchQuery.toLowerCase());
+                }).toList();
+              }
+
+                // Apply category filter
+              if (_selectedCategoryFilter != 'All') {
+                filteredProducts = filteredProducts.where((p) => p.category == _selectedCategoryFilter).toList();
+              }
+
+                 // Apply stock status filter
+              if (_selectedStockStatus == 'In Stock') {
+                filteredProducts = filteredProducts.where((p) => p.totalQuantity > 0).toList();
+              } else if (_selectedStockStatus == 'Out of Stock') {
+                filteredProducts = filteredProducts.where((p) => p.totalQuantity == 0).toList();
+              } else if (_selectedStockStatus == 'Low Stock') {
+                filteredProducts = filteredProducts.where((p) => p.totalQuantity > 0 && p.totalQuantity <= 10).toList();
+              }
+
+                // Debug print
+              for (var p in filteredProducts) {
+                print('[Filtered Product] ${p.name} - Total Quantity: ${p.totalQuantity}');
+              }
+
+
+
+
+              // Sort logic
+              if (_selectedSort == 'Newest') {
+                filteredProducts.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+              } else if (_selectedSort == 'Oldest') {
+                filteredProducts.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+              } else if (_selectedSort == 'Price ↑') {
+                filteredProducts.sort((a, b) {
+                  final aLowestPrice = a.stocks.isNotEmpty
+                      ? a.stocks.map((s) => s.retailPrice).reduce((x, y) => x < y ? x : y)
+                      : 0;
+                  final bLowestPrice = b.stocks.isNotEmpty
+                      ? b.stocks.map((s) => s.retailPrice).reduce((x, y) => x < y ? x : y)
+                      : 0;
+                  return aLowestPrice.compareTo(bLowestPrice);
+                });
+              } else if (_selectedSort == 'Price ↓') {
+                filteredProducts.sort((a, b) {
+                  final aLowestPrice = a.stocks.isNotEmpty
+                      ? a.stocks.map((s) => s.retailPrice).reduce((x, y) => x < y ? x : y)
+                      : 0;
+                  final bLowestPrice = b.stocks.isNotEmpty
+                      ? b.stocks.map((s) => s.retailPrice).reduce((x, y) => x < y ? x : y)
+                      : 0;
+                  return bLowestPrice.compareTo(aLowestPrice);
+                });
+              }
+
+
+              final visibleProducts = filteredProducts.take(_loadedCount).toList();
 
               return Column(
                 children: [
+                  // Search Bar
                   FadeInDown(
                     duration: const Duration(milliseconds: 600),
                     child: Padding(
@@ -138,7 +252,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                                 _debounce = Timer(const Duration(milliseconds: 300), () {
                                   setState(() {
                                     _searchQuery = value;
-                                    _loadedCount = 50; // Reset pagination
+                                    _loadedCount = 50;
                                   });
                                 });
                               },
@@ -150,7 +264,9 @@ class _ProductListScreenState extends State<ProductListScreen> {
                               switchProvider.toggleProductGridView();
                             },
                             icon: Icon(
-                              switchProvider.isProductGridView ? Icons.layers_rounded : Icons.dashboard_rounded,
+                              switchProvider.isProductGridView
+                                  ? Icons.layers_rounded
+                                  : Icons.dashboard_rounded,
                               size: 30,
                               color: AppColor.primary,
                             ),
@@ -159,28 +275,90 @@ class _ProductListScreenState extends State<ProductListScreen> {
                       ),
                     ),
                   ),
+
+                  // Filter Dropdowns
+                  FadeInDown(
+                    duration: const Duration(milliseconds: 400),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 5),
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          double spacing = 12;
+                          double itemWidth = (constraints.maxWidth - (spacing * 2)) / (widget.category.isNotEmpty ? 2 : 3);
+
+                          return Wrap(
+                            spacing: spacing,
+                            runSpacing: 10,
+                            children: [
+                           if(widget.category.isEmpty) _buildFilterDropdown(
+                            width: itemWidth,
+                            label: 'Category',
+                            value: _selectedCategoryFilter,
+                            items: ['All', ...storeCategoryProvider.visibleCategories.toList()],
+                            onChanged: (value) {
+                              setState(() {
+                                _selectedCategoryFilter = value!;
+                                _loadedCount = 50;
+                              });
+                            },
+                            ),
+                              _buildFilterDropdown(
+                                width: itemWidth,
+                                label: 'Sort',
+                                value: _selectedSort,
+                                items: ['Newest', 'Oldest', 'Price ↑', 'Price ↓', 'Quantity ↑', 'Quantity ↓'],
+                                onChanged: (value) {
+                                  setState(() {
+                                    _selectedSort = value!;
+                                  });
+                                },
+                              ),
+                              _buildFilterDropdown(
+                                width: itemWidth,
+                                label: 'Stock',
+                                value: _selectedStockStatus,
+                                items: ['All', 'In Stock', 'Out of Stock', 'Low Stock'],
+                                onChanged: (value) {
+                                  setState(() {
+                                    _selectedStockStatus = value!;
+                                  });
+                                },
+                              ),
+
+                            ],
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+
+
+
+
+                  // Product List/Grid
                   Expanded(
                     child: NotificationListener<ScrollNotification>(
                       onNotification: (scrollInfo) {
                         if (scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent &&
-                            _loadedCount < allFiltered.length) {
+                            _loadedCount < filteredProducts.length) {
                           setState(() {
                             _loadedCount += _loadIncrement;
                           });
                         }
                         return false;
                       },
-                      child: filtered.isEmpty
+                      child: visibleProducts.isEmpty
                           ? _buildEmptyState()
                           : switchProvider.isProductGridView
-                          ? _buildGridView(filtered, currencyFormat, switchProvider)
-                          : _buildListView(filtered, currencyFormat, switchProvider),
+                          ? _buildGridView(visibleProducts, currencyFormat, switchProvider)
+                          : _buildListView(visibleProducts, currencyFormat, switchProvider),
                     ),
                   ),
                 ],
               );
             },
           ),
+
         );
       },
     );
@@ -225,7 +403,6 @@ class _ProductListScreenState extends State<ProductListScreen> {
             final product = products[index];
             final isPack = product.isSoldByPack;
             final isPiece = product.isSoldByPiece;
-            final unit = isPack ? (product.unit ?? 'pack') : 'pcs';
             final price = product.stocks.isNotEmpty
                 ? product.stocks.first.retailPrice
                 : 0;
@@ -271,8 +448,8 @@ class _ProductListScreenState extends State<ProductListScreen> {
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
                                 color: product.isVariant == true
-                                    ? AppColor.success.withOpacity(0.8)
-                                    : AppColor.warning.withOpacity(0.7),
+                                    ? AppColor.warning.withOpacity(0.8)
+                                    : AppColor.success.withOpacity(0.9),
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
@@ -321,31 +498,42 @@ class _ProductListScreenState extends State<ProductListScreen> {
                       const SizedBox(height: 4),
 
                       // Stock
-                      Text(
-                        'Stocks: ${product.totalQuantity}',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: AppColor.textSecondary,
-                        ),
-                        textAlign: TextAlign.center,
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Stocks: ${product.totalQuantity}',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: AppColor.textSecondary,
+                              ),
+                              textAlign: TextAlign.center,
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                            ),
+                          ),
+                        ],
                       ),
-
                       const SizedBox(height: 5),
 
-                      // Price badge
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
                           color: Colors.green.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(6),
                         ),
+                        constraints: const BoxConstraints(
+                          maxWidth: 150, // 👈 Optional: constrain width to make ellipsis work
+                        ),
                         child: Text(
-                          '${currencyFormat.format(price)} | $unit',
+                          '${currencyFormat.format(price)}',
                           style: TextStyle(
                             fontSize: priceFontSize,
                             fontWeight: FontWeight.w600,
                             color: Colors.green.shade700,
                           ),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
                         ),
                       ),
                     ],
@@ -370,7 +558,6 @@ class _ProductListScreenState extends State<ProductListScreen> {
         final imageUrl = product.imagePath ?? '';
         final isPack = product.isSoldByPack;
         final isPiece = product.isSoldByPiece;
-        final unit = product.unit ?? "unit" ;
         final price = product.stocks.isNotEmpty
             ? product.stocks.first.retailPrice
             : 0;
@@ -446,13 +633,6 @@ class _ProductListScreenState extends State<ProductListScreen> {
                           ),
                         ),
                         const SizedBox(width: 6),
-                        Text(
-                          '| $unit',
-                          style: const TextStyle(
-                            fontSize: 12.5,
-                            color: AppColor.textSecondary,
-                          ),
-                        ),
                       ],
                     ),
                     const SizedBox(height: 3),

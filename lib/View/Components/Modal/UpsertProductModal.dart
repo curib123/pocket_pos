@@ -28,8 +28,9 @@ class UpsertProductModal extends StatefulWidget {
   final String Category;
   final Product? existingProduct;
   final Product? parentProduct;
+  final bool? isRestock;
 
-  const UpsertProductModal({super.key, this.isVariant = false, this.existingProduct, required this.Category, this.parentProduct});
+  const UpsertProductModal({super.key, this.isVariant = false, this.existingProduct, required this.Category, this.parentProduct, this.isRestock  = false});
 
   @override
   State<UpsertProductModal> createState() => _UpsertProductModalState();
@@ -109,6 +110,7 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
 
     // 🚀 Initialize calculated loose stock right away
     _updateLooseStock();
+
   }
 
 
@@ -133,7 +135,16 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
     }
   }
 
-  Color get themeAccent => widget.isVariant ? AppColor.success : AppColor.primary;
+  Color get themeAccent {
+    final isEditing = widget.existingProduct != null;
+
+    if (widget.isVariant) {
+      return AppColor.success;
+    }
+    return isEditing ? AppColor.warning : AppColor.secondary;
+  }
+
+
 
   void _showImagePickerOptions() {
     showModalBottomSheet(
@@ -184,7 +195,7 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
     return 'unit';
   }
 
-  Future<void> _openAddVariantDialog() async {
+  Future<void> openAddVariantDialog() async {
     final parent = Product(
       id: widget.existingProduct?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
       name: _nameController.text.trim(),
@@ -312,7 +323,7 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
     try {
       if (widget.isVariant) {
         // Case 1: New variant, no existing product necessarily
-        final parentId = _selectedCategory ?? 'unknown';
+        final parentId = widget.parentProduct != null ? widget.parentProduct!.id : productId ;
         await variantProductProvider.upsertVariant(parentId, product);
         Navigator.pop(context, product);
       } else
@@ -371,231 +382,231 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
         return Material(
           borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
           color: AppColor.surface,
-          child: Padding(
-            padding: EdgeInsets.only(
-              top: 16,
-              left: 16,
-              right: 16,
-              bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-            ),
-            child: SingleChildScrollView(
-              child:   Consumer6<ProductProvider, StoreCategoryProvider,VariantProductProvider,LooseStockProvider,CurrencyProvider,ProductStockProvider>(
-            builder: (context, productProvider, storeCategoryProvider,variantProductProvider,looseStockProvider,currencyProvider,productStockProvider, _) {
-                  return Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        widget.existingProduct != null
-                            ? (widget.isVariant ? 'Edit Variant' : 'Edit Product')
-                            : (widget.isVariant ? 'Add Variant' : 'Add New Product'),
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: AppColor.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      GestureDetector(
-                        onTap: _showImagePickerOptions,
-                        child: Container(
-                          height: 100,
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            border: Border.all(color: AppColor.border),
-                            borderRadius: BorderRadius.circular(10),
-                            color: AppColor.background.withOpacity(0.5),
-                          ),
-                          child: _selectedImage != null
-                              ? Stack(
-                            children: [
-                              // Image Layer
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(10),
-                                child: Image.file(
-                                  _selectedImage!,
-                                  fit: BoxFit.fill,
-                                  width: double.infinity,
-                                  height: double.infinity,
+         child:   Consumer6<ProductProvider, StoreCategoryProvider,VariantProductProvider,LooseStockProvider,CurrencyProvider,ProductStockProvider>(
+    builder: (context, productProvider, storeCategoryProvider,variantProductProvider,looseStockProvider,currencyProvider,productStockProvider, _)  {
+              return Padding(
+                  padding: EdgeInsets.only(
+                    top: 16,
+                    left: 16,
+                    right: 16,
+                    bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+                  ),
+                  child: SingleChildScrollView(
+                    child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if(widget.isRestock == false)...[
+                              Text(
+                                widget.existingProduct != null
+                                    ? (widget.isRestock == true
+                                    ? (widget.isVariant ? 'Restock Variant' : 'Restock Product')
+                                    : (widget.isVariant ? 'Edit Variant' : 'Edit Product'))
+                                    : (widget.isVariant ? 'Add Variant' : 'Add New Product'),
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: themeAccent,
                                 ),
                               ),
-                              // Overlay Icon + Text
-                              Container(
-                                width: double.infinity,
-                                height: double.infinity,
-                                decoration: BoxDecoration(
-                                  color: Colors.black.withOpacity(0.3),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: const Center(
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
+
+                              const SizedBox(height: 16),
+                              GestureDetector(
+                                onTap: _showImagePickerOptions,
+                                child: Container(
+                                  height: 100,
+                                  width: double.infinity,
+                                  decoration: BoxDecoration(
+                                    border: Border.all(color: AppColor.border),
+                                    borderRadius: BorderRadius.circular(10),
+                                    color: AppColor.background.withOpacity(0.5),
+                                  ),
+                                  child: _selectedImage != null
+                                      ? Stack(
                                     children: [
-                                      Icon(Icons.camera_alt_outlined, size: 24, color: Colors.white),
-                                      SizedBox(height: 6),
-                                      Text(
-                                        'Tap to change image',
-                                        style: TextStyle(color: Colors.white),
+                                      // Image Layer
+                                      ClipRRect(
+                                        borderRadius: BorderRadius.circular(10),
+                                        child: Image.file(
+                                          _selectedImage!,
+                                          fit: BoxFit.fill,
+                                          width: double.infinity,
+                                          height: double.infinity,
+                                        ),
+                                      ),
+                                      // Overlay Icon + Text
+                                      Container(
+                                        width: double.infinity,
+                                        height: double.infinity,
+                                        decoration: BoxDecoration(
+                                          color: themeAccent.withOpacity(0.3),
+                                          borderRadius: BorderRadius.circular(10),
+                                        ),
+                                        child: const Center(
+                                          child: Column(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              Icon(Icons.camera_alt_outlined, size: 24, color: Colors.white),
+                                              SizedBox(height: 6),
+                                              Text(
+                                                'Tap to change image',
+                                                style: TextStyle(color: Colors.white),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
                                       ),
                                     ],
+                                  )
+                                      : const Center(
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(Icons.camera_alt_outlined, size: 24, color: AppColor.textSecondary),
+                                        SizedBox(height: 6),
+                                        Text(
+                                          'Tap to select image',
+                                          style: TextStyle(color: AppColor.textSecondary),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ),
+
+                              const SizedBox(height: 16),
+                              CustomTextField(
+                                label: 'Product Name',
+                                hintText: 'Enter product name',
+                                helperText: 'This will appear in listings and receipts',
+                                controller: _nameController,
+                              ),
+                              const SizedBox(height: 10),
+                              CustomFlatDropdown<String>(
+                                hint: 'Choose category',
+                                helperText: 'Group similar items together',
+                                value: _selectedCategory,
+                                items: storeCategoryProvider.visibleCategories,
+                                onChanged: (val) => setState(() => _selectedCategory = val),
+                                itemBuilder: (category) => Text(category),
+                                prefixIcon: Icons.category,
+                              ),
+                              const SizedBox(height: 20),
+
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: CustomPillToggle(
+                                      color: themeAccent,
+                                      label: "Sold by Pack",
+                                      isSelected: _isSoldByPack,
+                                      onTap: () => setState(() {
+                                        _isSoldByPack = !_isSoldByPack;
+                                        if (!_isSoldByPack) _piecesPerPackController.clear();
+                                      }),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: CustomPillToggle(
+                                      color: themeAccent,
+                                      label: "Sold by Piece",
+                                      isSelected: _isSoldByPiece,
+                                      onTap: () => setState(() {
+                                        _isSoldByPiece = !_isSoldByPiece;
+                                        if (!_isSoldByPiece) _looseStockController.clear();
+                                      }),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 20),
+                              Text(
+                                getSellingTypeGuide(),
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  fontStyle: FontStyle.italic,
+                                  color: AppColor.textSecondary,
+                                ),
+                              ),
                             ],
-                          )
-                              : const Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.camera_alt_outlined, size: 24, color: AppColor.textSecondary),
-                                SizedBox(height: 6),
-                                Text(
-                                  'Tap to select image',
-                                  style: TextStyle(color: AppColor.textSecondary),
+
+                           // 🧩 Toggle "Add Stock Now?"
+                            if (!isAddingStock && (_isSoldByPack || _isSoldByPiece))
+                              ...[
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'Add Stock Now?',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: themeAccent,
+                                    ),
+                                  ),
+                                  Switch(
+                                    value: _hasStock,
+                                    activeColor: themeAccent,
+                                    activeTrackColor: themeAccent.withOpacity(0.3),
+                                    onChanged: (val) => setState(() => _hasStock = val),
+                                  ),
+                                ],
+                              ),
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  'Enable this if you want to add stock now.',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontStyle: FontStyle.italic,
+                                    color: AppColor.textSecondary,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                            ],
+                             // 🧩 Show Stocks and Add/Edit/Delete UI
+                            if (_hasStock && !isAddingStock) ...[
+                              if (_isSoldByPack && _isSoldByPiece) ...[
+                                CustomTextField(
+                                  label: 'Pieces per Pack',
+                                  hintText: 'e.g. 20',
+                                  helperText: 'How many pieces per pack?',
+                                  controller: _piecesPerPackController,
+                                  keyboardType: TextInputType.number,
+                                ),
+
+                                CustomTextField(
+                                  label: _isSoldByPack ? 'Pieces (Auto)' : 'Number of Pieces',
+                                  hintText: _isSoldByPack ? 'Calculated automatically' : 'e.g. 100',
+                                  helperText: (_isSoldByPack && _isSoldByPiece)
+                                      ? 'This field is auto-calculated based on pack quantity'
+                                      : (_isSoldByPack
+                                      ? (_piecesPerPackController.text.isEmpty ||
+                                      int.tryParse(_piecesPerPackController.text) == 0)
+                                      ? 'Enter pieces per pack to enable auto-calculation'
+                                      : 'This value is auto-calculated from stock × pieces per pack'
+                                      : 'Enter the total number of individual items in stock'),
+                                  controller: _looseStockController,
+                                  keyboardType: TextInputType.number,
                                 ),
                               ],
-                            ),
-                          ),
-                        ),
-                      ),
+                              const SizedBox(height: 10),
 
-                      const SizedBox(height: 16),
-                      CustomTextField(
-                        label: 'Product Name',
-                        hintText: 'Enter product name',
-                        helperText: 'This will appear in listings and receipts',
-                        controller: _nameController,
-                      ),
-                      const SizedBox(height: 10),
-                      CustomFlatDropdown<String>(
-                        hint: 'Choose category',
-                        helperText: 'Group similar items together',
-                        value: _selectedCategory,
-                        items: storeCategoryProvider.visibleCategories,
-                        onChanged: (val) => setState(() => _selectedCategory = val),
-                        itemBuilder: (category) => Text(category),
-                        prefixIcon: Icons.category,
-                      ),
-                      const SizedBox(height: 20),
-                      CustomFlatDropdown<String>(
-                        hint: 'Choose unit',
-                        helperText: 'e.g. pcs, ml, kg (optional)',
-                        value: _selectedUnit,
-                        items: _units,
-                        onChanged: (val) => setState(() => _selectedUnit = val),
-                        itemBuilder: (unit) => Text(unit),
-                        prefixIcon: Icons.scale,
-                      ),
-                      const SizedBox(height: 20),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: CustomPillToggle(
-                              label: "Sold by Pack",
-                              isSelected: _isSoldByPack,
-                              onTap: () => setState(() {
-                                _isSoldByPack = !_isSoldByPack;
-                                if (!_isSoldByPack) _piecesPerPackController.clear();
-                              }),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: CustomPillToggle(
-                              label: "Sold by Piece",
-                              isSelected: _isSoldByPiece,
-                              onTap: () => setState(() {
-                                _isSoldByPiece = !_isSoldByPiece;
-                                if (!_isSoldByPiece) _looseStockController.clear();
-                              }),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-                      Text(
-                        getSellingTypeGuide(),
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontStyle: FontStyle.italic,
-                          color: AppColor.textSecondary,
-                        ),
-                      ),
-
-                     // 🧩 Toggle "Add Stock Now?"
-                      if (!isAddingStock && (_isSoldByPack || _isSoldByPiece))
-                        ...[
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text(
-                              'Add Stock Now?',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: AppColor.textPrimary,
+                            if (_stock.isNotEmpty) ...[
+                              const Padding(
+                                padding: EdgeInsets.only(bottom: 8.0),
+                                child: Text(
+                                  "Existing Stocks",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
                               ),
-                            ),
-                            Switch(
-                              value: _hasStock,
-                              activeColor: themeAccent,
-                              activeTrackColor: themeAccent.withOpacity(0.3),
-                              onChanged: (val) => setState(() => _hasStock = val),
-                            ),
-                          ],
-                        ),
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text(
-                            'Enable this if you want to add stock now.',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontStyle: FontStyle.italic,
-                              color: AppColor.textSecondary,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                      ],
-                       // 🧩 Show Stocks and Add/Edit/Delete UI
-                      if (_hasStock && !isAddingStock) ...[
-                        if (_isSoldByPack && _isSoldByPiece) ...[
-                          CustomTextField(
-                            label: 'Pieces per Pack',
-                            hintText: 'e.g. 20',
-                            helperText: 'How many pieces per pack?',
-                            controller: _piecesPerPackController,
-                            keyboardType: TextInputType.number,
-                          ),
 
-                          CustomTextField(
-                            label: _isSoldByPack ? 'Pieces (Auto)' : 'Number of Pieces',
-                            hintText: _isSoldByPack ? 'Calculated automatically' : 'e.g. 100',
-                            helperText: (_isSoldByPack && _isSoldByPiece)
-                                ? 'This field is auto-calculated based on pack quantity'
-                                : (_isSoldByPack
-                                ? (_piecesPerPackController.text.isEmpty ||
-                                int.tryParse(_piecesPerPackController.text) == 0)
-                                ? 'Enter pieces per pack to enable auto-calculation'
-                                : 'This value is auto-calculated from stock × pieces per pack'
-                                : 'Enter the total number of individual items in stock'),
-                            controller: _looseStockController,
-                            keyboardType: TextInputType.number,
-                          ),
-                        ],
-                        if (_stock.isNotEmpty) ...[
-                          const Padding(
-                            padding: EdgeInsets.only(bottom: 8.0),
-                            child: Text(
-                              "Existing Stocks",
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ),
-
-                          ..._stock.map(
-                                (stock) => Container(
+                              ..._stock.map(
+                                    (stock) => Container(
                                   margin: const EdgeInsets.symmetric(vertical: 6),
                                   padding: const EdgeInsets.all(12),
                                   decoration: BoxDecoration(
@@ -701,284 +712,286 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
                                     ],
                                   ),
                                 )
-                            ,
-                          ),
-                        ],
-
-                        const SizedBox(height: 10),
-
-                        // ➕ Add Stock Button
-                        CustomButton(
-                          icon: Icons.add_circle_outline,
-                          text: "Add Stock",
-                          onPressed: () async {
-                            final productId = widget.existingProduct?.id ?? "temp-${DateTime.now().millisecondsSinceEpoch}";
-                            final stock = await showDialog<ProductStock>(
-                              context: context,
-                              builder: (_) => AddOrEditStockDialog(
-                                productId: productId,
-                                isSoldByPack: _isSoldByPack,
-                                isSoldByPiece: _isSoldByPiece,
+                                ,
                               ),
-                            );
+                            ],
 
-                            if (stock != null) {
-                              setState(() {
-                                _stock.add(stock);
-                                _updateLooseStock();
-                              });
-                            }
-                          },
-                        ),
+                            SizedBox(height: 10,),
+                            // ➕ Add Stock Button
+                            CustomButton(
+                              backgroundColor: themeAccent,
+                              icon: Icons.add_circle_outline,
+                              text: "Add Stock",
+                              onPressed: () async {
+                                final productId = widget.existingProduct?.id ?? "temp-${DateTime.now().millisecondsSinceEpoch}";
+                                final stock = await showDialog<ProductStock>(
+                                  context: context,
+                                  builder: (_) => AddOrEditStockDialog(
+                                    productId: productId,
+                                    isSoldByPack: _isSoldByPack,
+                                    isSoldByPiece: _isSoldByPiece,
+                                  ),
+                                );
 
-                        const SizedBox(height: 16),
-                      ],
-
-                      // 🧩 Toggle "Has Variants"
-                      if (!widget.isVariant) ...[
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text(
-                              'Has Variants',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: AppColor.textPrimary,
-                              ),
+                                if (stock != null) {
+                                  setState(() {
+                                    _stock.add(stock);
+                                    _updateLooseStock();
+                                  });
+                                }
+                              },
                             ),
-                            Switch(
-                              value: _hasVariant,
-                              activeColor: themeAccent,
-                              activeTrackColor: themeAccent.withOpacity(0.5),
-                              onChanged: (val) => setState(() => _hasVariant = val),
-                            ),
-                          ],
-                        ),
+
+                            const SizedBox(height: 16),
+                              ],
+                           if(widget.isRestock == false)...[
+                             // 🧩 Toggle "Has Variants"
+                             if (!widget.isVariant && (_isSoldByPack || _isSoldByPiece)) ...[
+                               Row(
+                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                 children: [
+                                   Text(
+                                     'Has Variants',
+                                     style: TextStyle(
+                                       fontSize: 14,
+                                       fontWeight: FontWeight.w600,
+                                       color: themeAccent,
+                                     ),
+                                   ),
+                                   Switch(
+                                     value: _hasVariant,
+                                     activeColor: themeAccent,
+                                     activeTrackColor: themeAccent.withOpacity(0.5),
+                                     onChanged: (val) => setState(() => _hasVariant = val),
+                                   ),
+                                 ],
+                               ),
+                               Align(
+                                 alignment: Alignment.centerRight,
+                                 child: Text(
+                                   'Enable if this product has multiple types or versions.',
+                                   style: TextStyle(
+                                     fontSize: 11,
+                                     fontStyle: FontStyle.italic,
+                                     color: AppColor.textSecondary,
+                                   ),
+                                 ),
+                               ),
+                             ],
+                             const SizedBox(height: 10),
+                             // 🧩 Show Variant List & Add Button
+                             if (_hasVariant && !widget.isVariant) ...[
+                               if (_variants.isNotEmpty) ...[
+                                 const Text("Added Variants", style: TextStyle(fontWeight: FontWeight.bold)),
+                                 const SizedBox(height: 8),
+
+                                 ..._variants.map(
+                                       (v) => Container(
+                                     margin: const EdgeInsets.symmetric(vertical: 6),
+                                     padding: const EdgeInsets.all(12),
+                                     decoration: BoxDecoration(
+                                       color: AppColor.surface,
+                                       borderRadius: BorderRadius.circular(10),
+                                       border: Border.all(color: Colors.grey.shade300),
+                                     ),
+                                     child: Row(
+                                       children: [
+                                         // 📸 Image preview
+                                         (v.imagePath != null && v.imagePath!.isNotEmpty)
+                                             ? ClipRRect(
+                                           borderRadius: BorderRadius.circular(8),
+                                           child: Image.file(
+                                             File(v.imagePath!),
+                                             width: 50,
+                                             height: 50,
+                                             fit: BoxFit.cover,
+                                           ),
+                                         )
+                                             : const Icon(Icons.image_not_supported_outlined, size: 50),
+
+                                         const SizedBox(width: 12),
+
+                                         // 🧾 Variant Info
+                                         Expanded(
+                                           child: Column(
+                                             crossAxisAlignment: CrossAxisAlignment.start,
+                                             children: [
+                                               Text(
+                                                 v.name,
+                                                 style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                                               ),
+                                               const SizedBox(height: 4),
+                                               Text(
+                                                 "Unit: ${v.unit}",
+                                                 style: const TextStyle(fontSize: 12, color: AppColor.textSecondary),
+                                               ),
+                                               if (v.stocks.isNotEmpty) ...[
+                                                 const SizedBox(height: 4),
+                                                 Text(
+                                                   "Qty: ${v.stocks.first.quantity}",
+                                                   style: const TextStyle(fontSize: 12, color: AppColor.textSecondary),
+                                                 ),
+                                               ]
+                                             ],
+                                           ),
+                                         ),
+
+                                         // ✏️ Actions
+                                         Row(
+                                           mainAxisSize: MainAxisSize.min,
+                                           children: [
+                                             IconButton(
+                                               icon: const Icon(Icons.edit, color: Colors.orange),
+                                               tooltip: "Edit Variant",
+                                               onPressed: () async {
+                                                 final editedVariant = await showModalBottomSheet<Product>(
+                                                   context: context,
+                                                   isScrollControlled: true,
+                                                   backgroundColor: Colors.transparent,
+                                                   shape: const RoundedRectangleBorder(
+                                                     borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+                                                   ),
+                                                   builder: (_) => DraggableScrollableSheet(
+                                                     expand: false,
+                                                     maxChildSize: 0.80,
+                                                     initialChildSize: 0.60,
+                                                     minChildSize: 0.6,
+                                                     builder: (_, controller) => Padding(
+                                                       padding: EdgeInsets.only(
+                                                         bottom: MediaQuery.of(context).viewInsets.bottom,
+                                                       ),
+                                                       child: Material(
+                                                         borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
+                                                         color: Colors.white,
+                                                         child: SafeArea(
+                                                           top: false,
+                                                           child: SingleChildScrollView(
+                                                             controller: controller,
+                                                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                                                             child: UpsertProductModal(
+                                                               Category: _selectedCategory ?? '',
+                                                               isVariant: true,
+                                                               existingProduct: v,
+                                                             ),
+                                                           ),
+                                                         ),
+                                                       ),
+                                                     ),
+                                                   ),
+                                                 );
+
+                                                 if (editedVariant != null) {
+                                                   setState(() {
+                                                     final index = _variants.indexWhere((variant) => variant.id == editedVariant.id);
+                                                     if (index != -1) _variants[index] = editedVariant;
+                                                   });
+
+                                                 }
+                                               },
+                                             ),
+                                             IconButton(
+                                               icon: const Icon(Icons.delete_outline_outlined, color: Colors.redAccent),
+                                               tooltip: "Delete Variant",
+                                               onPressed: () async {
+                                                 await showDialog<bool>(
+                                                   context: context,
+                                                   builder: (context) => CustomConfirmDialog(
+                                                     title: "Delete Variant?",
+                                                     content: "Are you sure you want to delete '${v.name}'?",
+                                                     onCancel: () => Navigator.pop(context),
+                                                     onConfirm: () {
+                                                       setState(() {
+                                                         _variants.removeWhere((variant) => variant.id == v.id);
+                                                       });
+                                                       SnackbarService.showSuccess("🗑️ Variant deleted!");
+                                                     },
+                                                   ),
+                                                 );
+                                               },
+                                             ),
+                                           ],
+                                         ),
+                                       ],
+                                     ),
+                                   ),
+                                 ),
+
+
+                                 const SizedBox(height: 5),
+                               ],
+
+                               CustomButton(
+                                 icon: Icons.add_circle_outline,
+                                 text: "Add Variant",
+                                 onPressed: openAddVariantDialog,
+                               ),
+                               const SizedBox(height: 16),
+
+
+                             ],
+                           ],
+
                         Align(
-                          alignment: Alignment.centerRight,
-                          child: Text(
-                            'Enable if this product has multiple types or versions.',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontStyle: FontStyle.italic,
-                              color: AppColor.textSecondary,
-                            ),
-                          ),
-                        ),
-                      ],
-                      const SizedBox(height: 10),
-                      // 🧩 Show Variant List & Add Button
-                      if (_hasVariant && !widget.isVariant) ...[
-                        if (_variants.isNotEmpty) ...[
-                          const Text("Added Variants", style: TextStyle(fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 8),
-
-                          ..._variants.map(
-                                (v) => Container(
-                              margin: const EdgeInsets.symmetric(vertical: 6),
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: AppColor.surface,
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: Colors.grey.shade300),
-                              ),
-                              child: Row(
-                                children: [
-                                  // 📸 Image preview
-                                  (v.imagePath != null && v.imagePath!.isNotEmpty)
-                                      ? ClipRRect(
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: Image.file(
-                                      File(v.imagePath!),
-                                      width: 50,
-                                      height: 50,
-                                      fit: BoxFit.cover,
-                                    ),
-                                  )
-                                      : const Icon(Icons.image_not_supported_outlined, size: 50),
-
-                                  const SizedBox(width: 12),
-
-                                  // 🧾 Variant Info
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          v.name,
-                                          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                          alignment: Alignment.bottomCenter,
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: CustomButton(
+                                  backgroundColor: themeAccent,
+                                  icon: Icons.check_circle_outline,
+                                  text: _isSubmitting
+                                      ? (widget.existingProduct != null
+                                      ? "Saving..."
+                                      : "Adding...")
+                                      : (widget.existingProduct != null
+                                      ? (widget.isVariant ? "Update " : "Update ")
+                                      : (widget.isVariant ? "Add Variant " : "Add Product ")),
+                                  isDisabled: _isSubmitting,
+                                  onPressed: () async {
+                                    if (_nameController.text.trim().isEmpty) {
+                                      showDialog(
+                                        context: context,
+                                        builder: (context) => CustomNotificationDialog(
+                                          title: "Missing Product Name",
+                                          content: "Please enter a name for this product.",
+                                          type: 'warning',
+                                          onConfirm: () => Navigator.pop(context),
                                         ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          "Unit: ${v.unit}",
-                                          style: const TextStyle(fontSize: 12, color: AppColor.textSecondary),
-                                        ),
-                                        if (v.stocks.isNotEmpty) ...[
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            "Qty: ${v.stocks.first.quantity}",
-                                            style: const TextStyle(fontSize: 12, color: AppColor.textSecondary),
-                                          ),
-                                        ]
-                                      ],
-                                    ),
-                                  ),
+                                      );
+                                      return;
+                                    }
 
-                                  // ✏️ Actions
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      IconButton(
-                                        icon: const Icon(Icons.edit, color: Colors.orange),
-                                        tooltip: "Edit Variant",
-                                        onPressed: () async {
-                                          final editedVariant = await showModalBottomSheet<Product>(
-                                            context: context,
-                                            isScrollControlled: true,
-                                            backgroundColor: Colors.transparent,
-                                            shape: const RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
-                                            ),
-                                            builder: (_) => DraggableScrollableSheet(
-                                              expand: false,
-                                              maxChildSize: 0.80,
-                                              initialChildSize: 0.60,
-                                              minChildSize: 0.6,
-                                              builder: (_, controller) => Padding(
-                                                padding: EdgeInsets.only(
-                                                  bottom: MediaQuery.of(context).viewInsets.bottom,
-                                                ),
-                                                child: Material(
-                                                  borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
-                                                  color: Colors.white,
-                                                  child: SafeArea(
-                                                    top: false,
-                                                    child: SingleChildScrollView(
-                                                      controller: controller,
-                                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-                                                      child: UpsertProductModal(
-                                                        Category: _selectedCategory ?? '',
-                                                        isVariant: true,
-                                                        existingProduct: v,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          );
-
-                                          if (editedVariant != null) {
-                                            setState(() {
-                                              final index = _variants.indexWhere((variant) => variant.id == editedVariant.id);
-                                              if (index != -1) _variants[index] = editedVariant;
-                                            });
-
-                                          }
-                                        },
-                                      ),
-                                      IconButton(
-                                        icon: const Icon(Icons.delete_outline_outlined, color: Colors.redAccent),
-                                        tooltip: "Delete Variant",
-                                        onPressed: () async {
-                                          await showDialog<bool>(
-                                            context: context,
-                                            builder: (context) => CustomConfirmDialog(
-                                              title: "Delete Variant?",
-                                              content: "Are you sure you want to delete '${v.name}'?",
-                                              onCancel: () => Navigator.pop(context),
-                                              onConfirm: () {
-                                                setState(() {
-                                                  _variants.removeWhere((variant) => variant.id == v.id);
-                                                });
-                                                SnackbarService.showSuccess("🗑️ Variant deleted!");
-                                              },
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-
-
-                          const SizedBox(height: 5),
-                        ],
-
-                        CustomButton(
-                          icon: Icons.add_circle_outline,
-                          text: "Add Variant",
-                          onPressed: _openAddVariantDialog,
-                        ),
-                        const SizedBox(height: 16),
-                      ],
-
-                      const SizedBox(height: 10,),
-                      Align(
-                        alignment: Alignment.bottomCenter,
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: CustomButton(
-                                backgroundColor: themeAccent,
-                                icon: Icons.check_circle_outline,
-                                text: _isSubmitting
-                                    ? (widget.existingProduct != null
-                                    ? "Saving..."
-                                    : "Adding...")
-                                    : (widget.existingProduct != null
-                                    ? (widget.isVariant ? "Update " : "Update ")
-                                    : (widget.isVariant ? "Add Variant " : "Add Product ")),
-                                isDisabled: _isSubmitting,
-                                onPressed: () async {
-                                  if (_nameController.text.trim().isEmpty) {
-                                    showDialog(
-                                      context: context,
-                                      builder: (context) => CustomNotificationDialog(
-                                        title: "Missing Product Name",
-                                        content: "Please enter a name for this product.",
-                                        type: 'warning',
-                                        onConfirm: () => Navigator.pop(context),
-                                      ),
+                                    setState(() => _isSubmitting = true);
+                                    await Future.delayed(const Duration(milliseconds: 300));
+                                    _submitProduct(
+                                      productProvider,
+                                      variantProductProvider,
+                                      looseStockProvider,
+                                      productStockProvider,
                                     );
-                                    return;
-                                  }
-
-                                  setState(() => _isSubmitting = true);
-                                  await Future.delayed(const Duration(milliseconds: 300));
-                                  _submitProduct(
-                                    productProvider,
-                                    variantProductProvider,
-                                    looseStockProvider,
-                                    productStockProvider,
-                                  );
-                                },
+                                  },
+                                ),
                               ),
-                            ),
-                            SizedBox(width: 10,),
-                            Expanded(
-                              child: CustomButton(
-                                borderColor: themeAccent,
-                                isFilled: false,
-                                icon: Icons.cancel_rounded,
-                                text: "Cancel",
-                                onPressed: () => Navigator.pop(context),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: CustomButton(
+                                  borderColor: themeAccent,
+                                  isFilled: false,
+                                  icon: Icons.cancel_rounded,
+                                  text: "Cancel",
+                                  onPressed: () => Navigator.pop(context),
+                                ),
                               ),
-                            ),
+                            ],
+                          ),
+                        )
+                          ]
 
-                          ],
-                        ),
-                      ),
+                    ),
+                  ),
 
-                    ],
-                  );
-                }
-              ),
-            ),
+              );
+            }
           ),
         );
 

@@ -40,18 +40,30 @@ class _CategoryListState extends State<CategoryList> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer3<ProductProvider, StoreCategoryProvider,SwitchProvider>(
-      builder: (context, productProvider, storeCategoryProvider,switchProvider, _) {
+    return Consumer3<ProductProvider, StoreCategoryProvider, SwitchProvider>(
+      builder: (context, productProvider, storeCategoryProvider, switchProvider, _) {
         final isArchiveView = switchProvider.isArchiveView;
+
+        // Sort categories by product count (desc), then alphabetically (asc)
+        final sortedCategories = List<String>.from(visibleCategories)
+          ..sort((a, b) {
+            final aCount = productProvider.getAllProductsWithVariantsByCategory(a).length;
+            final bCount = productProvider.getAllProductsWithVariantsByCategory(b).length;
+            if (bCount != aCount) {
+              return bCount.compareTo(aCount);
+            } else {
+              return a.compareTo(b);
+            }
+          });
 
         return ListView.builder(
           padding: const EdgeInsets.symmetric(horizontal: 25),
-          itemCount: visibleCategories.length,
+          itemCount: sortedCategories.length,
           itemBuilder: (context, index) {
-            final category = visibleCategories[index];
+            final category = sortedCategories[index];
             final icon = StoreCategory.icons[category] ?? LucideIcons.tag;
             final color = StoreCategory.colors[category] ?? Colors.grey;
-            final count = productProvider.getAllProductsWithVariantsByCategory(category).length.toString();
+            final count = productProvider.getAllProductsWithVariantsByCategory(category).length;
 
             return FadeInLeft(
               duration: const Duration(milliseconds: 300),

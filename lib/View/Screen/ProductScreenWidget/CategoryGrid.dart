@@ -21,50 +21,61 @@ class CategoryGrid extends StatelessWidget {
       builder: (context, productProvider, storeCategoryProvider, switchProvider, _) {
         final isArchiveView = switchProvider.isArchiveView;
 
+        // Sort categories by product count (desc), then name (asc)
+        final sortedCategories = List<String>.from(categories)
+          ..sort((a, b) {
+            final aCount = productProvider.getAllProductsWithVariantsByCategory(a).length;
+            final bCount = productProvider.getAllProductsWithVariantsByCategory(b).length;
+            if (bCount != aCount) {
+              return bCount.compareTo(aCount);
+            } else {
+              return a.compareTo(b);
+            }
+          });
+
         return SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
           child: GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            itemCount: categories.length,
+            itemCount: sortedCategories.length,
             gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
               maxCrossAxisExtent: 180,
               mainAxisSpacing: 16,
               crossAxisSpacing: 16,
-              childAspectRatio: 0.80 ,
+              childAspectRatio: 0.80,
             ),
             itemBuilder: (context, index) {
-              final category = categories[index];
+              final category = sortedCategories[index];
               final icon = StoreCategory.icons[category] ?? LucideIcons.tag;
               final color = StoreCategory.colors[category] ?? Colors.grey;
-              final count = productProvider.getAllProductsWithVariantsByCategory(category).length.toString();
+              final count = productProvider.getAllProductsWithVariantsByCategory(category).length;
 
               return FadeInUp(
                 duration: const Duration(milliseconds: 300),
                 child: Slidable(
                   key: ValueKey(category),
-                    endActionPane: ActionPane(
-                      motion: const DrawerMotion(),
-                      children: [
-                        SlidableAction(
-                          onPressed: (_) {
-                            storeCategoryProvider.setHidden(category, !isArchiveView);
-                            final action = isArchiveView ? 'Unhidden' : 'Hidden';
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('$category has been $action')),
-                            );
-                          },
-                          backgroundColor: isArchiveView ? Colors.green : Colors.redAccent,
-                          foregroundColor: Colors.white,
-                          icon: isArchiveView ? LucideIcons.eye : LucideIcons.eyeOff,
-                          label: isArchiveView ? 'Unhide' : 'Hide',
-                          flex: 2, // Make the button take up more space
-                          spacing: 30, // More space between icon and label
-                          autoClose: true,
-                        ),
-                      ],
-                    ),
-
+                  endActionPane: ActionPane(
+                    motion: const DrawerMotion(),
+                    children: [
+                      SlidableAction(
+                        onPressed: (_) {
+                          storeCategoryProvider.setHidden(category, !isArchiveView);
+                          final action = isArchiveView ? 'Unhidden' : 'Hidden';
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('$category has been $action')),
+                          );
+                        },
+                        backgroundColor: isArchiveView ? Colors.green : Colors.redAccent,
+                        foregroundColor: Colors.white,
+                        icon: isArchiveView ? LucideIcons.eye : LucideIcons.eyeOff,
+                        label: isArchiveView ? 'Unhide' : 'Hide',
+                        flex: 2,
+                        spacing: 30,
+                        autoClose: true,
+                      ),
+                    ],
+                  ),
                   child: GestureDetector(
                     onTap: () {
                       Navigator.push(

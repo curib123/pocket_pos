@@ -1,12 +1,16 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:mobile_stock_inventory/Helper/AppColor.dart';
+import 'package:mobile_stock_inventory/Helper/Enums/enum.dart';
+import 'package:mobile_stock_inventory/Model/product_model.dart';
 import 'package:mobile_stock_inventory/Provider/CurrencyProvider.dart';
 import 'package:mobile_stock_inventory/Provider/ProductProvider.dart';
 import 'package:mobile_stock_inventory/Provider/ProductStockProvider.dart';
 import 'package:mobile_stock_inventory/Provider/VariantProductProvider.dart';
 import 'package:mobile_stock_inventory/View/Components/Alert/CustomConfimDialog.dart';
+import 'package:mobile_stock_inventory/View/Components/Alert/CustomNotificationDialog.dart';
 import 'package:mobile_stock_inventory/View/Components/Custom/CustomButton.dart';
 import 'package:mobile_stock_inventory/View/Components/Custom/CustomSwitchPill.dart';
 import 'package:mobile_stock_inventory/View/Components/Custom/CustomTextField.dart';
@@ -93,6 +97,61 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
     return Row(children: [_buildTag(label)]);
   }
 
+  String formatNumber(num value) => NumberFormat.decimalPattern().format(value);
+
+  void _editVariant(BuildContext context, Product variant) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+      ),
+      builder: (context) {
+        return DraggableScrollableSheet(
+          expand: false,
+          maxChildSize: 0.95,
+          initialChildSize: 0.9,
+          minChildSize: 0.6,
+          builder: (_, controller) => Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+            ),
+            child: Material(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
+              color: Colors.white,
+              child: SafeArea(
+                top: false,
+                child: SingleChildScrollView(
+                  controller: controller,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                  child: UpsertProductModal(
+                    Category: '',
+                    existingProduct: variant,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _deleteVariant(BuildContext context, String parentId, String ,VariantProductProvider variantProductProvider, String variantId) {
+    showDialog(
+      context: context,
+      builder: (context) => CustomConfirmDialog(
+        title: "Delete Variant",
+        content: "Are you sure you want to delete this variant?\nThis action cannot be undone.",
+        onConfirm: () {
+          variantProductProvider.deleteVariant(parentId, variantId);
+        },
+      ),
+    );
+  }
+
+
   @override
   Widget build(BuildContext context) {
     final product = context.watch<ProductProvider>().getProductById(widget.productId);
@@ -148,7 +207,6 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -157,61 +215,148 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                         borderRadius: BorderRadius.circular(10),
                         child: SizedBox(
                           width: 100,
-                          height: 140,
+                          height: 170,
                           child: hasImage
                               ? Image.file(
                             File(product.imagePath!),
                             key: UniqueKey(),
-                            fit: BoxFit.cover,
+                            fit: BoxFit.fill,
                           )
                               : Container(
-                            color: AppColor.border,
+                            color: AppColor.border.withOpacity(0.5),
                             child: const Center(
                               child: Icon(
                                 Icons.image_not_supported,
                                 size: 28,
-                                color: AppColor.textSecondary,
+                                color: AppColor.primary,
                               ),
                             ),
                           ),
                         ),
                       ),
-
-                      const SizedBox(width: 12),
-
                       // Info Column
+                      const SizedBox(width: 10),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             // Pack/Pcs toggle if relevant
-                            if (product.isSoldByPiece && product.isSoldByPack)
-                              CustomSwitchPill(
-                                options: ['Pack', 'Pcs'],
-                                selected: isUsePackSwitch ? 'Pack' : 'Pcs',
-                                onSelected: (label) => setState(() {
-                                  isUsePackSwitch = label == 'Pack';
-                                  final perPack = (product.piecesPerPack ?? 1).clamp(1, double.infinity);
-                                  final stock = product.stocks.isNotEmpty ? product.stocks.last : null;
-                                  price = stock != null
-                                      ? (isUsePackSwitch ? stock.retailPrice : stock.retailPrice / perPack)
-                                      : 0;
-                                  cost = stock != null
-                                      ? (isUsePackSwitch ? stock.costPrice : stock.costPrice / perPack)
-                                      : 0;
-                                }),
-                              ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                (product.isSoldByPiece && product.isSoldByPack)
+                                    ? CustomSwitchPill(
+                                  options: ['Pack', 'Pcs'],
+                                  selected: isUsePackSwitch ? 'Pack' : 'Pcs',
+                                  onSelected: (label) => setState(() {
+                                    isUsePackSwitch = label == 'Pack';
+                                    final perPack = (product.piecesPerPack ?? 1).clamp(1, double.infinity);
+                                    final stock = product.stocks.isNotEmpty ? product.stocks.last : null;
+                                    price = stock != null
+                                        ? (isUsePackSwitch ? stock.retailPrice : stock.retailPrice / perPack)
+                                        : 0;
+                                    cost = stock != null
+                                        ? (isUsePackSwitch ? stock.costPrice : stock.costPrice / perPack)
+                                        : 0;
+                                  }),
+                                )
+                                    : const SizedBox.shrink(), // ← empty widget
 
-                            if (usePack || usePieces) ...[
-                              // Product name: big & bold, primary color
-                              Text(
-                                product.name,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  color: AppColor.textPrimary,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 16,
+                                product.isVariant
+                                    ? TextButton.icon(
+                                  onPressed: () {
+                                    if (widget.ModalAsVariant == true) {
+                                      Navigator.pop(context);
+                                    } else {
+                                      final parentId = variantProductProvider.getParentProductIdFromVariantId(product.id);
+                                      if (parentId != null) {
+                                        showDialog(
+                                          context: context,
+                                          builder: (context) => CustomConfirmDialog(
+                                            title: "Go to Main Product",
+                                            content: "Are you sure you want to view the main product?\nYou’ll leave this product view.",
+                                            onConfirm: () {
+                                              Navigator.pop(context);
+                                              ProductDetailModal.show(context, parentId, false);
+                                            },
+                                          ),
+                                        );
+                                      }
+                                    }
+                                  },
+                                  icon: const Icon(
+                                    LucideIcons.cornerUpLeft,
+                                    color: Colors.blueGrey,
+                                    size: 16,
+                                  ),
+                                  label: const Text(
+                                    "Go Main",
+                                    style: TextStyle(
+                                      color: Colors.blueGrey,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                  style: TextButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                    minimumSize: Size.zero,
+                                    backgroundColor: Colors.blueGrey.withOpacity(0.1),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                )
+                                    : IconButton(
+                                  onPressed: () {
+                                    showDialog(
+                                      context: context,
+                                      builder: (context) => CustomConfirmDialog(
+                                        title: "Delete Product",
+                                        content: "Are you sure you want to delete this product?\nThis action cannot be undone.",
+                                        onConfirm: () {
+                                          productProvider.deleteProduct(product.id);
+                                          Navigator.pop(context);
+                                        },
+                                      ),
+                                    );
+                                  },
+                                  icon: const Icon(
+                                    LucideIcons.trash,
+                                    color: Colors.redAccent,
+                                    size: 18,
+                                  ),
+                                  tooltip: "Delete Product",
+                                  padding: const EdgeInsets.all(6),
+                                  constraints: const BoxConstraints(),
+                                  style: IconButton.styleFrom(
+                                    backgroundColor: AppColor.error.withOpacity(0.15),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                  ),
                                 ),
+
+                              ],
+                            ),
+                            if (usePack || usePieces) ...[
+
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      product.name,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        color: AppColor.textSecondary,
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: _getFontSizeForName(product.name) + 5,
+                                      ),
+                                    ),
+                                  ),
+                                  // Add anything else like price or unit here
+                                ],
                               ),
 
 
@@ -220,140 +365,77 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   if (product.category != null)
-                                    Expanded(
-                                      child: Text(
-                                        product.category!,
-                                        style: const TextStyle(
-                                          color: AppColor.textSecondary,
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w400,
-                                        ),
-                                      ),
-                                    ),
-                                  product.isVariant
-                                      ? TextButton.icon(
-                                    onPressed: () {
-                                      if (widget.ModalAsVariant == true) {
-                                        Navigator.pop(context);
-                                      } else {
-                                        final parentId = variantProductProvider.getParentProductIdFromVariantId(product.id);
-                                        if (parentId != null) {
-                                          showDialog(
-                                            context: context,
-                                            builder: (context) => CustomConfirmDialog(
-                                              title: "Go to Parent Product",
-                                              content:
-                                              "Are you sure you want to view the parent product?\nYou’ll leave this product view.",
-                                              onConfirm: () {
-                                                Navigator.pop(context);
-                                                ProductDetailModal.show(context, parentId, false);
-                                              },
-                                            ),
-                                          );
-                                        } else {
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            const SnackBar(content: Text("Parent product not found.")),
-                                          );
-                                        }
-                                      }
-                                    },
-                                    icon: const Icon(
-                                      LucideIcons.cornerUpLeft,
-                                      color: Colors.blueGrey,
-                                      size: 16,
-                                    ),
-                                    label: const Text(
-                                      "Main",
-                                      style: TextStyle(
-                                        color: Colors.blueGrey,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                    style: TextButton.styleFrom(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                      minimumSize: Size.zero,
-                                      backgroundColor: Colors.blueGrey.withOpacity(0.1),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                    ),
-                                  )
-                                      : IconButton(
-                                    onPressed: () {
-                                      showDialog(
-                                        context: context,
-                                        builder: (context) => CustomConfirmDialog(
-                                          title: "Delete Product",
-                                          content:
-                                          "Are you sure you want to delete this product?\nThis action cannot be undone.",
-                                          onConfirm: () {
-                                            productProvider.deleteProduct(product.id);
-                                            Navigator.pop(context);
-                                          },
-                                        ),
-                                      );
-                                    },
-                                    icon: const Icon(
-                                      LucideIcons.trash,
-                                      color: Colors.redAccent,
-                                      size: 18,
-                                    ),
-                                    tooltip: "Delete Product",
-                                    padding: const EdgeInsets.all(6),
-                                    constraints: const BoxConstraints(),
-                                    style: IconButton.styleFrom(
-                                      backgroundColor: AppColor.error.withOpacity(0.15),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                    ),
-                                  ),
+                                   _buildTag( product.category!)
                                 ],
                               ),
+                                SizedBox(height: 5),
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Flexible(
+                                    child: Builder(
+                                      builder: (context) {
+                                        final label = '${currency.format(price)} |';
+                                        double fontSize;
 
-                              // Retail price: big, bright
-                              Text(
-                                'Retail: ${currency.format(price)}',
-                                style: const TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColor.primary,
-                                ),
+                                        if (label.length <= 15) {
+                                          fontSize = 18;
+                                        } else if (label.length <= 25) {
+                                          fontSize = 16;
+                                        } else {
+                                          fontSize = 14;
+                                        }
+
+                                        return Text(
+                                          label,
+                                          style: TextStyle(
+                                            fontSize: fontSize,
+                                            fontWeight: FontWeight.w700,
+                                            color: AppColor.primary,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                          maxLines: 1,
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                  const SizedBox(width: 5), // 🧘 small spacing between text and unit
+                                  unitType, // <- make sure this isn't padded internally!
+                                ],
                               ),
-
+                              SizedBox(height: 5),
                               // Cost price: smaller, faded with strikethrough
-                              Text(
-                                'Cost: ${currency.format(cost)} | $unit',
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: AppColor.textSecondary,
-                                  fontStyle: FontStyle.italic,
-                                  decoration: TextDecoration.lineThrough,
-                                ),
-                              ),
-
-                              // Stock counts: bigger font weight, spaced
                               Row(
                                 children: [
                                   Text(
-                                    'Pack: ${product.totalQuantity}',
+                                    'Cost Price: ${currency.format(cost)} | ' ,
                                     style: const TextStyle(
-                                      fontWeight: FontWeight.w200,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 16),
-                                  Text(
-                                    'Piece: ${product.totalQuantityByPieces}',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w200,
-                                      fontSize: 14,
+                                      fontSize: 12,
+                                      color: AppColor.textSecondary,
+                                      fontStyle: FontStyle.italic,
+                                      decoration: TextDecoration.lineThrough,
                                     ),
                                   ),
                                 ],
                               ),
+                              const SizedBox(height: 5,),
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  if (!product.isSoldByPack && product.isSoldByPiece) ...[
+                                    _buildStockLabel('Available Piece: ${formatNumber(product.totalQuantity)}'),
+                                  ] else ...[
+                                    if (isUsePackSwitch) ...[
+                                      _buildStockLabel('Available Pack: ${formatNumber(product.totalQuantity)}'),
+                                    ] else ...[
+                                      _buildStockLabel('Available Piece: ${formatNumber(product.totalQuantityByPieces)}'),
+                                    ],
+                                  ],
+                                  const SizedBox(width: 12),
+                                ],
+                              )
+
+
                             ],
                           ],
                         ),
@@ -368,6 +450,8 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                         child: CustomButton(
                           text: 'Edit',
                           icon: Icons.edit,
+                          isFilled: false,
+                          borderColor: AppColor.warning,
                           onPressed: () {
                             showModalBottomSheet(
                               context: context,
@@ -379,9 +463,9 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                               builder: (context) {
                                 return DraggableScrollableSheet(
                                   expand: false,
-                                  maxChildSize: 0.95,
-                                  initialChildSize: 0.9,
-                                  minChildSize: 0.6,
+                                  maxChildSize: 0.8,
+                                  initialChildSize: 0.7,
+                                  minChildSize: 0.65,
                                   builder: (_, controller) => Padding(
                                     padding: EdgeInsets.only(
                                       bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -412,188 +496,218 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                       const SizedBox(width: 5),
                       Expanded(
                         child: CustomButton(
+                          borderColor: AppColor.primary,
                           text: 'Restock',
                           icon: Icons.inventory_2,
                           isFilled: false,
                           onPressed: () {
-                            // Implement restock logic
+                            showModalBottomSheet(
+                              context: context,
+                              isScrollControlled: true,
+                              backgroundColor: Colors.transparent,
+                              shape: const RoundedRectangleBorder(
+                                borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+                              ),
+                              builder: (context) {
+                                return DraggableScrollableSheet(
+                                  expand: false,
+                                  maxChildSize: 0.8,
+                                  initialChildSize: 0.6,
+                                  minChildSize: 0.5,
+                                  builder: (_, controller) => Padding(
+                                    padding: EdgeInsets.only(
+                                      bottom: MediaQuery.of(context).viewInsets.bottom,
+                                    ),
+                                    child: Material(
+                                      borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
+                                      color: Colors.white,
+                                      child: SafeArea(
+                                        top: false,
+                                        child: SingleChildScrollView(
+                                          controller: controller,
+                                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                                          child: UpsertProductModal(
+                                            Category: '',
+                                            isRestock: true,
+                                            existingProduct: product,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            );
+
                           },
                         ),
-                      ),
+                      ), const SizedBox(width: 5),
+                   if(!product.isVariant) ...[
+                     Expanded(
+                       child: CustomButton(
+                         borderColor: AppColor.success,
+                         text: 'Add Variant',
+                         isFilled: false,
+                         onPressed: () async {
+                           final addedVariant = await showModalBottomSheet<Product>(
+                             context: context,
+                             isScrollControlled: true,
+                             backgroundColor: Colors.transparent,
+                             builder: (context) {
+                               return UpsertProductModal(
+                                 Category: product.category.toString(),
+                                 isVariant: true,
+                                 existingProduct: null, // optional if you want fresh variant
+                                 parentProduct: product,  // ✅ this will be the new param
+                               );
+                             },
+                           );
+
+                           if (addedVariant != null) {
+                             showDialog(
+                               context: context,
+                               builder: (context) => CustomNotificationDialog(
+                                 type: 'success',
+                                 title: "Variant Added",
+                                 content: "\"${addedVariant.name}\" has been successfully added to this product.",
+                                 onConfirm: () => Navigator.pop(context),
+                               ),
+                             );
+                           }
+                         },
+                       ),
+                     ),
+                   ],
+
                     ],
                   ),
                   const SizedBox(height: 12),
-                  if (product.variants.isEmpty)
+                  if (product.variants.isEmpty) ...[
                     Center(
                       child: Container(
-                        width: MediaQuery.sizeOf(context).width,
-                        height: MediaQuery.sizeOf(context).width * 0.8,
+                        width: double.infinity,
+                        margin: const EdgeInsets.only(top: 40, left: 16, right: 16),
+                        padding: const EdgeInsets.all(24),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppColor.border),
+                          border: Border.all(color: AppColor.border, width: 1.2),
+                          color: AppColor.surface,
                         ),
-                        child: Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Icon(Icons.layers),
-                              const SizedBox(height: 20),
-                              Text(
-                                'No Variants Available.\nTry adding a new variant.',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: AppColor.textSecondary,
-                                  fontSize: context.rf(14),
-                                  fontWeight: FontWeight.w500,
-                                  height: 1.4,
-                                ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              LucideIcons.layers,
+                              size: 40,
+                              color: AppColor.textSecondary,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              !product.isVariant ? 'No Variants Found' : 'This Is a Variant',
+                              style: TextStyle(
+                                fontSize: context.rf(16),
+                                fontWeight: FontWeight.bold,
+                                color: AppColor.textPrimary,
                               ),
-                            ],
-                          ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              !product.isVariant
+                                  ? 'Organize this product better by adding variants for sizes, styles, or other options.'
+                                  : 'Variants are grouped under a main product. You’re viewing one of them.',
+                              style: TextStyle(
+                                fontSize: context.rf(13),
+                                color: AppColor.textSecondary,
+                                height: 1.4,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
                         ),
                       ),
                     )
-                  else ...[
-                    const SizedBox(height: 10),
-                    ...product.variants.map((variant) {
-                      return InkWell(
-                        onTap: () => ProductDetailModal.show(context, variant.id, true),
-                        borderRadius: BorderRadius.circular(16),
-                        child: Container(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: AppColor.surface,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: Colors.grey.shade300),
-                          ),
-                          child: Row(
-                            children: [
-                              // Variant image or placeholder icon
-                              Container(
-                                width: 40,
-                                height: 40,
-                                margin: const EdgeInsets.only(right: 12),
-                                decoration: BoxDecoration(
-                                  color: Colors.grey.shade200,
-                                  borderRadius: BorderRadius.circular(8),
-                                  image: (variant.imagePath != null && variant.imagePath!.isNotEmpty)
-                                      ? DecorationImage(
-                                    image: FileImage(File(variant.imagePath!)),
-                                    fit: BoxFit.cover,
-                                  )
-                                      : null,
-                                ),
-                                child: (variant.imagePath == null || variant.imagePath!.isEmpty)
-                                    ? const Icon(LucideIcons.image, color: AppColor.textSecondary, size: 20)
+
+
+                  ],
+                  ...product.variants.map((variant) {
+                    return InkWell(
+                      onTap: () => ProductDetailModal.show(context, variant.id, true),
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 6),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppColor.surface,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Colors.grey.shade300),
+                        ),
+                        child: Row(
+                          children: [
+                            // Image
+                            Container(
+                              width: 40,
+                              height: 40,
+                              margin: const EdgeInsets.only(right: 12),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade200,
+                                borderRadius: BorderRadius.circular(8),
+                                image: (variant.imagePath != null && variant.imagePath!.isNotEmpty)
+                                    ? DecorationImage(
+                                  image: FileImage(File(variant.imagePath!)),
+                                  fit: BoxFit.cover,
+                                )
                                     : null,
                               ),
+                              child: (variant.imagePath == null || variant.imagePath!.isEmpty)
+                                  ? const Icon(LucideIcons.image, color: AppColor.textSecondary, size: 20)
+                                  : null,
+                            ),
 
-
-                             // Variant name + unit
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      variant.name,
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 14,
-                                        color: AppColor.textPrimary,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    if (usePack || usePieces)
-                                      Padding(
-                                        padding: const EdgeInsets.only(top: 4),
-                                        child: Wrap(
-                                          spacing: 6,
-                                          runSpacing: -4,
-                                          children: [
-                                            if (usePack) _buildTag('Pack'),
-                                            if (usePieces) _buildTag('Piece'),
-                                          ],
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                              ),
-
-                              // Edit/Delete buttons
-                              Row(
+                            // Name + Tag + Quantity
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  IconButton(
-                                    icon: const Icon(LucideIcons.edit, color: AppColor.primary),
-                                    onPressed: () {
-                                      // Prevent tap propagation
-                                      // TODO: open variant edit modal
-
-                                      showModalBottomSheet(
-                                        context: context,
-                                        isScrollControlled: true,
-                                        backgroundColor: Colors.transparent,
-                                        shape: const RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
-                                        ),
-                                        builder: (context) {
-                                          return DraggableScrollableSheet(
-                                            expand: false,
-                                            maxChildSize: 0.95,
-                                            initialChildSize: 0.9,
-                                            minChildSize: 0.6,
-                                            builder: (_, controller) => Padding(
-                                              padding: EdgeInsets.only(
-                                                bottom: MediaQuery.of(context).viewInsets.bottom,
-                                              ),
-                                              child: Material(
-                                                borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
-                                                color: Colors.white,
-                                                child: SafeArea(
-                                                  top: false,
-                                                  child: SingleChildScrollView(
-                                                    controller: controller,
-                                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-                                                    child: UpsertProductModal(
-                                                      Category: '',
-                                                      existingProduct: variant,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                      );
-                                    },
+                                  Text(
+                                    variant.name,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                      color: AppColor.textSecondary,
+                                    ),
                                   ),
-                                  IconButton(
-                                    icon: const Icon(LucideIcons.trash, color: AppColor.errorText),
-                                    onPressed: () {
-                                      // TODO: confirm & delete variant
-
-                                      showDialog(
-                                        context: context,
-                                        builder: (context) => CustomConfirmDialog(
-                                          title: "Delete Product",
-                                          content: "Are you sure you want to delete this product?\nThis action cannot be undone.",
-                                          onConfirm: () {
-                                            variantProductProvider.deleteVariant(product.id, variant.id);
-                                          },
-                                        ),
-                                      );
-                                    },
+                                  const SizedBox(height: 4),
+                                  Wrap(
+                                    spacing: 6,
+                                    runSpacing: -4,
+                                    children: [
+                                      if (usePack) _buildTag('Pack'),
+                                      if (usePieces) _buildTag('Piece'),
+                                    ],
                                   ),
                                 ],
                               ),
-                            ],
-                          ),
-                        ),
-                      );
+                            ),
 
-                    }),
-                  ],
+                            // Edit/Delete Buttons
+                            Row(
+                              children: [
+                                IconButton(
+                                  icon: const Icon(LucideIcons.edit, color: AppColor.primary),
+                                  onPressed: () => _editVariant(context, variant),
+                                ),
+                                IconButton(
+                                  icon: const Icon(LucideIcons.trash, color: AppColor.errorText),
+                                  onPressed: () => _deleteVariant(context, product.id,variant.id,variantProductProvider,variant.id),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  })
+
 
                 ],
               ),
@@ -621,4 +735,38 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
       ),
     );
   }
+
+  Widget _buildStockLabel(String label) {
+    // Adjust font size based on label length
+    double fontSize;
+    if (label.length <= 20) {
+      fontSize = 14;
+    } else if (label.length <= 35) {
+      fontSize = 13;
+    } else {
+      fontSize = 12;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppColor.primary.withOpacity(0.07),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontWeight: FontWeight.w200,
+          fontSize: fontSize,
+          color: AppColor.textSecondary.withOpacity(0.7),
+        ),
+      ),
+    );
+  }
+
+  double _getFontSizeForName(String name) {
+    return (18 - (name.length * 0.3)).clamp(10.0, 16.0);
+  }
+
+
 }
