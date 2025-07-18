@@ -58,7 +58,7 @@ class CustomButton extends StatelessWidget {
 
     return SizedBox(
       width: width ?? double.infinity,
-      height: height ?? 40, // Bigger height
+      height: height ?? 45, // Bigger height
       child: ElevatedButton(
         onPressed: isDisabled ? null : onPressed,
         style: buttonStyle,

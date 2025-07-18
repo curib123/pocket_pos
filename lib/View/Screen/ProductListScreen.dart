@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:mobile_stock_inventory/Helper/AppColor.dart';
 import 'package:mobile_stock_inventory/Model/product_model.dart';
@@ -10,6 +11,7 @@ import 'package:mobile_stock_inventory/Provider/StoreCategoryProvider.dart';
 import 'package:mobile_stock_inventory/Provider/SwitchProvider.dart';
 import 'package:mobile_stock_inventory/View/Components/BouncingCartIcon.dart';
 import 'package:mobile_stock_inventory/View/Components/Custom/CustomButton.dart';
+import 'package:mobile_stock_inventory/View/Components/Custom/CustomFlatDropdown.dart';
 import 'package:mobile_stock_inventory/View/Components/Modal/ProductDetailScreenModal.dart';
 import 'package:mobile_stock_inventory/View/Components/Modal/UpsertProductModal.dart';
 import 'package:provider/provider.dart';
@@ -185,9 +187,15 @@ class _ProductListScreenState extends State<ProductListScreen> {
                 filteredProducts = filteredProducts.where((p) => p.totalQuantity == 0).toList();
               } else if (_selectedStockStatus == 'Low Stock') {
                 filteredProducts = filteredProducts.where((p) => p.totalQuantity > 0 && p.totalQuantity <= 10).toList();
+              } // Apply product type filter (MAIN or VARIANT only)
+              if (_selectedStockStatus == 'Main Stock') {
+                filteredProducts = filteredProducts.where((p) => !p.isVariant).toList();
+              } else if (_selectedStockStatus == 'Variant Stock') {
+                filteredProducts = filteredProducts.where((p) => p.isVariant).toList();
               }
 
-                // Debug print
+
+              // Debug print
               for (var p in filteredProducts) {
                 print('[Filtered Product] ${p.name} - Total Quantity: ${p.totalQuantity}');
               }
@@ -220,7 +228,10 @@ class _ProductListScreenState extends State<ProductListScreen> {
                       : 0;
                   return bLowestPrice.compareTo(aLowestPrice);
                 });
+              } else if (_selectedSort == 'Alphabetical') {
+                filteredProducts.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
               }
+
 
 
               final visibleProducts = filteredProducts.take(_loadedCount).toList();
@@ -231,7 +242,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                   FadeInDown(
                     duration: const Duration(milliseconds: 600),
                     child: Padding(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
                       child: Row(
                         children: [
                           Expanded(
@@ -284,55 +295,68 @@ class _ProductListScreenState extends State<ProductListScreen> {
                       child: LayoutBuilder(
                         builder: (context, constraints) {
                           double spacing = 12;
-                          double itemWidth = (constraints.maxWidth - (spacing * 2)) / (widget.category.isNotEmpty ? 2 : 3);
+                          int columnCount = widget.category.isNotEmpty ? 2 : 3;
+                          double itemWidth = (constraints.maxWidth - (spacing * (columnCount - 1))) / columnCount;
 
                           return Wrap(
                             spacing: spacing,
                             runSpacing: 10,
                             children: [
-                           if(widget.category.isEmpty) _buildFilterDropdown(
-                            width: itemWidth,
-                            label: 'Category',
-                            value: _selectedCategoryFilter,
-                            items: ['All', ...storeCategoryProvider.visibleCategories.toList()],
-                            onChanged: (value) {
-                              setState(() {
-                                _selectedCategoryFilter = value!;
-                                _loadedCount = 50;
-                              });
-                            },
-                            ),
-                              _buildFilterDropdown(
+
+                              if (widget.category.isEmpty)
+                                SizedBox(
+                                  width: itemWidth,
+                                  child: CustomFlatDropdown<String>(
+                                    hint: 'Select Category',
+                                    value: _selectedCategoryFilter,
+                                    items: ['All', ...storeCategoryProvider.visibleCategories.toList()],
+                                    onChanged: (value) {
+                                      setState(() {
+                                        _selectedCategoryFilter = value!;
+                                        _loadedCount = 50;
+                                      });
+                                    },
+                                    itemBuilder: (val) => Text(val),
+                                  ),
+                                ),
+
+                              // Sort Filter
+                              SizedBox(
                                 width: itemWidth,
-                                label: 'Sort',
-                                value: _selectedSort,
-                                items: ['Newest', 'Oldest', 'Price ↑', 'Price ↓', 'Quantity ↑', 'Quantity ↓'],
-                                onChanged: (value) {
-                                  setState(() {
-                                    _selectedSort = value!;
-                                  });
-                                },
-                              ),
-                              _buildFilterDropdown(
-                                width: itemWidth,
-                                label: 'Stock',
-                                value: _selectedStockStatus,
-                                items: ['All', 'In Stock', 'Out of Stock', 'Low Stock'],
-                                onChanged: (value) {
-                                  setState(() {
-                                    _selectedStockStatus = value!;
-                                  });
-                                },
+                                child: CustomFlatDropdown<String>(
+                                  hint: 'Select Sort',
+                                  value: _selectedSort,
+                                  items: ['Newest', 'Oldest', 'Price ↑', 'Price ↓', 'Quantity ↑', 'Quantity ↓','Alphabetical'],
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _selectedSort = value!;
+                                    });
+                                  },
+                                  itemBuilder: (val) => Text(val),
+                                ),
                               ),
 
+                              // Stock Filter
+                              SizedBox(
+                                width: itemWidth,
+                                child: CustomFlatDropdown<String>(
+                                  hint: 'Select Stock Status',
+                                  value: _selectedStockStatus,
+                                  items: ['All', 'In Stock', 'Out of Stock', 'Low Stock','Main Stock','Variant Stock'],
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _selectedStockStatus = value!;
+                                    });
+                                  },
+                                  itemBuilder: (val) => Text(val),
+                                ),
+                              ),
                             ],
                           );
                         },
                       ),
                     ),
                   ),
-
-
 
 
                   // Product List/Grid
@@ -364,6 +388,166 @@ class _ProductListScreenState extends State<ProductListScreen> {
     );
   }
 
+  Widget _buildGridView(List<Product> products, currencyFormat, SwitchProvider switchProvider) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        int crossAxisCount = (constraints.maxWidth ~/ 160).clamp(2, 6);
+        double imageHeight = constraints.maxWidth < 500 ? 100 : 140;
+        double fontSize = constraints.maxWidth < 500 ? 12 : 14;
+
+        return GridView.builder(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
+            crossAxisSpacing: 17,
+            mainAxisSpacing: 20,
+            childAspectRatio: 0.65,
+          ),
+          itemCount: products.length,
+          itemBuilder: (context, index) {
+            final product = products[index];
+            final isPack = product.isSoldByPack;
+            final isPiece = product.isSoldByPiece;
+            final hasStock = product.stocks.isNotEmpty;
+            final stock = hasStock ? product.stocks.first : null;
+
+            return FadeInUp(
+              duration: Duration(milliseconds: 250 + (index * 60)),
+              child: GestureDetector(
+                onTap: () => ProductDetailModal.show(context, product.id, false),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: AppColor.primary.withOpacity(0.035),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColor.border.withOpacity(0.2)),
+                  ),
+                  padding: const EdgeInsets.all(10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      // 📸 Image + Price + Badge
+                      Stack(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: (product.imagePath != null &&
+                                product.imagePath!.isNotEmpty &&
+                                File(product.imagePath!).existsSync())
+                                ? Image.file(
+                              File(product.imagePath!),
+                              width: double.infinity,
+                              height: imageHeight,
+                              fit: BoxFit.cover,
+                            )
+                                : _placeholderIcon(AppColor.primary, switchProvider),
+                          ),
+
+                          // 🟧 Variant / Main Badge
+                          Positioned(
+                            top: 0,
+                            right: 8,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: product.isVariant
+                                    ? AppColor.warning.withOpacity(0.9)
+                                    : AppColor.success.withOpacity(0.9),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                product.isVariant ? 'Variant' : 'Main',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          // 💰 Price (stacked inside image)
+                          if (hasStock && (isPack || isPiece))
+                            Positioned(
+                              bottom: 0,
+                              left: 0,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  if (isPiece && !isPack)
+                                    _buildImagePriceTag(
+                                      '${currencyFormat.format(stock!.retailPrice)} / piece',
+                                    ),
+                                  if (isPiece && isPack && (product.piecesPerPack ?? 0) > 0)
+                                    _buildImagePriceTag(
+                                      '${currencyFormat.format(stock!.retailPrice / product.piecesPerPack!)} / piece',
+                                    ),
+                                  if (isPack)
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 4),
+                                      child: _buildImagePriceTag(
+                                        '${currencyFormat.format(stock!.retailPrice)} / pack',
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 10),
+
+                      // 🏷 Selling types
+                      if (isPack || isPiece)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 6),
+                          child: Wrap(
+                            spacing: 6,
+                            runSpacing: -4,
+                            alignment: WrapAlignment.center,
+                            children: [
+                              if (product.category != null) _buildTag(product.category!),
+                              if (isPack) _buildTag('Pack'),
+                              if (isPiece) _buildTag('Piece'),
+                            ],
+                          ),
+                        ),
+
+                      // 🧾 Product Name
+                      Text(
+                        product.name,
+                        style: TextStyle(
+                          fontSize: fontSize,
+                          fontWeight: FontWeight.w600,
+                          color: AppColor.textPrimary,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+
+                      ),
+
+                      const SizedBox(height: 3),
+
+                      // 📊 Stock
+                      Text(
+                        'Stocks: ${product.totalQuantity}',
+                        style: const TextStyle(
+                          fontSize: 13.5,
+                          color: AppColor.textSecondary,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   Widget _buildEmptyState() {
     return Center(
       child: FadeInDown(
@@ -382,286 +566,164 @@ class _ProductListScreenState extends State<ProductListScreen> {
     );
   }
 
-  Widget _buildGridView(List<Product> products, currencyFormat, SwitchProvider switchProvider) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        int crossAxisCount = (constraints.maxWidth ~/ 160).clamp(2, 6);
-        double imageHeight = constraints.maxWidth + 50 < 500 ? 110 : 150;
-        double fontSize = constraints.maxWidth < 500 ? 13 : 14;
-        double priceFontSize = constraints.maxWidth < 500 ? 13 : 14.5;
+  Widget buildSlimProductTile(Product product, NumberFormat currencyFormat, BuildContext context) {
+    final hasStock = product.stocks.isNotEmpty;
+    final stock = hasStock ? product.stocks.first : null;
+    final isPack = product.isSoldByPack;
+    final isPiece = product.isSoldByPiece;
+    final hasImage = product.imagePath?.isNotEmpty == true && File(product.imagePath!).existsSync();
 
-        return GridView.builder(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: crossAxisCount,
-            crossAxisSpacing: 10,
-            mainAxisSpacing: 10,
-            childAspectRatio: 0.60,
-          ),
-          itemCount: products.length,
-          itemBuilder: (context, index) {
-            final product = products[index];
-            final isPack = product.isSoldByPack;
-            final isPiece = product.isSoldByPiece;
-            final price = product.stocks.isNotEmpty
-                ? product.stocks.first.retailPrice
-                : 0;
-
-            print(product.isVariant);
-
-            return FadeInUp(
-              duration: Duration(milliseconds: 250 + (index * 60)),
-              child: GestureDetector(
-                onTap: () {
-                  ProductDetailModal.show(context, product.id,false);
-                },
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: AppColor.primary.withOpacity(0.035),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  padding: const EdgeInsets.all(10),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Stack(
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: (product.imagePath != null &&
-                                product.imagePath!.isNotEmpty &&
-                                File(product.imagePath!).existsSync())
-                                ? Image.file(
-                              File(product.imagePath!),
-                              width: double.infinity,
-                              height: imageHeight,
-                              fit: BoxFit.fill,
-                            )
-                                : _placeholderIcon(AppColor.primary, switchProvider),
-                          ),
-
-                          // 🏷 Badge based on isVariant
-                          Positioned(
-                            bottom: 8,
-                            right: 8,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: product.isVariant == true
-                                    ? AppColor.warning.withOpacity(0.8)
-                                    : AppColor.success.withOpacity(0.9),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                product.isVariant == true ? 'Variant' : 'Main',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-
-
-                      const SizedBox(height: 15),
-
-                      // Tags
-                      if (isPack || isPiece) ...[
-                        Wrap(
-                          spacing: 6,
-                          runSpacing: -4,
-                          alignment: WrapAlignment.center,
-                          children: [
-                            if (isPack) _buildTag('Pack'),
-                            if (isPiece) _buildTag('Piece'),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                      ],
-
-                      // Name
-                      Text(
-                        product.name,
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: fontSize,
-                          color: AppColor.textPrimary,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.center,
-                      ),
-
-                      const SizedBox(height: 4),
-
-                      // Stock
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              'Stocks: ${product.totalQuantity}',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: AppColor.textSecondary,
-                              ),
-                              textAlign: TextAlign.center,
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 5),
-
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.green.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        constraints: const BoxConstraints(
-                          maxWidth: 150, // 👈 Optional: constrain width to make ellipsis work
-                        ),
-                        child: Text(
-                          '${currencyFormat.format(price)}',
-                          style: TextStyle(
-                            fontSize: priceFontSize,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.green.shade700,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+    return InkWell(
+      onTap: () => ProductDetailModal.show(context, product.id, false),
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: AppColor.accent.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Row(
+          children: [
+            // 🖼️ Image or Placeholder
+            ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: hasImage
+                  ? Image.file(
+                File(product.imagePath!),
+                width: 48,
+                height: 48,
+                fit: BoxFit.cover,
+              )
+                  : Container(
+                width: 48,
+                height: 48,
+                color: AppColor.accent.withOpacity(0.1),
+                child: const Icon(Icons.inventory_2_rounded, color: AppColor.accent),
               ),
-            );
-          },
-        );
-      },
-    );
-  }
+            ),
+            const SizedBox(width: 10),
 
-
-
-  Widget _buildListView(List<Product> products, currencyFormat, SwitchProvider switchProvider) {
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      itemCount: products.length,
-      itemBuilder: (context, index) {
-        final product = products[index];
-        final imageUrl = product.imagePath ?? '';
-        final isPack = product.isSoldByPack;
-        final isPiece = product.isSoldByPiece;
-        final price = product.stocks.isNotEmpty
-            ? product.stocks.first.retailPrice
-            : 0;
-
-        return FadeInUp(
-          duration: Duration(milliseconds: 200 + (index * 60)),
-          child: Container(
-            margin: const EdgeInsets.symmetric(vertical: 5),
-            child: ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
-              tileColor: AppColor.accent.withOpacity(0.04),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              leading: ClipRRect(
-                borderRadius: BorderRadius.circular(6),
-                child: imageUrl.isNotEmpty && File(imageUrl).existsSync()
-                    ? Image.file(
-                  File(imageUrl),
-                  width: 60,
-                  height: 100,
-                  fit: BoxFit.cover,
-                )
-                    : _placeholderIcon(AppColor.accent, switchProvider),
-              ),
-              title: Column(
-                mainAxisAlignment: MainAxisAlignment.start,
+            // 📝 Product Info
+            Expanded(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Name
                   Text(
                     product.name,
                     style: const TextStyle(
                       fontWeight: FontWeight.w600,
-                      fontSize: 14,
+                      fontSize: 13,
                       color: AppColor.textPrimary,
                     ),
-                    overflow: TextOverflow.ellipsis,
                     maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  // Selling Type Tags
-                  if (isPack || isPiece) ...[
-                    const SizedBox(height: 4),
-                    Wrap(
-                      spacing: 6,
-                      runSpacing: -4,
-                      children: [
-                        if (isPack) _buildTag('Pack'),
-                        if (isPiece) _buildTag('Piece'),
-                      ],
-                    ),
-                  ],
-                ],
-              ),
-              subtitle: Padding(
-                padding: const EdgeInsets.only(top: 3),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Price + unit
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.green.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            currencyFormat.format(price),
-                            style: const TextStyle(
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.green,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                      ],
-                    ),
-                    const SizedBox(height: 3),
-                    // Stock Info
-                    Text(
-                      'Stocks: ${product.totalQuantity}',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: AppColor.textSecondary,
+
+                  const SizedBox(height: 4),
+                  // 🏷 Selling types
+                  if (isPack || isPiece)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: Wrap(
+                        spacing: 6,
+                        runSpacing: -4,
+                        alignment: WrapAlignment.center,
+                        children: [
+                          if (product.category != null) _buildTag(product.category!),
+                          if (product.isVariant) _buildTag('Variant'),
+                          if (!product.isVariant) _buildTag('Main'),
+                          if (isPack) _buildTag('Pack'),
+                          if (isPiece) _buildTag('Piece'),
+                        ],
                       ),
                     ),
-                  ],
-                ),
+
+                  // Prices
+                  if (hasStock && (isPack || isPiece))
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: -2,
+                      children: [
+                        if (isPack)
+                          _priceChip('${currencyFormat.format(stock!.retailPrice)} / pack'),
+                        if (isPiece)
+                          _priceChip(() {
+                            if (!isPack) {
+                              return '${currencyFormat.format(stock!.retailPrice)} / piece';
+                            } else if ((product.piecesPerPack ?? 0) > 0) {
+                              return '${currencyFormat.format(stock!.retailPrice / product.piecesPerPack!)} / piece';
+                            } else {
+                              return '—';
+                            }
+                          }()),
+                      ],
+                    ),
+                   const SizedBox(height: 5,),
+                  // Stock
+                  Text(
+                    'Stock: ${product.totalQuantity}',
+                    style: const TextStyle(fontSize: 12, color: AppColor.textSecondary),
+                  ),
+                ],
               ),
-              trailing: const Icon(
-                Icons.chevron_right,
-                color: AppColor.textSecondary,
-                size: 30,
-              ),
-              onTap: () {
-                ProductDetailModal.show(context,product.id,false);
-              },
             ),
-          ),
-        );
+
+            // ➡️ Arrow
+            const Icon(Icons.chevron_right_rounded, color: AppColor.textSecondary),
+          ],
+        ),
+      ),
+    );
+  }
+  Widget _priceChip(String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: AppColor.primary.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        text,
+        style: const TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w500,
+          color: AppColor.primary,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildListView(List<Product> products, currencyFormat, context) {
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      itemCount: products.length,
+      itemBuilder: (context, index) {
+        return buildSlimProductTile(products[index], currencyFormat, context);
       },
     );
   }
 
+
+
+  Widget _buildImagePriceTag(String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: AppColor.primary,
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        text,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 10,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
+  }
 
 
 
@@ -680,7 +742,8 @@ class _ProductListScreenState extends State<ProductListScreen> {
 
 Widget _buildTag(String label) {
   return Container(
-    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+    margin: const EdgeInsets.symmetric( vertical: 3),
     decoration: BoxDecoration(
       color: AppColor.primary.withOpacity(0.1),
       borderRadius: BorderRadius.circular(6),

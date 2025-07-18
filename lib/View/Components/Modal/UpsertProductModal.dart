@@ -386,7 +386,7 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
     builder: (context, productProvider, storeCategoryProvider,variantProductProvider,looseStockProvider,currencyProvider,productStockProvider, _)  {
               return Padding(
                   padding: EdgeInsets.only(
-                    top: 16,
+                    top: 0,
                     left: 16,
                     right: 16,
                     bottom: MediaQuery.of(context).viewInsets.bottom + 16,
@@ -428,7 +428,7 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
                                         borderRadius: BorderRadius.circular(10),
                                         child: Image.file(
                                           _selectedImage!,
-                                          fit: BoxFit.fill,
+                                          fit: BoxFit.contain,
                                           width: double.infinity,
                                           height: double.infinity,
                                         ),
@@ -438,7 +438,7 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
                                         width: double.infinity,
                                         height: double.infinity,
                                         decoration: BoxDecoration(
-                                          color: themeAccent.withOpacity(0.3),
+                                          color: Colors.black.withOpacity(0.3),
                                           borderRadius: BorderRadius.circular(10),
                                         ),
                                         child: const Center(
@@ -719,7 +719,8 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
                             SizedBox(height: 10,),
                             // ➕ Add Stock Button
                             CustomButton(
-                              backgroundColor: themeAccent,
+                              isFilled: false,
+                              borderColor: themeAccent,
                               icon: Icons.add_circle_outline,
                               text: "Add Stock",
                               onPressed: () async {
@@ -921,6 +922,8 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
                                ],
 
                                CustomButton(
+                                 isFilled: false,
+                                 borderColor: themeAccent,
                                  icon: Icons.add_circle_outline,
                                  text: "Add Variant",
                                  onPressed: openAddVariantDialog,

@@ -33,42 +33,48 @@ class CustomFlatDropdown<T> extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (label != null) ...[
-          Text(label!, style: const TextStyle(fontWeight: FontWeight.w600)),
+          Text(label!, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
           const SizedBox(height: 4),
         ],
         Container(
-          height: 50,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          margin: const EdgeInsets.symmetric(vertical: 5),
+          height: 44,
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          margin: const EdgeInsets.symmetric(vertical: 4),
           decoration: BoxDecoration(
             color: AppColor.primary.withOpacity(0.05),
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(8),
           ),
           child: Row(
             children: [
               if (prefixIcon != null) ...[
-                Icon(prefixIcon, color: iconColor),
-                const SizedBox(width: 10),
+                Icon(prefixIcon, color: iconColor, size: 20),
+                const SizedBox(width: 8),
               ],
               Expanded(
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<T?>(
                     value: value,
                     isExpanded: true,
-                    icon: Icon(Icons.keyboard_arrow_down_rounded, color: iconColor),
+                    icon: Icon(Icons.keyboard_arrow_down_rounded, size: 20, color: iconColor),
                     onChanged: readOnly ? null : onChanged,
                     hint: Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
                         hint,
-                        style: const TextStyle(color: AppColor.textSecondary, fontSize: 14),
+                        style: const TextStyle(
+                          color: AppColor.textSecondary,
+                          fontSize: 12, // 👈 smaller hint
+                        ),
                       ),
                     ),
                     selectedItemBuilder: (context) {
                       return items.map((item) {
                         return Align(
                           alignment: Alignment.centerLeft,
-                          child: itemBuilder(item),
+                          child: DefaultTextStyle(
+                            style: const TextStyle(fontSize: 15, color: AppColor.textSecondary), // 👈 smaller selected
+                            child: itemBuilder(item),
+                          ),
                         );
                       }).toList();
                     },
@@ -77,7 +83,10 @@ class CustomFlatDropdown<T> extends StatelessWidget {
                         value: item,
                         child: Align(
                           alignment: Alignment.centerLeft,
-                          child: itemBuilder(item),
+                          child: DefaultTextStyle(
+                            style: const TextStyle(fontSize: 15, color: AppColor.textSecondary), // 👈 smaller menu item
+                            child: itemBuilder(item),
+                          ),
                         ),
                       );
                     }).toList(),
@@ -89,10 +98,10 @@ class CustomFlatDropdown<T> extends StatelessWidget {
         ),
         if (helperText != null)
           Padding(
-            padding: const EdgeInsets.only(left: 4),
+            padding: const EdgeInsets.only(left: 4, top: 2),
             child: Text(
               helperText!,
-              style: TextStyle(color: Colors.grey[600], fontSize: 12),
+              style: TextStyle(color: Colors.grey[600], fontSize: 11),
             ),
           ),
       ],

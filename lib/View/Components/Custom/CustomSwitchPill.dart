@@ -16,30 +16,37 @@ class CustomSwitchPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 3),
       decoration: BoxDecoration(
         color: AppColor.background,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColor.primary.withOpacity(0.25)),
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(color: AppColor.primary.withOpacity(0.2)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: options.map((label) {
           final isSelected = label == selected;
+
           return GestureDetector(
             onTap: () => onSelected(label),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeInOut,
+              margin: const EdgeInsets.symmetric(horizontal: 2),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
                 color: isSelected ? AppColor.primary : Colors.transparent,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(30),
               ),
-              child: Text(
-                label,
+              child: AnimatedDefaultTextStyle(
+                duration: const Duration(milliseconds: 200),
                 style: TextStyle(
-                  fontSize: 13,
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w600,
                   color: isSelected ? Colors.white : AppColor.textPrimary,
-                  fontWeight: FontWeight.w500,
+                  letterSpacing: 0.3,
                 ),
+                child: Text(label),
               ),
             ),
           );
