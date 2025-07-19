@@ -573,7 +573,6 @@ class _ProductListScreenState extends State<ProductListScreen> {
     );
   }
 
-
   Widget _buildListView(List<Product> products, currencyFormat, SwitchProvider switchProvider) {
     return LayoutBuilder(
       builder: (context, constraints) {

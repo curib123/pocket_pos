@@ -392,8 +392,6 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                                 variantProductProvider,
                               ),
                             ),
-
-                            // Price & Cost Tags (bottom-right)
                             Positioned(
                               bottom: 0,
                               right: 0,
@@ -491,7 +489,6 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                                 text: 'Edit',
                                 icon: Icons.edit,
                                 isFilled: false,
-                                borderColor: AppColor.warning,
                                 onPressed: () => _openEditSheet(product),
                               ),
                             ),
@@ -502,21 +499,10 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                                 text: 'Restock',
                                 icon: Icons.inventory_2_outlined,
                                 isFilled: false,
-                                borderColor: AppColor.primary,
                                 onPressed: () => _openRestockSheet(product),
                               ),
                             ),
                             const SizedBox(width: 6),
-                            if (!product.isVariant)
-                              Expanded(
-                                child: CustomButton(
-                                  isSlimmer: true,
-                                  text: 'Add Variant',
-                                  isFilled: false,
-                                  borderColor: AppColor.success,
-                                  onPressed: () => _openAddVariantSheet(context, product),
-                                ),
-                              ),
                           ],
                         ),
                         SizedBox(height: 10,),
@@ -589,6 +575,15 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                             ...product.variants.map(
                                   (variant) => _buildVariantCard(context, variant, product, variantProductProvider),
                             ),
+                            if (!product.isVariant)
+                              SizedBox(height: 10,),
+                               CustomButton(
+                                  isSlimmer: false,
+                                  text: 'Add Variant',
+                                  isFilled: true,
+                                  onPressed: () => _openAddVariantSheet(context, product),
+
+                              ),
                           ]
                         ],
 
@@ -653,43 +648,6 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
     return (22 - (name.length * 0.3)).clamp(10.0, 16.0);
   }
 
-
-  Widget _goToMainProductButton(VariantProductProvider variantProductProvider) {
-    return TextButton.icon(
-      onPressed: () {
-        if (widget.ModalAsVariant == true) {
-          Navigator.pop(context);
-        } else {
-          final parentId = variantProductProvider.getParentProductIdFromVariantId(widget.productId);
-          if (parentId != null) {
-            showDialog(
-              context: context,
-              builder: (context) => CustomConfirmDialog(
-                title: "Go to Main Product",
-                content: "Are you sure you want to view the main product?\nYou’ll leave this product view.",
-                onConfirm: () {
-                  Navigator.pop(context);
-                  ProductDetailModal.show(context, parentId, false);
-                },
-              ),
-            );
-          }
-        }
-      },
-      icon: const Icon(Icons.arrow_back_ios_new, color: AppColor.textSecondary, size: 16),
-      label: const Text(
-        "Go to Main",
-        style: TextStyle(fontSize: 12, color: AppColor.textSecondary),
-      ),
-      style: TextButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        minimumSize: Size.zero,
-        backgroundColor: AppColor.secondarySurface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      ),
-    );
-  }
 
   Widget _deleteProductButton(
       ProductProvider productProvider,
@@ -844,11 +802,11 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
       borderRadius: BorderRadius.circular(16),
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 3),
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
           color: AppColor.surface,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey.shade300),
+          border: Border.all(color: Colors.grey),
         ),
         child: Row(
           children: [
@@ -880,7 +838,7 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                     v.name,
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: 12,
+                      fontSize: 14,
                       color: AppColor.textSecondary,
                     ),
                   ),
