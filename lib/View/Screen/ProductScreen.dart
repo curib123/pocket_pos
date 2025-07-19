@@ -49,7 +49,6 @@ class ProductScreen extends StatelessWidget {
                   padding: const EdgeInsets.only(bottom: 0),
                   child: Column(
                     children: [
-                      const SizedBox(height: 10),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 15),
                         child: Row(
@@ -83,7 +82,6 @@ class ProductScreen extends StatelessWidget {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 5),
                       FadeInUp(
                         duration: const Duration(milliseconds: 500),
                         child: Padding(

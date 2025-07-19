@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:mobile_stock_inventory/Helper/AppColor.dart';
+import 'package:mobile_stock_inventory/Model/cart_item_model.dart';
 import 'package:mobile_stock_inventory/Model/product_model.dart';
+import 'package:mobile_stock_inventory/Provider/CartListProvider.dart';
 import 'package:mobile_stock_inventory/Provider/CurrencyProvider.dart';
 import 'package:mobile_stock_inventory/Provider/ProductProvider.dart';
 import 'package:mobile_stock_inventory/Provider/ProductStockProvider.dart';
@@ -14,6 +16,7 @@ import 'package:mobile_stock_inventory/View/Components/Alert/CustomNotificationD
 import 'package:mobile_stock_inventory/View/Components/Custom/CustomButton.dart';
 import 'package:mobile_stock_inventory/View/Components/Custom/CustomStepper.dart';
 import 'package:mobile_stock_inventory/View/Components/Custom/CustomSwitchPill.dart';
+import 'package:mobile_stock_inventory/View/Components/Modal/CartListModal.dart';
 import 'package:mobile_stock_inventory/View/Components/Modal/UpsertProductModal.dart';
 import 'package:provider/provider.dart';
 
@@ -184,8 +187,8 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
         File(product.imagePath!).existsSync();
 
     return SafeArea(
-      child: Consumer3<ProductProvider, ProductStockProvider,VariantProductProvider>(
-        builder: (context, productProvider, productStockProvider,variantProductProvider, _) {
+      child: Consumer4<ProductProvider, ProductStockProvider,VariantProductProvider,CartListProvider  >(
+        builder: (context, productProvider, productStockProvider,variantProductProvider,cartListProvider, _) {
           return Scaffold(
             bottomNavigationBar: SafeArea(
               child: Padding(
@@ -201,7 +204,34 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                             text: 'Add to Cart',
                             icon: Icons.shopping_cart_outlined,
                             isFilled: false,
-                            onPressed: () {},
+                              onPressed: () {
+                                if (qty <= 0) {
+                                  // ❗ Show warning when there's NO stock
+                                  showDialog(
+                                    context: context,
+                                    builder: (_) => CustomNotificationDialog(
+                                      onConfirm: () => Navigator.pop(context),
+                                      type: 'warning',
+                                      title: 'Out of Stock',
+                                      content: 'This product is currently out of stock. Please restock before adding to cart.',
+                                    ),
+                                  );
+                                } else {
+
+                                  // ✅ Proceed to add to cart
+                                  cartListProvider.addToCart(CartItem(
+                                    productId: product.id,
+                                    name: product.name,
+                                    price: price,
+                                    quantity: quantityChosen.toInt(),
+                                    imagePath: product.imagePath,
+                                    maxQuantity: qty.toInt(),
+                                  ));
+
+                                  Navigator.pop(context);
+                                }
+                              }
+
                           ),
                         ),
                         const SizedBox(width: 10),
@@ -209,7 +239,45 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                           child: CustomButton(
                             text: 'Proceed',
                             icon: Icons.check_circle_outline,
-                            onPressed: () {},
+                              onPressed: () {
+                                if (qty <= 0) {
+                                  // ❗ Show warning when there's NO stock
+                                  showDialog(
+                                    context: context,
+                                    builder: (_) => CustomNotificationDialog(
+                                      onConfirm: () => Navigator.pop(context),
+                                      type: 'warning',
+                                      title: 'Out of Stock',
+                                      content: 'This product is currently out of stock. Please restock before adding to cart.',
+                                    ),
+                                  );
+                                } else {
+
+                                  Navigator.pop(context);
+                                  // ✅ Proceed when there is stock
+                                  cartListProvider.addToCart(CartItem(
+                                    productId: product.id,
+                                    name: product.name,
+                                    price: price,
+                                    quantity: quantityChosen.toInt(),
+                                    imagePath: product.imagePath,
+                                    maxQuantity: qty.toInt(),
+                                  ));
+
+                                  showModalBottomSheet(
+                                    context: context,
+                                    isScrollControlled: true,
+                                    backgroundColor: Colors.transparent,
+                                    builder: (context) => const FractionallySizedBox(
+                                      heightFactor: 0.90,
+                                      child: CartListModal(),
+                                    ),
+                                  );
+
+
+                                }
+                              }
+
                           ),
                         ),
                       ],

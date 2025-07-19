@@ -8,7 +8,7 @@ import 'package:mobile_stock_inventory/Model/product_model.dart';
 import 'package:mobile_stock_inventory/Model/product_stock.dart';
 import 'package:mobile_stock_inventory/Model/stock_log.dart';
 import 'package:mobile_stock_inventory/Provider/AuthProvider.dart';
-import 'package:mobile_stock_inventory/Provider/CartProvider.dart';
+import 'package:mobile_stock_inventory/Provider/CartListProvider.dart';
 import 'package:mobile_stock_inventory/Provider/CurrencyProvider.dart';
 import 'package:mobile_stock_inventory/Provider/LooseStockProvider.dart';
 import 'package:mobile_stock_inventory/Provider/ProductAnalyticsProvider.dart';
@@ -77,7 +77,7 @@ Future<void> main() async {
           ChangeNotifierProvider(create: (_) => StoreCategoryProvider()),
           ChangeNotifierProvider(create: (_) => SwitchProvider()),
           ChangeNotifierProvider(create: (_) => CurrencyProvider()),
-          ChangeNotifierProvider(create: (_) => CartProvider()),
+          ChangeNotifierProvider(create: (_) => CartListProvider()),
         ],
         child: const MyApp(),
       ),

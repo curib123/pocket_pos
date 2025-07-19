@@ -559,9 +559,9 @@ class _ProductListScreenState extends State<ProductListScreen> {
 
                           ),
                           if (outStock)
-                            Icon(LucideIcons.alertTriangle,color: AppColor.errorText,)
+                            Icon(LucideIcons.alertTriangle,color: AppColor.errorText,size: 20,)
                           else if (lowStock)
-                            Icon(LucideIcons.alertTriangle,color: AppColor.warning,)
+                            Icon(LucideIcons.alertTriangle,color: AppColor.warning,size: 20,)
                         ],
                       ),
                     ],
@@ -731,9 +731,9 @@ class _ProductListScreenState extends State<ProductListScreen> {
                           ),
                           const SizedBox(width: 6),
                           if (outStock)
-                            const Icon(LucideIcons.alertTriangle, color: AppColor.errorText, size: 18)
+                            const Icon(LucideIcons.alertTriangle, color: AppColor.errorText, size: 20)
                           else if (lowStock)
-                            const Icon(LucideIcons.alertTriangle, color: AppColor.warning, size: 18),
+                            const Icon(LucideIcons.alertTriangle, color: AppColor.warning, size: 20),
                         ],
                       ),
                     ],

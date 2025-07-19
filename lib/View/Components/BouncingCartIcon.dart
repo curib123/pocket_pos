@@ -1,18 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:animate_do/animate_do.dart';
-import 'package:mobile_stock_inventory/Provider/CartProvider.dart';
+import 'package:mobile_stock_inventory/Provider/CartListProvider.dart';
+import 'package:mobile_stock_inventory/View/Components/Modal/CartListModal.dart';
 import 'package:provider/provider.dart';
 
 class BouncingCartIcon extends StatelessWidget {
-
-
   const BouncingCartIcon({
     super.key
   });
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<CartProvider>(
+    return Consumer<CartListProvider>(
       builder: (context,cartProvider,_) {
         return Bounce(
           infinite: true,
@@ -23,6 +22,15 @@ class BouncingCartIcon extends StatelessWidget {
               InkWell(
                 borderRadius: BorderRadius.circular(30),
                 onTap: (){
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (context) => FractionallySizedBox(
+                      heightFactor: 0.90,
+                      child: CartListModal(),
+                    ),
+                  );
 
                 },
                 child: const Padding(
