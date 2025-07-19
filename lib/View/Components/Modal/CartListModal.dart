@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:mobile_stock_inventory/Provider/CurrencyProvider.dart';
 import 'package:mobile_stock_inventory/View/Components/Custom/CustomButton.dart';
 import 'package:provider/provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
@@ -17,6 +18,14 @@ class CartListModal extends StatelessWidget {
       child: Consumer<CartListProvider>(
         builder: (context, cartProvider, _) {
           final cartItems = cartProvider.cartItems;
+          final currency = context.read<CurrencyProvider>();
+
+          /// ✅ Calculate total from all cart item subtotals
+          final double total = cartItems.fold(
+            0,
+                (sum, item) => sum + (item.price * item.quantity),
+          );
+
           return Scaffold(
             bottomNavigationBar: SafeArea(
               child: Padding(
@@ -25,27 +34,48 @@ class CartListModal extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          "Total:",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                        Text(
+                          "${currency.formatAmount(total)}",
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 10,),
+                    Row(
                       children: [
                         Expanded(
                           child: CustomButton(
-                              text: 'Cancel',
-                              icon: Icons.cancel_rounded,
-                              borderColor: AppColor.errorText,
-                              isFilled: false,
-                              onPressed: () {
-                               Navigator.pop(context);
-                              }
-
+                            text: 'Cancel',
+                            icon: Icons.cancel_rounded,
+                            borderColor: AppColor.errorText,
+                            isFilled: false,
+                            onPressed: () {
+                              Navigator.pop(context);
+                            },
                           ),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
                           child: CustomButton(
                             backgroundColor: AppColor.primary,
-                              text: 'Proceed Payment',
-                              onPressed: () {
-
-                              }
+                            text: 'Proceed Payment',
+                            onPressed: () {
+                              debugPrint("🧾 Proceeding with total: $total");
+                              // Add logic here to pass total or navigate
+                            },
                           ),
                         ),
                       ],
@@ -58,7 +88,8 @@ class CartListModal extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
               decoration: BoxDecoration(
                 color: AppColor.surface,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                borderRadius:
+                const BorderRadius.vertical(top: Radius.circular(24)),
               ),
               child: Column(
                 children: [
@@ -68,10 +99,11 @@ class CartListModal extends StatelessWidget {
                         onTap: () => Navigator.pop(context),
                         child: const Icon(Icons.arrow_back_ios_new),
                       ),
-                      SizedBox(width: 30,),
+                      const SizedBox(width: 30),
                       const Text(
                         "Your Cart",
-                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
+                        style:
+                        TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
                       ),
                       const Spacer(),
                       IconButton(
@@ -87,7 +119,8 @@ class CartListModal extends StatelessWidget {
                         : ListView.separated(
                       padding: const EdgeInsets.only(bottom: 16),
                       itemCount: cartItems.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 10),
+                      separatorBuilder: (_, __) =>
+                      const SizedBox(height: 10),
                       itemBuilder: (context, index) =>
                           _CartItemTile(item: cartItems[index]),
                     ),
@@ -118,6 +151,7 @@ class _CartItemTileState extends State<_CartItemTile> {
     final cartProvider = Provider.of<CartListProvider>(context, listen: false);
     final item = widget.item;
     final double subtotal = item.price * item.quantity;
+    final currency = context.read<CurrencyProvider>();
 
     return Container(
       padding: const EdgeInsets.all(10),
@@ -151,7 +185,8 @@ class _CartItemTileState extends State<_CartItemTile> {
                         Expanded(
                           child: Text(
                             item.name,
-                            style: const TextStyle(fontWeight: FontWeight.w700),
+                            style:
+                            const TextStyle(fontWeight: FontWeight.w700),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
@@ -161,17 +196,17 @@ class _CartItemTileState extends State<_CartItemTile> {
                             size: 18,
                             color: Colors.redAccent,
                           ),
-                          onPressed: () => cartProvider.removeFromCart(item.productId),
+                          onPressed: () =>
+                              cartProvider.removeFromCart(item.productId),
                           visualDensity: VisualDensity.compact,
                           padding: EdgeInsets.zero,
                         ),
                       ],
                     ),
-                    const SizedBox(height: 2),
                     Row(
                       children: [
                         Text(
-                          "₱${item.price.toStringAsFixed(2)}",
+                          "${currency.formatAmount(item.price)}",
                           style: TextStyle(
                             fontWeight: FontWeight.w600,
                             color: AppColor.primary,
@@ -180,12 +215,11 @@ class _CartItemTileState extends State<_CartItemTile> {
                         const SizedBox(width: 8),
                         Text(
                           "× ${item.quantity}",
-                          style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                          style: TextStyle(
+                              fontSize: 12, color: Colors.grey.shade600),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 2),
-
                   ],
                 ),
               ),
@@ -213,7 +247,7 @@ class _CartItemTileState extends State<_CartItemTile> {
                 ),
               ),
               Text(
-                "₱${subtotal.toStringAsFixed(2)}",
+                "${currency.formatAmount(subtotal)}",
                 style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
@@ -247,7 +281,8 @@ class _ProductImage extends StatelessWidget {
             : null,
       ),
       child: imagePath == null
-          ? const Icon(Icons.image_not_supported, size: 20, color: Colors.grey)
+          ? const Icon(Icons.image_not_supported,
+          size: 20, color: Colors.grey)
           : null,
     );
   }
@@ -262,7 +297,8 @@ class _EmptyCartState extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(LucideIcons.shoppingCart, size: 60, color: Colors.grey.shade300),
+          Icon(LucideIcons.shoppingCart,
+              size: 60, color: Colors.grey.shade300),
           const SizedBox(height: 16),
           Text(
             "Your cart’s chillin’... 💤",
@@ -283,4 +319,3 @@ class _EmptyCartState extends StatelessWidget {
     );
   }
 }
-
