@@ -20,7 +20,6 @@ import 'package:mobile_stock_inventory/View/Components/Custom/CustomFlatDropdown
 import 'package:mobile_stock_inventory/View/Components/Custom/CustomPillToggle.dart';
 import 'package:mobile_stock_inventory/View/Components/Custom/CustomTextField.dart';
 import 'package:mobile_stock_inventory/Helper/AppColor.dart';
-import 'package:mobile_stock_inventory/View/Components/SnackbarService.dart';
 import 'package:provider/provider.dart';
 
 class UpsertProductModal extends StatefulWidget {
@@ -906,7 +905,6 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
                                                          setState(() {
                                                            _variants.removeWhere((variant) => variant.id == v.id);
                                                          });
-                                                         SnackbarService.showSuccess("🗑️ Variant deleted!");
                                                        },
                                                      ),
                                                    );

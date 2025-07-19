@@ -4,7 +4,6 @@ import 'package:uuid/uuid.dart';
 import 'package:mobile_stock_inventory/Model/loose_stock.dart';
 import 'package:mobile_stock_inventory/Model/product_model.dart';
 import 'package:mobile_stock_inventory/Model/stock_log.dart';
-import 'package:mobile_stock_inventory/View/Components/SnackbarService.dart';
 
 class LooseStockProvider extends ChangeNotifier {
   final Box<Product> _productBox;
@@ -68,9 +67,6 @@ class LooseStockProvider extends ChangeNotifier {
     await _productBox.put(product.id, updatedProduct);
     notifyListeners();
 
-    SnackbarService.showSuccess(isNew
-        ? "✅ Loose stock created with $quantity piece(s)."
-        : "✅ Loose stock updated to $quantity piece(s).");
   }
 
   /// ➖ Deduct Loose Pieces
@@ -80,7 +76,6 @@ class LooseStockProvider extends ChangeNotifier {
 
     final loose = product.looseStock!;
     if (loose.remainingPieces < qty) {
-      SnackbarService.showWarning("⚠️ Not enough loose pieces.");
       return;
     }
 
@@ -110,7 +105,6 @@ class LooseStockProvider extends ChangeNotifier {
 
     await _productBox.put(product.id, updatedProduct);
     notifyListeners();
-    SnackbarService.showSuccess("✅ Deducted $qty loose piece(s).");
   }
 
   /// ✏️ Manually Set Loose Piece Quantity
@@ -144,7 +138,6 @@ class LooseStockProvider extends ChangeNotifier {
 
     await _productBox.put(product.id, updatedProduct);
     notifyListeners();
-    SnackbarService.showSuccess("✅ Loose stock updated.");
   }
 
   /// 🗑️ Delete loose stock
@@ -173,7 +166,6 @@ class LooseStockProvider extends ChangeNotifier {
 
     await _productBox.put(product.id, updatedProduct);
     notifyListeners();
-    SnackbarService.showSuccess("🗑️ Loose stock deleted.");
   }
 
   int getRemainingPieces(String idOrName) {

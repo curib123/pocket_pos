@@ -4,7 +4,6 @@ import 'package:mobile_stock_inventory/Model/loose_stock.dart';
 import 'package:mobile_stock_inventory/Model/product_model.dart';
 import 'package:mobile_stock_inventory/Model/product_stock.dart';
 import 'package:mobile_stock_inventory/Model/stock_log.dart';
-import 'package:mobile_stock_inventory/View/Components/SnackbarService.dart';
 
 class ProductStockProvider extends ChangeNotifier {
   final Box<Product> _productBox;
@@ -222,7 +221,6 @@ class ProductStockProvider extends ChangeNotifier {
     try {
       final product = _getProduct(productIdOrName);
       if (product == null) {
-        SnackbarService.showWarning("⚠️ Product not found.");
         return;
       }
 
@@ -279,9 +277,7 @@ class ProductStockProvider extends ChangeNotifier {
       await _productBox.put(updatedProduct.id, updatedProduct);
       notifyListeners();
 
-      SnackbarService.showSuccess("✅ Stock updated and loose pieces synced.");
     } catch (e) {
-      SnackbarService.showError("❌ Failed to update stock: $e");
     }
   }
 }

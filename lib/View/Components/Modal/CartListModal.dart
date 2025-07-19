@@ -16,100 +16,57 @@ class CartListModal extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FractionallySizedBox(
-      child: Consumer2<CartListProvider, ProductStockProvider>(
-        builder: (context, cartProvider, productStockProvider, _) {
-          final cartItems = cartProvider.cartItems;
-          final currency = context.read<CurrencyProvider>();
-          final double total = cartProvider.totalPrice;
+    return DraggableScrollableSheet(
+      expand: false,
+      initialChildSize: 0.85,
+      minChildSize: 0.5,
+      maxChildSize: 0.95,
+      builder: (context, scrollController) {
+        return Container(
+          decoration: BoxDecoration(
+            color: AppColor.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Consumer2<CartListProvider, ProductStockProvider>(
+            builder: (context, cartProvider, productStockProvider, _) {
+              final cartItems = cartProvider.cartItems;
+              final currency = context.read<CurrencyProvider>();
+              final double total = cartProvider.totalPrice;
 
-          return Scaffold(
-            bottomNavigationBar: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          "Total:",
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                        Text(
-                          currency.formatAmount(total),
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: CustomButton(
-                            text: 'Cancel',
-                            icon: Icons.cancel_rounded,
-                            borderColor: AppColor.errorText,
-                            isFilled: false,
-                            onPressed: () => Navigator.pop(context),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: CustomButton(
-                            backgroundColor: AppColor.primary,
-                            text: 'Proceed Payment',
-                            onPressed: () {
-                              showPaymentDialog(context);
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            body: Container(
-              padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
-              decoration: BoxDecoration(
-                color: AppColor.surface,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-              ),
-              child: Column(
+              return Column(
                 children: [
-                  Row(
-                    children: [
-                      GestureDetector(
-                        onTap: () => Navigator.pop(context),
-                        child: const Icon(Icons.arrow_back_ios_new),
-                      ),
-                      const SizedBox(width: 30),
-                      const Text(
-                        "Your Cart",
-                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
-                      ),
-                      const Spacer(),
-                      IconButton(
-                        icon: const Icon(Icons.close),
-                        onPressed: () => Navigator.pop(context),
-                      )
-                    ],
+                  // Header
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+                    child: Row(
+                      children: [
+                        GestureDetector(
+                          onTap: () => Navigator.pop(context),
+                          child: const Icon(Icons.arrow_back_ios_new),
+                        ),
+                        const SizedBox(width: 30),
+                        const Text(
+                          "Your Cart",
+                          style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
+                        ),
+                        const Spacer(),
+                        IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () => Navigator.pop(context),
+                        )
+                      ],
+                    ),
                   ),
+
                   const SizedBox(height: 12),
+
+                  // Cart Items
                   Expanded(
                     child: cartItems.isEmpty
                         ? const _EmptyCartState()
                         : ListView.separated(
-                      padding: const EdgeInsets.only(bottom: 16),
+                      controller: scrollController,
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                       itemCount: cartItems.length,
                       separatorBuilder: (_, __) => const SizedBox(height: 10),
                       itemBuilder: (context, index) => _CartItemTile(
@@ -117,15 +74,70 @@ class CartListModal extends StatelessWidget {
                       ),
                     ),
                   ),
+
+                  // Bottom Bar
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              "Total:",
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                            Text(
+                              currency.formatAmount(total),
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: CustomButton(
+                                text: 'Cancel',
+                                icon: Icons.cancel_rounded,
+                                borderColor: AppColor.errorText,
+                                isFilled: false,
+                                onPressed: () => Navigator.pop(context),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: CustomButton(
+                                backgroundColor: AppColor.primary,
+                                text: 'Proceed Payment',
+                                onPressed: () {
+                                  showPaymentDialog(context);
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
-              ),
-            ),
-          );
-        },
-      ),
+              );
+            },
+          ),
+        );
+      },
     );
   }
 }
+
 
 class _CartItemTile extends StatefulWidget {
   final String productId;
@@ -186,7 +198,7 @@ class _CartItemTileState extends State<_CartItemTile> {
                             IconButton(
                               icon: const Icon(
                                 LucideIcons.trash2,
-                                size: 18,
+                                size: 25,
                                 color: Colors.redAccent,
                               ),
                               onPressed: () {

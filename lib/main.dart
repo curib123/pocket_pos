@@ -19,7 +19,6 @@ import 'package:mobile_stock_inventory/Provider/SwitchProvider.dart';
 import 'package:mobile_stock_inventory/Provider/TabProvider.dart';
 import 'package:mobile_stock_inventory/Provider/ProductStockProvider.dart';
 import 'package:mobile_stock_inventory/Provider/VariantProductProvider.dart';
-import 'package:mobile_stock_inventory/View/Components/SnackbarService.dart';
 import 'package:mobile_stock_inventory/home.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -82,7 +81,6 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      scaffoldMessengerKey: SnackbarService.messengerKey,
       debugShowCheckedModeBanner: false,
       title: "Mobile POS & Inventory App",
       theme: ThemeData(

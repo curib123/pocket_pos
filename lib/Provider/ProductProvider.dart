@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:mobile_stock_inventory/Model/product_model.dart';
 import 'package:mobile_stock_inventory/Model/stock_log.dart';
-import 'package:mobile_stock_inventory/View/Components/SnackbarService.dart';
 
 class ProductProvider extends ChangeNotifier {
   final Box<Product> _productBox;
@@ -30,7 +29,6 @@ class ProductProvider extends ChangeNotifier {
       ..sort((a, b) => b.lastModified.compareTo(a.lastModified));
 
     if (!silently) {
-      SnackbarService.showSuccess("🔄 Products refreshed");
     }
 
     notifyListeners();
@@ -98,7 +96,6 @@ class ProductProvider extends ChangeNotifier {
             p.deletedAt == null);
 
         if (nameExists) {
-          SnackbarService.showWarning('⚠️ Product already exists: ${product.name}');
           return;
         }
 
@@ -136,7 +133,6 @@ class ProductProvider extends ChangeNotifier {
 
         await _productBox.put(newProduct.id, newProduct);
         refreshProducts();
-        SnackbarService.showSuccess('✅ Product added: ${product.name}');
       } else {
         final log = StockLog(
           id: 'log-${product.id}-adjust-${DateTime.now().millisecondsSinceEpoch}',
@@ -154,10 +150,8 @@ class ProductProvider extends ChangeNotifier {
 
         await _productBox.put(updatedProduct.id, updatedProduct);
         refreshProducts();
-        SnackbarService.showSuccess('✅ Product updated: ${updatedProduct.name}');
       }
     } catch (e) {
-      SnackbarService.showError('❌ Failed to upsert product: $e');
     }
   }
 
@@ -182,10 +176,8 @@ class ProductProvider extends ChangeNotifier {
 
         await _productBox.put(id, deleted);
         refreshProducts();
-        SnackbarService.showSuccess('🗑️ Product deleted: ${product.name}');
       }
     } catch (e) {
-      SnackbarService.showError('❌ Failed to delete product: $e');
     }
   }
 
@@ -210,10 +202,8 @@ class ProductProvider extends ChangeNotifier {
 
         await _productBox.put(id, restored);
         refreshProducts();
-        SnackbarService.showSuccess('✅ Product restored: ${product.name}');
       }
     } catch (e) {
-      SnackbarService.showError('❌ Failed to restore product: $e');
     }
   }
 
@@ -239,9 +229,7 @@ class ProductProvider extends ChangeNotifier {
 
       await _productBox.clear();
       refreshProducts();
-      SnackbarService.showSuccess('🧹 All products cleared.');
     } catch (e) {
-      SnackbarService.showError('❌ Clear all failed: $e');
     }
   }
 }

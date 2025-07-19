@@ -346,7 +346,7 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                       ),
                     ),
                   Container(
-                    padding: EdgeInsets.symmetric(vertical: 20,horizontal: 20),
+                    padding: EdgeInsets.symmetric(vertical: 10,horizontal: 20),
                     margin: EdgeInsets.symmetric(vertical: 10),
                     decoration: BoxDecoration(
                       color: AppColor.surface,
@@ -395,22 +395,22 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
 
                             // Price & Cost Tags (bottom-right)
                             Positioned(
-                              bottom: 10,
+                              bottom: 0,
                               right: 0,
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
                                   // Price Tag
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
+                                    padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 3),
                                     decoration: BoxDecoration(
                                       color: AppColor.primary,
-                                      borderRadius: BorderRadius.circular(8),
+                                      borderRadius: BorderRadius.circular(5),
                                     ),
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        const Icon(Icons.sell, size: 15, color: Colors.white),
+                                        const Icon(Icons.sell, size: 13, color: Colors.white),
                                         const SizedBox(width: 4),
                                         Text(
                                           currency.format(price),
@@ -424,31 +424,6 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                                     ),
                                   ),
 
-                                  const SizedBox(height: 5),
-
-                                  // Cost Tag
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: AppColor.warning,
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          'Cost: ${currency.format(cost)}',
-                                          style: const TextStyle(
-                                            fontSize: 12,
-                                            fontStyle: FontStyle.italic,
-                                            decoration: TextDecoration.lineThrough,
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
                                 ],
                               ),
                             ),
@@ -458,12 +433,9 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                         const SizedBox(height: 16),
 
                         // --- Product Name & Link to Main ---
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: Text(
+                             Text(
                                 product.name,
+                                textAlign: TextAlign.center,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
                                   fontSize: _getFontSizeForName(product.name) + 5,
@@ -471,12 +443,7 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                                   color: AppColor.textPrimary,
                                 ),
                               ),
-                            ),
-                            product.isVariant
-                                ? _goToMainProductButton(variantProductProvider)
-                                : const SizedBox.shrink(),
-                          ],
-                        ),
+
 
                         const SizedBox(height: 6),
 
@@ -502,6 +469,7 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
 
                         // --- Stock Label ---
                         Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             if (!product.isSoldByPack && product.isSoldByPiece)
                               _buildStockLabel('Available Piece: ${formatNumber(product.totalQuantity)}')
@@ -614,18 +582,6 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                                 onChanged: (val) => setState(() => _hasVariant = val),
                               ),
                             ],
-                          ),
-
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                              'Enable this if you want to view variant now.',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontStyle: FontStyle.italic,
-                                color: AppColor.textSecondary,
-                              ),
-                            ),
                           ),
 
                           const SizedBox(height: 10),

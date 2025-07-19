@@ -132,7 +132,7 @@ class _CustomStepperFieldState extends State<CustomStepperField> {
         decoration: BoxDecoration(
           color: onTap == null
               ? Colors.grey.withOpacity(0.15)
-              : widget.themeColor.withOpacity(0.18),
+              : Colors.grey.withOpacity(0.18),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Icon(

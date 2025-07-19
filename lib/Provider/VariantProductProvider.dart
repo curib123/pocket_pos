@@ -3,7 +3,6 @@ import 'package:hive/hive.dart';
 import 'package:mobile_stock_inventory/Model/product_model.dart';
 import 'package:mobile_stock_inventory/Model/stock_log.dart';
 import 'package:mobile_stock_inventory/Provider/ProductProvider.dart';
-import 'package:mobile_stock_inventory/View/Components/SnackbarService.dart';
 
 class VariantProductProvider extends ChangeNotifier {
   final Box<Product> _productBox;
@@ -54,7 +53,7 @@ class VariantProductProvider extends ChangeNotifier {
       final parent = _getParent(parentId);
 
       if (parent == null) {
-        SnackbarService.showWarning("❌ Parent product not found.");
+
         return;
       }
 
@@ -112,7 +111,6 @@ class VariantProductProvider extends ChangeNotifier {
         _productProvider.refreshProducts();
         notifyListeners();
 
-        SnackbarService.showSuccess("✅ Variant added: ${variant.name}");
       } else {
         // 🔁 UPDATE EXISTING VARIANT
         final oldVariant = parent.variants[existingIndex];
@@ -168,7 +166,6 @@ class VariantProductProvider extends ChangeNotifier {
         _productProvider.refreshProducts();
         notifyListeners();
 
-        SnackbarService.showSuccess("✅ Variant updated: ${variant.name}");
 
         final savedParent = _productBox.get(parent.id);
         if (savedParent != null) {
@@ -176,7 +173,7 @@ class VariantProductProvider extends ChangeNotifier {
         }
       }
     } catch (e) {
-      SnackbarService.showError("❌ Failed to upsert variant: $e");
+
       debugPrint("❌ Variant upsert error: $e");
     }
   }
@@ -189,7 +186,7 @@ class VariantProductProvider extends ChangeNotifier {
       final matchingVariants = parent.variants.where((v) => v.id == variantId).toList();
 
       if (matchingVariants.isEmpty) {
-        SnackbarService.showWarning("⚠️ Variant not found.");
+
         return;
       }
 
@@ -239,9 +236,9 @@ class VariantProductProvider extends ChangeNotifier {
       _productProvider.refreshProducts();
       notifyListeners();
 
-      SnackbarService.showSuccess("🗑️ Variant deleted.");
+
     } catch (e) {
-      SnackbarService.showError("❌ Failed to delete variant: $e");
+
     }
   }
 }

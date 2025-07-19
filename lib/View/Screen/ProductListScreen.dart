@@ -529,7 +529,6 @@ class _ProductListScreenState extends State<ProductListScreen> {
                       ]
                       ),
 
-
                       // 🏷 Selling types
                       if (isPack || isPiece)
                         Padding(
@@ -545,7 +544,6 @@ class _ProductListScreenState extends State<ProductListScreen> {
                           ),
                         ),
 
-                      // 📊 Stock
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [

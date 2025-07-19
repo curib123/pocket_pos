@@ -26,48 +26,22 @@ void showPaymentDialog(BuildContext context) {
             contentPadding: const EdgeInsets.all(20),
             content: ConstrainedBox(
               constraints: BoxConstraints(maxWidth: isTablet ? 500 : double.infinity),
-              child: Consumer4<CartListProvider, ProductStockProvider,ProductProvider,CurrencyProvider>(
-                builder: (context, cartListProvider, productStockProvider,productProvider, currencyProvider, _) {
+              child: Consumer4<CartListProvider, ProductStockProvider, ProductProvider, CurrencyProvider>(
+                builder: (context, cartListProvider, productStockProvider, productProvider, currencyProvider, _) {
                   final cartList = cartListProvider.cartItems;
                   final totalAmount = cartList.fold(0.0, (sum, item) => sum + item.getSubtotal());
-
                   double change = 0;
 
                   return StatefulBuilder(
                     builder: (context, setState) {
-                      bool isLoading = false;
-
                       Future<void> handlePayNow() async {
                         final input = paymentController.text.trim();
 
-                        if (input.isEmpty) {
-                          showDialog(
-                            context: context,
-                            builder: (_) => CustomNotificationDialog(
-                              onConfirm: () => Navigator.pop(context),
-                              title: 'Missing Payment',
-                              content: 'Please enter the amount paid by the customer.',
-                              type: 'warning',
-                            ),
-                          );
-                          return;
-                        }
-
+                        // Silent fail if no input or invalid payment
                         final payment = double.tryParse(input);
-                        if (payment == null || payment < totalAmount) {
-                          showDialog(
-                            context: context,
-                            builder: (_) => CustomNotificationDialog(
-                              onConfirm: () => Navigator.pop(context),
-                              title: 'Invalid or Insufficient Payment',
-                              content: 'Please enter a valid payment amount that covers the total cost.',
-                              type: 'warning',
-                            ),
-                          );
+                        if (input.isEmpty || payment == null || payment < totalAmount) {
                           return;
                         }
-
-                        setState(() => isLoading = true);
 
                         for (final item in cartList) {
                           await handleSellingDeduction(
@@ -83,8 +57,21 @@ void showPaymentDialog(BuildContext context) {
                         }
 
                         cartListProvider.clearCart();
-                        setState(() => isLoading = false);
-                        Navigator.pop(context); // close payment dialog
+
+                        // ✅ Show success message only
+                        showDialog(
+                          context: context,
+                          builder: (_) => CustomNotificationDialog(
+                            onConfirm: () {
+                              Navigator.of(context).pop();
+                              Navigator.of(context).pop();
+                              Navigator.of(context).pop();
+                            },
+                            title: "Payment Successful!",
+                            content: "The transaction was completed and items were deducted from stock.",
+                            type: "success",
+                          ),
+                        );
                       }
 
                       return SingleChildScrollView(
@@ -118,7 +105,7 @@ void showPaymentDialog(BuildContext context) {
                                         ),
                                         const SizedBox(width: 8),
                                         Text(
-                                          '${currencyProvider.formatAmount(item.getSubtotal())}',
+                                          currencyProvider.formatAmount(item.getSubtotal()),
                                           style: const TextStyle(fontSize: 13),
                                         ),
                                       ],
@@ -136,7 +123,7 @@ void showPaymentDialog(BuildContext context) {
                               children: [
                                 const Text('Total:', style: TextStyle(fontWeight: FontWeight.bold)),
                                 Text(
-                                  '${currencyProvider.formatAmount(totalAmount)}',
+                                  currencyProvider.formatAmount(totalAmount),
                                   style: const TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 16,
@@ -170,7 +157,7 @@ void showPaymentDialog(BuildContext context) {
                               children: [
                                 const Text('Change:', style: TextStyle(fontWeight: FontWeight.bold)),
                                 Text(
-                                  '${currencyProvider.formatAmount(change)}',
+                                  currencyProvider.formatAmount(change),
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     color: change >= 0 ? Colors.green : Colors.red,
@@ -195,13 +182,10 @@ void showPaymentDialog(BuildContext context) {
                                 ),
                                 const SizedBox(width: 12),
                                 Expanded(
-                                  child: isLoading
-                                      ? const Center(child: CircularProgressIndicator())
-                                      : CustomButton(
+                                  child: CustomButton(
                                     text: 'Pay Now',
                                     onPressed: () {
-                                      Navigator.pop(context);
-                                      Future.delayed(Duration.zero,(){
+                                      Future.delayed(Duration.zero, () {
                                         handlePayNow();
                                       });
                                     },

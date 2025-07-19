@@ -3,7 +3,6 @@ import 'package:hive/hive.dart';
 import 'package:mobile_stock_inventory/Model/product_analytics.dart';
 import 'package:mobile_stock_inventory/Model/product_model.dart';
 import 'package:mobile_stock_inventory/Model/stock_log.dart';
-import 'package:mobile_stock_inventory/View/Components/SnackbarService.dart';
 
 enum DateFilterType { day, week, month, year }
 
@@ -176,6 +175,5 @@ class ProductAnalyticsProvider extends ChangeNotifier {
   Future<void> clearAnalytics() async {
     await _analyticsBox.clear();
     notifyListeners();
-    SnackbarService.showSuccess("📊 All analytics cleared.");
   }
 }
