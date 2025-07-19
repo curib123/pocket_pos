@@ -6,21 +6,29 @@ class CartListProvider with ChangeNotifier {
 
   List<CartItem> get cartItems => List.unmodifiable(_cartItems);
 
-  // 🚀 Add or update
-  void addToCart(CartItem item, {int quantity = 1}) {
+  /// 🚀 Add to cart or update existing item (Upsert logic)
+  void addToCart(CartItem item) {
+    if (item.quantity <= 0) return;
+
     final index = _cartItems.indexWhere((e) => e.productId == item.productId);
 
     if (index >= 0) {
-      _cartItems[index].quantity += quantity;
+      // 🔁 Update existing item
+      final existing = _cartItems[index];
+      final newQuantity = existing.quantity + item.quantity;
+      _cartItems[index] = existing.copyWith(quantity: newQuantity);
     } else {
-      _cartItems.add(item.copyWith(quantity: quantity));
+      // ➕ Add new item
+      _cartItems.add(item);
     }
 
     notifyListeners();
   }
 
-  // ✏️ Update quantity
+  /// ✏️ Update exact quantity
   void updateQuantity(String productId, int quantity) {
+    if (quantity <= 0) return removeFromCart(productId);
+
     final index = _cartItems.indexWhere((e) => e.productId == productId);
     if (index >= 0) {
       _cartItems[index].quantity = quantity;
@@ -28,32 +36,67 @@ class CartListProvider with ChangeNotifier {
     }
   }
 
-  // ❌ Remove item
+  /// ➕ Increment quantity by 1
+  void incrementQuantity(String productId) {
+    final index = _cartItems.indexWhere((e) => e.productId == productId);
+    if (index >= 0) {
+      _cartItems[index].quantity += 1;
+      notifyListeners();
+    }
+  }
+
+  /// ➖ Decrement quantity by 1 (removes if hits 0)
+  void decrementQuantity(String productId) {
+    final index = _cartItems.indexWhere((e) => e.productId == productId);
+    if (index >= 0) {
+      final newQty = _cartItems[index].quantity - 1;
+      if (newQty <= 0) {
+        removeFromCart(productId);
+      } else {
+        _cartItems[index].quantity = newQty;
+        notifyListeners();
+      }
+    }
+  }
+
+  /// 🎯 Get a specific CartItem by productId
+  CartItem? getCartItem(String productId) {
+    try {
+      return _cartItems.firstWhere((e) => e.productId == productId);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// ❌ Remove item
   void removeFromCart(String productId) {
     _cartItems.removeWhere((e) => e.productId == productId);
     notifyListeners();
   }
 
-  // 🧹 Clear everything
+  /// 🧹 Clear everything
   void clearCart() {
     _cartItems.clear();
     notifyListeners();
   }
 
-  // 💰 Total cost
-  double get totalPrice => _cartItems.fold(
-    0,
-        (sum, item) => sum + (item.price * item.quantity),
-  );
-
-  // 🔍 Check presence
+  /// 🔍 Check if item is in cart
   bool isInCart(String productId) =>
       _cartItems.any((e) => e.productId == productId);
 
-  // 📦 Get quantity
-  int getQuantity(String productId) =>
-      _cartItems.firstWhere(
-            (e) => e.productId == productId,
-        orElse: () => CartItem(productId: '', name: '', price: 0),
-      ).quantity;
+  /// 💵 Get total cost
+  double get totalPrice =>
+      _cartItems.fold(0, (sum, item) => sum + item.getSubtotal());
+
+  /// 🧮 Total items (for cart badge)
+  int get totalItems =>
+      _cartItems.fold(0, (sum, item) => sum + item.quantity);
+
+  /// 🪄 Replace the whole cart (e.g. from saved state)
+  void replaceCart(List<CartItem> newCart) {
+    _cartItems
+      ..clear()
+      ..addAll(newCart);
+    notifyListeners();
+  }
 }

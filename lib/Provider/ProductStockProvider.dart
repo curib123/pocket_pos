@@ -24,52 +24,89 @@ class ProductStockProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> sellPack(String productIdOrName, String stockId) async {
+  Future<bool> sellPack(String productIdOrName, int quantity) async {
     final product = _getProduct(productIdOrName);
-    if (product == null) return;
+    if (product == null) return false;
 
-    final stockIndex = product.stocks.indexWhere((s) => s.id == stockId);
-    if (stockIndex == -1) return;
+    // Clone & sort FIFO by dateReceived
+    final sortedStocks = [...product.stocks]
+      ..sort((a, b) => a.dateReceived.compareTo(b.dateReceived));
 
-    final updatedStock = product.stocks[stockIndex].copyWith(
-      quantity: product.stocks[stockIndex].quantity - 1,
-    );
+    int remainingToDeduct = quantity;
+    List<ProductStock> updatedStocks = [...product.stocks];
+    List<StockLog> logs = [];
 
-    final updatedStocks = [...product.stocks];
-    updatedStocks[stockIndex] = updatedStock;
+    for (final stock in sortedStocks) {
+      if (remainingToDeduct <= 0) break;
+      if (stock.quantity <= 0) continue;
 
-    final log = StockLog(
-      id: 'log-${DateTime.now().millisecondsSinceEpoch}',
-      productId: product.id,
-      quantity: 1,
-      isPiece: false,
-      reason: StockLogReason.sold,
-      remarks: 'Sold 1 pack',
-    );
+      final deduct = stock.quantity >= remainingToDeduct
+          ? remainingToDeduct
+          : stock.quantity;
+
+      final updated = stock.copyWith(quantity: stock.quantity - deduct);
+      final index = updatedStocks.indexWhere((s) => s.id == stock.id);
+      if (index != -1) updatedStocks[index] = updated;
+
+      logs.add(
+        StockLog(
+          id: 'log-${DateTime.now().millisecondsSinceEpoch}-${stock.id}',
+          productId: product.id,
+          quantity: deduct,
+          isPiece: false,
+          reason: StockLogReason.sold,
+          remarks: 'Sold $deduct pack(s) from stock ${stock.id} - ${stock.quantity ?? "N/A"}',
+        ),
+      );
+
+      remainingToDeduct -= deduct;
+    }
+
+    // Not enough stock
+    if (remainingToDeduct > 0) return false;
 
     final updatedProduct = product.copyWith(
       stocks: updatedStocks,
       lastModified: DateTime.now(),
-      logs: [...product.logs, log],
+      logs: [...product.logs, ...logs],
     );
 
     await _productBox.put(updatedProduct.id, updatedProduct);
     notifyListeners();
+
+    return true;
   }
 
-  Future<void> sellPiece(String productIdOrName, int quantity) async {
+
+  Future<bool> sellPiece(String productIdOrName, int quantity) async {
+    if (quantity <= 0) {
+      print('❌ Invalid quantity: $quantity');
+      return false;
+    }
+
     final product = _getProduct(productIdOrName);
-    if (product == null) return;
+    if (product == null) {
+      print('❌ Product not found: $productIdOrName');
+      return false;
+    }
 
     final current = product.looseStock;
-    if (current == null || current.remainingPieces < quantity) return;
+    if (current == null) {
+      print('⚠️ No loose stock found for product ${product.id}');
+      return false;
+    }
+
+    if (current.remainingPieces < quantity) {
+      print('⚠️ Not enough loose stock. Requested: $quantity, Available: ${current.remainingPieces}');
+      return false;
+    }
 
     final updatedLoose = current.copyWith(
       remainingPieces: current.remainingPieces - quantity,
     );
 
     final log = StockLog(
-      id: 'log-${DateTime.now().millisecondsSinceEpoch}',
+      id: 'log-${DateTime.now().millisecondsSinceEpoch}-${product.id}',
       productId: product.id,
       quantity: quantity,
       isPiece: true,
@@ -84,8 +121,15 @@ class ProductStockProvider extends ChangeNotifier {
     );
 
     await _productBox.put(updatedProduct.id, updatedProduct);
+    // optionally: await syncToSupabase(updatedProduct);
+
     notifyListeners();
+    print('✅ Sold $quantity piece(s) of ${product.name}');
+
+    return true;
   }
+
+
 
   Future<void> upsertStock(String productIdOrName, ProductStock stock) async {
     final product = _getProduct(productIdOrName);
@@ -148,47 +192,7 @@ class ProductStockProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> deductQuantityFifo(String productIdOrName, int quantity) async {
-    final product = _getProduct(productIdOrName);
-    if (product == null) return;
 
-    List<ProductStock> updatedStocks = [...product.stocks];
-    List<StockLog> logs = [];
-
-    for (int i = 0; i < updatedStocks.length; i++) {
-      if (quantity <= 0) break;
-
-      final available = updatedStocks[i].quantity;
-      if (available <= 0) continue;
-
-      final deduct = quantity < available ? quantity : available;
-      quantity -= deduct;
-
-      updatedStocks[i] = updatedStocks[i].copyWith(
-        quantity: available - deduct,
-      );
-
-      logs.add(
-        StockLog(
-          id: 'log-${updatedStocks[i].id}-${DateTime.now().millisecondsSinceEpoch}',
-          productId: product.id,
-          quantity: deduct,
-          isPiece: false,
-          reason: StockLogReason.sold,
-          remarks: 'FIFO deduction',
-        ),
-      );
-    }
-
-    final updatedProduct = product.copyWith(
-      stocks: updatedStocks,
-      lastModified: DateTime.now(),
-      logs: [...product.logs, ...logs],
-    );
-
-    await _productBox.put(updatedProduct.id, updatedProduct);
-    notifyListeners();
-  }
 
   Future<void> updateLooseStock(String productIdOrName, int remainingPieces) async {
     final product = _getProduct(productIdOrName);

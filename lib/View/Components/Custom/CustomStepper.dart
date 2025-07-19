@@ -29,14 +29,16 @@ class _CustomStepperFieldState extends State<CustomStepperField> {
   @override
   void initState() {
     super.initState();
-    _controller = TextEditingController(text: widget.value.toString());
+    final safeValue = widget.value > 0 ? widget.value : widget.min;
+    _controller = TextEditingController(text: safeValue.toString());
   }
 
   @override
   void didUpdateWidget(CustomStepperField oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.value != widget.value) {
-      _controller.text = widget.value.toString();
+      final safeValue = widget.value > 0 ? widget.value : widget.min;
+      _controller.text = safeValue.toString();
     }
   }
 
@@ -50,7 +52,6 @@ class _CustomStepperFieldState extends State<CustomStepperField> {
   Widget build(BuildContext context) {
     return widget.useTextInput
         ? SizedBox(
-
       child: CustomTextField(
         label: '',
         controller: _controller,
@@ -99,7 +100,7 @@ class _CustomStepperFieldState extends State<CustomStepperField> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Text(
-              widget.value.toString(),
+              (widget.value > 0 ? widget.value : widget.min).toString(),
               style: TextStyle(
                 fontSize: 16.5,
                 fontWeight: FontWeight.w600,

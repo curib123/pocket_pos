@@ -1,3 +1,8 @@
+enum SellingType {
+  piece,
+  pack,
+}
+
 class CartItem {
   final String productId;
   final String name;
@@ -5,17 +10,24 @@ class CartItem {
   int quantity;
   final int maxQuantity;
   final String? imagePath;
+  final bool isSoldPerPack;
+  final bool isSoldPerPiece;
+  final SellingType sellingType;
 
   CartItem({
     required this.productId,
     required this.name,
     required this.price,
-    this.quantity = 1,
-    this.maxQuantity = 999, // default cap
+    required this.quantity,
+    this.maxQuantity = 999,
     this.imagePath,
+    required this.isSoldPerPack,
+    required this.isSoldPerPiece,
+    required this.sellingType,
   });
 
-  // Optional: for immutability
+  double getSubtotal() => price * quantity;
+
   CartItem copyWith({
     String? productId,
     String? name,
@@ -23,6 +35,9 @@ class CartItem {
     int? quantity,
     int? maxQuantity,
     String? imagePath,
+    bool? isSoldPerPack,
+    bool? isSoldPerPiece,
+    SellingType? sellingType,
   }) {
     return CartItem(
       productId: productId ?? this.productId,
@@ -31,6 +46,9 @@ class CartItem {
       quantity: quantity ?? this.quantity,
       maxQuantity: maxQuantity ?? this.maxQuantity,
       imagePath: imagePath ?? this.imagePath,
+      isSoldPerPack: isSoldPerPack ?? this.isSoldPerPack,
+      isSoldPerPiece: isSoldPerPiece ?? this.isSoldPerPiece,
+      sellingType: sellingType ?? this.sellingType,
     );
   }
 }

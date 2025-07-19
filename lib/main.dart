@@ -14,7 +14,6 @@ import 'package:mobile_stock_inventory/Provider/LooseStockProvider.dart';
 import 'package:mobile_stock_inventory/Provider/ProductAnalyticsProvider.dart';
 import 'package:mobile_stock_inventory/Provider/ProductProvider.dart';
 import 'package:mobile_stock_inventory/Provider/ProductSync.dart';
-import 'package:mobile_stock_inventory/Provider/StockLogProvider.dart';
 import 'package:mobile_stock_inventory/Provider/StoreCategoryProvider.dart';
 import 'package:mobile_stock_inventory/Provider/SwitchProvider.dart';
 import 'package:mobile_stock_inventory/Provider/TabProvider.dart';
@@ -65,14 +64,6 @@ Future<void> main() async {
           ChangeNotifierProvider(create: (_) => LooseStockProvider(productBox)),
           ChangeNotifierProvider(create: (_) => ProductAnalyticsProvider(productBox,analyticsBox)),
           Provider(create: (_) => ProductSync(productBox)),
-          ChangeNotifierProxyProvider<ProductSync, StockLogProvider>(
-            create: (_) => StockLogProvider(productBox),
-            update: (_, sync, provider) {
-              provider!.attachSync(sync);
-              return provider;
-            },
-          ),
-
 
           ChangeNotifierProvider(create: (_) => StoreCategoryProvider()),
           ChangeNotifierProvider(create: (_) => SwitchProvider()),

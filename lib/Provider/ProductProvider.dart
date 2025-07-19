@@ -23,10 +23,19 @@ class ProductProvider extends ChangeNotifier {
     }
   }
 
-  void refreshProducts() {
-    _products = _productBox.values.where((p) => p.deletedAt == null).toList();
+  void refreshProducts({bool silently = false}) {
+    _products = _productBox.values
+        .where((p) => p.deletedAt == null)
+        .toList()
+      ..sort((a, b) => b.lastModified.compareTo(a.lastModified));
+
+    if (!silently) {
+      SnackbarService.showSuccess("🔄 Products refreshed");
+    }
+
     notifyListeners();
   }
+
 
   List<Product> getProductsByCategory(String category) =>
       _products.where((product) => product.category == category).toList();

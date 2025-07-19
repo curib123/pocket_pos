@@ -59,7 +59,7 @@ class _ProductDetailContent extends StatefulWidget {
 
 class _ProductDetailContentState extends State<_ProductDetailContent> {
 
-  bool isUsePackSwitch = false;
+  bool isUsePackSwitch = true;
   double price = 0;
   double cost = 0;
   String unit = '';
@@ -69,6 +69,7 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
   double quantityChosen = 0;
   bool useQtyInput = false;
   bool _hasVariant = false;
+  SellingType sellingType = SellingType.pack;
 
   @override
   void didChangeDependencies() {
@@ -107,6 +108,8 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
         : isPackView
         ? product.totalQuantity.toDouble()
         : product.totalQuantityByPieces.toDouble();
+
+    sellingType = isUsePackSwitch ? SellingType.pack : SellingType.piece;
   }
 
 
@@ -226,6 +229,9 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                                     quantity: quantityChosen.toInt(),
                                     imagePath: product.imagePath,
                                     maxQuantity: qty.toInt(),
+                                    sellingType: sellingType,
+                                    isSoldPerPack: product.isSoldByPack,
+                                    isSoldPerPiece: product.isSoldByPiece,
                                   ));
 
                                   Navigator.pop(context);
@@ -262,6 +268,9 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                                     quantity: quantityChosen.toInt(),
                                     imagePath: product.imagePath,
                                     maxQuantity: qty.toInt(),
+                                    sellingType: sellingType,
+                                    isSoldPerPack: product.isSoldByPack,
+                                    isSoldPerPiece: product.isSoldByPiece,
                                   ));
 
                                   showModalBottomSheet(
@@ -321,11 +330,15 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                                 ? stock.costPrice
                                 : stock.costPrice / perPack
                                 : 0;
+                            // For quantity logic
                             qty = (!product.isSoldByPack && product.isSoldByPiece)
                                 ? product.totalQuantity.toDouble()
                                 : isUsePackSwitch
                                 ? product.totalQuantity.toDouble()
                                 : product.totalQuantityByPieces.toDouble();
+
+                             // For selling type logic — structured like qty logic
+                            sellingType = isUsePackSwitch ? SellingType.pack : SellingType.piece;
 
                             quantityChosen = quantityChosen > qty ? qty : quantityChosen;
                           }),
