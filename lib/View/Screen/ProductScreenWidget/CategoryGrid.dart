@@ -90,7 +90,7 @@ class CategoryGrid extends StatelessWidget {
                         color: AppColor.surface,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: AppColor.border.withOpacity(0.2),
+                          color: AppColor.secondarySurface.withOpacity(0.2),
                           width: 1,
                         ),
                         boxShadow: [

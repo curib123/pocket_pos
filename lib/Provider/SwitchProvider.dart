@@ -23,7 +23,7 @@ class SwitchProvider with ChangeNotifier {
 
   /// Loads settings & ensures default is applied if missing or empty
   Future<void> loadSettings() async {
-    _isCategoryGridView = await _loadBool('categoryGridView', defaultValue: true);
+    _isCategoryGridView = await _loadBool('categoryGridView', defaultValue: false);
     _isProductGridView = await _loadBool('productGridView', defaultValue: true);
     _isArchiveView = await _loadBool('archiveCategory', defaultValue: false);
     notifyListeners();

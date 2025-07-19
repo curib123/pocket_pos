@@ -1,34 +1,40 @@
 import 'package:flutter/material.dart';
 
 class AppColor {
-  // Primary - Warm Terracotta
-  static const Color primary = Color(0xFFB35C2E); // Approximate terracotta tone
+  // Primary - Terracotta Khaki fusion
+  static const Color primary = Color(0xFFAF6E4D); // Muted terracotta with a khaki base
 
-  // Accent - Deep Clay
-  static const Color accent = Color(0xFF8C3C17); // Rich brownish-orange
+  // Accent - Clay Khaki
+  static const Color accent = Color(0xFF7B4B35); // Earthy, deeper clay tone
 
-  // Secondary - Muted Orange
-  static const Color secondary = Color(0xFFD9844B); // Warm soft orange
+  // Secondary - Soft Khaki Tan
+  static const Color secondary = Color(0xFFD6A26F); // Lighter tan-orange mix
 
-  // Background & UI
-  static const Color background = Color(0xFFFDF6E3); // Creamy background
-  static const Color surface = Color(0xFFFFFFFF); // White for cards and surfaces
+  // Background - Light Sand
+  static const Color background = Color(0xFFF6F1E7); // Dusty khaki background
+
+  // Surface - Cream White (more warm)
+  static const Color surface = Color(0xFFFFFFFF); // Slightly off-white, cozy
 
   // Text
-  static const Color textPrimary = Color(0xFF3E2A1E); // Dark brown
-  static const Color textSecondary = Color(0xFF7B5E4B); // Muted brown
+  static const Color textPrimary = Color(0xFF4B3F35); // Rich brown for high contrast
+  static const Color textSecondary = Color(0xFF7E6C5F); // Muted for less emphasis
 
-  // Semantic Success
-  static const Color success = Color(0xFF5BA160); // Soft olive green
 
-  // Semantic Warning
-  static const Color warning = Color(0xFFE0A648); // Warm amber
+  // ✅ Semantic Success – Sage Green
+  static const Color success = Color(0xFF6BAA75);        // Soft sage
+  static const Color successBackground = Color(0xFFE7F3EB); // Pale minty backdrop
+  static const Color successText = Color(0xFF2F6E44);    // Darker forest-sage
 
-  // Semantic Error
-  static const Color error = Color(0xFFD45D5D); // Muted red
-  static const Color errorBackground = Color(0xFFFFEDEA); // Light red background
-  static const Color errorText = Color(0xFF8C1D1D); // Deep red
+  // ⚠️ Semantic Warning – Golden Oat
+  static const Color warning = Color(0xFFD8A045);        // Earthy gold
+  static const Color warningBackground = Color(0xFFFFF3E0); // Soft butter amber
+  static const Color warningText = Color(0xFF6E4A1F);    // Toasted caramel
 
-  // Divider / Border
-  static const Color border = Color(0xFFEAD8C0); // Light earthy beige
+  // ❌ Semantic Error – Rose Clay
+  static const Color error = Color(0xFFDA6A5E);          // Muted coral-red
+  static const Color errorBackground = Color(0xFFFFF0EF); // Blush tint
+  static const Color errorText = Color(0xFF752B25);      // Deep clay red
+
+  static const Color secondarySurface = Color(0xFFF2F2F2); // Light grey for inputs ,dropdowns
 }

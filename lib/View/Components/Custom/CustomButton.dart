@@ -14,6 +14,7 @@ class CustomButton extends StatelessWidget {
   final IconData? icon;
   final double iconSize;
   final Color? borderColor;
+  final bool isSlimmer; // 👈 NEW
 
   const CustomButton({
     super.key,
@@ -26,8 +27,9 @@ class CustomButton extends StatelessWidget {
     this.backgroundColor,
     this.textColor,
     this.icon,
-    this.iconSize = 20, // Bigger icon
+    this.iconSize = 20,
     this.borderColor,
+    this.isSlimmer = false, // 👈 DEFAULT
   });
 
   @override
@@ -50,7 +52,9 @@ class CustomButton extends StatelessWidget {
       side: isFilled || isDisabled
           ? null
           : BorderSide(color: effectiveText.withOpacity(0.7), width: 1.2),
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+      padding: isSlimmer
+          ? const EdgeInsets.symmetric(vertical: 6, horizontal: 10)
+          : const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
@@ -58,7 +62,7 @@ class CustomButton extends StatelessWidget {
 
     return SizedBox(
       width: width ?? double.infinity,
-      height: height ?? 45, // Bigger height
+      height: height ?? (isSlimmer ? 36 : 45), // 👈 Adjust height if slim
       child: ElevatedButton(
         onPressed: isDisabled ? null : onPressed,
         style: buttonStyle,
@@ -67,7 +71,7 @@ class CustomButton extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (icon != null)
-              Icon(icon, size: iconSize, color: effectiveText),
+              Icon(icon, size: isSlimmer ? iconSize - 4 : iconSize, color: effectiveText),
             if (icon != null) const SizedBox(width: 6),
             Flexible(
               child: Text(
@@ -76,7 +80,7 @@ class CustomButton extends StatelessWidget {
                 maxLines: 1,
                 softWrap: false,
                 style: TextStyle(
-                  fontSize: context.rf(12), // Bigger font
+                  fontSize: context.rf(isSlimmer ? 11 : 12), // 👈 Adjust font
                   fontWeight: FontWeight.w600,
                   letterSpacing: 0.3,
                   color: effectiveText,

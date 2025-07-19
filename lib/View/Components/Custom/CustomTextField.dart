@@ -55,7 +55,7 @@ class CustomTextField extends StatelessWidget {
       ),
       helperMaxLines: 3,
       filled: true,
-      fillColor: AppColor.primary.withOpacity(0.05),
+      fillColor: AppColor.secondarySurface,
       contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),

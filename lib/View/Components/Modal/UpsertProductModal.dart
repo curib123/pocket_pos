@@ -416,7 +416,7 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
                                   height: 100,
                                   width: double.infinity,
                                   decoration: BoxDecoration(
-                                    border: Border.all(color: AppColor.border),
+                                    border: Border.all(color: AppColor.secondarySurface),
                                     borderRadius: BorderRadius.circular(10),
                                     color: AppColor.background.withOpacity(0.5),
                                   ),

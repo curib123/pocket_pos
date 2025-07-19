@@ -39,10 +39,10 @@ class CustomFlatDropdown<T> extends StatelessWidget {
         Container(
           height: 44,
           padding: const EdgeInsets.symmetric(horizontal: 10),
-          margin: const EdgeInsets.symmetric(vertical: 4),
+          margin: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
-            color: AppColor.primary.withOpacity(0.05),
-            borderRadius: BorderRadius.circular(8),
+            color: AppColor.secondarySurface,
+            borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
             children: [

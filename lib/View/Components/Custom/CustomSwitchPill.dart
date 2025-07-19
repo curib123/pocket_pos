@@ -16,11 +16,10 @@ class CustomSwitchPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 5),
       decoration: BoxDecoration(
-        color: AppColor.background,
+        color: AppColor.secondarySurface,
         borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: AppColor.primary.withOpacity(0.2)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

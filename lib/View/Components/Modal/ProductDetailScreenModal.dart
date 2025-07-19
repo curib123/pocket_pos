@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:mobile_stock_inventory/Helper/AppColor.dart';
-import 'package:mobile_stock_inventory/Helper/Enums/enum.dart';
 import 'package:mobile_stock_inventory/Model/product_model.dart';
 import 'package:mobile_stock_inventory/Provider/CurrencyProvider.dart';
 import 'package:mobile_stock_inventory/Provider/ProductProvider.dart';
@@ -15,9 +14,7 @@ import 'package:mobile_stock_inventory/View/Components/Alert/CustomNotificationD
 import 'package:mobile_stock_inventory/View/Components/Custom/CustomButton.dart';
 import 'package:mobile_stock_inventory/View/Components/Custom/CustomStepper.dart';
 import 'package:mobile_stock_inventory/View/Components/Custom/CustomSwitchPill.dart';
-import 'package:mobile_stock_inventory/View/Components/Custom/CustomTextField.dart';
 import 'package:mobile_stock_inventory/View/Components/Modal/UpsertProductModal.dart';
-import 'package:mobile_stock_inventory/View/Components/ResponsiveText.dart';
 import 'package:provider/provider.dart';
 
 class ProductDetailModal {
@@ -68,6 +65,7 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
   double qty = 0;
   double quantityChosen = 0;
   bool useQtyInput = false;
+  bool _hasVariant = false;
 
   @override
   void didChangeDependencies() {
@@ -79,6 +77,7 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
     usePack = product.isSoldByPack;
     usePiece = product.isSoldByPiece;
     unit = product.unit ?? "unit";
+    _hasVariant= product.hasVariant;
 
     final latest = product.stocks.isNotEmpty ? product.stocks.last : null;
     if (latest == null) return;
@@ -265,92 +264,108 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                         ),
                       ),
                     ),
-
-                  const SizedBox(height: 12),
-
-                  // --- Product Image & Price Tag ---
-                  Stack(
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(16),
-                        child: SizedBox(
-                          width: double.infinity,
-                          height: 130,
-                          child: hasImage
-                              ? Image.file(
-                            File(product.imagePath!),
-                            key: UniqueKey(),
-                            fit: BoxFit.contain,
-                          )
-                              : Container(
-                            color: AppColor.border.withOpacity(0.3),
-                            child: const Center(
-                              child: Icon(Icons.image_not_supported, size: 32, color: AppColor.primary),
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      // Action button (top-right)
-                      Positioned(
-                        top: 8,
-                        right: 8,
-                        child: product.isVariant
-                            ? _goToMainProductButton(variantProductProvider)
-                            : _deleteProductButton(productProvider),
-                      ),
-
-                      Positioned(
-                        bottom: 5,
-                        right: 12,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
+                  Container(
+                    padding: EdgeInsets.symmetric(vertical: 20,horizontal: 20),
+                    margin: EdgeInsets.symmetric(vertical: 10),
+                    decoration: BoxDecoration(
+                      color: AppColor.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColor.secondarySurface),
+                    ),
+                    child: Column(
+                      children: [
+                        // --- Product Image & Price Tag ---
+                        Stack(
                           children: [
-                            // --- Price Tag ---
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
-                              decoration: BoxDecoration(
-                                color:  AppColor.primary,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Icons.sell, size: 15, color: Colors.white),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    currency.format(price),
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.white,
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(16),
+                              child: SizedBox(
+                                width: double.infinity,
+                                height: 130,
+                                child: hasImage
+                                    ? Image.file(
+                                  File(product.imagePath!),
+                                  key: UniqueKey(),
+                                  fit: BoxFit.contain,
+                                )
+                                    : Container(
+                                  color: AppColor.secondarySurface.withOpacity(0.3),
+                                  child: const Center(
+                                    child: Icon(
+                                      Icons.image_not_supported,
+                                      size: 32,
+                                      color: AppColor.primary,
                                     ),
                                   ),
-                                ],
+                                ),
                               ),
                             ),
 
-                            const SizedBox(height: 5),
-
-                            // --- Cost Tag ---
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color:  AppColor.warning,
-                                borderRadius: BorderRadius.circular(8),
+                            // Delete Button (top-right)
+                            Positioned(
+                              top: 0,
+                              right: 0,
+                              child: _deleteProductButton(
+                                productProvider,
+                                product,
+                                variantProductProvider,
                               ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
+                            ),
+
+                            // Price & Cost Tags (bottom-right)
+                            Positioned(
+                              bottom: 10,
+                              right: 0,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
-                                  const Icon(Icons.local_atm_outlined, size: 12, color: Colors.white),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    'Cost: ${currency.format(cost)}',
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      fontStyle: FontStyle.italic,
-                                      decoration: TextDecoration.lineThrough,
-                                      color: Colors.white,
+                                  // Price Tag
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
+                                    decoration: BoxDecoration(
+                                      color: AppColor.primary,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(Icons.sell, size: 15, color: Colors.white),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          currency.format(price),
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+
+                                  const SizedBox(height: 5),
+
+                                  // Cost Tag
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: AppColor.warning,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          'Cost: ${currency.format(cost)}',
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            fontStyle: FontStyle.italic,
+                                            decoration: TextDecoration.lineThrough,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ],
@@ -358,31 +373,33 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                             ),
                           ],
                         ),
-                      ),
 
+                        const SizedBox(height: 16),
 
-
-                    ],
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // --- Product Info Section ---
-                  Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          product.name,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: _getFontSizeForName(product.name) + 5,
-                            fontWeight: FontWeight.w800,
-                            color: AppColor.textSecondary,
-                          ),
+                        // --- Product Name & Link to Main ---
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                product.name,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: _getFontSizeForName(product.name) + 5,
+                                  fontWeight: FontWeight.w900,
+                                  color: AppColor.textPrimary,
+                                ),
+                              ),
+                            ),
+                            product.isVariant
+                                ? _goToMainProductButton(variantProductProvider)
+                                : const SizedBox.shrink(),
+                          ],
                         ),
+
                         const SizedBox(height: 6),
 
-                        // 🏷 Selling types & category
+                        // --- Tags: Category, Type, Selling ---
                         if (usePack || usePiece)
                           Padding(
                             padding: const EdgeInsets.only(bottom: 6),
@@ -400,8 +417,9 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                             ),
                           ),
 
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 5),
 
+                        // --- Stock Label ---
                         Row(
                           children: [
                             if (!product.isSoldByPack && product.isSoldByPiece)
@@ -413,13 +431,14 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                           ],
                         ),
 
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 10),
 
                         // --- Action Buttons ---
                         Row(
                           children: [
                             Expanded(
                               child: CustomButton(
+                                isSlimmer: true,
                                 text: 'Edit',
                                 icon: Icons.edit,
                                 isFilled: false,
@@ -430,8 +449,9 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                             const SizedBox(width: 6),
                             Expanded(
                               child: CustomButton(
+                                isSlimmer: true,
                                 text: 'Restock',
-                                icon: Icons.inventory_2,
+                                icon: Icons.inventory_2_outlined,
                                 isFilled: false,
                                 borderColor: AppColor.primary,
                                 onPressed: () => _openRestockSheet(product),
@@ -441,6 +461,7 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                             if (!product.isVariant)
                               Expanded(
                                 child: CustomButton(
+                                  isSlimmer: true,
                                   text: 'Add Variant',
                                   isFilled: false,
                                   borderColor: AppColor.success,
@@ -449,25 +470,7 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                               ),
                           ],
                         ),
-
-                        // --- Variants Section ---
-
-                         if(!product.isVariant)...[
-                           Padding(
-                             padding: const EdgeInsets.all(10.0),
-                             child: Row(
-                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                               children: [
-                                 Text("Variants",style: TextStyle(color: AppColor.textSecondary,fontSize: 16,fontWeight: FontWeight.bold),),
-                                 Text(product.variants.length.toString(),style: TextStyle(color: AppColor.textSecondary,fontSize: 16,fontWeight: FontWeight.bold),),
-                               ],
-                             ),
-                           ),
-                           ...product.variants.map((variant) =>
-                               _buildVariantCard(context, variant, product, variantProductProvider)),
-                         ],
-
-                        SizedBox(height: 10 ),
+                        SizedBox(height: 10,),
                         Center(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.center,
@@ -502,6 +505,56 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                             ],
                           ),
                         ),
+                      ],
+                    ),
+                  ),
+
+                  // --- Product Variant Info Section ---
+                  Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // --- Variants Section ---
+                        if (!product.isVariant) ...[
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'View Variant Now?',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColor.primary,
+                                ),
+                              ),
+                              Switch(
+                                value: _hasVariant,
+                                activeColor: AppColor.primary,
+                                activeTrackColor: AppColor.primary.withOpacity(0.3),
+                                onChanged: (val) => setState(() => _hasVariant = val),
+                              ),
+                            ],
+                          ),
+
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              'Enable this if you want to view variant now.',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontStyle: FontStyle.italic,
+                                color: AppColor.textSecondary,
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 10),
+                          if (_hasVariant)...[
+                            ...product.variants.map(
+                                  (variant) => _buildVariantCard(context, variant, product, variantProductProvider),
+                            ),
+                          ]
+                        ],
+
                         SizedBox(height: 10 ),
                       ],
                     ),
@@ -521,7 +574,7 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
       decoration: BoxDecoration(
-        color: AppColor.primary.withOpacity(0.1),
+        color: AppColor.secondarySurface,
         borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
@@ -529,7 +582,7 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
         style: const TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w500,
-          color: AppColor.primary,
+          color: AppColor.textSecondary,
         ),
       ),
     );
@@ -539,25 +592,21 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
     // Adjust font size based on label length
     double fontSize;
     if (label.length <= 20) {
-      fontSize = 14;
+      fontSize = 16;
     } else if (label.length <= 35) {
-      fontSize = 13;
+      fontSize = 14;
     } else {
-      fontSize = 12;
+      fontSize = 13;
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: AppColor.primary.withOpacity(0.07),
-        borderRadius: BorderRadius.circular(8),
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 8),
       child: Text(
         label,
         style: TextStyle(
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.w900,
           fontSize: fontSize,
-          color: AppColor.textSecondary.withOpacity(0.7),
+          color: AppColor.textPrimary,
         ),
       ),
     );
@@ -590,42 +639,58 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
           }
         }
       },
-      icon: const Icon(LucideIcons.cornerUpLeft, color: Colors.white, size: 16),
+      icon: const Icon(Icons.arrow_back_ios_new, color: AppColor.textSecondary, size: 16),
       label: const Text(
-        "Go Main",
-        style: TextStyle(fontSize: 12, color: Colors.white),
+        "Go to Main",
+        style: TextStyle(fontSize: 12, color: AppColor.textSecondary),
       ),
       style: TextButton.styleFrom(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         minimumSize: Size.zero,
-        backgroundColor: Colors.black.withOpacity(0.6),
+        backgroundColor: AppColor.secondarySurface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
     );
   }
 
-  Widget _deleteProductButton(ProductProvider productProvider) {
+  Widget _deleteProductButton(
+      ProductProvider productProvider,
+      Product product,
+      VariantProductProvider variantProductProvider,
+      ) {
     return IconButton(
       onPressed: () {
+        final isVariant = product.isVariant;
+        final title = isVariant ? "Delete Variant" : "Delete Product";
+        final content = isVariant
+            ? "Are you sure you want to delete this variant?\nIt will be removed from its parent product."
+            : "Are you sure you want to delete this product?\nThis action cannot be undone.";
+
         showDialog(
           context: context,
           builder: (context) => CustomConfirmDialog(
-            title: "Delete Product",
-            content: "Are you sure you want to delete this product?\nThis action cannot be undone.",
+            title: title,
+            content: content,
             onConfirm: () {
-              productProvider.deleteProduct(widget.productId);
+              if (isVariant) {
+                final parentId = variantProductProvider.getParentProductIdFromVariantId(widget.productId).toString();
+                variantProductProvider.deleteVariant(parentId, widget.productId);
+              } else {
+                productProvider.deleteProduct(widget.productId);
+              }
+
               Navigator.pop(context);
             },
           ),
         );
       },
-      icon: const Icon(LucideIcons.trash, color: Colors.white, size: 18),
+      icon: Icon(LucideIcons.trash, color: AppColor.textSecondary, size: 18),
       tooltip: "Delete Product",
       padding: const EdgeInsets.all(6),
       constraints: const BoxConstraints(),
       style: IconButton.styleFrom(
-        backgroundColor: Colors.black12.withOpacity(0.6),
+        backgroundColor: AppColor.secondarySurface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
       ),
