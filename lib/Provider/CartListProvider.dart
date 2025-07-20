@@ -6,52 +6,67 @@ class CartListProvider with ChangeNotifier {
 
   List<CartItem> get cartItems => List.unmodifiable(_cartItems);
 
-  /// 🚀 Add to cart or update existing item (Upsert logic)
+  String getTaggedName(CartItem item) {
+    final rawName = item.name.replaceAll(RegExp(r' \((pcs|pack)\)$'), '');
+
+    final label = item.sellingType == SellingType.piece
+        ? ' (pcs)'
+        : ' (pack)';
+    
+    return '$rawName$label';
+  }
+
+
   void addToCart(CartItem item) {
     if (item.quantity <= 0) return;
 
-    final index = _cartItems.indexWhere((e) => e.productId == item.productId);
+    final taggedName = getTaggedName(item);
+    final updatedItem = item.copyWith(name: taggedName);
+
+    final index = _cartItems.indexWhere((e) =>
+    e.name == taggedName &&
+        e.sellingType == updatedItem.sellingType);
 
     if (index >= 0) {
-      // 🔁 Update existing item
       final existing = _cartItems[index];
-      final newQuantity = existing.quantity + item.quantity;
+      final newQuantity = existing.quantity + updatedItem.quantity;
       _cartItems[index] = existing.copyWith(quantity: newQuantity);
     } else {
-      // ➕ Add new item
-      _cartItems.add(item);
+      _cartItems.add(updatedItem);
     }
 
     notifyListeners();
   }
 
-  /// ✏️ Update exact quantity
-  void updateQuantity(String productId, int quantity) {
-    if (quantity <= 0) return removeFromCart(productId);
 
-    final index = _cartItems.indexWhere((e) => e.productId == productId);
+
+  /// ✏️ Update quantity by name
+  void updateQuantity(String name, int quantity) {
+    if (quantity <= 0) return removeFromCart(name);
+
+    final index = _cartItems.indexWhere((e) => e.name == name);
     if (index >= 0) {
       _cartItems[index].quantity = quantity;
       notifyListeners();
     }
   }
 
-  /// ➕ Increment quantity by 1
-  void incrementQuantity(String productId) {
-    final index = _cartItems.indexWhere((e) => e.productId == productId);
+  /// ➕ Increment quantity by name
+  void incrementQuantity(String name) {
+    final index = _cartItems.indexWhere((e) => e.name == name);
     if (index >= 0) {
       _cartItems[index].quantity += 1;
       notifyListeners();
     }
   }
 
-  /// ➖ Decrement quantity by 1 (removes if hits 0)
-  void decrementQuantity(String productId) {
-    final index = _cartItems.indexWhere((e) => e.productId == productId);
+  /// ➖ Decrement quantity by name
+  void decrementQuantity(String name) {
+    final index = _cartItems.indexWhere((e) => e.name == name);
     if (index >= 0) {
       final newQty = _cartItems[index].quantity - 1;
       if (newQty <= 0) {
-        removeFromCart(productId);
+        removeFromCart(name);
       } else {
         _cartItems[index].quantity = newQty;
         notifyListeners();
@@ -59,44 +74,44 @@ class CartListProvider with ChangeNotifier {
     }
   }
 
-  /// 🎯 Get a specific CartItem by productId
-  CartItem? getCartItem(String productId) {
+  /// 🎯 Get item by name
+  CartItem? getCartItem(String name) {
     try {
-      return _cartItems.firstWhere((e) => e.productId == productId);
+      return _cartItems.firstWhere((e) => e.name == name);
     } catch (_) {
       return null;
     }
   }
 
-  /// ❌ Remove item
-  void removeFromCart(String productId) {
-    _cartItems.removeWhere((e) => e.productId == productId);
+  /// ❌ Remove item by name
+  void removeFromCart(String name) {
+    _cartItems.removeWhere((e) => e.name == name);
     notifyListeners();
   }
 
-  /// 🧹 Clear everything
-  void clearCart() {
-    _cartItems.clear();
-    notifyListeners();
-  }
+  /// 🔍 Check if in cart by name
+  bool isInCart(String name) => _cartItems.any((e) => e.name == name);
 
-  /// 🔍 Check if item is in cart
-  bool isInCart(String productId) =>
-      _cartItems.any((e) => e.productId == productId);
-
-  /// 💵 Get total cost
+  /// 💵 Total cost
   double get totalPrice =>
       _cartItems.fold(0, (sum, item) => sum + item.getSubtotal());
 
-  /// 🧮 Total items (for cart badge)
+  /// 🧮 Total items
   int get totalItems =>
       _cartItems.fold(0, (sum, item) => sum + item.quantity);
 
-  /// 🪄 Replace the whole cart (e.g. from saved state)
+  /// 🧼 Replace all
   void replaceCart(List<CartItem> newCart) {
     _cartItems
       ..clear()
       ..addAll(newCart);
     notifyListeners();
   }
+
+  /// 🧹 Clear everything
+  void clearAll() {
+    _cartItems.clear();
+    notifyListeners();
+  }
+
 }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_stock_inventory/Helper/AppColor.dart';
-import 'package:mobile_stock_inventory/Helper/HandleSellingDeduction.dart';
+import 'package:mobile_stock_inventory/Model/cart_item_model.dart';
 import 'package:mobile_stock_inventory/Provider/CartListProvider.dart';
 import 'package:mobile_stock_inventory/Provider/CurrencyProvider.dart';
 import 'package:mobile_stock_inventory/Provider/ProductProvider.dart';
@@ -11,14 +11,13 @@ import 'package:mobile_stock_inventory/View/Components/Custom/CustomTextField.da
 import 'package:provider/provider.dart';
 
 void showPaymentDialog(BuildContext context) {
-  final TextEditingController paymentController = TextEditingController();
-
   showDialog(
     context: context,
     builder: (context) {
       return LayoutBuilder(
         builder: (context, constraints) {
           final bool isTablet = constraints.maxWidth > 600;
+          final TextEditingController paymentController = TextEditingController();
 
           return AlertDialog(
             backgroundColor: Colors.white,
@@ -36,42 +35,70 @@ void showPaymentDialog(BuildContext context) {
                     builder: (context, setState) {
                       Future<void> handlePayNow() async {
                         final input = paymentController.text.trim();
+                        final sanitizedInput = input.replaceAll(RegExp(r'[^\d.]'), '');
+                        final payment = double.tryParse(sanitizedInput);
 
-                        // Silent fail if no input or invalid payment
-                        final payment = double.tryParse(input);
-                        if (input.isEmpty || payment == null || payment < totalAmount) {
+                        if (cartList.isEmpty || sanitizedInput.isEmpty || payment == null || payment < totalAmount) {
                           return;
                         }
 
                         for (final item in cartList) {
-                          await handleSellingDeduction(
-                            context,
-                            productStockProvider,
-                            productProvider,
-                            item.productId,
-                            item.isSoldPerPack,
-                            item.isSoldPerPiece,
-                            item.sellingType,
-                            item.quantity.toDouble(),
-                          );
+                          try {
+                            final int qty = item.quantity.toInt();
+                            final String productId = item.productId;
+                            final bool isSoldByPack = item.isSoldPerPack;
+                            final bool isSoldByPiece = item.isSoldPerPiece;
+                            final sellingType = item.sellingType;
+
+                            print("🛒 Selling → ${item.name} x$qty ($sellingType)");
+                            bool success = false;
+
+                            if (!isSoldByPack && isSoldByPiece) {
+                              print("🧩 Selling by PIECE only → ${item.name} | Qty: $qty");
+                              success = await productStockProvider.sellPiece(productId, qty, context);
+                            } else if (isSoldByPack && !isSoldByPiece) {
+                              print("📦 Selling by PACK only → ${item.name} | Qty: $qty");
+                              success = await productStockProvider.sellPack(productId, qty);
+                            } else if (isSoldByPack && isSoldByPiece) {
+                              print("⚙️ Selling by BOTH pack & piece → ${item.name} | Using: $sellingType | Qty: $qty");
+                              success = sellingType == SellingType.pack
+                                  ? await productStockProvider.sellPack(productId, qty)
+                                  : await productStockProvider.sellPiece(productId, qty, context);
+                            } else {
+                              print("❌ Invalid selling config for item: ${item.name}");
+                              continue;
+                            }
+
+
+                            if (success) {
+                              print("✅ Deducted ${item.name}");
+                              // ✅ Show success dialog
+                              showDialog(
+                                context: context,
+                                builder: (_) => CustomNotificationDialog(
+                                  title: "Payment Successful!",
+                                  content: "The transaction was completed and items were deducted from stock.",
+                                  type: "success",
+                                  onConfirm: () {
+                                    int popCount = 3;
+                                    while (popCount-- > 0 && Navigator.canPop(context)) {
+                                      Navigator.pop(context);
+                                    }
+                                  },
+                                ),
+                              );
+                              productProvider.refreshProducts();
+                            } else {
+                              print("❗ Deduction failed for ${item.name}");
+                            }
+                          } catch (e) {
+                            print("❌ Error deducting ${item.name}: $e");
+                          }
                         }
 
-                        cartListProvider.clearCart();
+                        cartListProvider.clearAll();
 
-                        // ✅ Show success message only
-                        showDialog(
-                          context: context,
-                          builder: (_) => CustomNotificationDialog(
-                            onConfirm: () {
-                              Navigator.of(context).pop();
-                              Navigator.of(context).pop();
-                              Navigator.of(context).pop();
-                            },
-                            title: "Payment Successful!",
-                            content: "The transaction was completed and items were deducted from stock.",
-                            type: "success",
-                          ),
-                        );
+
                       }
 
                       return SingleChildScrollView(
@@ -141,7 +168,7 @@ void showPaymentDialog(BuildContext context) {
                               controller: paymentController,
                               keyboardType: TextInputType.number,
                               onChanged: (value) {
-                                final input = double.tryParse(value) ?? 0;
+                                final input = double.tryParse(value.replaceAll(RegExp(r'[^\d.]'), '')) ?? 0;
                                 setState(() {
                                   change = input - totalAmount;
                                 });
@@ -185,9 +212,7 @@ void showPaymentDialog(BuildContext context) {
                                   child: CustomButton(
                                     text: 'Pay Now',
                                     onPressed: () {
-                                      Future.delayed(Duration.zero, () {
-                                        handlePayNow();
-                                      });
+                                      Future.delayed(Duration.zero, () => handlePayNow());
                                     },
                                     isDisabled: change < 0,
                                     isFilled: true,

@@ -392,6 +392,7 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                                 variantProductProvider,
                               ),
                             ),
+
                             Positioned(
                               bottom: 0,
                               right: 0,
@@ -588,6 +589,31 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                         ],
 
                         SizedBox(height: 10 ),
+                        product.isVariant ? CustomButton(
+                            isSlimmer: false,
+                            isFilled: false,
+                            icon: LucideIcons.package2,
+                            text: "Main product", onPressed: (){
+                          if (widget.ModalAsVariant == true) {
+                            Navigator.pop(context);
+                          } else {
+                            final parentId = variantProductProvider.getParentProductIdFromVariantId(widget.productId);
+                            if (parentId != null) {
+                              showDialog(
+                                context: context,
+                                builder: (context) => CustomConfirmDialog(
+                                  title: "Go to Main Product",
+                                  content: "Are you sure you want to view the main product?\nYou’ll leave this product view.",
+                                  onConfirm: () {
+                                    Navigator.pop(context);
+                                    ProductDetailModal.show(context, parentId, false);
+                                  },
+                                ),
+                              );
+                            }
+                          }
+                        }) : SizedBox.shrink(),
+                        SizedBox(height: 10 ),
                       ],
                     ),
                 ],
@@ -647,6 +673,8 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
   double _getFontSizeForName(String name) {
     return (22 - (name.length * 0.3)).clamp(10.0, 16.0);
   }
+
+
 
 
   Widget _deleteProductButton(

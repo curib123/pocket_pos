@@ -24,42 +24,54 @@ class CustomPillToggle extends StatelessWidget {
 
     return GestureDetector(
       onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: BoxDecoration(
-          color: backgroundColor,
-          borderRadius: BorderRadius.circular(50),
-          border: Border.all(color: borderColor, width: 1.5),
-          boxShadow: isSelected
-              ? [
-            BoxShadow(
-              color: shadowColor,
-              blurRadius: 6,
-              offset: const Offset(0, 3),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // Shrink padding if constrained tightly
+          final isTight = constraints.maxWidth < 100;
+          final horizontalPadding = isTight ? 6.0 : 12.0;
+          final verticalPadding = isTight ? 6.0 : 10.0;
+
+          return AnimatedContainer(
+            duration: const Duration(milliseconds: 250),
+            padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: verticalPadding),
+            decoration: BoxDecoration(
+              color: backgroundColor,
+              borderRadius: BorderRadius.circular(50),
+              border: Border.all(color: borderColor, width: 1.5),
+              boxShadow: isSelected
+                  ? [
+                BoxShadow(
+                  color: shadowColor,
+                  blurRadius: 6,
+                  offset: const Offset(0, 3),
+                ),
+              ]
+                  : [],
             ),
-          ]
-              : [],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
-              color: iconColor,
-              size: 18,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              label,
-              style: TextStyle(
-                color: textColor,
-                fontWeight: FontWeight.w600,
-                fontSize: 13,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
+                    color: iconColor,
+                    size: isTight ? 14 : 18,
+                  ),
+                  SizedBox(width: isTight ? 4 : 8),
+                  Text(
+                    label,
+                    style: TextStyle(
+                      color: textColor,
+                      fontWeight: FontWeight.w600,
+                      fontSize: isTight ? 11 : 13,
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

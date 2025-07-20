@@ -4,6 +4,7 @@ import 'package:mobile_stock_inventory/Model/loose_stock.dart';
 import 'package:mobile_stock_inventory/Model/product_model.dart';
 import 'package:mobile_stock_inventory/Model/product_stock.dart';
 import 'package:mobile_stock_inventory/Model/stock_log.dart';
+import 'package:mobile_stock_inventory/View/Components/Alert/CustomNotificationDialog.dart';
 
 class ProductStockProvider extends ChangeNotifier {
   final Box<Product> _productBox;
@@ -12,6 +13,7 @@ class ProductStockProvider extends ChangeNotifier {
 
   Product? _getProduct(String idOrName) {
     try {
+      // 🔍 First, try matching main products
       return _productBox.values.firstWhere(
             (p) =>
         p.deletedAt == null &&
@@ -19,9 +21,26 @@ class ProductStockProvider extends ChangeNotifier {
                 p.name.trim().toLowerCase() == idOrName.trim().toLowerCase()),
       );
     } catch (_) {
-      return null;
+      // ❌ Not found in top-level, now check inside variants
+      for (final parent in _productBox.values) {
+        if (parent.hasVariant && parent.variants.isNotEmpty) {
+          try {
+            return parent.variants.firstWhere(
+                  (v) =>
+              v.deletedAt == null &&
+                  (v.id == idOrName ||
+                      v.name.trim().toLowerCase() ==
+                          idOrName.trim().toLowerCase()),
+            );
+          } catch (_) {
+            // ignore and continue
+          }
+        }
+      }
+      return null; // 🫥 No match found anywhere
     }
   }
+
 
   Future<bool> sellPack(String productIdOrName, int quantity) async {
     final product = _getProduct(productIdOrName);
@@ -76,8 +95,7 @@ class ProductStockProvider extends ChangeNotifier {
     return true;
   }
 
-
-  Future<bool> sellPiece(String productIdOrName, int quantity) async {
+  Future<bool> sellPiece(String productIdOrName, int quantity,BuildContext context) async {
     if (quantity <= 0) {
       print('❌ Invalid quantity: $quantity');
       return false;
@@ -90,43 +108,82 @@ class ProductStockProvider extends ChangeNotifier {
     }
 
     final current = product.looseStock;
+    final itemsPerPack = product.piecesPerPack ?? 1;
+
     if (current == null) {
       print('⚠️ No loose stock found for product ${product.id}');
       return false;
     }
 
-    if (current.remainingPieces < quantity) {
-      print('⚠️ Not enough loose stock. Requested: $quantity, Available: ${current.remainingPieces}');
+    final looseBefore = current.remainingPieces;
+
+    if (looseBefore < quantity) {
+      print('⚠️ Not enough loose stock. Requested: $quantity, Available: $looseBefore');
+      showDialog(context: context, builder: (_) =>  CustomNotificationDialog(title: 'Not Enough', content: 'Not enough loose stock. Requested: $quantity, Available: $looseBefore'));
       return false;
     }
 
-    final updatedLoose = current.copyWith(
-      remainingPieces: current.remainingPieces - quantity,
-    );
+    final looseAfter = looseBefore - quantity;
 
-    final log = StockLog(
+    /// 🔁 Check how many full packs were "sold" from the loose count
+    final fullPacksSold = quantity ~/ itemsPerPack;
+
+    /// 🧮 Deduct that many packs from stock (FIFO style)
+    List<ProductStock> updatedStocks = [...product.stocks];
+    List<StockLog> logs = [];
+
+    int packsToDeduct = fullPacksSold;
+    for (int i = 0; i < updatedStocks.length && packsToDeduct > 0; i++) {
+      final stock = updatedStocks[i];
+      if (stock.quantity <= 0) continue;
+
+      final deduct = (stock.quantity >= packsToDeduct) ? packsToDeduct : stock.quantity;
+      updatedStocks[i] = stock.copyWith(quantity: stock.quantity - deduct);
+
+      logs.add(StockLog(
+        id: 'log-${DateTime.now().millisecondsSinceEpoch}-pack-${stock.id}',
+        productId: product.id,
+        quantity: deduct,
+        isPiece: false,
+        reason: StockLogReason.sold,
+        remarks: 'Auto-synced: $deduct pack(s) deducted after selling $quantity pcs',
+      ));
+
+      packsToDeduct -= deduct;
+    }
+
+    // 🧾 Log the piece sale itself
+    logs.add(StockLog(
       id: 'log-${DateTime.now().millisecondsSinceEpoch}-${product.id}',
       productId: product.id,
       quantity: quantity,
       isPiece: true,
       reason: StockLogReason.sold,
       remarks: 'Sold $quantity piece(s)',
+    ));
+
+    final updatedLoose = current.copyWith(
+      remainingPieces: looseAfter,
     );
 
     final updatedProduct = product.copyWith(
       looseStock: updatedLoose,
+      stocks: updatedStocks,
+      logs: [...product.logs, ...logs],
       lastModified: DateTime.now(),
-      logs: [...product.logs, log],
     );
 
     await _productBox.put(updatedProduct.id, updatedProduct);
-    // optionally: await syncToSupabase(updatedProduct);
-
     notifyListeners();
+
     print('✅ Sold $quantity piece(s) of ${product.name}');
+    if (fullPacksSold > 0) {
+      print('🔁 Auto-deducted $fullPacksSold pack(s) from ProductStock');
+    }
 
     return true;
   }
+
 
 
 

@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:mobile_stock_inventory/Provider/ProductStockProvider.dart';
+import 'package:mobile_stock_inventory/View/Components/Alert/CustomConfimDialog.dart';
 import 'package:provider/provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:mobile_stock_inventory/Provider/CartListProvider.dart';
@@ -70,7 +71,7 @@ class CartListModal extends StatelessWidget {
                       itemCount: cartItems.length,
                       separatorBuilder: (_, __) => const SizedBox(height: 10),
                       itemBuilder: (context, index) => _CartItemTile(
-                        productId: cartItems[index].productId,
+                        name: cartItems[index].name,
                       ),
                     ),
                   ),
@@ -140,8 +141,8 @@ class CartListModal extends StatelessWidget {
 
 
 class _CartItemTile extends StatefulWidget {
-  final String productId;
-  const _CartItemTile({required this.productId});
+  final String name; // ✅ Now using name
+  const _CartItemTile({required this.name});
 
   @override
   State<_CartItemTile> createState() => _CartItemTileState();
@@ -156,7 +157,7 @@ class _CartItemTileState extends State<_CartItemTile> {
 
     return Consumer<CartListProvider>(
       builder: (context, cartProvider, _) {
-        final item = cartProvider.getCartItem(widget.productId);
+        final item = cartProvider.getCartItem(widget.name); // ✅ by name
         if (item == null) return const SizedBox.shrink();
 
         return Container(
@@ -202,8 +203,17 @@ class _CartItemTileState extends State<_CartItemTile> {
                                 color: Colors.redAccent,
                               ),
                               onPressed: () {
-                                cartProvider.removeFromCart(item.productId);
-                                debugPrint("🗑️ Removed item from cart: ${item.name} (${item.productId})");
+                                showDialog(
+                                  context: context,
+                                  builder: (context) => CustomConfirmDialog(
+                                    title: "Remove Item?",
+                                    content: "Are you sure you want to remove \"${item.name}\" from your cart?",
+                                    onConfirm: () {
+                                      cartProvider.removeFromCart(item.name);
+                                      Navigator.pop(context);
+                                    },
+                                  ),
+                                );
                               },
                               visualDensity: VisualDensity.compact,
                               padding: EdgeInsets.zero,
@@ -241,7 +251,7 @@ class _CartItemTileState extends State<_CartItemTile> {
                 useTextInput: mode == 'Input',
                 themeColor: AppColor.primary,
                 onChanged: (newQty) {
-                  cartProvider.updateQuantity(item.productId, newQty);
+                  cartProvider.updateQuantity(item.name, newQty); // ✅ update by name
                   debugPrint("🔢 Updated quantity for ${item.name} to $newQty");
                 },
               ),

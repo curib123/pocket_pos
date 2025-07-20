@@ -764,8 +764,27 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
                                        value: _hasVariant,
                                        activeColor: themeAccent,
                                        activeTrackColor: themeAccent.withOpacity(0.5),
-                                       onChanged: (val) => setState(() => _hasVariant = val),
+                                       onChanged: (val) {
+
+                                         if (_selectedCategory == null || _selectedCategory!.isEmpty) {
+                                         showDialog(
+                                           context: context,
+                                           builder: (context) => CustomNotificationDialog(
+                                             title: "Missing Category",
+                                             content: "Please select a category first before enabling variants.",
+                                             type: 'warning',
+                                             onConfirm: () => Navigator.pop(context),
+                                           ),
+                                         );
+                                         return;
+                                       }
+
+
+                                       // Safe to toggle
+                                         setState(() => _hasVariant = val);
+                                       },
                                      ),
+
                                    ],
                                  ),
                                  Align(

@@ -129,29 +129,53 @@ class ProductProvider extends ChangeNotifier {
         final newProduct = product.copyWith(
           lastModified: DateTime.now(),
           logs: [...product.logs, ...logs],
+          looseStock: product.looseStock, // 👈 ensures looseStock is persisted
         );
 
         await _productBox.put(newProduct.id, newProduct);
         refreshProducts();
       } else {
-        final log = StockLog(
-          id: 'log-${product.id}-adjust-${DateTime.now().millisecondsSinceEpoch}',
-          productId: product.id,
-          quantity: 0,
-          isPiece: false,
-          reason: StockLogReason.adjusted,
-          remarks: 'Product details manually updated',
-        );
+        // 🧠 Get current product from box for comparison
+        final currentProduct = _productBox.get(product.id);
+
+        final List<StockLog> logs = [
+          StockLog(
+            id: 'log-${product.id}-adjust-${DateTime.now().millisecondsSinceEpoch}',
+            productId: product.id,
+            quantity: 0,
+            isPiece: false,
+            reason: StockLogReason.adjusted,
+            remarks: 'Product details manually updated',
+          )
+        ];
+
+        // 🧮 Optional: log loose stock change if it changed
+        final looseBefore = currentProduct?.looseStock?.remainingPieces ?? 0;
+        final looseAfter = product.looseStock?.remainingPieces ?? 0;
+
+        if (looseBefore != looseAfter) {
+          final diff = looseAfter - looseBefore;
+          logs.add(StockLog(
+            id: 'log-${product.id}-loose-adjust-${DateTime.now().millisecondsSinceEpoch}',
+            productId: product.id,
+            quantity: diff.abs(),
+            isPiece: true,
+            reason: StockLogReason.adjusted,
+            remarks: diff > 0 ? 'Added loose stock' : 'Removed loose stock',
+          ));
+        }
 
         final updatedProduct = product.copyWith(
           lastModified: DateTime.now(),
-          logs: [...product.logs, log],
+          logs: [...product.logs, ...logs],
+          looseStock: product.looseStock, // 👈 update looseStock on edit
         );
 
         await _productBox.put(updatedProduct.id, updatedProduct);
         refreshProducts();
       }
     } catch (e) {
+      print("⚠️ Error in upsertProduct: $e");
     }
   }
 
