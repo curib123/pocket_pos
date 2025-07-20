@@ -324,6 +324,7 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
         // Case 1: New variant, no existing product necessarily
         final parentId = widget.parentProduct != null ? widget.parentProduct!.id : productId ;
         await variantProductProvider.upsertVariant(parentId, product);
+
         Navigator.pop(context, product);
       } else
       if (widget.existingProduct != null && widget.existingProduct!.isVariant) {

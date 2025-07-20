@@ -13,17 +13,33 @@ class LooseStockProvider extends ChangeNotifier {
   final uuid = const Uuid();
 
   Product? _getProduct(String idOrName) {
-    try {
-      return _productBox.values.firstWhere(
-            (p) =>
-        p.deletedAt == null &&
-            (p.id == idOrName ||
-                p.name.trim().toLowerCase() == idOrName.trim().toLowerCase()),
-      );
-    } catch (_) {
-      return null;
+    final normalized = idOrName.trim().toLowerCase();
+
+    for (final product in _productBox.values) {
+      if (product.deletedAt != null) continue;
+
+      // 🔍 Match main product
+      if (product.id.toLowerCase() == normalized ||
+          product.name.trim().toLowerCase() == normalized) {
+        return product;
+      }
+
+      // 🔍 Match from variants
+      if (product.hasVariant && product.variants.isNotEmpty) {
+        for (final variant in product.variants.whereType<Product>()) {
+          if (variant.deletedAt != null) continue;
+
+          if (variant.id.toLowerCase() == normalized ||
+              variant.name.trim().toLowerCase() == normalized) {
+            return variant;
+          }
+        }
+      }
     }
+
+    return null;
   }
+
 
   LooseStock? getLooseStock(String idOrName) {
     final product = _getProduct(idOrName);
@@ -32,13 +48,39 @@ class LooseStockProvider extends ChangeNotifier {
 
   /// 🪵 CREATE / UPDATE Loose Stock
   Future<void> upsertLooseStock(String idOrName, int quantity) async {
-    final product = _getProduct(idOrName);
-    if (product == null) return;
+    print('🟡 [upsertLooseStock] Called with idOrName: $idOrName | Quantity: $quantity');
+
+    Product? product = _getProduct(idOrName);
+    Product? parent;
+
+    // 🔁 Try finding in variants manually (no orElse!)
+    if (product == null) {
+      print('🔍 Not found in main products. Searching variants...');
+      for (final p in _productBox.values) {
+        for (final v in p.variants) {
+          if (v.id == idOrName || v.name.toLowerCase() == idOrName.toLowerCase()) {
+            product = v;
+            parent = p;
+            print('🧬 Variant found: ${v.name} (Parent: ${parent.name})');
+            break;
+          }
+        }
+        if (product != null) break;
+      }
+
+      if (product == null) {
+        print('❌ Product or variant not found: $idOrName');
+        return;
+      }
+    }
 
     final now = DateTime.now();
-
     final isNew = product.looseStock == null;
     final previousQty = product.looseStock?.remainingPieces ?? 0;
+
+    print('🔍 Product matched: ${product.name} (${product.id})');
+    print('📦 Previous loose stock: $previousQty');
+    print('🆕 Is new loose stock? $isNew');
 
     final newLoose = LooseStock(
       productId: product.id,
@@ -64,48 +106,31 @@ class LooseStockProvider extends ChangeNotifier {
       ],
     );
 
-    await _productBox.put(product.id, updatedProduct);
-    notifyListeners();
+    if (parent != null) {
+      final updatedVariants = parent.variants.map((v) {
+        return v.id == updatedProduct.id ? updatedProduct : v;
+      }).toList();
 
+      final updatedParent = parent.copyWith(
+        variants: updatedVariants,
+        lastModified: now,
+      );
+
+      await _productBox.put(updatedParent.id, updatedParent);
+      print('✅ Variant loose stock updated in parent: ${parent.name}');
+    } else {
+      await _productBox.put(product.id, updatedProduct);
+      print('✅ Main product loose stock ${isNew ? "created" : "updated"} successfully');
+    }
+
+    print('🧾 Log added: ${isNew ? "Initial loose stock created" : "Adjusted from $previousQty to $quantity"}');
+    print("🧮 Final Loose Stock: ${updatedProduct.looseStock?.remainingPieces}");
+
+    notifyListeners();
+    print('📣 Listeners notified.');
   }
 
   /// ➖ Deduct Loose Pieces
-  Future<void> deductLoosePieces(String idOrName, int qty) async {
-    final product = _getProduct(idOrName);
-    if (product == null || product.looseStock == null) return;
-
-    final loose = product.looseStock!;
-    if (loose.remainingPieces < qty) {
-      return;
-    }
-
-    final newQty = loose.remainingPieces - qty;
-    final now = DateTime.now();
-
-    final updatedLoose = loose.copyWith(
-      remainingPieces: newQty,
-      lastModified: now,
-    );
-
-    final updatedProduct = product.copyWith(
-      looseStock: updatedLoose,
-      lastModified: now,
-      logs: [
-        ...product.logs,
-        StockLog(
-          id: uuid.v4(),
-          productId: product.id,
-          quantity: qty,
-          isPiece: true,
-          reason: StockLogReason.sold,
-          remarks: "Deducted $qty piece(s) from loose stock",
-        ),
-      ],
-    );
-
-    await _productBox.put(product.id, updatedProduct);
-    notifyListeners();
-  }
 
   /// ✏️ Manually Set Loose Piece Quantity
   Future<void> setLoosePieces(String idOrName, int newQty) async {

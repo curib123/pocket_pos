@@ -12,33 +12,31 @@ class ProductStockProvider extends ChangeNotifier {
   ProductStockProvider(this._productBox);
 
   Product? _getProduct(String idOrName) {
-    try {
-      // 🔍 First, try matching main products
-      return _productBox.values.firstWhere(
-            (p) =>
-        p.deletedAt == null &&
-            (p.id == idOrName ||
-                p.name.trim().toLowerCase() == idOrName.trim().toLowerCase()),
-      );
-    } catch (_) {
-      // ❌ Not found in top-level, now check inside variants
-      for (final parent in _productBox.values) {
-        if (parent.hasVariant && parent.variants.isNotEmpty) {
-          try {
-            return parent.variants.firstWhere(
-                  (v) =>
-              v.deletedAt == null &&
-                  (v.id == idOrName ||
-                      v.name.trim().toLowerCase() ==
-                          idOrName.trim().toLowerCase()),
-            );
-          } catch (_) {
-            // ignore and continue
+    final normalized = idOrName.trim().toLowerCase();
+
+    for (final product in _productBox.values) {
+      if (product.deletedAt != null) continue;
+
+      // 🔍 Match main product
+      if (product.id.toLowerCase() == normalized ||
+          product.name.trim().toLowerCase() == normalized) {
+        return product;
+      }
+
+      // 🔍 Match from variants
+      if (product.hasVariant && product.variants.isNotEmpty) {
+        for (final variant in product.variants.whereType<Product>()) {
+          if (variant.deletedAt != null) continue;
+
+          if (variant.id.toLowerCase() == normalized ||
+              variant.name.trim().toLowerCase() == normalized) {
+            return variant;
           }
         }
       }
-      return null; // 🫥 No match found anywhere
     }
+
+    return null;
   }
 
 
@@ -73,62 +71,124 @@ class ProductStockProvider extends ChangeNotifier {
           quantity: deduct,
           isPiece: false,
           reason: StockLogReason.sold,
-          remarks: 'Sold $deduct pack(s) from stock ${stock.id} - ${stock.quantity ?? "N/A"}',
+          remarks: 'Sold $deduct pack(s) from stock ${stock.id} in ${product.id}',
         ),
       );
 
       remainingToDeduct -= deduct;
     }
 
-    // Not enough stock
+    // ❌ Not enough stock
     if (remainingToDeduct > 0) return false;
+
+    // ✅ Update loose stock if it exists
+    LooseStock? updatedLoose;
+    if (product.looseStock != null && product.piecesPerPack != null) {
+      final totalPiecesDeducted = quantity * (product.piecesPerPack ?? 0);
+      final newRemaining = (product.looseStock!.remainingPieces - totalPiecesDeducted).clamp(0, double.infinity).toInt();
+
+      updatedLoose = product.looseStock!.copyWith(remainingPieces: newRemaining);
+
+      logs.add(
+        StockLog(
+          id: 'log-${DateTime.now().millisecondsSinceEpoch}-loose',
+          productId: product.id,
+          quantity: totalPiecesDeducted.toInt(),
+          isPiece: true,
+          reason: StockLogReason.sold,
+          remarks: 'Auto-synced: Deducted $totalPiecesDeducted pcs after selling $quantity pack(s)',
+        ),
+      );
+    }
 
     final updatedProduct = product.copyWith(
       stocks: updatedStocks,
+      looseStock: updatedLoose ?? product.looseStock,
       lastModified: DateTime.now(),
       logs: [...product.logs, ...logs],
     );
 
-    await _productBox.put(updatedProduct.id, updatedProduct);
+    Product? parent;
+    for (final p in _productBox.values) {
+      if (p.hasVariant && p.variants.any((v) => v.id == product.id)) {
+        parent = p;
+        break;
+      }
+    }
+
+
+    if (parent != null) {
+      final updatedVariants = parent.variants.map((v) {
+        return v.id == product.id ? updatedProduct : v;
+      }).toList();
+
+      final updatedParent = parent.copyWith(
+        variants: updatedVariants,
+        lastModified: DateTime.now(),
+      );
+
+      await _productBox.put(updatedParent.id, updatedParent);
+    } else {
+      await _productBox.put(updatedProduct.id, updatedProduct);
+    }
+
     notifyListeners();
+
+    print('✅ Sold $quantity pack(s) of ${product.name} id ${product.id}');
+    if (updatedLoose != null) {
+      print('🔁 Auto-synced loose stock. Deducted ${quantity * (product.piecesPerPack ?? 0)} pcs');
+    }
 
     return true;
   }
 
-  Future<bool> sellPiece(String productIdOrName, int quantity,BuildContext context) async {
+
+
+  Future<bool> sellPiece(String productIdOrName, int quantity, BuildContext context) async {
+    // 🚫 Step 1: Quantity sanity check
     if (quantity <= 0) {
       print('❌ Invalid quantity: $quantity');
       return false;
     }
 
+    // 🔍 Step 2: Find the product by ID or name
     final product = _getProduct(productIdOrName);
     if (product == null) {
       print('❌ Product not found: $productIdOrName');
       return false;
     }
 
+    // 📦 Step 3: Prepare loose stock and unit data
     final current = product.looseStock;
     final itemsPerPack = product.piecesPerPack ?? 1;
 
+    // ⚠️ Step 4: Validate that loose stock exists
     if (current == null) {
-      print('⚠️ No loose stock found for product ${product.id}');
+      print('⚠️ No loose stock found for product ${product.id} product name : ${product.name} ');
       return false;
     }
 
+    // 🧮 Step 5: Check if there's enough loose pieces to sell
     final looseBefore = current.remainingPieces;
-
     if (looseBefore < quantity) {
       print('⚠️ Not enough loose stock. Requested: $quantity, Available: $looseBefore');
-      showDialog(context: context, builder: (_) =>  CustomNotificationDialog(title: 'Not Enough', content: 'Not enough loose stock. Requested: $quantity, Available: $looseBefore'));
+      showDialog(
+        context: context,
+        builder: (_) => CustomNotificationDialog(
+          title: 'Not Enough',
+          content: 'Not enough loose stock. Requested: $quantity, Available: $looseBefore',
+        ),
+      );
       return false;
     }
 
+    // 🔢 Step 6: Calculate new loose stock after selling
     final looseAfter = looseBefore - quantity;
 
-    /// 🔁 Check how many full packs were "sold" from the loose count
+    // 🧠 Step 7: Check how many full packs this sale would deduct
     final fullPacksSold = quantity ~/ itemsPerPack;
 
-    /// 🧮 Deduct that many packs from stock (FIFO style)
+    // 🛠️ Step 8: Auto-deduct those packs from the FIFO ProductStock list
     List<ProductStock> updatedStocks = [...product.stocks];
     List<StockLog> logs = [];
 
@@ -140,6 +200,7 @@ class ProductStockProvider extends ChangeNotifier {
       final deduct = (stock.quantity >= packsToDeduct) ? packsToDeduct : stock.quantity;
       updatedStocks[i] = stock.copyWith(quantity: stock.quantity - deduct);
 
+      // 🧾 Add log for each pack deduction
       logs.add(StockLog(
         id: 'log-${DateTime.now().millisecondsSinceEpoch}-pack-${stock.id}',
         productId: product.id,
@@ -152,7 +213,7 @@ class ProductStockProvider extends ChangeNotifier {
       packsToDeduct -= deduct;
     }
 
-    // 🧾 Log the piece sale itself
+    // 🧾 Step 9: Add log for the actual piece sale
     logs.add(StockLog(
       id: 'log-${DateTime.now().millisecondsSinceEpoch}-${product.id}',
       productId: product.id,
@@ -162,10 +223,10 @@ class ProductStockProvider extends ChangeNotifier {
       remarks: 'Sold $quantity piece(s)',
     ));
 
-    final updatedLoose = current.copyWith(
-      remainingPieces: looseAfter,
-    );
+    // ✏️ Step 10: Update the loose stock count
+    final updatedLoose = current.copyWith(remainingPieces: looseAfter);
 
+    // 🛒 Step 11: Prepare updated product
     final updatedProduct = product.copyWith(
       looseStock: updatedLoose,
       stocks: updatedStocks,
@@ -173,9 +234,34 @@ class ProductStockProvider extends ChangeNotifier {
       lastModified: DateTime.now(),
     );
 
-    await _productBox.put(updatedProduct.id, updatedProduct);
+    Product? parent;
+    try {
+      parent = _productBox.values.firstWhere(
+            (p) => p.hasVariant && p.variants.any((v) => v.id == product.id),
+      );
+    } catch (_) {
+      parent = null;
+    }
+
+
+    if (parent != null) {
+      final updatedVariants = parent.variants.map((v) {
+        return v.id == product.id ? updatedProduct : v;
+      }).toList();
+
+      final updatedParent = parent.copyWith(
+        variants: updatedVariants,
+        lastModified: DateTime.now(),
+      );
+
+      await _productBox.put(updatedParent.id, updatedParent);
+    } else {
+      await _productBox.put(updatedProduct.id, updatedProduct);
+    }
+
     notifyListeners();
 
+    // ✅ Step 13: Done! Print confirmation
     print('✅ Sold $quantity piece(s) of ${product.name}');
     if (fullPacksSold > 0) {
       print('🔁 Auto-deducted $fullPacksSold pack(s) from ProductStock');
@@ -183,8 +269,6 @@ class ProductStockProvider extends ChangeNotifier {
 
     return true;
   }
-
-
 
 
   Future<void> upsertStock(String productIdOrName, ProductStock stock) async {
