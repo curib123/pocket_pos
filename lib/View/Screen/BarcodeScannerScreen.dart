@@ -55,6 +55,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
     _initialDialogShown = true;
 
     bool? result;
+    // SHOW: Initial selling mode dialog
     await showDialog(
       context: context,
       barrierDismissible: false,
@@ -73,6 +74,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
       ),
     );
 
+
     setState(() => _globalIsPack = result);
   }
 
@@ -85,20 +87,24 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
       // 🔁 Non-selling mode
       setState(() => _canScan = false);
 
+      // SHOW: Notification in non-selling mode
       await showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (_) => CustomNotificationDialog(
-          title: 'Scanned Barcode',
-          content: 'Scanned: $barcode',
-          type: 'success',
-          buttonText: 'Use This',
-          onConfirm: () {
-            widget.onScanned?.call(barcode);
-            _cleanupScannerState();
-            Navigator.pop(context); // close dialog
-            Navigator.pop(context); // close scanner
-          },
+        builder: (_) => WillPopScope(
+          onWillPop: () async => false,
+          child: CustomNotificationDialog(
+            title: 'Scanned Barcode',
+            content: 'Scanned: $barcode',
+            type: 'success',
+            buttonText: 'Use This',
+            onConfirm: () {
+              widget.onScanned?.call(barcode);
+              _cleanupScannerState();
+              Navigator.pop(context); // Close dialog
+              Navigator.pop(context); // Close scanner
+            },
+          ),
         ),
       );
 
@@ -114,41 +120,49 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
     final result = Provider.of<CartListProvider>(context, listen: false)
         .scanAndAddByBarcode(barcode: barcode, isPackView: isPack);
 
+    // SHOW: Scan success/fail in selling mode
     await showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) => CustomNotificationDialog(
-        title: result.success ? 'Scan Successful' : 'Scan Failed',
-        content: result.success
-            ? 'Scanned: $barcode\nType: ${isPack ? "Pack" : "Piece"}'
-            : result.error ?? 'An unknown error occurred.',
-        type: result.success ? 'success' : 'error',
-        buttonText: widget.multiScan ? 'Scan Another' : 'Done',
-        onConfirm: () {
-          Navigator.pop(context); // close dialog
+      builder: (_) => WillPopScope(
+        onWillPop: () async => false,
+        child: CustomConfirmDialog(
+          title: result.success ? 'Scan Successful' : 'Scan Failed',
+          content: result.success
+              ? 'Scanned: $barcode\nType: ${isPack ? "Pack" : "Piece"}'
+              : result.error ?? 'An unknown error occurred.',
+          confirmText: widget.multiScan ? 'Scan Another' : 'Done',
+          icon: result.success ? LucideIcons.checkCircle : LucideIcons.alertOctagon,
+          iconColor: result.success ? Colors.green : Colors.redAccent,
+          onCancel: () => Navigator.pop(context),
+          onConfirm: () {
 
-          if (result.success) {
-            if (!widget.multiScan) {
-              Navigator.pop(context); // close scanner
+            if (result.success) {
+              if (!widget.multiScan) {
+                Navigator.pop(context); // close scanner
+              } else {
+                setState(() {
+                  _canScan = true;
+                  _showScanHint = true;
+                });
+                Future.delayed(const Duration(seconds: 2), () {
+                  if (mounted) setState(() => _showScanHint = false);
+                });
+              }
             } else {
-              setState(() {
-                _canScan = true;
-                _showScanHint = true;
-              });
-              Future.delayed(const Duration(seconds: 2), () {
-                if (mounted) setState(() => _showScanHint = false);
-              });
+              setState(() => _canScan = true);
             }
-          } else {
-            setState(() => _canScan = true);
-          }
-        },
+          },
+        ),
       ),
     );
+
+
   }
 
   Future<bool> _askIsPackDialog(String barcode) async {
     bool? result;
+    // SHOW: "Is this a pack?" confirmation
     await showDialog(
       context: context,
       barrierDismissible: false,
@@ -166,6 +180,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
         ),
       ),
     );
+
     return result ?? false;
   }
 
@@ -220,13 +235,31 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
             : null,
         body: Stack(
           children: [
-            MobileScanner(
-              controller: controller,
-              onDetect: (capture) {
-                for (final barcode in capture.barcodes) {
-                  _handleBarcode(barcode.rawValue);
-                }
-              },
+            Stack(
+              children: [
+                // 📷 Camera view
+                MobileScanner(
+                  controller: controller,
+                  onDetect: (capture) {
+                    for (final barcode in capture.barcodes) {
+                      _handleBarcode(barcode.rawValue);
+                    }
+                  },
+                ),
+
+                // 🟩 Camera frame overlay
+                Align(
+                  alignment: Alignment.center,
+                  child: Container(
+                    width: 250,
+                    height: 250,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.white, width: 2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ],
             ),
             if (widget.multiScan || !widget.isSelling)
               Align(
