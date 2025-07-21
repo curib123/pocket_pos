@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:mobile_stock_inventory/Model/cart_item_model.dart';
+import 'package:mobile_stock_inventory/Model/product_model.dart';
 
 class CartListProvider with ChangeNotifier {
   final List<CartItem> _cartItems = [];
+  final Box<Product> _productBox;
+
+  CartListProvider(this._productBox);
 
   List<CartItem> get cartItems => List.unmodifiable(_cartItems);
 
@@ -38,7 +43,86 @@ class CartListProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  /// 🚀 Scan barcode → find product → add to cart
+  Product? getProductByBarcode(String barcode) {
+    final normalized = barcode.trim().toLowerCase();
 
+    for (final product in _productBox.values) {
+      if (product.deletedAt != null) continue;
+
+      // 🔍 Check main product barcode
+      if ((product.barcode ?? '').trim().toLowerCase() == normalized) {
+        return product;
+      }
+
+      // 🔍 Check variants' barcodes
+      if (product.hasVariant && product.variants.isNotEmpty) {
+        for (final variant in product.variants.whereType<Product>()) {
+          if (variant.deletedAt != null) continue;
+
+          if ((variant.barcode ?? '').trim().toLowerCase() == normalized) {
+            return variant;
+          }
+        }
+      }
+    }
+
+    return null;
+  }
+
+  ({bool success, String? error}) scanAndAddByBarcode({
+    required String barcode,
+    required bool isPackView,
+  }) {
+    final product = getProductByBarcode(barcode);
+    if (product == null) {
+      final msg = 'Product not found for barcode $barcode';
+      debugPrint('❌ $msg');
+      return (success: false, error: msg);
+    }
+
+    final sellingType = isPackView ? SellingType.pack : SellingType.piece;
+    final latest = product.stocks.isNotEmpty ? product.stocks.last : null;
+
+    if (latest == null) {
+      final msg = 'No stock found for ${product.name}';
+      debugPrint('⚠️ $msg');
+      return (success: false, error: msg);
+    }
+
+    final isPieceOnly = product.isSoldByPiece && !product.isSoldByPack;
+    final perPack = product.piecesPerPack ?? 0;
+
+    // 🧮 Pricing logic
+    final price = isPieceOnly
+        ? latest.retailPrice
+        : isPackView
+        ? latest.retailPrice
+        : latest.retailPrice / perPack;
+
+    // 🧮 Pricing logic
+    final qty = isPieceOnly
+        ? product.totalQuantity
+        : isPackView
+        ? product.totalQuantity
+        : product.looseStock!.remainingPieces.toDouble();
+
+    final cartItem = CartItem(
+      productId: product.id,
+      name: product.name,
+      price: price,
+      quantity: 1,
+      maxQuantity: qty.toInt(),
+      imagePath: product.imagePath,
+      isSoldPerPack: product.isSoldByPack,
+      isSoldPerPiece: product.isSoldByPiece,
+      sellingType: sellingType,
+      barcode: product.barcode,
+    );
+
+    addToCart(cartItem);
+    return (success: true, error: null);
+  }
 
   /// ✏️ Update quantity by name
   void updateQuantity(String name, int quantity) {

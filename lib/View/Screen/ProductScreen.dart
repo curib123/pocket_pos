@@ -5,6 +5,7 @@ import 'package:mobile_stock_inventory/Provider/ProductProvider.dart';
 import 'package:mobile_stock_inventory/Provider/SwitchProvider.dart';
 import 'package:mobile_stock_inventory/Provider/StoreCategoryProvider.dart';
 import 'package:mobile_stock_inventory/View/Components/Custom/CustomButton.dart';
+import 'package:mobile_stock_inventory/View/Components/Modal/UpsertProductModal.dart';
 import 'package:mobile_stock_inventory/View/Components/SearchAndCartRow.dart';
 import 'package:mobile_stock_inventory/View/Screen/ProductListScreen.dart';
 import 'package:mobile_stock_inventory/View/Screen/ProductScreenWidget/CategoryGrid.dart';
@@ -27,20 +28,66 @@ class ProductScreen extends StatelessWidget {
           child: Scaffold(
             appBar: SearchAndCartAppBar(),
             bottomNavigationBar: Padding(
-              padding: const EdgeInsets.all(10.0),
-              child: CustomButton(
-                text: "View All Product",
-                icon: LucideIcons.box,
-                onPressed: () {
-
-                  Future.delayed(Duration.zero, () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => ProductListScreen(category: '',)),
-                    );
-                  });
-
-                },
+              padding: const EdgeInsets.symmetric(horizontal: 15,vertical: 5),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CustomButton(
+                    text: "View All Products",
+                    isFilled: false,
+                    icon: LucideIcons.box,
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ProductListScreen(category: ''),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  CustomButton(
+                    text: "Add Products",
+                    icon: LucideIcons.plusCircle,
+                    onPressed: () {
+                      Future.delayed(const Duration(milliseconds: 100), () {
+                        showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          backgroundColor: Colors.transparent,
+                          shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+                          ),
+                          builder: (context) {
+                            return DraggableScrollableSheet(
+                              expand: false,
+                              maxChildSize: 0.95,
+                              initialChildSize: 0.8,
+                              minChildSize: 0.75,
+                              builder: (_, controller) => Padding(
+                                padding: EdgeInsets.only(
+                                  bottom: MediaQuery.of(context).viewInsets.bottom,
+                                ),
+                                child: Material(
+                                  borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
+                                  color: Colors.white,
+                                  child: SafeArea(
+                                    top: false,
+                                    child: SingleChildScrollView(
+                                      controller: controller,
+                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                                      child: UpsertProductModal(Category: ''), // lowercase "category"
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      });
+                    },
+                  ),
+                ],
               ),
             ),
             body: Stack(

@@ -58,7 +58,10 @@ class Product extends HiveObject {
   @HiveField(16)
   final bool isVariant;
 
-  // 👨‍🔬 Computed
+  @HiveField(17)
+  final String? barcode;
+
+  // 🧮 Computed
   int get totalQuantity {
     final packQty = stocks.fold<int>(0, (sum, stock) => sum + stock.quantity);
     return packQty;
@@ -69,6 +72,7 @@ class Product extends HiveObject {
     final totalQtyByPieces = packQty * (piecesPerPack ?? 1);
     return totalQtyByPieces;
   }
+
   Product({
     required this.id,
     required this.name,
@@ -78,6 +82,7 @@ class Product extends HiveObject {
     this.category,
     this.unit,
     this.imagePath,
+    this.barcode,
     required this.createdAt,
     required this.lastModified,
     this.deletedAt,
@@ -99,6 +104,7 @@ class Product extends HiveObject {
       'piecesPerPack': piecesPerPack,
       'unit': unit,
       'imagePath': imagePath,
+      'barcode': barcode,
       'createdAt': createdAt.toIso8601String(),
       'lastModified': lastModified.toIso8601String(),
       'deletedAt': deletedAt?.toIso8601String(),
@@ -121,6 +127,7 @@ class Product extends HiveObject {
       piecesPerPack: map['piecesPerPack'],
       unit: map['unit'],
       imagePath: map['imagePath'],
+      barcode: map['barcode'],
       createdAt: DateTime.parse(map['createdAt']),
       lastModified: DateTime.parse(map['lastModified']),
       deletedAt: map['deletedAt'] != null ? DateTime.parse(map['deletedAt']) : null,
@@ -142,6 +149,7 @@ class Product extends HiveObject {
     int? piecesPerPack,
     String? unit,
     String? imagePath,
+    String? barcode,
     DateTime? createdAt,
     DateTime? lastModified,
     DateTime? deletedAt,
@@ -161,6 +169,7 @@ class Product extends HiveObject {
       piecesPerPack: piecesPerPack ?? this.piecesPerPack,
       unit: unit ?? this.unit,
       imagePath: imagePath ?? this.imagePath,
+      barcode: barcode ?? this.barcode,
       createdAt: createdAt ?? this.createdAt,
       lastModified: lastModified ?? this.lastModified,
       deletedAt: deletedAt ?? this.deletedAt,

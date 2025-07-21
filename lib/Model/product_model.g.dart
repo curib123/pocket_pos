@@ -25,6 +25,7 @@ class ProductAdapter extends TypeAdapter<Product> {
       category: fields[2] as String?,
       unit: fields[6] as String?,
       imagePath: fields[7] as String?,
+      barcode: fields[17] as String?,
       createdAt: fields[8] as DateTime,
       lastModified: fields[9] as DateTime,
       deletedAt: fields[10] as DateTime?,
@@ -40,7 +41,7 @@ class ProductAdapter extends TypeAdapter<Product> {
   @override
   void write(BinaryWriter writer, Product obj) {
     writer
-      ..writeByte(17)
+      ..writeByte(18)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -74,7 +75,9 @@ class ProductAdapter extends TypeAdapter<Product> {
       ..writeByte(15)
       ..write(obj.variants)
       ..writeByte(16)
-      ..write(obj.isVariant);
+      ..write(obj.isVariant)
+      ..writeByte(17)
+      ..write(obj.barcode);
   }
 
   @override

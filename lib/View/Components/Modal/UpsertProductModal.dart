@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile_stock_inventory/Helper/ProductUnits.dart';
+import 'package:mobile_stock_inventory/Model/loose_stock.dart';
 import 'package:mobile_stock_inventory/Model/product_model.dart';
 import 'package:mobile_stock_inventory/Model/product_stock.dart';
 import 'package:mobile_stock_inventory/Provider/CurrencyProvider.dart';
@@ -20,6 +21,7 @@ import 'package:mobile_stock_inventory/View/Components/Custom/CustomFlatDropdown
 import 'package:mobile_stock_inventory/View/Components/Custom/CustomPillToggle.dart';
 import 'package:mobile_stock_inventory/View/Components/Custom/CustomTextField.dart';
 import 'package:mobile_stock_inventory/Helper/AppColor.dart';
+import 'package:mobile_stock_inventory/View/Screen/BarcodeScannerScreen.dart';
 import 'package:provider/provider.dart';
 
 class UpsertProductModal extends StatefulWidget {
@@ -39,6 +41,7 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
   final _nameController = TextEditingController();
   final _piecesPerPackController = TextEditingController();
   final _looseStockController = TextEditingController();
+  final _barcodeController = TextEditingController();
 
   String? _selectedUnit;
   String? _selectedCategory;
@@ -210,6 +213,7 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
       variants: [],
       stocks: [],
       logs: [],
+      barcode: '',
       looseStock: null,
     );
 
@@ -295,7 +299,9 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
     final updatedStocks = _stock.map((stock) =>
         stock.copyWith(productId: productId)).toList();
     final updatedVariants = _variants.map((variant) =>
-        variant.copyWith(isVariant: true)).toList();
+        variant.copyWith(isVariant: true,looseStock: LooseStock(productId: variant.id, remainingPieces:variant.totalQuantityByPieces ))).toList();
+
+
 
     final product = Product(
       id: productId,
@@ -308,16 +314,17 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
       isSoldByPack: _isSoldByPack,
       isSoldByPiece: _isSoldByPiece,
       imagePath: _selectedImage?.path ?? '',
+      barcode: _barcodeController.text.trim(), // 👈 add this line
       createdAt: isEditing ? widget.existingProduct!.createdAt : DateTime.now(),
       lastModified: DateTime.now(),
       deletedAt: null,
       stocks: updatedStocks,
-      // ✅ Preserve updated stocks
       logs: widget.existingProduct?.logs ?? [],
       hasVariant: _hasVariant,
       variants: _hasVariant ? updatedVariants : [],
       looseStock: null, // Will be handled separately
     );
+
 
     try {
       if (widget.isVariant) {
@@ -476,11 +483,61 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
                                 ),
 
                                 const SizedBox(height: 16),
-                                CustomTextField(
-                                  label: 'Product Name',
-                                  hintText: 'Enter product name',
-                                  helperText: 'This will appear in listings and receipts',
-                                  controller: _nameController,
+                                Column(
+                                  children: [
+                                    CustomTextField(
+                                      label: 'Product Name',
+                                      hintText: 'Enter product name',
+                                      helperText: 'This will appear in listings and receipts',
+                                      controller: _nameController,
+                                    ),
+                                    const SizedBox(height: 10), // spacing
+                                    Row(
+                                      crossAxisAlignment: CrossAxisAlignment.center,
+                                      children: [
+                                        Expanded(
+                                          child: CustomTextField(
+                                            label: 'Barcode (Optional)',
+                                            hintText: 'Scan or manually enter the barcode',
+                                            helperText: 'Used for quick lookup and scanning at checkout',
+                                            controller: _barcodeController,
+                                            keyboardType: TextInputType.text, // 🛠️ safer for barcode types
+                                          ),
+                                        ),
+                                        SizedBox(
+                                          height: 60,
+                                          child: Align(
+                                            alignment: Alignment.center,
+                                            child: IconButton(
+                                              icon: Icon(Icons.qr_code_scanner),
+                                              tooltip: 'Scan Barcode',
+                                              onPressed: () async {
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (_) => BarcodeScannerScreen(
+                                                      onScanned: (barcode) {
+                                                        // Update your text field or do whatever
+                                                        print('Scanned barcode: $barcode');
+                                                        setState(() {
+                                                          _barcodeController.text = barcode;
+                                                        });
+                                                      },
+                                                    ),
+                                                  ),
+                                                );
+
+                                              },
+
+
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    )
+
+
+                                  ],
                                 ),
                                 const SizedBox(height: 10),
                                 CustomFlatDropdown<String>(

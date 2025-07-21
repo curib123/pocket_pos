@@ -67,7 +67,7 @@ Future<void> main() async {
           ChangeNotifierProvider(create: (_) => StoreCategoryProvider()),
           ChangeNotifierProvider(create: (_) => SwitchProvider()),
           ChangeNotifierProvider(create: (_) => CurrencyProvider()),
-          ChangeNotifierProvider(create: (_) => CartListProvider()),
+          ChangeNotifierProvider(create: (_) => CartListProvider(productBox)),
         ],
         child: const MyApp(),
       ),

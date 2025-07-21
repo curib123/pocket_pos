@@ -107,7 +107,7 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
         ? product.totalQuantity.toDouble()
         : isPackView
         ? product.totalQuantity.toDouble()
-        : product.totalQuantityByPieces.toDouble();
+        : product.looseStock!.remainingPieces.toDouble();
 
     sellingType = isUsePackSwitch ? SellingType.pack : SellingType.piece;
   }
@@ -335,7 +335,7 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                                 ? product.totalQuantity.toDouble()
                                 : isUsePackSwitch
                                 ? product.totalQuantity.toDouble()
-                                : product.totalQuantityByPieces.toDouble();
+                                : product.looseStock!.remainingPieces.toDouble();
 
                              // For selling type logic — structured like qty logic
                             sellingType = isUsePackSwitch ? SellingType.pack : SellingType.piece;
@@ -470,12 +470,7 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            if (!product.isSoldByPack && product.isSoldByPiece)
-                              _buildStockLabel('Available Piece: ${formatNumber(product.totalQuantity)}')
-                            else if (isUsePackSwitch)
-                              _buildStockLabel('Available Pack: ${formatNumber(product.totalQuantity)}')
-                            else
-                              _buildStockLabel('Available Piece: ${formatNumber(product.totalQuantityByPieces)}'),
+                              _buildStockLabel('Available Piece: ${formatNumber(qty)}')
                           ],
                         ),
 

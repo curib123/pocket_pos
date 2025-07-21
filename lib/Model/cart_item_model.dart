@@ -13,6 +13,7 @@ class CartItem {
   final bool isSoldPerPack;
   final bool isSoldPerPiece;
   final SellingType sellingType;
+  final String? barcode; // 🆕 NEW FIELD for scanned or manual barcode
 
   CartItem({
     required this.productId,
@@ -24,6 +25,7 @@ class CartItem {
     required this.isSoldPerPack,
     required this.isSoldPerPiece,
     required this.sellingType,
+    this.barcode, // 🆕 don't forget this here too
   });
 
   double getSubtotal() => price * quantity;
@@ -38,6 +40,7 @@ class CartItem {
     bool? isSoldPerPack,
     bool? isSoldPerPiece,
     SellingType? sellingType,
+    String? barcode, // 🆕 include in copyWith
   }) {
     return CartItem(
       productId: productId ?? this.productId,
@@ -49,6 +52,7 @@ class CartItem {
       isSoldPerPack: isSoldPerPack ?? this.isSoldPerPack,
       isSoldPerPiece: isSoldPerPiece ?? this.isSoldPerPiece,
       sellingType: sellingType ?? this.sellingType,
+      barcode: barcode ?? this.barcode, // 🆕 propagate change
     );
   }
 }
