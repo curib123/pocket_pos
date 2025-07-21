@@ -251,8 +251,8 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
                 Align(
                   alignment: Alignment.center,
                   child: Container(
-                    width: 250,
-                    height: 250,
+                    width: 300,
+                    height: 230,
                     decoration: BoxDecoration(
                       border: Border.all(color: Colors.white, width: 2),
                       borderRadius: BorderRadius.circular(12),
