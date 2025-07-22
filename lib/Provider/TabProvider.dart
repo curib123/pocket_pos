@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:retailpos/View/Screen/DashBoardScreen.dart';
+import 'package:retailpos/View/Screen/LoanScreen.dart';
 import 'package:retailpos/View/Screen/ProductScreen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -13,7 +14,7 @@ class TabProvider extends ChangeNotifier {
   final List<Widget> screens = [
   DashBoardScreen(),
   ProductScreen(),
-  DashBoardScreen(),
+  LoanScreen(),
   DashBoardScreen(),
   ];
 

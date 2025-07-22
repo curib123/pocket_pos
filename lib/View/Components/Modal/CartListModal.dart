@@ -38,7 +38,7 @@ class CartListModal extends StatelessWidget {
                 children: [
                   // Header
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+                    padding: const EdgeInsets.fromLTRB(5, 20, 5, 0),
                     child: Row(
                       children: [
                         GestureDetector(
@@ -120,7 +120,10 @@ class CartListModal extends StatelessWidget {
                                 backgroundColor: AppColor.primary,
                                 text: 'Proceed Payment',
                                 onPressed: () {
-                                  showPaymentDialog(context);
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) => const PaymentDialog(),
+                                  );
                                 },
                               ),
                             ),
@@ -211,7 +214,6 @@ class _CartItemTileState extends State<_CartItemTile> {
                                     content: "Are you sure you want to remove \"${item.name}\" from your cart?",
                                     onConfirm: () {
                                       cartProvider.removeFromCart(item.name);
-                                      Navigator.pop(context);
                                     },
                                   ),
                                 );

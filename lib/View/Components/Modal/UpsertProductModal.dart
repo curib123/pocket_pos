@@ -148,38 +148,69 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
     return isEditing ? AppColor.secondary : AppColor.primary;
   }
 
-
-
   void _showImagePickerOptions() {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
+      backgroundColor: Colors.white,
       builder: (_) => SafeArea(
-        child: Wrap(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
+            // 🔹 Drag indicator for vibes
+            Container(
+              width: 40,
+              height: 5,
+              margin: const EdgeInsets.symmetric(vertical: 10),
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8.0),
+              child: Text(
+                'Choose an option',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            const Divider(height: 1),
+
+            // 📸 Gallery option
             ListTile(
-              leading: const Icon(Icons.photo_library),
+              leading: const Icon(Icons.photo_library_rounded, color: Colors.teal),
               title: const Text('Pick from Gallery'),
               onTap: () {
                 Navigator.pop(context);
                 _pickImage(ImageSource.gallery);
               },
             ),
+
+            const Divider(height: 1),
+
+            // 📷 Camera option
             ListTile(
-              leading: const Icon(Icons.camera_alt),
+              leading: const Icon(Icons.camera_alt_rounded, color: Colors.deepOrange),
               title: const Text('Capture from Camera'),
               onTap: () {
                 Navigator.pop(context);
                 _pickImage(ImageSource.camera);
               },
             ),
+
+            const SizedBox(height: 10),
           ],
         ),
       ),
     );
   }
+
+
   String getSellingTypeGuide() {
     if (_isSoldByPack && _isSoldByPiece) {
       return 'Customers can buy either full packs or individual pieces. e.g. a box of canned soda or a single can.';
@@ -490,11 +521,10 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
                                     CustomTextField(
                                       label: 'Product Name',
                                       hintText: 'Enter product name',
-                                      helperText: 'This will appear in listings and receipts',
                                       controller: _nameController,
                                       prefixIcon: Icon(LucideIcons.box),
                                     ),
-                                    const SizedBox(height: 10), // spacing
+                                    const SizedBox(height: 5), // spacing
                                     Row(
                                       crossAxisAlignment: CrossAxisAlignment.center,
                                       children: [
@@ -526,7 +556,7 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
                                                           setState(() {
                                                             _barcodeController.text = barcode;
                                                           });
-                                                          
+
                                                         } else {
                                                           Future.delayed(Duration(seconds: 1),(){
                                                             showDialog(
@@ -558,10 +588,9 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
 
                                   ],
                                 ),
-                                const SizedBox(height: 10),
+                                const SizedBox(height: 5),
                                 CustomFlatDropdown<String>(
                                   hint: 'Choose category',
-                                  helperText: 'Group similar items together',
                                   value: _selectedCategory,
                                   items: storeCategoryProvider.visibleCategories,
                                   onChanged: (val) => setState(() => _selectedCategory = val),
@@ -1029,9 +1058,9 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
 
                                ],
                              ],
-
-                          Align(
-                            alignment: Alignment.bottomCenter,
+                              const SizedBox(height: 16),
+                          Positioned(
+                            bottom: 0,
                             child: Row(
                               children: [
                                 Expanded(

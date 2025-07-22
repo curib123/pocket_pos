@@ -17,6 +17,9 @@ class CustomTextField extends StatelessWidget {
   final Widget? prefixIcon;
   final String? helperText;
 
+  // NEW: optional focusNode param (nullable)
+  final FocusNode? focusNode;
+
   const CustomTextField({
     super.key,
     required this.label,
@@ -32,6 +35,7 @@ class CustomTextField extends StatelessWidget {
     this.readOnly = false,
     this.prefixIcon,
     this.helperText,
+    this.focusNode, // add here
   });
 
   InputDecoration _buildDecoration(BuildContext context) {
@@ -50,7 +54,7 @@ class CustomTextField extends StatelessWidget {
       helperStyle: const TextStyle(
         color: Colors.grey,
         fontSize: 12,
-        fontStyle: FontStyle.italic, // ✅ Italicized helper text
+        fontStyle: FontStyle.italic,
         overflow: TextOverflow.visible,
       ),
       helperMaxLines: 3,
@@ -101,6 +105,7 @@ class CustomTextField extends StatelessWidget {
         validator: validator,
         onChanged: onChanged,
         readOnly: readOnly,
+        focusNode: focusNode, // <-- pass the focusNode here
         style: TextStyle(
           color: AppColor.textPrimary,
           fontSize: context.rf(14),

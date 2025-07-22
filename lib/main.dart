@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:retailpos/Model/loan_item.dart';
 import 'package:retailpos/Model/loose_stock.dart';
 import 'package:retailpos/Model/product_analytics.dart';
 import 'package:retailpos/Model/product_model.dart';
@@ -34,6 +35,7 @@ Future<void> main() async {
   Hive.registerAdapter(ProductAnalyticsAdapter());
   Hive.registerAdapter(StockLogAdapter());
   Hive.registerAdapter(StockLogReasonAdapter());
+  Hive.registerAdapter(LoanItemAdapter());
 
   final productBox = await Hive.openBox<Product>('products');
   final analyticsBox = await Hive.openBox<ProductAnalytics>('product_analytics');

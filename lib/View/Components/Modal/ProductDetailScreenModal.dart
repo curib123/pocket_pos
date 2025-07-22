@@ -68,7 +68,7 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
   double qty = 0;
   double quantityChosen = 0;
   bool useQtyInput = false;
-  bool _hasVariant = false;
+  bool _hasVariant = true;
   SellingType sellingType = SellingType.pack;
 
   @override
@@ -81,7 +81,6 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
     usePack = product.isSoldByPack;
     usePiece = product.isSoldByPiece;
     unit = product.unit ?? "unit";
-    _hasVariant= product.hasVariant;
 
     final latest = product.stocks.isNotEmpty ? product.stocks.last : null;
     if (latest == null) return;

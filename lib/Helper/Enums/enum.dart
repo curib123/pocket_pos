@@ -3,6 +3,9 @@ enum UnitType {
   pack,     // e.g., pack, box, sack, etc.
 }
 
+enum LoanFilterType { all, day, week, month, year }
+
+
 extension UnitTypeExtension on UnitType {
   /// Returns a readable label for UI
   String get label {

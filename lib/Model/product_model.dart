@@ -2,6 +2,7 @@ import 'package:hive/hive.dart';
 import 'product_stock.dart';
 import 'loose_stock.dart';
 import 'stock_log.dart';
+import 'loan_item.dart'; // 🆕 Import LoanItem
 
 part 'product_model.g.dart';
 
@@ -61,6 +62,9 @@ class Product extends HiveObject {
   @HiveField(17)
   final String? barcode;
 
+  @HiveField(18)
+  final List<LoanItem> loans; // 🆕 Loan list
+
   // 🧮 Computed
   int get totalQuantity {
     final packQty = stocks.fold<int>(0, (sum, stock) => sum + stock.quantity);
@@ -78,7 +82,7 @@ class Product extends HiveObject {
     return logs.where((log) => log.reason == reason).toList();
   }
 
-// 🗂 Group logs by reason
+  // 🗂 Group logs by reason
   Map<StockLogReason, List<StockLog>> get logsByReason {
     final Map<StockLogReason, List<StockLog>> grouped = {};
     for (final log in logs) {
@@ -87,7 +91,7 @@ class Product extends HiveObject {
     return grouped;
   }
 
-// 📊 Count logs per reason (super useful for analytics)
+  // 📊 Count logs per reason
   Map<StockLogReason, int> get logCountsByReason {
     final Map<StockLogReason, int> counts = {};
     for (final log in logs) {
@@ -96,7 +100,7 @@ class Product extends HiveObject {
     return counts;
   }
 
-// 🧾 Just an alias for readability
+  // 🧾 Just an alias for readability
   List<StockLog> get allLogs => logs;
 
   Product({
@@ -118,6 +122,7 @@ class Product extends HiveObject {
     this.hasVariant = false,
     this.variants = const [],
     this.isVariant = false,
+    this.loans = const [], // 🆕 default empty
   });
 
   Map<String, dynamic> toMap() {
@@ -140,6 +145,7 @@ class Product extends HiveObject {
       'hasVariant': hasVariant,
       'variants': variants.map((v) => v.toMap()).toList(),
       'isVariant': isVariant,
+      'loans': loans.map((l) => l.toMap()).toList(), // 🆕
     };
   }
 
@@ -163,6 +169,7 @@ class Product extends HiveObject {
       hasVariant: map['hasVariant'] ?? false,
       variants: (map['variants'] as List?)?.map((v) => Product.fromMap(v)).toList() ?? [],
       isVariant: map['isVariant'] ?? false,
+      loans: (map['loans'] as List?)?.map((l) => LoanItem.fromMap(l)).toList() ?? [], // 🆕
     );
   }
 
@@ -185,6 +192,7 @@ class Product extends HiveObject {
     List<Product>? variants,
     bool? hasVariant,
     bool? isVariant,
+    List<LoanItem>? loans, // 🆕
   }) {
     return Product(
       id: id ?? this.id,
@@ -205,6 +213,7 @@ class Product extends HiveObject {
       variants: variants ?? this.variants,
       hasVariant: hasVariant ?? this.hasVariant,
       isVariant: isVariant ?? this.isVariant,
+      loans: loans ?? this.loans,
     );
   }
 }
