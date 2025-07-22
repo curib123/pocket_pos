@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mobile_stock_inventory/Helper/Database/SecureStorageServices.dart';
+import 'package:retailpos/Helper/Database/SecureStorageServices.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AuthProvider with ChangeNotifier {

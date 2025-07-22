@@ -1,33 +1,47 @@
 import 'package:flutter/material.dart';
-import 'package:mobile_stock_inventory/View/Components/ResponsiveText.dart'; // ✅ Responsive text
+import 'package:retailpos/Helper/AppColor.dart';
+import 'package:retailpos/View/Components/Custom/CustomButton.dart';
+import 'package:retailpos/View/Components/ResponsiveText.dart';
 
 class CustomConfirmDialog extends StatelessWidget {
   final String title;
-  final String content;
+  final String? content;
+  final Widget? customContent;
   final String cancelText;
   final String confirmText;
   final VoidCallback onConfirm;
   final VoidCallback? onCancel;
   final IconData? icon;
   final Color? iconColor;
+  final bool? showThirdButton;
+  final IconData? thirdButtonIcon;
+  final String? thirdButtonText;
+  final VoidCallback? onThirdButton;
 
   const CustomConfirmDialog({
     Key? key,
     required this.title,
-    required this.content,
+    this.content,
+    this.customContent,
     required this.onConfirm,
     this.onCancel,
     this.cancelText = "Cancel",
     this.confirmText = "Confirm",
     this.icon,
     this.iconColor,
-  }) : super(key: key);
+    this.thirdButtonText,
+    this.onThirdButton,
+    this.showThirdButton = false,
+    this.thirdButtonIcon,
+  })  : assert(content != null || customContent != null,
+  'Either content or customContent must be provided'),
+        super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      backgroundColor: Colors.white,
-      surfaceTintColor: Colors.white,
+      backgroundColor: AppColor.surface,
+      surfaceTintColor: AppColor.surface,
       elevation: 12,
       insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
       shape: RoundedRectangleBorder(
@@ -35,83 +49,106 @@ class CustomConfirmDialog extends StatelessWidget {
       ),
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 400),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (icon != null)
-                Icon(icon, size: 48, color: iconColor ?? Colors.teal),
-              if (icon != null) const SizedBox(height: 16),
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: context.rf(22), // ✅ Responsive title
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.3,
-                  color: Colors.black,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                content,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: context.rf(16), // ✅ Responsive content
-                  color: Colors.black87,
-                  height: 1.4,
-                ),
-              ),
-              const SizedBox(height: 28),
-              Row(
+        child: Stack(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                        if (onCancel != null) onCancel!();
-                      },
-                      style: OutlinedButton.styleFrom(
-                        side: BorderSide(color: Colors.grey.shade300),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        foregroundColor: Colors.grey.shade800,
-                      ),
-                      child: Text(
-                        cancelText,
-                        style: TextStyle(fontSize: context.rf(14)), // ✅
-                      ),
+                  if (icon != null)
+                    Icon(icon, size: 48, color: iconColor ?? AppColor.primary),
+                  if (icon != null) const SizedBox(height: 16),
+                  Text(
+                    title,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: context.rf(22),
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.3,
+                      color: AppColor.textPrimary,
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                        onConfirm();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.teal,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: Text(
-                        confirmText,
-                        style: TextStyle(fontSize: context.rf(14)), // ✅
+                  const SizedBox(height: 16),
+                  if (customContent != null)
+                    customContent!
+                  else if (content != null)
+                    Text(
+                      content!,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: context.rf(16),
+                        color: AppColor.textSecondary,
+                        height: 1.4,
                       ),
                     ),
+                  const SizedBox(height: 28),
+                  Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: CustomButton(
+                              borderColor: AppColor.textSecondary,
+                              text: cancelText,
+                              isFilled: false,
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                                if (onCancel != null) onCancel!();
+                              },
+                              isSlimmer: true,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: CustomButton(
+                              backgroundColor: AppColor.primary,
+                              text: confirmText,
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                                onConfirm();
+                              },
+                              isFilled: true,
+                              isSlimmer: true,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      showThirdButton!
+                          ? CustomButton(
+                        text: thirdButtonText ?? '',
+                        backgroundColor: AppColor.secondarySurface,
+                        icon: thirdButtonIcon,
+                        textColor: AppColor.textPrimary,
+                        isFilled: true,
+                        isSlimmer: true,
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          onThirdButton!();
+                        },
+                      )
+                          : const SizedBox.shrink(),
+                    ],
                   ),
                 ],
               ),
-            ],
-          ),
+            ),
+
+            // ✖️ Exit icon in the top-right corner
+            Positioned(
+              top: 8,
+              right: 8,
+              child: IconButton(
+                icon: const Icon(Icons.close, size: 24),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                splashRadius: 20,
+                tooltip: 'Close',
+              ),
+            ),
+          ],
         ),
       ),
     );

@@ -1,4 +1,4 @@
-# mobile_stock_inventory
+# retailpos
 
 A new Flutter project.
 

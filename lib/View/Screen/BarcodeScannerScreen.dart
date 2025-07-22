@@ -1,19 +1,13 @@
-// 📦 Flutter & Packages
 import 'package:flutter/material.dart';
+import 'package:retailpos/View/Components/Modal/CartListModal.dart';
 import 'package:provider/provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-
-// 🎯 App Utilities
-import 'package:mobile_stock_inventory/Helper/AppColor.dart';
-
-// 🌐 Providers
-import 'package:mobile_stock_inventory/Provider/CartListProvider.dart';
-
-// 🧩 Custom Components
-import 'package:mobile_stock_inventory/View/Components/Alert/CustomConfimDialog.dart';
-import 'package:mobile_stock_inventory/View/Components/Alert/CustomNotificationDialog.dart';
-import 'package:mobile_stock_inventory/View/Components/BouncingCartIcon.dart';
+import 'package:retailpos/Helper/AppColor.dart';
+import 'package:retailpos/Provider/CartListProvider.dart';
+import 'package:retailpos/View/Components/Alert/CustomConfimDialog.dart';
+import 'package:retailpos/View/Components/Alert/CustomNotificationDialog.dart';
+import 'package:retailpos/View/Components/BouncingCartIcon.dart';
 
 class BarcodeScannerScreen extends StatefulWidget {
   final void Function(String barcode)? onScanned;
@@ -36,58 +30,20 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
   final Set<String> _scannedBarcodes = {};
   final List<Map<String, dynamic>> _scannedItems = [];
 
-  bool? _globalIsPack;
+  bool? _globalIsPack = false;
   bool _initialDialogShown = false;
-  String? _firstScannedBarcode;
   bool _canScan = true;
   bool _showScanHint = false;
 
-  @override
-  void initState() {
-    super.initState();
-    if (widget.isSelling) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _showInitialIsPackDialog());
-    }
-  }
 
-  Future<void> _showInitialIsPackDialog() async {
-    if (_initialDialogShown) return;
-    _initialDialogShown = true;
-
-    bool? result;
-    // SHOW: Initial selling mode dialog
-    await showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => WillPopScope(
-        onWillPop: () async => false,
-        child: CustomConfirmDialog(
-          title: 'Scan Mode',
-          content: 'Will all scanned items be in pack mode?',
-          confirmText: 'Yes, all are packs',
-          cancelText: 'No',
-          icon: LucideIcons.box,
-          iconColor: Colors.teal,
-          onConfirm: () => result = true,
-          onCancel: () => result = false,
-        ),
-      ),
-    );
-
-
-    setState(() => _globalIsPack = result);
-  }
 
   Future<void> _handleBarcode(String? barcode) async {
     if (barcode == null || barcode.trim().isEmpty || !_canScan || _scannedBarcodes.contains(barcode)) return;
 
     _scannedBarcodes.add(barcode);
+    setState(() => _canScan = false);
 
     if (!widget.isSelling) {
-      // 🔁 Non-selling mode
-      setState(() => _canScan = false);
-
-      // SHOW: Notification in non-selling mode
       await showDialog(
         context: context,
         barrierDismissible: false,
@@ -101,93 +57,106 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
             onConfirm: () {
               widget.onScanned?.call(barcode);
               _cleanupScannerState();
-              Navigator.pop(context); // Close dialog
-              Navigator.pop(context); // Close scanner
+              Navigator.pop(context);
+              Navigator.pop(context);
             },
           ),
         ),
       );
-
       return;
     }
 
     if (_globalIsPack == null) return;
 
-    setState(() => _canScan = false);
-
-    bool isPack = _globalIsPack ?? await _askIsPackDialog(barcode);
+    bool isPack = _globalIsPack!;
 
     final result = Provider.of<CartListProvider>(context, listen: false)
         .scanAndAddByBarcode(barcode: barcode, isPackView: isPack);
 
-    // SHOW: Scan success/fail in selling mode
     await showDialog(
       context: context,
       barrierDismissible: false,
       builder: (_) => WillPopScope(
         onWillPop: () async => false,
-        child: CustomConfirmDialog(
-          title: result.success ? 'Scan Successful' : 'Scan Failed',
-          content: result.success
-              ? 'Scanned: $barcode\nType: ${isPack ? "Pack" : "Piece"}'
-              : result.error ?? 'An unknown error occurred.',
-          confirmText: widget.multiScan ? 'Scan Another' : 'Done',
-          icon: result.success ? LucideIcons.checkCircle : LucideIcons.alertOctagon,
-          iconColor: result.success ? Colors.green : Colors.redAccent,
-          onCancel: () => Navigator.pop(context),
-          onConfirm: () {
-
-            if (result.success) {
-              if (!widget.multiScan) {
-                Navigator.pop(context); // close scanner
-              } else {
+        child: StatefulBuilder(
+          builder: (context, setModalState) => CustomConfirmDialog(
+            showThirdButton: true,
+            thirdButtonText: "Proceed Now?",
+              thirdButtonIcon: Icons.add_shopping_cart,
+            onThirdButton: (){
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (context) => FractionallySizedBox(
+                  heightFactor: 0.90,
+                  child: CartListModal(),
+                ),
+              );
+              _canScan = true;
+              _showScanHint = true;
+              _scannedBarcodes.clear();
+            },
+            title: result.success ? 'Scan Successful' : 'Scan Failed',
+            customContent: result.success
+                ? Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Text('Scanned: $barcode'),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text('Selling Type: ',
+                        style: TextStyle(fontWeight: FontWeight.w500)),
+                    const SizedBox(width: 6),
+                    Text(_globalIsPack! ? 'Pack' : 'Piece'),
+                  ],
+                ),
+              ],
+            )
+                : Text(result.error ?? 'An unknown error occurred.'),
+            confirmText: widget.multiScan ? 'Scan Another' : 'Done',
+            cancelText: 'Switch to ${_globalIsPack! ? "Piece" : "Pack"}',
+            icon: result.success ? LucideIcons.checkCircle : LucideIcons.alertOctagon,
+            iconColor: result.success ? Colors.green : Colors.redAccent,
+              onCancel: () {
                 setState(() {
+                  isPack = !isPack;
+                  _globalIsPack = isPack;
                   _canScan = true;
                   _showScanHint = true;
+                  _scannedBarcodes.clear();
                 });
-                Future.delayed(const Duration(seconds: 2), () {
-                  if (mounted) setState(() => _showScanHint = false);
-                });
+              },
+              onConfirm: () {
+              if (result.success) {
+                if (!widget.multiScan) {
+                  Navigator.pop(context);
+                } else {
+                  setState(() {
+                    _canScan = true;
+                    _showScanHint = true;
+                    _scannedBarcodes.clear();
+                  });
+                  Future.delayed(const Duration(seconds: 2), () {
+                    if (mounted) setState(() => _showScanHint = false);
+                  });
+                }
+              } else {
+                setState(() => _canScan = true);
               }
-            } else {
-              setState(() => _canScan = true);
-            }
-          },
+            },
+          ),
         ),
       ),
     );
-
-
-  }
-
-  Future<bool> _askIsPackDialog(String barcode) async {
-    bool? result;
-    // SHOW: "Is this a pack?" confirmation
-    await showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => WillPopScope(
-        onWillPop: () async => false,
-        child: CustomConfirmDialog(
-          title: 'Is this a Pack?',
-          content: 'Scanned barcode:\n$barcode\n\nScan this item as a pack?',
-          confirmText: 'Yes',
-          cancelText: 'No',
-          icon: LucideIcons.qrCode,
-          iconColor: Colors.teal,
-          onConfirm: () => result = true,
-          onCancel: () => result = false,
-        ),
-      ),
-    );
-
-    return result ?? false;
   }
 
   void _cleanupScannerState() {
     _scannedBarcodes.clear();
     _scannedItems.clear();
-    _firstScannedBarcode = null;
     _globalIsPack = null;
     _initialDialogShown = false;
     _canScan = true;
@@ -210,57 +179,175 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
               Navigator.pop(context);
               _cleanupScannerState();
             },
-            child: const Icon(
-              Icons.arrow_back_ios_new,
-              size: 20,
-              color: AppColor.textSecondary,
-            ),
+            child: const Icon(Icons.arrow_back_ios_new,
+                size: 20, color: AppColor.textSecondary),
           ),
           backgroundColor: Colors.white,
           elevation: 1,
-          centerTitle: true,
           title: Text(
-            widget.multiScan ? '🔍 Scan Items' : '🏷️ Scan Product',
+            'Scan Now',
             style: const TextStyle(
               fontWeight: FontWeight.bold,
-              fontSize: 20,
-              color: AppColor.textSecondary,
+              fontSize: 18,
+              color: AppColor.primary,
             ),
           ),
-          iconTheme: const IconThemeData(color: AppColor.textSecondary),
           actions: [
+            if (widget.multiScan && _globalIsPack != null)
+              InkWell(
+                onTap: () => setState(() {
+                  _globalIsPack = !_globalIsPack!;
+                }),
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.black12,
+                    borderRadius: BorderRadius.circular(25),
+                    border: Border.all(color: AppColor.background),
+                  ),
+                  child: Text(
+                    _globalIsPack! ? 'Switch to Piece' : 'Switch to Pack',
+                    style: TextStyle(
+                      color: AppColor.textSecondary,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+
+
             if (widget.multiScan) BouncingCartIcon(),
           ],
         )
             : null,
         body: Stack(
           children: [
-            Stack(
-              children: [
-                // 📷 Camera view
-                MobileScanner(
-                  controller: controller,
-                  onDetect: (capture) {
-                    for (final barcode in capture.barcodes) {
-                      _handleBarcode(barcode.rawValue);
-                    }
-                  },
-                ),
+            // 📸 The actual camera scanner
+            MobileScanner(
+              controller: controller,
+              onDetect: (capture) {
+                for (final barcode in capture.barcodes) {
+                  _handleBarcode(barcode.rawValue);
+                }
+              },
+            ),
 
-                // 🟩 Camera frame overlay
-                Align(
-                  alignment: Alignment.center,
+            // 🕶️ Frame overlay with outside dimmed
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final double overlayWidth = MediaQuery.of(context).size.width ;
+                final double overlayHeight = 120;
+                final double left = (constraints.maxWidth - overlayWidth) / 2;
+                final double top = (constraints.maxHeight - overlayHeight) / 2;
+
+                return Stack(
+                  children: [
+                    // 🔲 Top
+                    Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      height: top,
+                      child: Container(color: Colors.black.withOpacity(0.6)),
+                    ),
+
+                    // 🔲 Bottom
+                    Positioned(
+                      top: top + overlayHeight,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      child: Container(color: Colors.black.withOpacity(0.6)),
+                    ),
+
+                    // 🔲 Left
+                    Positioned(
+                      top: top,
+                      left: 0,
+                      width: left,
+                      height: overlayHeight,
+                      child: Container(color: Colors.black.withOpacity(0.6)),
+                    ),
+
+                    // 🔲 Right
+                    Positioned(
+                      top: top,
+                      left: left + overlayWidth,
+                      right: 0,
+                      height: overlayHeight,
+                      child: Container(color: Colors.black.withOpacity(0.6)),
+                    ),
+
+                    // ✨ The transparent frame with border
+                    Positioned(
+                      left: left,
+                      top: top,
+                      width: overlayWidth,
+                      height: overlayHeight,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.transparent,
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.9),
+                            width: 2,
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+
+            // 🏷️ Mode label
+            if (_globalIsPack != null && widget.isSelling)
+              Positioned(
+                top: 16,
+                left: 0,
+                right: 0,
+                child: Center(
                   child: Container(
-                    width: 300,
-                    height: 230,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      border: Border.all(color: Colors.white, width: 2),
-                      borderRadius: BorderRadius.circular(12),
+                      color: Colors.teal.shade800,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.15),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          _globalIsPack! ? Icons.inventory_2_rounded : Icons.widgets_rounded,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Scanning: ${_globalIsPack! ? "Pack" : "Piece"} Mode',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w500,
+                            fontSize: 14,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-              ],
-            ),
+              ),
+
+
+            // 📄 Bottom instruction
             if (widget.multiScan || !widget.isSelling)
               Align(
                 alignment: Alignment.bottomCenter,
@@ -271,13 +358,14 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   margin: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.65),
-                    borderRadius: BorderRadius.circular(12),
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.white24),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: const [
-                      Icon(Icons.barcode_reader, size: 18, color: Colors.white70),
+                      Icon(LucideIcons.scanLine, size: 18, color: Colors.white70),
                       SizedBox(width: 8),
                       Flexible(
                         child: Text(

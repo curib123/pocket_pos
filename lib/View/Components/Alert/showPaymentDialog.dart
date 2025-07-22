@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:mobile_stock_inventory/Helper/AppColor.dart';
-import 'package:mobile_stock_inventory/Model/cart_item_model.dart';
-import 'package:mobile_stock_inventory/Provider/CartListProvider.dart';
-import 'package:mobile_stock_inventory/Provider/CurrencyProvider.dart';
-import 'package:mobile_stock_inventory/Provider/ProductProvider.dart';
-import 'package:mobile_stock_inventory/Provider/ProductStockProvider.dart';
-import 'package:mobile_stock_inventory/View/Components/Alert/CustomNotificationDialog.dart';
-import 'package:mobile_stock_inventory/View/Components/Custom/CustomButton.dart';
-import 'package:mobile_stock_inventory/View/Components/Custom/CustomTextField.dart';
+import 'package:retailpos/Helper/AppColor.dart';
+import 'package:retailpos/Model/cart_item_model.dart';
+import 'package:retailpos/Provider/CartListProvider.dart';
+import 'package:retailpos/Provider/CurrencyProvider.dart';
+import 'package:retailpos/Provider/ProductProvider.dart';
+import 'package:retailpos/Provider/ProductStockProvider.dart';
+import 'package:retailpos/View/Components/Alert/CustomNotificationDialog.dart';
+import 'package:retailpos/View/Components/Custom/CustomButton.dart';
+import 'package:retailpos/View/Components/Custom/CustomTextField.dart';
 import 'package:provider/provider.dart';
 
 void showPaymentDialog(BuildContext context) {
@@ -55,7 +55,7 @@ void showPaymentDialog(BuildContext context) {
 
                             if (!isSoldByPack && isSoldByPiece) {
                               print("🧩 Selling by PIECE only → ${item.name} | Qty: $qty");
-                              success = await productStockProvider.sellPiece(productId, qty, context);
+                              success = await productStockProvider.sellPack(productId, qty);
                             } else if (isSoldByPack && !isSoldByPiece) {
                               print("📦 Selling by PACK only → ${item.name} | Qty: $qty");
                               success = await productStockProvider.sellPack(productId, qty);
@@ -83,6 +83,7 @@ void showPaymentDialog(BuildContext context) {
                                     int popCount = 3;
                                     while (popCount-- > 0 && Navigator.canPop(context)) {
                                       Navigator.pop(context);
+                                      cartListProvider.clearAll();
                                     }
                                   },
                                 ),
@@ -95,9 +96,6 @@ void showPaymentDialog(BuildContext context) {
                             print("❌ Error deducting ${item.name}: $e");
                           }
                         }
-
-                        cartListProvider.clearAll();
-
 
                       }
 

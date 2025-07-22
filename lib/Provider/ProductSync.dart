@@ -1,6 +1,6 @@
 import 'package:hive/hive.dart';
-import 'package:mobile_stock_inventory/Model/product_model.dart';
-import 'package:mobile_stock_inventory/Helper/Database/SupabaseProductServices.dart';
+import 'package:retailpos/Model/product_model.dart';
+import 'package:retailpos/Helper/Database/SupabaseProductServices.dart';
 
 class ProductSync {
   final Box<Product> _productBox;

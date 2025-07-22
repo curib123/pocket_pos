@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
-import 'package:mobile_stock_inventory/Model/product_model.dart';
-import 'package:mobile_stock_inventory/Model/stock_log.dart';
+import 'package:retailpos/Model/product_model.dart';
+import 'package:retailpos/Model/stock_log.dart';
 
 class ProductProvider extends ChangeNotifier {
   final Box<Product> _productBox;
@@ -32,6 +32,27 @@ class ProductProvider extends ChangeNotifier {
     }
 
     notifyListeners();
+  }
+
+  bool barcodeExists(String barcode) {
+    for (final product in _products) {
+      if (product.barcode == barcode) return true;
+      for (final variant in product.variants) {
+        if (variant.barcode == barcode) return true;
+      }
+    }
+    return false;
+  }
+
+  Product? getProductOrVariantByBarcode(String barcode) {
+    for (final product in _products) {
+      if (product.barcode == barcode) return product;
+
+      for (final variant in product.variants) {
+        if (variant.barcode == barcode) return variant;
+      }
+    }
+    return null;
   }
 
 

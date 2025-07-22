@@ -3,21 +3,21 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import 'package:mobile_stock_inventory/Helper/AppColor.dart';
-import 'package:mobile_stock_inventory/Model/cart_item_model.dart';
-import 'package:mobile_stock_inventory/Model/product_model.dart';
-import 'package:mobile_stock_inventory/Provider/CartListProvider.dart';
-import 'package:mobile_stock_inventory/Provider/CurrencyProvider.dart';
-import 'package:mobile_stock_inventory/Provider/ProductProvider.dart';
-import 'package:mobile_stock_inventory/Provider/ProductStockProvider.dart';
-import 'package:mobile_stock_inventory/Provider/VariantProductProvider.dart';
-import 'package:mobile_stock_inventory/View/Components/Alert/CustomConfimDialog.dart';
-import 'package:mobile_stock_inventory/View/Components/Alert/CustomNotificationDialog.dart';
-import 'package:mobile_stock_inventory/View/Components/Custom/CustomButton.dart';
-import 'package:mobile_stock_inventory/View/Components/Custom/CustomStepper.dart';
-import 'package:mobile_stock_inventory/View/Components/Custom/CustomSwitchPill.dart';
-import 'package:mobile_stock_inventory/View/Components/Modal/CartListModal.dart';
-import 'package:mobile_stock_inventory/View/Components/Modal/UpsertProductModal.dart';
+import 'package:retailpos/Helper/AppColor.dart';
+import 'package:retailpos/Model/cart_item_model.dart';
+import 'package:retailpos/Model/product_model.dart';
+import 'package:retailpos/Provider/CartListProvider.dart';
+import 'package:retailpos/Provider/CurrencyProvider.dart';
+import 'package:retailpos/Provider/ProductProvider.dart';
+import 'package:retailpos/Provider/ProductStockProvider.dart';
+import 'package:retailpos/Provider/VariantProductProvider.dart';
+import 'package:retailpos/View/Components/Alert/CustomConfimDialog.dart';
+import 'package:retailpos/View/Components/Alert/CustomNotificationDialog.dart';
+import 'package:retailpos/View/Components/Custom/CustomButton.dart';
+import 'package:retailpos/View/Components/Custom/CustomStepper.dart';
+import 'package:retailpos/View/Components/Custom/CustomSwitchPill.dart';
+import 'package:retailpos/View/Components/Modal/CartListModal.dart';
+import 'package:retailpos/View/Components/Modal/UpsertProductModal.dart';
 import 'package:provider/provider.dart';
 
 class ProductDetailModal {
@@ -352,7 +352,21 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                       color: AppColor.surface,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: AppColor.secondarySurface),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.08), // slightly darker base
+                          offset: Offset(0, 4), // close shadow
+                          blurRadius: 6,
+                        ),
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.04), // soft diffused shadow
+                          offset: Offset(0, 10), // deeper layer
+                          blurRadius: 20,
+                        ),
+                      ],
                     ),
+
+
                     child: Column(
                       children: [
                         // --- Product Image & Price Tag ---
@@ -467,9 +481,18 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                         const SizedBox(height: 5),
 
                         // --- Stock Label ---
-                        Row(
+                        Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.qr_code_2,color: AppColor.textSecondary,size: 15,),
+                                  SizedBox(width: 10,),
+                                  Text('${product.barcode}',style: TextStyle(fontSize: 14,color: AppColor.textSecondary),)
+                                ],
+                              ),
                               _buildStockLabel('Available Piece: ${formatNumber(qty)}')
                           ],
                         ),
@@ -481,7 +504,7 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                           children: [
                             Expanded(
                               child: CustomButton(
-                                isSlimmer: true,
+                                isSlimmer: false,
                                 text: 'Edit',
                                 icon: Icons.edit,
                                 isFilled: false,
@@ -491,7 +514,7 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                             const SizedBox(width: 6),
                             Expanded(
                               child: CustomButton(
-                                isSlimmer: true,
+                                isSlimmer: false,
                                 text: 'Restock',
                                 icon: Icons.inventory_2_outlined,
                                 isFilled: false,

@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:mobile_stock_inventory/Provider/CartListProvider.dart';
-import 'package:mobile_stock_inventory/View/Components/BouncingCartIcon.dart';
-import 'package:mobile_stock_inventory/View/Components/ProductSearchDelegate.dart';
-import 'package:mobile_stock_inventory/View/Screen/BarcodeScannerScreen.dart';
+import 'package:retailpos/Provider/CartListProvider.dart';
+import 'package:retailpos/View/Components/AnimatedScannerIcon.dart';
+import 'package:retailpos/View/Components/BouncingCartIcon.dart';
+import 'package:retailpos/View/Components/ProductSearchDelegate.dart';
+import 'package:retailpos/View/Screen/BarcodeScannerScreen.dart';
 import 'package:provider/provider.dart';
-import 'package:mobile_stock_inventory/Provider/ProductProvider.dart';
+import 'package:retailpos/Provider/ProductProvider.dart';
 
 class SearchAndCartAppBar extends StatelessWidget implements PreferredSizeWidget {
   const SearchAndCartAppBar({super.key});
@@ -57,25 +58,7 @@ class SearchAndCartAppBar extends StatelessWidget implements PreferredSizeWidget
                 ),
           
                 const SizedBox(width: 16),
-          
-                // 📷 Barcode Scanner Icon
-                IconButton(
-                  icon: const Icon(Icons.qr_code_scanner, color: Colors.black87),
-                  tooltip: 'Scan Barcode',
-                  onPressed: () async {
-                     await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => BarcodeScannerScreen(
-                          multiScan: true,
-                          isSelling: true,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-
-
+                AnimatedScannerButton(),
                 // 🛒 Cart Icon
                 const BouncingCartIcon(),
               ],

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:mobile_stock_inventory/Model/cart_item_model.dart';
-import 'package:mobile_stock_inventory/Model/product_model.dart';
+import 'package:retailpos/Model/cart_item_model.dart';
+import 'package:retailpos/Model/product_model.dart';
 
 class CartListProvider with ChangeNotifier {
   final List<CartItem> _cartItems = [];
@@ -81,7 +81,7 @@ class CartListProvider with ChangeNotifier {
       return (success: false, error: msg);
     }
 
-    final sellingType = isPackView ? SellingType.pack : SellingType.piece;
+
     final latest = product.stocks.isNotEmpty ? product.stocks.last : null;
 
     if (latest == null) {
@@ -92,6 +92,8 @@ class CartListProvider with ChangeNotifier {
 
     final isPieceOnly = product.isSoldByPiece && !product.isSoldByPack;
     final perPack = product.piecesPerPack ?? 0;
+    final sellingType =  isPieceOnly ? SellingType.piece : isPackView ? SellingType.pack : SellingType.piece;
+
 
     // 🧮 Pricing logic
     final price = isPieceOnly

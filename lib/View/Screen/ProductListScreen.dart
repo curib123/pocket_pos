@@ -3,17 +3,17 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import 'package:mobile_stock_inventory/Helper/AppColor.dart';
-import 'package:mobile_stock_inventory/Model/product_model.dart';
-import 'package:mobile_stock_inventory/Provider/CurrencyProvider.dart';
-import 'package:mobile_stock_inventory/Provider/ProductProvider.dart';
-import 'package:mobile_stock_inventory/Provider/StoreCategoryProvider.dart';
-import 'package:mobile_stock_inventory/Provider/SwitchProvider.dart';
-import 'package:mobile_stock_inventory/View/Components/BouncingCartIcon.dart';
-import 'package:mobile_stock_inventory/View/Components/Custom/CustomButton.dart';
-import 'package:mobile_stock_inventory/View/Components/Custom/CustomFlatDropdown.dart';
-import 'package:mobile_stock_inventory/View/Components/Modal/ProductDetailScreenModal.dart';
-import 'package:mobile_stock_inventory/View/Components/Modal/UpsertProductModal.dart';
+import 'package:retailpos/Helper/AppColor.dart';
+import 'package:retailpos/Model/product_model.dart';
+import 'package:retailpos/Provider/CurrencyProvider.dart';
+import 'package:retailpos/Provider/ProductProvider.dart';
+import 'package:retailpos/Provider/StoreCategoryProvider.dart';
+import 'package:retailpos/Provider/SwitchProvider.dart';
+import 'package:retailpos/View/Components/BouncingCartIcon.dart';
+import 'package:retailpos/View/Components/Custom/CustomButton.dart';
+import 'package:retailpos/View/Components/Custom/CustomFlatDropdown.dart';
+import 'package:retailpos/View/Components/Modal/ProductDetailScreenModal.dart';
+import 'package:retailpos/View/Components/Modal/UpsertProductModal.dart';
 import 'package:provider/provider.dart';
 import 'package:animate_do/animate_do.dart';
 
@@ -464,7 +464,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                               decoration: BoxDecoration(
                                 color: product.isVariant
                                     ? AppColor.warning
-                                    : AppColor.success,
+                                    : AppColor.primary,
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
@@ -637,7 +637,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                   decoration: BoxDecoration(
-                                    color: product.isVariant ? AppColor.warning : AppColor.success,
+                                    color: product.isVariant ? AppColor.warning : AppColor.primary,
                                     borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: Text(

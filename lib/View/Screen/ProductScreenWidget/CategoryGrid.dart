@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:provider/provider.dart';
-import 'package:mobile_stock_inventory/Helper/AppColor.dart';
-import 'package:mobile_stock_inventory/Helper/AppCategory.dart';
-import 'package:mobile_stock_inventory/View/Screen/ProductListScreen.dart';
-import 'package:mobile_stock_inventory/Provider/ProductProvider.dart';
-import 'package:mobile_stock_inventory/Provider/StoreCategoryProvider.dart';
-import 'package:mobile_stock_inventory/Provider/SwitchProvider.dart';
+import 'package:retailpos/Helper/AppColor.dart';
+import 'package:retailpos/Helper/AppCategory.dart';
+import 'package:retailpos/View/Screen/ProductListScreen.dart';
+import 'package:retailpos/Provider/ProductProvider.dart';
+import 'package:retailpos/Provider/StoreCategoryProvider.dart';
+import 'package:retailpos/Provider/SwitchProvider.dart';
 import 'package:animate_do/animate_do.dart';
 
 class CategoryGrid extends StatelessWidget {

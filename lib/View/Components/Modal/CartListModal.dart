@@ -1,16 +1,16 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:mobile_stock_inventory/Provider/ProductStockProvider.dart';
-import 'package:mobile_stock_inventory/View/Components/Alert/CustomConfimDialog.dart';
+import 'package:retailpos/Provider/ProductStockProvider.dart';
+import 'package:retailpos/View/Components/Alert/CustomConfimDialog.dart';
 import 'package:provider/provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import 'package:mobile_stock_inventory/Provider/CartListProvider.dart';
-import 'package:mobile_stock_inventory/Provider/CurrencyProvider.dart';
-import 'package:mobile_stock_inventory/Helper/AppColor.dart';
-import 'package:mobile_stock_inventory/View/Components/Alert/showPaymentDialog.dart';
-import 'package:mobile_stock_inventory/View/Components/Custom/CustomButton.dart';
-import 'package:mobile_stock_inventory/View/Components/Custom/CustomStepper.dart';
-import 'package:mobile_stock_inventory/View/Components/Custom/CustomSwitchPill.dart';
+import 'package:retailpos/Provider/CartListProvider.dart';
+import 'package:retailpos/Provider/CurrencyProvider.dart';
+import 'package:retailpos/Helper/AppColor.dart';
+import 'package:retailpos/View/Components/Alert/showPaymentDialog.dart';
+import 'package:retailpos/View/Components/Custom/CustomButton.dart';
+import 'package:retailpos/View/Components/Custom/CustomStepper.dart';
+import 'package:retailpos/View/Components/Custom/CustomSwitchPill.dart';
 
 class CartListModal extends StatelessWidget {
   const CartListModal({super.key});
@@ -193,6 +193,7 @@ class _CartItemTileState extends State<_CartItemTile> {
                               child: Text(
                                 item.name,
                                 style: const TextStyle(fontWeight: FontWeight.w700),
+                                maxLines: 3,
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
@@ -231,7 +232,7 @@ class _CartItemTileState extends State<_CartItemTile> {
                             ),
                             const SizedBox(width: 8),
                             Text(
-                              "× ${item.quantity}",
+                              "× ${item.maxQuantity - item.quantity}",
                               style: TextStyle(
                                 fontSize: 12,
                                 color: Colors.grey.shade600,

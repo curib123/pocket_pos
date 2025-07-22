@@ -73,6 +73,32 @@ class Product extends HiveObject {
     return totalQtyByPieces;
   }
 
+  // 📦 Get all logs for a specific reason
+  List<StockLog> getLogsByReason(StockLogReason reason) {
+    return logs.where((log) => log.reason == reason).toList();
+  }
+
+// 🗂 Group logs by reason
+  Map<StockLogReason, List<StockLog>> get logsByReason {
+    final Map<StockLogReason, List<StockLog>> grouped = {};
+    for (final log in logs) {
+      grouped.putIfAbsent(log.reason, () => []).add(log);
+    }
+    return grouped;
+  }
+
+// 📊 Count logs per reason (super useful for analytics)
+  Map<StockLogReason, int> get logCountsByReason {
+    final Map<StockLogReason, int> counts = {};
+    for (final log in logs) {
+      counts[log.reason] = (counts[log.reason] ?? 0) + 1;
+    }
+    return counts;
+  }
+
+// 🧾 Just an alias for readability
+  List<StockLog> get allLogs => logs;
+
   Product({
     required this.id,
     required this.name,

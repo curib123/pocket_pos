@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mobile_stock_inventory/Helper/AppColor.dart';
+import 'package:retailpos/Helper/AppColor.dart';
 
 class CustomFlatDropdown<T> extends StatelessWidget {
   final String hint;

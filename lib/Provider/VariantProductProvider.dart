@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
-import 'package:mobile_stock_inventory/Model/product_model.dart';
-import 'package:mobile_stock_inventory/Model/stock_log.dart';
-import 'package:mobile_stock_inventory/Provider/ProductProvider.dart';
+import 'package:retailpos/Model/product_model.dart';
+import 'package:retailpos/Model/stock_log.dart';
+import 'package:retailpos/Provider/ProductProvider.dart';
 
 class VariantProductProvider extends ChangeNotifier {
   final Box<Product> _productBox;

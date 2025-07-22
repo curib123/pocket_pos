@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mobile_stock_inventory/Helper/AppColor.dart';
+import 'package:retailpos/Helper/AppColor.dart';
 
 class CustomSwitchPill extends StatelessWidget {
   final List<String> options;

@@ -67,6 +67,9 @@ class StockLog extends HiveObject {
   @HiveField(8)
   final DateTime? deletedAt;
 
+  @HiveField(9)
+  final double? profit;
+
   StockLog({
     required this.id,
     required this.productId,
@@ -77,6 +80,7 @@ class StockLog extends HiveObject {
     DateTime? dateLogged,
     DateTime? lastModified,
     this.deletedAt,
+    this.profit,
   })  : dateLogged = dateLogged ?? DateTime.now(),
         lastModified = lastModified ?? DateTime.now();
 
@@ -91,6 +95,7 @@ class StockLog extends HiveObject {
       'dateLogged': dateLogged.toIso8601String(),
       'lastModified': lastModified.toIso8601String(),
       'deletedAt': deletedAt?.toIso8601String(),
+      'profit': profit,
     };
   }
 
@@ -107,9 +112,8 @@ class StockLog extends HiveObject {
       remarks: map['remarks'],
       dateLogged: DateTime.parse(map['dateLogged']),
       lastModified: DateTime.parse(map['lastModified']),
-      deletedAt: map['deletedAt'] != null
-          ? DateTime.parse(map['deletedAt'])
-          : null,
+      deletedAt: map['deletedAt'] != null ? DateTime.parse(map['deletedAt']) : null,
+      profit: map['profit']?.toDouble(),
     );
   }
 
@@ -123,6 +127,7 @@ class StockLog extends HiveObject {
     DateTime? dateLogged,
     DateTime? lastModified,
     DateTime? deletedAt,
+    double? profit,
   }) {
     return StockLog(
       id: id ?? this.id,
@@ -134,6 +139,7 @@ class StockLog extends HiveObject {
       dateLogged: dateLogged ?? this.dateLogged,
       lastModified: lastModified ?? this.lastModified,
       deletedAt: deletedAt ?? this.deletedAt,
+      profit: profit ?? this.profit,
     );
   }
 }

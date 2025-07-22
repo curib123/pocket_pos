@@ -3,25 +3,26 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
-import 'package:mobile_stock_inventory/Helper/ProductUnits.dart';
-import 'package:mobile_stock_inventory/Model/loose_stock.dart';
-import 'package:mobile_stock_inventory/Model/product_model.dart';
-import 'package:mobile_stock_inventory/Model/product_stock.dart';
-import 'package:mobile_stock_inventory/Provider/CurrencyProvider.dart';
-import 'package:mobile_stock_inventory/Provider/LooseStockProvider.dart';
-import 'package:mobile_stock_inventory/Provider/ProductProvider.dart';
-import 'package:mobile_stock_inventory/Provider/ProductStockProvider.dart';
-import 'package:mobile_stock_inventory/Provider/StoreCategoryProvider.dart';
-import 'package:mobile_stock_inventory/Provider/VariantProductProvider.dart';
-import 'package:mobile_stock_inventory/View/Components/Alert/AddOrEditStockDialog.dart';
-import 'package:mobile_stock_inventory/View/Components/Alert/CustomConfimDialog.dart';
-import 'package:mobile_stock_inventory/View/Components/Alert/CustomNotificationDialog.dart';
-import 'package:mobile_stock_inventory/View/Components/Custom/CustomButton.dart';
-import 'package:mobile_stock_inventory/View/Components/Custom/CustomFlatDropdown.dart';
-import 'package:mobile_stock_inventory/View/Components/Custom/CustomPillToggle.dart';
-import 'package:mobile_stock_inventory/View/Components/Custom/CustomTextField.dart';
-import 'package:mobile_stock_inventory/Helper/AppColor.dart';
-import 'package:mobile_stock_inventory/View/Screen/BarcodeScannerScreen.dart';
+import 'package:lucide_icons/lucide_icons.dart';
+import 'package:retailpos/Helper/ProductUnits.dart';
+import 'package:retailpos/Model/loose_stock.dart';
+import 'package:retailpos/Model/product_model.dart';
+import 'package:retailpos/Model/product_stock.dart';
+import 'package:retailpos/Provider/CurrencyProvider.dart';
+import 'package:retailpos/Provider/LooseStockProvider.dart';
+import 'package:retailpos/Provider/ProductProvider.dart';
+import 'package:retailpos/Provider/ProductStockProvider.dart';
+import 'package:retailpos/Provider/StoreCategoryProvider.dart';
+import 'package:retailpos/Provider/VariantProductProvider.dart';
+import 'package:retailpos/View/Components/Alert/AddOrEditStockDialog.dart';
+import 'package:retailpos/View/Components/Alert/CustomConfimDialog.dart';
+import 'package:retailpos/View/Components/Alert/CustomNotificationDialog.dart';
+import 'package:retailpos/View/Components/Custom/CustomButton.dart';
+import 'package:retailpos/View/Components/Custom/CustomFlatDropdown.dart';
+import 'package:retailpos/View/Components/Custom/CustomPillToggle.dart';
+import 'package:retailpos/View/Components/Custom/CustomTextField.dart';
+import 'package:retailpos/Helper/AppColor.dart';
+import 'package:retailpos/View/Screen/BarcodeScannerScreen.dart';
 import 'package:provider/provider.dart';
 
 class UpsertProductModal extends StatefulWidget {
@@ -58,6 +59,7 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
    final List<ProductStock> _stock = [];
 
   @override
+  @override
   void initState() {
     super.initState();
 
@@ -76,6 +78,7 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
       _selectedUnit = p.unit;
       _isSoldByPack = p.isSoldByPack;
       _isSoldByPiece = p.isSoldByPiece;
+      _barcodeController.text = p.barcode!;
       _hasVariant = p.hasVariant;
       _selectedImage = (p.imagePath?.isNotEmpty == true) ? File(p.imagePath!) : null;
       _variants.addAll(p.variants);
@@ -84,7 +87,7 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
       _piecesPerPackController.text = p.piecesPerPack.toString();
 
       // ✅ Populate loose stock only if it exists
-      _looseStockController.text = p.looseStock?.toString() ?? '';
+      _looseStockController.text = p.looseStock?.remainingPieces.toString() ?? '';
 
       // ✅ Load stock batches
       _stock.addAll(p.stocks);
@@ -101,18 +104,17 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
       _piecesPerPackController.text = parent.piecesPerPack.toString();
 
       // ⚠️ Loose stock should be handled separately for new variants
+      _piecesPerPackController.addListener(_updateLooseStock);
+      _updateLooseStock();
 
     } else {
       // 🆕 Creating brand new product
       _piecesPerPackController.text = '0'; // Default value
+
+      // ✅ Enable live loose stock updates
+      _piecesPerPackController.addListener(_updateLooseStock);
+      _updateLooseStock();
     }
-
-    // 🧠 Always listen to piecesPerPack changes to update loose stock live
-    _piecesPerPackController.addListener(_updateLooseStock);
-
-    // 🚀 Initialize calculated loose stock right away
-    _updateLooseStock();
-
   }
 
 
@@ -141,9 +143,9 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
     final isEditing = widget.existingProduct != null;
 
     if (widget.isVariant) {
-      return AppColor.success;
+      return AppColor.textSecondary;
     }
-    return isEditing ? AppColor.warning : AppColor.secondary;
+    return isEditing ? AppColor.secondary : AppColor.primary;
   }
 
 
@@ -314,7 +316,7 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
       isSoldByPack: _isSoldByPack,
       isSoldByPiece: _isSoldByPiece,
       imagePath: _selectedImage?.path ?? '',
-      barcode: _barcodeController.text.trim(), // 👈 add this line
+      barcode: _barcodeController.text.trim() , // 👈 add this line
       createdAt: isEditing ? widget.existingProduct!.createdAt : DateTime.now(),
       lastModified: DateTime.now(),
       deletedAt: null,
@@ -490,6 +492,7 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
                                       hintText: 'Enter product name',
                                       helperText: 'This will appear in listings and receipts',
                                       controller: _nameController,
+                                      prefixIcon: Icon(LucideIcons.box),
                                     ),
                                     const SizedBox(height: 10), // spacing
                                     Row(
@@ -497,9 +500,9 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
                                       children: [
                                         Expanded(
                                           child: CustomTextField(
+                                            prefixIcon: Icon(Icons.qr_code),
                                             label: 'Barcode (Optional)',
                                             hintText: 'Scan or manually enter the barcode',
-                                            helperText: 'Used for quick lookup and scanning at checkout',
                                             controller: _barcodeController,
                                             keyboardType: TextInputType.text, // 🛠️ safer for barcode types
                                           ),
@@ -509,7 +512,7 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
                                           child: Align(
                                             alignment: Alignment.center,
                                             child: IconButton(
-                                              icon: Icon(Icons.qr_code_scanner),
+                                              icon: Icon(LucideIcons.scanLine,color: AppColor.primary,),
                                               tooltip: 'Scan Barcode',
                                               onPressed: () async {
                                                 Navigator.push(
@@ -519,9 +522,25 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
                                                       onScanned: (barcode) {
                                                         // Update your text field or do whatever
                                                         print('Scanned barcode: $barcode');
-                                                        setState(() {
-                                                          _barcodeController.text = barcode;
-                                                        });
+                                                        if (!productProvider.barcodeExists(barcode)) {
+                                                          setState(() {
+                                                            _barcodeController.text = barcode;
+                                                          });
+                                                          
+                                                        } else {
+                                                          Future.delayed(Duration(seconds: 1),(){
+                                                            showDialog(
+                                                              context: context,
+                                                              builder: (_) => CustomNotificationDialog(
+                                                                onConfirm: () => Navigator.pop(context),
+                                                                type: 'warning',
+                                                                title: "Barcode Already Exist!",
+                                                                content: "This barcode is already assigned to an existing product or variant. Please scan a different one.",
+                                                              ),
+                                                            );
+                                                          });
+                                                        }
+
                                                       },
                                                     ),
                                                   ),

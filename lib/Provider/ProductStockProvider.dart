@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
-import 'package:mobile_stock_inventory/Model/loose_stock.dart';
-import 'package:mobile_stock_inventory/Model/product_model.dart';
-import 'package:mobile_stock_inventory/Model/product_stock.dart';
-import 'package:mobile_stock_inventory/Model/stock_log.dart';
-import 'package:mobile_stock_inventory/View/Components/Alert/CustomNotificationDialog.dart';
+import 'package:retailpos/Model/loose_stock.dart';
+import 'package:retailpos/Model/product_model.dart';
+import 'package:retailpos/Model/product_stock.dart';
+import 'package:retailpos/Model/stock_log.dart';
+import 'package:retailpos/View/Components/Alert/CustomNotificationDialog.dart';
 
 class ProductStockProvider extends ChangeNotifier {
   final Box<Product> _productBox;
@@ -39,12 +39,10 @@ class ProductStockProvider extends ChangeNotifier {
     return null;
   }
 
-
   Future<bool> sellPack(String productIdOrName, int quantity) async {
     final product = _getProduct(productIdOrName);
     if (product == null) return false;
 
-    // Clone & sort FIFO by dateReceived
     final sortedStocks = [...product.stocks]
       ..sort((a, b) => a.dateReceived.compareTo(b.dateReceived));
 
@@ -64,12 +62,17 @@ class ProductStockProvider extends ChangeNotifier {
       final index = updatedStocks.indexWhere((s) => s.id == stock.id);
       if (index != -1) updatedStocks[index] = updated;
 
+      // 💰 Calculate profit per pack
+      final double unitProfit = (stock.retailPrice ?? 0) - (stock.costPrice ?? 0);
+      final double totalProfit = unitProfit * deduct;
+
       logs.add(
         StockLog(
           id: 'log-${DateTime.now().millisecondsSinceEpoch}-${stock.id}',
           productId: product.id,
           quantity: deduct,
           isPiece: false,
+          profit: totalProfit,
           reason: StockLogReason.sold,
           remarks: 'Sold $deduct pack(s) from stock ${stock.id} in ${product.id}',
         ),
@@ -78,10 +81,8 @@ class ProductStockProvider extends ChangeNotifier {
       remainingToDeduct -= deduct;
     }
 
-    // ❌ Not enough stock
     if (remainingToDeduct > 0) return false;
 
-    // ✅ Update loose stock if it exists
     LooseStock? updatedLoose;
     if (product.looseStock != null && product.piecesPerPack != null) {
       final totalPiecesDeducted = quantity * (product.piecesPerPack ?? 0);
@@ -93,7 +94,7 @@ class ProductStockProvider extends ChangeNotifier {
         StockLog(
           id: 'log-${DateTime.now().millisecondsSinceEpoch}-loose',
           productId: product.id,
-          quantity: totalPiecesDeducted.toInt(),
+          quantity: totalPiecesDeducted,
           isPiece: true,
           reason: StockLogReason.sold,
           remarks: 'Auto-synced: Deducted $totalPiecesDeducted pcs after selling $quantity pack(s)',
@@ -115,7 +116,6 @@ class ProductStockProvider extends ChangeNotifier {
         break;
       }
     }
-
 
     if (parent != null) {
       final updatedVariants = parent.variants.map((v) {
@@ -142,34 +142,43 @@ class ProductStockProvider extends ChangeNotifier {
     return true;
   }
 
-
-
   Future<bool> sellPiece(String productIdOrName, int quantity, BuildContext context) async {
-    // 🚫 1. Sanity check
     if (quantity <= 0) {
       print('❌ Invalid quantity: $quantity');
       return false;
     }
 
-    // 🔍 2. Get product (main or variant)
     final product = _getProduct(productIdOrName);
     if (product == null) {
       print('❌ Product not found: $productIdOrName');
+      showDialog(
+        context: context,
+        builder: (_) => CustomNotificationDialog(
+          title: 'Product Not Found',
+          content: 'The product "$productIdOrName" could not be found in your inventory.',
+          onConfirm: () => Navigator.pop(context),
+        ),
+      );
       return false;
     }
 
     final looseStock = product.looseStock;
     final itemsPerPack = product.piecesPerPack ?? 1;
 
-    // ⚠️ 3. Validate loose stock exists
     if (looseStock == null) {
       print('⚠️ No loose stock for ${product.name}');
+      showDialog(
+        context: context,
+        builder: (_) => CustomNotificationDialog(
+          title: 'Loose Stock Not Available',
+          content: 'This product has no loose stock configured. Please set it up before selling by piece.',
+          onConfirm: () => Navigator.pop(context),
+        ),
+      );
       return false;
     }
 
     final looseBefore = looseStock.remainingPieces;
-
-    // ❌ 4. Not enough loose pieces
     if (looseBefore < quantity) {
       print('⚠️ Not enough loose stock. Requested: $quantity, Available: $looseBefore');
       showDialog(
@@ -177,52 +186,64 @@ class ProductStockProvider extends ChangeNotifier {
         builder: (_) => CustomNotificationDialog(
           title: 'Not Enough Stock',
           content: 'Only $looseBefore pieces available, but $quantity requested.',
+          onConfirm: () => Navigator.pop(context),
         ),
       );
       return false;
     }
 
-    // ✅ 5. Deduct loose pieces
+    // 🔄 Calculate new loose and pack values
     final looseAfter = looseBefore - quantity;
+    final currentPackCount = looseBefore ~/ itemsPerPack;
+    final newPackCount = looseAfter ~/ itemsPerPack;
+    final packsToDeduct = currentPackCount - newPackCount;
+
     final updatedLooseStock = looseStock.copyWith(remainingPieces: looseAfter);
 
-    // 🔁 6. Auto-deduct packs (only if quantity >= itemsPerPack)
-    final fullPacksSold = quantity ~/ itemsPerPack;
-    int packsToDeduct = fullPacksSold;
-
+    // 💾 Deduct packs from batch stock
     List<ProductStock> updatedStocks = [...product.stocks];
     List<StockLog> logs = [];
 
-    for (int i = 0; i < updatedStocks.length && packsToDeduct > 0; i++) {
+    int remainingToDeduct = packsToDeduct;
+    for (int i = 0; i < updatedStocks.length && remainingToDeduct > 0; i++) {
       final stock = updatedStocks[i];
       if (stock.quantity <= 0) continue;
 
-      final deduct = (stock.quantity >= packsToDeduct) ? packsToDeduct : stock.quantity;
+      final deduct = (stock.quantity >= remainingToDeduct) ? remainingToDeduct : stock.quantity;
       updatedStocks[i] = stock.copyWith(quantity: stock.quantity - deduct);
+
+      final unitProfit = (stock.retailPrice ?? 0) - (stock.costPrice ?? 0);
+      final totalProfit = unitProfit * deduct;
 
       logs.add(StockLog(
         id: 'log-${DateTime.now().millisecondsSinceEpoch}-pack-${stock.id}',
         productId: product.id,
         quantity: deduct,
         isPiece: false,
+        profit: totalProfit,
         reason: StockLogReason.sold,
         remarks: 'Auto-deducted $deduct pack(s) after selling $quantity pcs',
       ));
 
-      packsToDeduct -= deduct;
+      remainingToDeduct -= deduct;
     }
 
-    // 🧾 7. Add piece log
+    // 🧾 Log the piece sale
+    final retailPerPiece = (product.stocks.first.retailPrice ?? 0) / itemsPerPack;
+    final costPerPiece = (product.stocks.first.costPrice ?? 0) / itemsPerPack;
+    final pieceProfit = (retailPerPiece - costPerPiece) * quantity;
+
     logs.add(StockLog(
       id: 'log-${DateTime.now().millisecondsSinceEpoch}-${product.id}',
       productId: product.id,
       quantity: quantity,
       isPiece: true,
+      profit: pieceProfit,
       reason: StockLogReason.sold,
       remarks: 'Sold $quantity piece(s)',
     ));
 
-    // 🛠️ 8. Update product
+    // 🛠 Update product
     final updatedProduct = product.copyWith(
       looseStock: updatedLooseStock,
       stocks: updatedStocks,
@@ -230,7 +251,7 @@ class ProductStockProvider extends ChangeNotifier {
       lastModified: DateTime.now(),
     );
 
-    // 🧬 9. Handle variant vs normal
+    // 🔁 Update parent if variant
     Product? parent;
     try {
       parent = _productBox.values.firstWhere(
@@ -241,9 +262,9 @@ class ProductStockProvider extends ChangeNotifier {
     }
 
     if (parent != null) {
-      final updatedVariants = parent.variants.map((v) {
-        return v.id == product.id ? updatedProduct : v;
-      }).toList();
+      final updatedVariants = parent.variants.map((v) =>
+      v.id == product.id ? updatedProduct : v,
+      ).toList();
 
       final updatedParent = parent.copyWith(
         variants: updatedVariants,
@@ -259,12 +280,10 @@ class ProductStockProvider extends ChangeNotifier {
 
     notifyListeners();
 
-    // ✅ 10. Done
+    // 🧠 Debugging Logs
     print('✅ Sold $quantity pcs of ${product.name}');
     print('🧮 Loose stock: $looseBefore ➡️ $looseAfter');
-    if (fullPacksSold > 0) {
-      print('🔁 Auto-deducted $fullPacksSold full pack(s)');
-    }
+    print('📦 Pack count: $currentPackCount ➡️ $newPackCount (deducted $packsToDeduct pack[s])');
 
     return true;
   }

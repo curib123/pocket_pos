@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:mobile_stock_inventory/Helper/AppColor.dart';
-import 'package:mobile_stock_inventory/View/Components/ResponsiveText.dart';
+import 'package:retailpos/Helper/AppColor.dart';
+import 'package:retailpos/View/Components/ResponsiveText.dart';
 
 class CustomTextField extends StatelessWidget {
   final String label;
@@ -77,12 +77,12 @@ class CustomTextField extends StatelessWidget {
         borderSide: BorderSide(color: Colors.red.shade600, width: 1.8),
       ),
       prefixIcon: prefixIcon,
-      prefixIconColor: AppColor.accent,
+      prefixIconColor: AppColor.primary.withOpacity(0.6),
       suffixIcon: obscure
           ? IconButton(
         icon: Icon(
           isObscure ? Icons.visibility_off : Icons.visibility,
-          color: AppColor.accent,
+          color: AppColor.primary.withOpacity(0.6),
         ),
         onPressed: toggleObscure,
       )

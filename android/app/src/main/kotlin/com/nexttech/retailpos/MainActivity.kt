@@ -1,4 +1,4 @@
-package com.nexttech.mobile_stock_inventory
+package com.nexttech.retailpos
 
 import io.flutter.embedding.android.FlutterActivity
 

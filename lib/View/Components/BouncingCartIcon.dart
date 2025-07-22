@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:animate_do/animate_do.dart';
-import 'package:mobile_stock_inventory/Provider/CartListProvider.dart';
-import 'package:mobile_stock_inventory/View/Components/Modal/CartListModal.dart';
+import 'package:retailpos/Helper/AppColor.dart';
+import 'package:retailpos/Provider/CartListProvider.dart';
+import 'package:retailpos/View/Components/Modal/CartListModal.dart';
 import 'package:provider/provider.dart';
 
 class BouncingCartIcon extends StatelessWidget {
@@ -14,7 +15,7 @@ class BouncingCartIcon extends StatelessWidget {
     return Consumer<CartListProvider>(
       builder: (context,cartProvider,_) {
         return Bounce(
-          infinite: true,
+          infinite: cartProvider.cartItems.length != 0 ? true : false,
           from: 10, // subtle bounce
           duration: const Duration(seconds: 1),
           child: Stack(
@@ -35,7 +36,7 @@ class BouncingCartIcon extends StatelessWidget {
                 },
                 child: const Padding(
                   padding: EdgeInsets.all(8.0),
-                  child: Icon(Icons.shopping_cart_outlined, size: 40),
+                  child: Icon(Icons.shopping_cart_outlined, size: 40,color: AppColor.primary,),
                 ),
               ),
               if (cartProvider.cartItems.length > 0)

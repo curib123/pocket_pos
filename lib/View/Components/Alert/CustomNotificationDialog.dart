@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:animate_do/animate_do.dart';
-import 'package:mobile_stock_inventory/View/Components/ResponsiveText.dart'; // ✅ Responsive Text
+import 'package:retailpos/Helper/AppColor.dart';
+import 'package:retailpos/View/Components/ResponsiveText.dart'; // ✅ Responsive Text
 
 class CustomNotificationDialog extends StatelessWidget {
   final String title;
@@ -21,26 +22,34 @@ class CustomNotificationDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Pick icon and color based on type
+    // 🎨 Pick icon and color from AppColor based on type
     IconData iconData;
-    Color color;
+    Color backgroundColor;
+    Color textColor;
+    Color iconColor;
 
     switch (type) {
       case 'error':
         iconData = LucideIcons.xCircle;
-        color = Colors.red;
+        backgroundColor = AppColor.errorBackground;
+        textColor = AppColor.errorText;
+        iconColor = AppColor.error;
         break;
       case 'warning':
         iconData = LucideIcons.alertTriangle;
-        color = Colors.orange.shade800;
+        backgroundColor = AppColor.warningBackground;
+        textColor = AppColor.warningText;
+        iconColor = AppColor.warning;
         break;
       default:
         iconData = LucideIcons.checkCircle;
-        color = Colors.teal;
+        backgroundColor = AppColor.surface;
+        textColor = AppColor.textPrimary;
+        iconColor = AppColor.primary;
     }
 
     return Dialog(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColor.surface,
       elevation: 12,
       insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
       shape: RoundedRectangleBorder(
@@ -55,7 +64,7 @@ class CustomNotificationDialog extends StatelessWidget {
             children: [
               Bounce(
                 duration: const Duration(milliseconds: 600),
-                child: Icon(iconData, size: 48, color: color),
+                child: Icon(iconData, size: 48, color: iconColor),
               ),
               const SizedBox(height: 16),
               FadeInUp(
@@ -64,10 +73,10 @@ class CustomNotificationDialog extends StatelessWidget {
                   title,
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: context.rf(22), // ✅ Responsive title
+                    fontSize: context.rf(22),
                     fontWeight: FontWeight.w600,
                     letterSpacing: 0.3,
-                    color: Colors.black,
+                    color: AppColor.textPrimary,
                   ),
                 ),
               ),
@@ -79,8 +88,8 @@ class CustomNotificationDialog extends StatelessWidget {
                   content,
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: context.rf(16), // ✅ Responsive content
-                    color: Colors.black87,
+                    fontSize: context.rf(16),
+                    color: AppColor.textSecondary,
                     height: 1.4,
                   ),
                 ),
@@ -96,7 +105,7 @@ class CustomNotificationDialog extends StatelessWidget {
                       if (onConfirm != null) onConfirm!();
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: color,
+                      backgroundColor: iconColor,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
@@ -106,7 +115,7 @@ class CustomNotificationDialog extends StatelessWidget {
                     child: Text(
                       buttonText,
                       style: TextStyle(
-                        fontSize: context.rf(15), // ✅ Responsive button text
+                        fontSize: context.rf(15),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
