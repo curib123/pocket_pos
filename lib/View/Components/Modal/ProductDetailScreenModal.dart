@@ -3,9 +3,10 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import 'package:pocketpos/Helper/AppColor.dart';
+import 'package:pocketpos/Helper/Classes_Methods/AppColor.dart';
 import 'package:pocketpos/Model/cart_item_model.dart';
 import 'package:pocketpos/Model/product_model.dart';
+import 'package:pocketpos/Model/stock_log.dart';
 import 'package:pocketpos/Provider/CartListProvider.dart';
 import 'package:pocketpos/Provider/CurrencyProvider.dart';
 import 'package:pocketpos/Provider/ProductProvider.dart';
@@ -14,6 +15,7 @@ import 'package:pocketpos/Provider/VariantProductProvider.dart';
 import 'package:pocketpos/View/Components/Alert/CustomConfimDialog.dart';
 import 'package:pocketpos/View/Components/Alert/CustomNotificationDialog.dart';
 import 'package:pocketpos/View/Components/Custom/CustomButton.dart';
+import 'package:pocketpos/View/Components/Custom/CustomFlatDropdown.dart';
 import 'package:pocketpos/View/Components/Custom/CustomStepper.dart';
 import 'package:pocketpos/View/Components/Custom/CustomSwitchPill.dart';
 import 'package:pocketpos/View/Components/Modal/CartListModal.dart';
@@ -59,6 +61,15 @@ class _ProductDetailContent extends StatefulWidget {
 
 class _ProductDetailContentState extends State<_ProductDetailContent> {
 
+  final List<String> stockLogReasonStrings = [
+    'sale',     // 🟢 for StockLogReason.sold
+    'expired',
+    'damaged',
+    'donated',
+    'used',     // 🔄 instead of "consumed"
+  ];
+
+
   bool isUsePackSwitch = true;
   double price = 0;
   double cost = 0;
@@ -70,6 +81,46 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
   bool useQtyInput = false;
   bool _hasVariant = true;
   SellingType sellingType = SellingType.pack;
+  // This is your selected reason as string (UI value)
+  String _selectedReason = 'sale';
+
+// Map from String (UI) → Enum (logic)
+  StockLogReason? getStockLogReasonFromString(String reason) {
+    switch (reason.trim().toLowerCase()) {
+      case 'sale':
+        return StockLogReason.sold;
+      case 'expired':
+        return StockLogReason.expired;
+      case 'damaged':
+        return StockLogReason.damaged;
+      case 'donated':
+        return StockLogReason.donated;
+      case 'used':
+        return StockLogReason.consumed;
+      default:
+        return null; // 🫠 not recognized
+    }
+  }
+
+// Map from Enum (logic) → String (UI)
+  String getStringFromStockLogReason(StockLogReason reason) {
+    switch (reason) {
+      case StockLogReason.sold:
+        return 'sale';
+      case StockLogReason.expired:
+        return 'expired';
+      case StockLogReason.damaged:
+        return 'damaged';
+      case StockLogReason.donated:
+        return 'donated';
+      case StockLogReason.consumed:
+        return 'used';
+      default:
+        return 'unknown';
+    }
+  }
+
+
 
   @override
   void didChangeDependencies() {
@@ -174,6 +225,10 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
     );
   }
 
+  String _formatReasonName(String reason) {
+    return reason[0].toUpperCase() + reason.substring(1);
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -194,102 +249,204 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
           return Scaffold(
             bottomNavigationBar: SafeArea(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                padding: const EdgeInsets.fromLTRB(10, 0, 10, 16),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    if(getStockLogReasonFromString(_selectedReason) == StockLogReason.sold)...[
+                      Row(
+                        children: [
+                          Expanded(
+                            child: CustomButton(
+                                text: 'Add to Cart',
+                                icon: Icons.shopping_cart_outlined,
+                                isFilled: false,
+                                onPressed: () {
+                                  if (qty <= 0) {
+                                    // ❗ Show warning when there's NO stock
+                                    showDialog(
+                                      context: context,
+                                      builder: (_) => CustomNotificationDialog(
+                                        onConfirm: () => Navigator.pop(context),
+                                        type: 'warning',
+                                        title: 'Out of Stock',
+                                        content: 'This product is currently out of stock. Please restock before adding to cart.',
+                                      ),
+                                    );
+                                  } else {
 
-                    Row(
-                      children: [
-                        Expanded(
-                          child: CustomButton(
-                            text: 'Add to Cart',
-                            icon: Icons.shopping_cart_outlined,
-                            isFilled: false,
-                              onPressed: () {
-                                if (qty <= 0) {
-                                  // ❗ Show warning when there's NO stock
+                                    // ✅ Proceed to add to cart
+                                    cartListProvider.addToCart(CartItem(
+                                      productId: product.id,
+                                      name: product.name,
+                                      price: price,
+                                      quantity: quantityChosen.toInt(),
+                                      imagePath: product.imagePath,
+                                      maxQuantity: qty.toInt(),
+                                      sellingType: sellingType,
+                                      isSoldPerPack: product.isSoldByPack,
+                                      isSoldPerPiece: product.isSoldByPiece,
+                                    ));
+
+                                    Navigator.pop(context);
+                                  }
+                                }
+
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: CustomButton(
+                                text: 'Proceed',
+                                icon: Icons.check_circle_outline,
+                                onPressed: () {
+                                  if (qty <= 0) {
+                                    // ❗ Show warning when there's NO stock
+                                    showDialog(
+                                      context: context,
+                                      builder: (_) => CustomNotificationDialog(
+                                        onConfirm: () => Navigator.pop(context),
+                                        type: 'warning',
+                                        title: 'Out of Stock',
+                                        content: 'This product is currently out of stock. Please restock before adding to cart.',
+                                      ),
+                                    );
+                                  } else {
+
+                                    Navigator.pop(context);
+                                    // ✅ Proceed when there is stock
+                                    cartListProvider.addToCart(CartItem(
+                                      productId: product.id,
+                                      name: product.name,
+                                      price: price,
+                                      quantity: quantityChosen.toInt(),
+                                      imagePath: product.imagePath,
+                                      maxQuantity: qty.toInt(),
+                                      sellingType: sellingType,
+                                      isSoldPerPack: product.isSoldByPack,
+                                      isSoldPerPiece: product.isSoldByPiece,
+                                    ));
+
+                                    showModalBottomSheet(
+                                      context: context,
+                                      isScrollControlled: true,
+                                      backgroundColor: Colors.transparent,
+                                      builder: (context) => const FractionallySizedBox(
+                                        heightFactor: 0.90,
+                                        child: CartListModal(),
+                                      ),
+                                    );
+
+
+                                  }
+                                }
+
+                            ),
+                          ),
+                        ],
+                      ),
+                    ]else...[
+                      CustomButton(
+                        text: "Deduct Product",
+                        onPressed: () async {
+                          if (quantityChosen <= 0) {
+                            showDialog(
+                              context: context,
+                              builder: (_) => CustomNotificationDialog(
+                                onConfirm: () => Navigator.pop(context),
+                                type: 'warning',
+                                title: "Hold up! 🚫",
+                                content: "You need to enter a quantity greater than 0 before deducting stock. Try again!",
+                              ),
+                            );
+                            return;
+                          }
+
+                          final isPackOnly = product.isSoldByPack && !product.isSoldByPiece;
+                          final isPieceOnly = !product.isSoldByPack && product.isSoldByPiece;
+                          final isBoth = product.isSoldByPack && product.isSoldByPiece;
+
+                          final reason = getStockLogReasonFromString(_selectedReason);
+                          if (reason == null) {
+                            showDialog(
+                              context: context,
+                              builder: (_) => CustomNotificationDialog(
+                                onConfirm: () => Navigator.pop(context),
+                                type: 'warning',
+                                title: "Missing Reason",
+                                content: "Please select a reason for this stock deduction to keep your logs clean and accurate.",
+                              ),
+                            );
+                            return;
+                          }
+
+                          // ✅ Confirmation dialog before deducting
+                          await showDialog(
+                            context: context,
+                            builder: (_) => CustomConfirmDialog(
+                              title: 'Confirm Deduction',
+                              content:
+                              'Are you sure you want to deduct ${quantityChosen.toInt()} ${isUsePackSwitch ? 'pack(s)' : 'piece(s)'} '
+                                  'from "${product.name}" for reason: **${reason}**?',
+                              onConfirm: () async {
+                                bool success = false;
+
+                                if (isPieceOnly) {
+                                  success = await productStockProvider.sellPack(
+                                    product.id,
+                                    quantityChosen.toInt(),
+                                    reason,
+                                  );
+                                } else if (isPackOnly || (isBoth && isUsePackSwitch)) {
+                                  success = await productStockProvider.sellPack(
+                                    product.id,
+                                    quantityChosen.toInt(),
+                                    reason,
+                                  );
+                                } else {
+                                  success = await productStockProvider.sellPiece(
+                                    product.id,
+                                    quantityChosen.toInt(),
+                                    reason,
+                                    context,
+                                  );
+                                }
+
+                                if (success) {
+                                  showDialog(
+                                    context: context,
+                                    builder: (_) => CustomNotificationDialog(
+                                      onConfirm: () {
+                                        Navigator.pop(context);
+                                        quantityChosen = 0;
+                                        productProvider.refreshProducts();
+                                      },
+                                      type: 'success',
+                                      title: "Stock Deducted ✅",
+                                      content:
+                                      "${quantityChosen.toInt()} ${isUsePackSwitch ? 'pack(s)' : 'piece(s)'} of ${product.name} successfully deducted.",
+                                    ),
+                                  );
+                                } else {
                                   showDialog(
                                     context: context,
                                     builder: (_) => CustomNotificationDialog(
                                       onConfirm: () => Navigator.pop(context),
-                                      type: 'warning',
-                                      title: 'Out of Stock',
-                                      content: 'This product is currently out of stock. Please restock before adding to cart.',
+                                      type: 'error',
+                                      title: "Deduction Failed ❌",
+                                      content:
+                                      "Something went wrong while deducting stock. Try again or check your inventory level.",
                                     ),
                                   );
-                                } else {
-
-                                  // ✅ Proceed to add to cart
-                                  cartListProvider.addToCart(CartItem(
-                                    productId: product.id,
-                                    name: product.name,
-                                    price: price,
-                                    quantity: quantityChosen.toInt(),
-                                    imagePath: product.imagePath,
-                                    maxQuantity: qty.toInt(),
-                                    sellingType: sellingType,
-                                    isSoldPerPack: product.isSoldByPack,
-                                    isSoldPerPiece: product.isSoldByPiece,
-                                  ));
-
-                                  Navigator.pop(context);
                                 }
-                              }
+                              },
+                            ),
+                          );
 
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: CustomButton(
-                            text: 'Proceed',
-                            icon: Icons.check_circle_outline,
-                              onPressed: () {
-                                if (qty <= 0) {
-                                  // ❗ Show warning when there's NO stock
-                                  showDialog(
-                                    context: context,
-                                    builder: (_) => CustomNotificationDialog(
-                                      onConfirm: () => Navigator.pop(context),
-                                      type: 'warning',
-                                      title: 'Out of Stock',
-                                      content: 'This product is currently out of stock. Please restock before adding to cart.',
-                                    ),
-                                  );
-                                } else {
+                        },
+                      )
 
-                                  Navigator.pop(context);
-                                  // ✅ Proceed when there is stock
-                                  cartListProvider.addToCart(CartItem(
-                                    productId: product.id,
-                                    name: product.name,
-                                    price: price,
-                                    quantity: quantityChosen.toInt(),
-                                    imagePath: product.imagePath,
-                                    maxQuantity: qty.toInt(),
-                                    sellingType: sellingType,
-                                    isSoldPerPack: product.isSoldByPack,
-                                    isSoldPerPiece: product.isSoldByPiece,
-                                  ));
-
-                                  showModalBottomSheet(
-                                    context: context,
-                                    isScrollControlled: true,
-                                    backgroundColor: Colors.transparent,
-                                    builder: (context) => const FractionallySizedBox(
-                                      heightFactor: 0.90,
-                                      child: CartListModal(),
-                                    ),
-                                  );
-
-
-                                }
-                              }
-
-                          ),
-                        ),
-                      ],
-                    ),
+                    ]
                   ],
                 ),
               ),
@@ -499,31 +656,51 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                         const SizedBox(height: 10),
 
                         // --- Action Buttons ---
-                        Row(
+                        Column(
                           children: [
-                            Expanded(
-                              child: CustomButton(
-                                isSlimmer: false,
-                                text: 'Edit',
-                                icon: Icons.edit,
-                                isFilled: false,
-                                onPressed: () => _openEditSheet(product),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: CustomButton(
+                                    isSlimmer: false,
+                                    text: 'Edit',
+                                    icon: Icons.edit,
+                                    isFilled: false,
+                                    onPressed: () => _openEditSheet(product),
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: CustomButton(
+                                    isSlimmer: false,
+                                    text: 'Restock',
+                                    icon: Icons.inventory_2_outlined,
+                                    isFilled: false,
+                                    onPressed: () => _openRestockSheet(product),
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                              ],
+                            ),
+                            CustomFlatDropdown<String>(
+                              hint: 'Select a reason...',
+                              value: _selectedReason,
+                              items: stockLogReasonStrings, // ✅ Complete this
+                              prefixIcon: Icons.inventory_2_outlined,
+                              onChanged: (selected) {
+                                if (selected != null) {
+                                  setState(() => _selectedReason = selected);
+                                }
+                              },
+                              itemBuilder: (reason) => Text(
+                                _formatReasonName(reason), // e.g., converts 'sold' -> 'Sold'
+                                style: const TextStyle(fontSize: 15),
                               ),
                             ),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: CustomButton(
-                                isSlimmer: false,
-                                text: 'Restock',
-                                icon: Icons.inventory_2_outlined,
-                                isFilled: false,
-                                onPressed: () => _openRestockSheet(product),
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                          ],
+
+
+                          ]
                         ),
-                        SizedBox(height: 10,),
                         Center(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.center,
@@ -598,7 +775,7 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                                CustomButton(
                                   isSlimmer: false,
                                   text: 'Add Variant',
-                                  isFilled: true,
+                                  isFilled: false,
                                   onPressed: () => _openAddVariantSheet(context, product),
 
                               ),

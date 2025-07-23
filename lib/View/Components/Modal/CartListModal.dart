@@ -6,7 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:pocketpos/Provider/CartListProvider.dart';
 import 'package:pocketpos/Provider/CurrencyProvider.dart';
-import 'package:pocketpos/Helper/AppColor.dart';
+import 'package:pocketpos/Helper/Classes_Methods/AppColor.dart';
 import 'package:pocketpos/View/Components/Alert/showPaymentDialog.dart';
 import 'package:pocketpos/View/Components/Custom/CustomButton.dart';
 import 'package:pocketpos/View/Components/Custom/CustomStepper.dart';

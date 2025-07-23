@@ -3,7 +3,7 @@ import 'package:pocketpos/View/Components/Modal/CartListModal.dart';
 import 'package:provider/provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:pocketpos/Helper/AppColor.dart';
+import 'package:pocketpos/Helper/Classes_Methods/AppColor.dart';
 import 'package:pocketpos/Provider/CartListProvider.dart';
 import 'package:pocketpos/View/Components/Alert/CustomConfimDialog.dart';
 import 'package:pocketpos/View/Components/Alert/CustomNotificationDialog.dart';
@@ -116,7 +116,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
                 ),
               ],
             )
-                : Text(result.error ?? 'An unknown error occurred.'),
+                : Text(result.error ?? 'An unknown error occurred.',textAlign: TextAlign.center,),
             confirmText: widget.multiScan ? 'Scan Another' : 'Done',
             cancelText: 'Switch to ${_globalIsPack! ? "Piece" : "Pack"}',
             icon: result.success ? LucideIcons.checkCircle : LucideIcons.alertOctagon,

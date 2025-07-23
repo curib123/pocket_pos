@@ -36,6 +36,9 @@ enum StockLogReason {
 
   @HiveField(10)
   cleared,     // 🧹 Product wiped in bulk clear
+
+  @HiveField(11)
+  consumed
 }
 
 @HiveType(typeId: 4)

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
-import 'package:pocketpos/Helper/Enums/enum.dart';
+import 'package:pocketpos/Helper/Enums/Enum.dart';
 import 'package:pocketpos/Model/loan_item.dart';
 import 'package:pocketpos/Model/product_model.dart';
 import 'package:pocketpos/Model/stock_log.dart';

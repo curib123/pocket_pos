@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:pocketpos/Helper/Classes_Methods/helper_methods.dart';
+import 'package:pocketpos/Provider/ProductProvider.dart';
 import 'package:pocketpos/Provider/ProductSync.dart';
 import 'package:pocketpos/View/Components/SearchAndCartRow.dart';
 import 'package:provider/provider.dart';
@@ -16,11 +18,8 @@ class _DashBoardScreenState extends State<DashBoardScreen> {
     // TODO: implement initState
     super.initState();
     Future.delayed(Duration.zero,() async {
-      ///sync local to database vice versa
-      final syncProvider = Provider.of<ProductSync>(context, listen: false);
-      await syncProvider.autoSync();
-
-
+      autoSync(context);
+      refreshProduct(context);
     });
   }
   @override

@@ -7,10 +7,8 @@ class AppColor {
   // 🟨 Accent – Golden Amber
   static const Color accent = Color(0xFFFFB547); // Bolder gold, better CTA contrast
 
-
-// 🟦 Secondary – Deep Modern Blue
-  static const Color secondary = Color(0xFF1565C0); // Darker, more grounded
-
+// Alt darker brown (lux leather feel)
+  static const Color secondary = Color(0xFF4E342E); // Almost a dark chocolate
 
   // ⬜ Background – Soft Creamy Beige
   static const Color background = Color(0xFFFCFAF6); // Creamier, warm and cozy

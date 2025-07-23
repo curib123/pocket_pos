@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons/lucide_icons.dart';
+import 'package:pocketpos/View/Components/Alert/CustomConfimDialog.dart';
 import 'package:provider/provider.dart';
 import 'package:pocketpos/Provider/ProductProvider.dart';
 import 'package:pocketpos/View/Components/Custom/CustomButton.dart';
@@ -107,26 +109,50 @@ Future<void> showEditLoanDialog({
                         final newPrice = double.parse(priceController.text.trim());
                         final newBorrowerName = borrowerController.text.trim();
 
+                        Navigator.pop(context);
                         try {
-                          await productProvider.editLoanForProduct(
-                            productId: productId,
-                            borrowerName: borrowerName,
-                            loanDate: loanDate,
-                            newQuantity: newQuantity,
-                            newPrice: newPrice,
-                            newBorrowerName: newBorrowerName,
-                            track: true,
-                          );
-                          Navigator.of(context).pop();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Loan updated successfully')),
+                          await showDialog(
+                            context: context,
+                            builder: (_) => CustomConfirmDialog(
+                              icon: LucideIcons.checkCircle2,
+                              title: 'Update Loan Details',
+                              content: 'Are you sure you want to update this loan information?',
+                              onConfirm: () async {
+                                await productProvider.editLoanForProduct(
+                                  productId: productId,
+                                  borrowerName: borrowerName,
+                                  loanDate: loanDate,
+                                  newQuantity: newQuantity,
+                                  newPrice: newPrice,
+                                  newBorrowerName: newBorrowerName,
+                                  track: true,
+                                );
+
+                                Navigator.of(context).pop(); // close dialog
+
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('✅ Loan details updated successfully!'),
+                                    behavior: SnackBarBehavior.floating,
+                                    backgroundColor: Colors.green,
+                                    duration: Duration(seconds: 2),
+                                  ),
+                                );
+                              },
+                            ),
                           );
                         } catch (e) {
                           setState(() => isLoading = false);
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Update failed: $e')),
+                            SnackBar(
+                              content: Text('❌ Failed to update loan: $e'),
+                              behavior: SnackBarBehavior.floating,
+                              backgroundColor: Colors.red,
+                              duration: const Duration(seconds: 3),
+                            ),
                           );
                         }
+
                       },
                       width: 100,
                     );

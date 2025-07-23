@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:animate_do/animate_do.dart';
-import 'package:pocketpos/Helper/AppColor.dart';
+import 'package:pocketpos/Helper/Classes_Methods/AppColor.dart';
 import 'package:pocketpos/Provider/CartListProvider.dart';
 import 'package:pocketpos/View/Components/Modal/CartListModal.dart';
 import 'package:provider/provider.dart';

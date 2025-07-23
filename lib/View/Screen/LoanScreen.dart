@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:pocketpos/Helper/Enums/enum.dart';
+import 'package:pocketpos/Helper/Enums/Enum.dart';
 import 'package:pocketpos/Provider/CurrencyProvider.dart';
 import 'package:pocketpos/Provider/ProductProvider.dart';
-import 'package:pocketpos/Helper/AppColor.dart';
+import 'package:pocketpos/Helper/Classes_Methods/AppColor.dart';
 import 'package:pocketpos/View/Components/Alert/showEditLoanDialog.dart';
 import 'package:pocketpos/View/Components/Alert/showPayAllDialog.dart';
 import 'package:pocketpos/View/Components/Alert/showPayLoanDialog.dart';

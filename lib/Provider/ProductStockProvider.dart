@@ -39,13 +39,15 @@ class ProductStockProvider extends ChangeNotifier {
 
     return null;
   }
-
   Future<bool> sellPack(
       String productIdOrName,
-      int quantity, {
+      int quantity,
+      StockLogReason reason, // <- added here
+          {
         bool isLoan = false,
         String borrowName = 'Unknown',
-      }) async {
+      }
+      ) async {
     final product = _getProduct(productIdOrName);
     if (product == null) {
       print('❌ Product not found: $productIdOrName');
@@ -60,22 +62,15 @@ class ProductStockProvider extends ChangeNotifier {
     List<ProductStock> updatedStocks = [...product.stocks];
     List<StockLog> logs = [];
 
-    print('🛒 ${isLoan ? 'Loaning' : 'Selling'} $quantity pack(s) of ${product.name}');
+    print('🛒 ${isLoan ? 'Loaning' : reason.name} $quantity pack(s) of ${product.name}');
     print('📦 Initial stocks:');
     for (final s in sortedStocks) {
       print(' - ${s.id} | qty: ${s.quantity} | received: ${s.dateReceived}');
     }
 
-    // 🔄 FIFO Deduction Logic
     for (final stock in sortedStocks) {
-      if (remainingToDeduct <= 0) {
-        print('✅ Deduction complete');
-        break;
-      }
-      if (stock.quantity <= 0) {
-        print('⏭️ Skipping stock ${stock.id} - quantity is 0');
-        continue;
-      }
+      if (remainingToDeduct <= 0) break;
+      if (stock.quantity <= 0) continue;
 
       final deduct = stock.quantity >= remainingToDeduct
           ? remainingToDeduct
@@ -95,12 +90,11 @@ class ProductStockProvider extends ChangeNotifier {
           quantity: deduct,
           isPiece: false,
           profit: totalProfit,
-          reason: isLoan ? StockLogReason.borrowed : StockLogReason.sold,
-          remarks: '${isLoan ? 'Loaned' : 'Sold'} $deduct pack(s) from stock ${stock.id} in ${product.id}',
+          reason: isLoan ? StockLogReason.borrowed : reason,
+          remarks: '${isLoan ? 'Loaned' : reason.name} $deduct pack(s) from stock ${stock.id} in ${product.id}',
         ),
       );
 
-      print('📉 Deducted $deduct from stock ${stock.id}, remainingToDeduct: ${remainingToDeduct - deduct}');
       remainingToDeduct -= deduct;
     }
 
@@ -109,7 +103,6 @@ class ProductStockProvider extends ChangeNotifier {
       return false;
     }
 
-    // 🔁 Sync Loose Stock if needed
     LooseStock? updatedLoose;
     if (product.looseStock != null && product.piecesPerPack != null) {
       final totalPiecesDeducted = quantity * product.piecesPerPack!;
@@ -125,8 +118,8 @@ class ProductStockProvider extends ChangeNotifier {
           productId: product.id,
           quantity: totalPiecesDeducted,
           isPiece: true,
-          reason: isLoan ? StockLogReason.borrowed : StockLogReason.sold,
-          remarks: 'Auto-synced: Deducted $totalPiecesDeducted pcs after ${isLoan ? 'loaning' : 'selling'} $quantity pack(s)',
+            reason: isLoan ? StockLogReason.borrowed : reason, // ✅ use passed reason
+          remarks: 'Auto-synced: Deducted $totalPiecesDeducted pcs after ${isLoan ? 'loaning' : reason.name.toLowerCase()} $quantity pack(s)',
         ),
       );
 
@@ -135,7 +128,6 @@ class ProductStockProvider extends ChangeNotifier {
       print('⚠️ Skipped loose stock sync: looseStock or piecesPerPack is null');
     }
 
-    // 🧾 Add Loan Item if applicable
     LoanItem? loanItem;
     if (isLoan) {
       final double unitPrice = updatedStocks.first.retailPrice;
@@ -159,7 +151,6 @@ class ProductStockProvider extends ChangeNotifier {
       print('📋 LoanItem created for $borrowName | ₱$loanAmount total');
     }
 
-  // 🛠 Final Product Update
     final updatedProduct = product.copyWith(
       stocks: updatedStocks,
       looseStock: updatedLoose ?? product.looseStock,
@@ -170,8 +161,6 @@ class ProductStockProvider extends ChangeNotifier {
           : product.loans,
     );
 
-
-    // 🧬 Update Parent if Variant
     Product? parent;
     for (final p in _productBox.values) {
       if (p.hasVariant && p.variants.any((v) => v.id == product.id)) {
@@ -200,7 +189,6 @@ class ProductStockProvider extends ChangeNotifier {
 
     notifyListeners();
 
-    print('✅ ${isLoan ? 'Loaned' : 'Sold'} $quantity pack(s) of ${product.name} (id: ${product.id})');
     return true;
   }
 
@@ -208,9 +196,10 @@ class ProductStockProvider extends ChangeNotifier {
   Future<bool> sellPiece(
       String productIdOrName,
       int quantity,
+      StockLogReason reason,
       BuildContext context, {
         bool isLoan = false,
-        String borrowName = 'Unknown'
+        String borrowName = 'Unknown',
       }) async {
     if (quantity <= 0) {
       print('❌ Invalid quantity: $quantity');
@@ -263,7 +252,6 @@ class ProductStockProvider extends ChangeNotifier {
     final newPackCount = looseAfter ~/ itemsPerPack;
     final packsToDeduct = currentPackCount - newPackCount;
 
-    // 🛠 Update loose stock and prepare deduction
     final updatedLooseStock = looseStock.copyWith(remainingPieces: looseAfter);
     List<ProductStock> updatedStocks = [...product.stocks];
     List<StockLog> logs = [];
@@ -288,14 +276,13 @@ class ProductStockProvider extends ChangeNotifier {
         quantity: deduct,
         isPiece: false,
         profit: totalProfit,
-        reason: isLoan ? StockLogReason.borrowed : StockLogReason.sold,
+        reason: isLoan ? StockLogReason.borrowed : reason,
         remarks: '${isLoan ? 'Loaned' : 'Auto-deducted'} $deduct pack(s) after selling $quantity pcs',
       ));
 
       remainingToDeduct -= deduct;
     }
 
-    // 🧮 Profit per piece
     final retailPerPiece = (product.stocks.first.retailPrice ?? 0) / itemsPerPack;
     final costPerPiece = (product.stocks.first.costPrice ?? 0) / itemsPerPack;
     final pieceProfit = (retailPerPiece - costPerPiece) * quantity;
@@ -306,11 +293,10 @@ class ProductStockProvider extends ChangeNotifier {
       quantity: quantity,
       isPiece: true,
       profit: pieceProfit,
-      reason: isLoan ? StockLogReason.borrowed : StockLogReason.sold,
-      remarks: '${isLoan ? 'Loaned' : 'Sold'} $quantity piece(s)',
+      reason: isLoan ? StockLogReason.borrowed : reason,
+      remarks: '${isLoan ? 'Loaned' : reason.name} $quantity piece(s)',
     ));
 
-    // 💸 Loan adapter
     LoanItem? loanItem;
     if (isLoan) {
       final firstAvailableStock = updatedStocks.firstWhere(
@@ -339,7 +325,6 @@ class ProductStockProvider extends ChangeNotifier {
       print('📋 New loan created: ₱$loanAmount from $borrowName');
     }
 
-    // 🧬 Update the product (variant or normal)
     final updatedProduct = product.copyWith(
       looseStock: updatedLooseStock,
       stocks: updatedStocks,
@@ -375,14 +360,11 @@ class ProductStockProvider extends ChangeNotifier {
 
     notifyListeners();
 
-    // ✅ Final Log
-    print('✅ ${isLoan ? 'Loaned' : 'Sold'} $quantity pcs of ${product.name}');
     print('🧮 Loose stock: $looseBefore ➡️ $looseAfter');
     print('📦 Pack count: $currentPackCount ➡️ $newPackCount (deducted $packsToDeduct pack[s])');
 
     return true;
   }
-
 
   Future<void> upsertStock(String productIdOrName, ProductStock stock) async {
     final product = _getProduct(productIdOrName);

@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import 'package:pocketpos/Helper/AppColor.dart';
+import 'package:pocketpos/Helper/Classes_Methods/AppColor.dart';
 import 'package:pocketpos/Model/product_model.dart';
 import 'package:pocketpos/Provider/CurrencyProvider.dart';
 import 'package:pocketpos/Provider/ProductProvider.dart';

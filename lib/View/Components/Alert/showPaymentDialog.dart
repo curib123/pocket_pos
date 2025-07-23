@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:pocketpos/Model/stock_log.dart';
 import 'package:provider/provider.dart';
-import 'package:pocketpos/Helper/AppColor.dart';
+import 'package:pocketpos/Helper/Classes_Methods/AppColor.dart';
 import 'package:pocketpos/Model/cart_item_model.dart';
 import 'package:pocketpos/Provider/CartListProvider.dart';
 import 'package:pocketpos/Provider/CurrencyProvider.dart';
@@ -72,13 +73,13 @@ class _PaymentDialogState extends State<PaymentDialog> {
 
         bool success = false;
         if (item.isSoldPerPiece && !item.isSoldPerPack) {
-          success = await productStockProvider.sellPack(productId, qty, isLoan: isLoan, borrowName: loanerName);
+          success = await productStockProvider.sellPack(productId, qty,StockLogReason.sold, isLoan: isLoan, borrowName: loanerName);
         } else if (item.isSoldPerPack && !item.isSoldPerPiece) {
-          success = await productStockProvider.sellPack(productId, qty, isLoan: isLoan, borrowName: loanerName);
+          success = await productStockProvider.sellPack(productId, qty,StockLogReason.sold, isLoan: isLoan, borrowName: loanerName);
         } else {
           success = sellingType == SellingType.pack
-              ? await productStockProvider.sellPack(productId, qty, isLoan: isLoan, borrowName: loanerName)
-              : await productStockProvider.sellPiece(productId, qty, context, isLoan: isLoan, borrowName: loanerName);
+              ? await productStockProvider.sellPack(productId, qty,StockLogReason.sold, isLoan: isLoan, borrowName: loanerName)
+              : await productStockProvider.sellPiece(productId, qty,StockLogReason.sold, context, isLoan: isLoan, borrowName: loanerName);
         }
 
         if (!success) {

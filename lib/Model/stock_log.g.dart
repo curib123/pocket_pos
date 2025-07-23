@@ -137,6 +137,9 @@ class StockLogReasonAdapter extends TypeAdapter<StockLogReason> {
       case StockLogReason.cleared:
         writer.writeByte(10);
         break;
+      case StockLogReason.consumed:
+        writer.writeByte(11);
+        break;
     }
   }
 

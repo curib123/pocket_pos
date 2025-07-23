@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons/lucide_icons.dart';
+import 'package:pocketpos/View/Components/Alert/CustomConfimDialog.dart';
 import 'package:provider/provider.dart';
 import 'package:pocketpos/Provider/ProductProvider.dart';
 import 'package:pocketpos/View/Components/Custom/CustomButton.dart';
@@ -84,28 +86,49 @@ Future<void> showPayLoanDialog({
                       isDisabled: isLoading,
                       onPressed: () async {
                         if (!formKey.currentState!.validate()) return;
-                        setState(() => isLoading = true);
-                        final amount = double.parse(controller.text.trim());
 
-                        try {
-                          await productProvider.payLoanForProduct(
-                            productId: productId,
-                            borrowerName: borrowerName,
-                            amount: amount,
-                            track: true,
-                          );
-                          Navigator.of(context).pop();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Payment of ₱${amount.toStringAsFixed(2)} successful'),
-                            ),
-                          );
-                        } catch (e) {
-                          setState(() => isLoading = false);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Payment failed: $e')),
-                          );
-                        }
+                        final amount = double.parse(controller.text.trim());
+                        Navigator.pop(context);
+                        await showDialog(
+                          context: context,
+                          builder: (context) => CustomConfirmDialog(
+                            icon: LucideIcons.checkCircle2,
+                            title: 'Confirm Loan Payment',
+                            content: 'Proceed to pay ₱${amount.toStringAsFixed(2)} for "$borrowerName"?',
+                            onConfirm: () async {
+                              try {
+                                setState(() => isLoading = true);
+                                await productProvider.payLoanForProduct(
+                                  productId: productId,
+                                  borrowerName: borrowerName,
+                                  amount: amount,
+                                  track: true,
+                                );
+                                Navigator.of(context).pop(); // Close payment dialog
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('✅ Payment of ${amount.toStringAsFixed(2)} successful'),
+                                    behavior: SnackBarBehavior.floating,
+                                    backgroundColor: Colors.green[600],
+                                    duration: const Duration(seconds: 2),
+                                  ),
+                                );
+                              } catch (e) {
+                                setState(() => isLoading = false);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('❌ Payment failed: $e'),
+                                    behavior: SnackBarBehavior.floating,
+                                    backgroundColor: Colors.red[600],
+                                    duration: const Duration(seconds: 3),
+                                  ),
+                                );
+                              }
+                            },
+                          ),
+                        );
+
+
                       },
                       width: 100,
                     );

@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import 'package:pocketpos/Helper/ProductUnits.dart';
+import 'package:pocketpos/Helper/Classes_Methods/ProductUnits.dart';
 import 'package:pocketpos/Model/loose_stock.dart';
 import 'package:pocketpos/Model/product_model.dart';
 import 'package:pocketpos/Model/product_stock.dart';
@@ -21,7 +21,7 @@ import 'package:pocketpos/View/Components/Custom/CustomButton.dart';
 import 'package:pocketpos/View/Components/Custom/CustomFlatDropdown.dart';
 import 'package:pocketpos/View/Components/Custom/CustomPillToggle.dart';
 import 'package:pocketpos/View/Components/Custom/CustomTextField.dart';
-import 'package:pocketpos/Helper/AppColor.dart';
+import 'package:pocketpos/Helper/Classes_Methods/AppColor.dart';
 import 'package:pocketpos/View/Screen/BarcodeScannerScreen.dart';
 import 'package:provider/provider.dart';
 

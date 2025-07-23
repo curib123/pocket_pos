@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:pocketpos/Helper/AppColor.dart';
+import 'package:lucide_icons/lucide_icons.dart';
+import 'package:pocketpos/Helper/Classes_Methods/AppColor.dart';
 import 'package:pocketpos/Model/loan_item.dart';
+import 'package:pocketpos/Provider/CurrencyProvider.dart';
 import 'package:pocketpos/View/Components/Custom/CustomButton.dart';
+import 'package:provider/provider.dart';
 
 
 
@@ -28,126 +31,114 @@ class LoanCardWidget extends StatelessWidget {
       color: Colors.white,
       borderRadius: BorderRadius.circular(14),
       elevation: 0, // Flat style, no shadow
-      child: InkWell(
-        borderRadius: BorderRadius.circular(14),
-        onTap: () {},
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
-          margin: const EdgeInsets.symmetric(vertical: 10 ),
-          decoration: BoxDecoration(
+      child: Consumer<CurrencyProvider>(
+        builder: (context,currencyProvider,_) {
+          return InkWell(
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: Colors.grey.shade300,
-              width: 1.5,
+            onTap: () {},
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+              margin: const EdgeInsets.symmetric(vertical: 10 ),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: Colors.grey.shade300,
+                  width: 1.5,
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Title with due indicator dot
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          loan.name,
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: AppColor.textPrimary,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (isDue)
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: Colors.redAccent.shade400,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                    ],
+                  ),
+          
+                  const SizedBox(height: 12),
+          
+                  // Info Chips
+                  Wrap(
+                    spacing: 20,
+                    runSpacing: 10,
+                    children: [
+                      _InfoChip(
+                        icon: Icons.pending_outlined,
+                        label: "Due Amount",
+                        value: "${currencyProvider.formatAmount(dueAmount)}",
+                        valueColor: isDue ? Colors.redAccent[600] : Colors.green.shade600,
+                        iconColor: isDue ? Colors.redAccent[600] : Colors.green.shade600,
+                        labelColor: AppColor.textSecondary,
+                      ),
+                      _InfoChip(
+                        icon: Icons.payment_outlined,
+                        label: "Paid",
+                        value: "${currencyProvider.formatAmount(loan.paid)}",
+                        labelColor: AppColor.textSecondary,
+                        valueColor: AppColor.textPrimary,
+                        iconColor: Colors.grey.shade500,
+                      ),
+                    ],
+                  ),
+          
+                  const SizedBox(height: 18),
+          
+                  // Buttons row with your CustomButton slim style
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      SizedBox(
+                        width: 100,
+                        child: CustomButton(
+                          text: "Edit",
+                          icon: LucideIcons.edit3,
+                          isSlimmer: true,
+                          onPressed: onEdit != null ? () => onEdit!(loan) : () {},
+                          isDisabled: onEdit == null,
+                          isFilled: false,
+                          textColor: AppColor.primary,
+                          borderColor: AppColor.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      SizedBox(
+                        width: 100,
+                        child: CustomButton(
+                          text: "Pay Now",
+                          icon: LucideIcons.wallet2,
+                          isSlimmer: true,
+                          onPressed: (isDue && onPay != null) ? () => onPay!(loan) : () {},
+                          isDisabled: !isDue || onPay == null,
+                          isFilled: true,
+                          borderColor: AppColor.textSecondary,
+                        ),
+                      ),
+                    ],
+                  )
+                ],
+              ),
             ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Title with due indicator dot
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      loan.name,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: AppColor.textPrimary,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  if (isDue)
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: Colors.redAccent.shade400,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                ],
-              ),
-
-              const SizedBox(height: 12),
-
-              // Info Chips
-              Wrap(
-                spacing: 20,
-                runSpacing: 10,
-                children: [
-                  _InfoChip(
-                    icon: Icons.person_outline,
-                    label: "Borrower",
-                    value: loan.borrowerName,
-                    labelColor: AppColor.textSecondary,
-                    valueColor: AppColor.textPrimary,
-                    iconColor: Colors.grey.shade500,
-                  ),
-                  _InfoChip(
-                    icon: Icons.monetization_on_outlined,
-                    label: "Amount",
-                    value: "${loan.amount.toStringAsFixed(2)}",
-                    labelColor: AppColor.textSecondary,
-                    valueColor: AppColor.textPrimary,
-                    iconColor: Colors.grey.shade500,
-                  ),
-                  _InfoChip(
-                    icon: Icons.payment_outlined,
-                    label: "Paid",
-                    value: "${loan.paid.toStringAsFixed(2)}",
-                    labelColor: AppColor.textSecondary,
-                    valueColor: AppColor.textPrimary,
-                    iconColor: Colors.grey.shade500,
-                  ),
-                  _InfoChip(
-                    icon: Icons.pending_outlined,
-                    label: "Due",
-                    value: "${dueAmount.toStringAsFixed(2)}",
-                    valueColor: isDue ? Colors.redAccent[600] : Colors.green.shade600,
-                    iconColor: isDue ? Colors.redAccent[600] : Colors.green.shade600,
-                    labelColor: AppColor.textSecondary,
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 18),
-
-              // Buttons row with your CustomButton slim style
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  SizedBox(
-                    width: 80,
-                    child: CustomButton(
-                      text: "Edit",
-                      icon: Icons.edit_outlined,
-                      isSlimmer: true,
-                      onPressed: onEdit != null ? () => onEdit!(loan) : () {},
-                      isDisabled: onEdit == null,
-                      isFilled: false,
-                      textColor: AppColor.primary,
-                      borderColor: AppColor.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  SizedBox(
-                    width: 80,
-                    child: CustomButton(
-                      text: "Pay",
-                      icon: Icons.payment,
-                      isSlimmer: true,
-                      onPressed: (isDue && onPay != null) ? () => onPay!(loan) : () {},
-                      isDisabled: !isDue || onPay == null,
-                      isFilled: true,
-                      borderColor: AppColor.textSecondary,
-                    ),
-                  ),
-                ],
-              )
-            ],
-          ),
-        ),
+          );
+        }
       ),
     );
   }
