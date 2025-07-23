@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:pocketpos/Helper/Database/SecureStorageServices.dart';
+import 'package:pocketpos/Provider/ProductProvider.dart';
+import 'package:pocketpos/Provider/TabProvider.dart';
+import 'package:pocketpos/View/Components/Alert/CustomNotificationDialog.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AuthProvider with ChangeNotifier {
@@ -93,13 +97,47 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  Future<void> signOut() async {
+  Future<void> signOut(
+      TabProvider tabProvider,
+      ProductProvider productProvider,
+      BuildContext context,
+      ) async {
     print('[AuthProvider] Signing out...');
-    await _supabase.auth.signOut();
-    await _storage.clearAll();
-    print('[AuthProvider] Cleared secure storage');
-    notifyListeners();
+
+    bool hasError = false;
+
+    try {
+      await _supabase.auth.signOut();
+      print('[AuthProvider] Supabase sign-out success.');
+
+      // ✅ Proceed with cleanup regardless of error
+      await _storage.clearAll();
+      await tabProvider.setFirstTimeFlag(true);
+      await productProvider.clearAll();
+      print('[AuthProvider] Cleared secure storage & local data.');
+      notifyListeners();
+
+    } catch (e) {
+      hasError = true;
+      print('[AuthProvider] Supabase sign-out failed: $e');
+
+      if (context.mounted) {
+        await showDialog(
+          context: context,
+          builder: (context) => const CustomNotificationDialog(
+            title: "Sign Out Failed",
+            content:
+            "We couldn’t sign you out right now. This might be due to a slow or offline connection.\n\nYour local data will still be safely cleared.",
+            onConfirm: null,
+          ),
+        );
+      }
+    }
+
   }
+
+
+
 
   Future<Map<String, String?>> getStoredUser() async {
     print('[AuthProvider] Reading stored user...');

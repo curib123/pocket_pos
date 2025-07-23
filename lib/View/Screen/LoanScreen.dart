@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pocketpos/View/Components/AppDrawer.dart';
 import 'package:provider/provider.dart';
 import 'package:pocketpos/Helper/Enums/Enum.dart';
 import 'package:pocketpos/Provider/CurrencyProvider.dart';
@@ -52,6 +53,7 @@ class _LoanScreenState extends State<LoanScreen> {
             .length;
 
         return Scaffold(
+          drawer: AppDrawer(),
           appBar: AppBar(
             title: const Text("Loan Overview", style: TextStyle(color: AppColor.textSecondary)),
             centerTitle: true,

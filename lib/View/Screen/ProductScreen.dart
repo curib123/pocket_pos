@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:pocketpos/Helper/Classes_Methods/AppColor.dart';
+import 'package:pocketpos/Helper/Classes_Methods/helper_methods.dart';
 import 'package:pocketpos/Provider/ProductProvider.dart';
 import 'package:pocketpos/Provider/SwitchProvider.dart';
 import 'package:pocketpos/Provider/StoreCategoryProvider.dart';
+import 'package:pocketpos/View/Components/AppDrawer.dart';
 import 'package:pocketpos/View/Components/Custom/CustomButton.dart';
 import 'package:pocketpos/View/Components/Modal/UpsertProductModal.dart';
 import 'package:pocketpos/View/Components/SearchAndCartRow.dart';
@@ -13,9 +15,21 @@ import 'package:pocketpos/View/Screen/ProductScreenWidget/CategoryList.dart';
 import 'package:provider/provider.dart';
 import 'package:animate_do/animate_do.dart';
 
-class ProductScreen extends StatelessWidget {
+class ProductScreen extends StatefulWidget {
   const ProductScreen({super.key});
 
+  @override
+  State<ProductScreen> createState() => _ProductScreenState();
+}
+
+class _ProductScreenState extends State<ProductScreen> {
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+   Future.delayed(Duration.zero,() async =>  await refreshProduct(context));
+  }
   @override
   Widget build(BuildContext context) {
     return Consumer3<ProductProvider, SwitchProvider, StoreCategoryProvider>(
@@ -27,6 +41,7 @@ class ProductScreen extends StatelessWidget {
         return SafeArea(
           child: Scaffold(
             appBar: SearchAndCartAppBar(),
+            drawer: AppDrawer(),
             bottomNavigationBar: SlideInUp(
               duration: const Duration(milliseconds: 500),
               child: Padding(

@@ -387,7 +387,7 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                               title: 'Confirm Deduction',
                               content:
                               'Are you sure you want to deduct ${quantityChosen.toInt()} ${isUsePackSwitch ? 'pack(s)' : 'piece(s)'} '
-                                  'from "${product.name}" for reason: **${reason}**?',
+                                  'from "${product.name}" for reason: ${_selectedReason}?',
                               onConfirm: () async {
                                 bool success = false;
 

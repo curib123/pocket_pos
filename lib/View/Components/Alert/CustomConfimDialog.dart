@@ -17,6 +17,7 @@ class CustomConfirmDialog extends StatelessWidget {
   final IconData? thirdButtonIcon;
   final String? thirdButtonText;
   final VoidCallback? onThirdButton;
+  final bool? isPop;
 
   const CustomConfirmDialog({
     Key? key,
@@ -33,6 +34,7 @@ class CustomConfirmDialog extends StatelessWidget {
     this.onThirdButton,
     this.showThirdButton = false,
     this.thirdButtonIcon,
+    this.isPop = true,
   })  : assert(content != null || customContent != null,
   'Either content or customContent must be provided'),
         super(key: key);
@@ -93,8 +95,8 @@ class CustomConfirmDialog extends StatelessWidget {
                               text: cancelText,
                               isFilled: false,
                               onPressed: () {
-                                Navigator.of(context).pop();
                                 if (onCancel != null) onCancel!();
+                                Navigator.pop(context);
                               },
                               isSlimmer: true,
                             ),
@@ -105,8 +107,8 @@ class CustomConfirmDialog extends StatelessWidget {
                               backgroundColor: AppColor.primary,
                               text: confirmText,
                               onPressed: () {
-                                Navigator.of(context).pop();
                                 onConfirm();
+                               isPop == true ? Navigator.pop(context) : null;
                               },
                               isFilled: true,
                               isSlimmer: true,
