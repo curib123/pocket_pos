@@ -1,4 +1,4 @@
-import 'package:retailpos/Model/product_model.dart';
+import 'package:pocketpos/Model/product_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SupabaseProductServices {

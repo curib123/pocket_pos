@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:retailpos/View/Screen/DashBoardScreen.dart';
-import 'package:retailpos/View/Screen/LoanScreen.dart';
-import 'package:retailpos/View/Screen/ProductScreen.dart';
+import 'package:pocketpos/View/Screen/DashBoardScreen.dart';
+import 'package:pocketpos/View/Screen/LoanScreen.dart';
+import 'package:pocketpos/View/Screen/ProductScreen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class TabProvider extends ChangeNotifier {

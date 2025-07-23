@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
-import 'package:retailpos/Provider/TabProvider.dart';
-import 'package:retailpos/View/Components/Alert/CustomNotificationDialog.dart';
-import 'package:retailpos/View/Components/ResponsiveText.dart';
+import 'package:pocketpos/Provider/TabProvider.dart';
+import 'package:pocketpos/View/Components/Alert/CustomNotificationDialog.dart';
+import 'package:pocketpos/View/Components/ResponsiveText.dart';
 import 'package:provider/provider.dart';
-import 'package:retailpos/Helper/AppColor.dart';
-import 'package:retailpos/View/Components/AuthFormWidget.dart';
-import 'package:retailpos/Provider/AuthProvider.dart';
+import 'package:pocketpos/Helper/AppColor.dart';
+import 'package:pocketpos/View/Components/AuthFormWidget.dart';
+import 'package:pocketpos/Provider/AuthProvider.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});

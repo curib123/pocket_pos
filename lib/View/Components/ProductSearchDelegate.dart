@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import 'package:retailpos/Model/product_model.dart';
-import 'package:retailpos/View/Components/Modal/ProductDetailScreenModal.dart';
+import 'package:pocketpos/Model/product_model.dart';
+import 'package:pocketpos/View/Components/Modal/ProductDetailScreenModal.dart';
 
 class ProductSearchDelegate extends SearchDelegate<Product?> {
   final List<Product> products;

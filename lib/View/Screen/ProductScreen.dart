@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import 'package:retailpos/Helper/AppColor.dart';
-import 'package:retailpos/Provider/ProductProvider.dart';
-import 'package:retailpos/Provider/SwitchProvider.dart';
-import 'package:retailpos/Provider/StoreCategoryProvider.dart';
-import 'package:retailpos/View/Components/Custom/CustomButton.dart';
-import 'package:retailpos/View/Components/Modal/UpsertProductModal.dart';
-import 'package:retailpos/View/Components/SearchAndCartRow.dart';
-import 'package:retailpos/View/Screen/ProductListScreen.dart';
-import 'package:retailpos/View/Screen/ProductScreenWidget/CategoryGrid.dart';
-import 'package:retailpos/View/Screen/ProductScreenWidget/CategoryList.dart';
+import 'package:pocketpos/Helper/AppColor.dart';
+import 'package:pocketpos/Provider/ProductProvider.dart';
+import 'package:pocketpos/Provider/SwitchProvider.dart';
+import 'package:pocketpos/Provider/StoreCategoryProvider.dart';
+import 'package:pocketpos/View/Components/Custom/CustomButton.dart';
+import 'package:pocketpos/View/Components/Modal/UpsertProductModal.dart';
+import 'package:pocketpos/View/Components/SearchAndCartRow.dart';
+import 'package:pocketpos/View/Screen/ProductListScreen.dart';
+import 'package:pocketpos/View/Screen/ProductScreenWidget/CategoryGrid.dart';
+import 'package:pocketpos/View/Screen/ProductScreenWidget/CategoryList.dart';
 import 'package:provider/provider.dart';
 import 'package:animate_do/animate_do.dart';
 

@@ -1,4 +1,4 @@
-# retailpos
+# pocketpos
 
 A new Flutter project.
 

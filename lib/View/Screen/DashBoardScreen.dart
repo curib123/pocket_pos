@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:retailpos/Provider/ProductSync.dart';
-import 'package:retailpos/View/Components/SearchAndCartRow.dart';
+import 'package:pocketpos/Provider/ProductSync.dart';
+import 'package:pocketpos/View/Components/SearchAndCartRow.dart';
 import 'package:provider/provider.dart';
 
 class DashBoardScreen extends StatefulWidget {

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
-import 'package:retailpos/Helper/AppCategory.dart';
+import 'package:pocketpos/Helper/AppCategory.dart';
 
 class StoreCategoryProvider with ChangeNotifier {
   final Box visibilityBox = Hive.box('categoryVisibility');

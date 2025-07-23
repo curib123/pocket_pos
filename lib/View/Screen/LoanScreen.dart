@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:retailpos/Helper/Enums/enum.dart';
-import 'package:retailpos/Provider/CurrencyProvider.dart';
-import 'package:retailpos/Provider/ProductProvider.dart';
-import 'package:retailpos/Helper/AppColor.dart';
-import 'package:retailpos/View/Components/Alert/showEditLoanDialog.dart';
-import 'package:retailpos/View/Components/Alert/showPayAllDialog.dart';
-import 'package:retailpos/View/Components/Alert/showPayLoanDialog.dart';
-import 'package:retailpos/View/Components/Custom/CustomFlatDropdown.dart';
-import 'package:retailpos/View/Components/Custom/CustomButton.dart';
-import 'package:retailpos/View/Screen/LoanScreenWidget/LoanCardWidget.dart';
+import 'package:pocketpos/Helper/Enums/enum.dart';
+import 'package:pocketpos/Provider/CurrencyProvider.dart';
+import 'package:pocketpos/Provider/ProductProvider.dart';
+import 'package:pocketpos/Helper/AppColor.dart';
+import 'package:pocketpos/View/Components/Alert/showEditLoanDialog.dart';
+import 'package:pocketpos/View/Components/Alert/showPayAllDialog.dart';
+import 'package:pocketpos/View/Components/Alert/showPayLoanDialog.dart';
+import 'package:pocketpos/View/Components/Custom/CustomFlatDropdown.dart';
+import 'package:pocketpos/View/Components/Custom/CustomButton.dart';
+import 'package:pocketpos/View/Screen/LoanScreenWidget/LoanCardWidget.dart';
 
 class LoanScreen extends StatefulWidget {
   const LoanScreen({super.key});

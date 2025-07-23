@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:animate_do/animate_do.dart';
-import 'package:retailpos/Helper/AppColor.dart';
-import 'package:retailpos/View/Components/ResponsiveText.dart'; // ✅ Responsive Text
+import 'package:pocketpos/Helper/AppColor.dart';
+import 'package:pocketpos/View/Components/ResponsiveText.dart'; // ✅ Responsive Text
 
 class CustomNotificationDialog extends StatelessWidget {
   final String title;

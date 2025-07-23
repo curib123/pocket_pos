@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
-import 'package:retailpos/Model/product_analytics.dart';
-import 'package:retailpos/Model/product_model.dart';
-import 'package:retailpos/Model/stock_log.dart';
+import 'package:pocketpos/Model/product_analytics.dart';
+import 'package:pocketpos/Model/product_model.dart';
+import 'package:pocketpos/Model/stock_log.dart';
 
 enum DateFilterType { day, week, month, year }
 

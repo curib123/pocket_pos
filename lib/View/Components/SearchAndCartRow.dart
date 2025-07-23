@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:retailpos/Provider/CartListProvider.dart';
-import 'package:retailpos/View/Components/AnimatedScannerIcon.dart';
-import 'package:retailpos/View/Components/BouncingCartIcon.dart';
-import 'package:retailpos/View/Components/ProductSearchDelegate.dart';
-import 'package:retailpos/View/Screen/BarcodeScannerScreen.dart';
+import 'package:pocketpos/Provider/CartListProvider.dart';
+import 'package:pocketpos/View/Components/AnimatedScannerIcon.dart';
+import 'package:pocketpos/View/Components/BouncingCartIcon.dart';
+import 'package:pocketpos/View/Components/ProductSearchDelegate.dart';
+import 'package:pocketpos/View/Screen/BarcodeScannerScreen.dart';
 import 'package:provider/provider.dart';
-import 'package:retailpos/Provider/ProductProvider.dart';
+import 'package:pocketpos/Provider/ProductProvider.dart';
 
 class SearchAndCartAppBar extends StatelessWidget implements PreferredSizeWidget {
   const SearchAndCartAppBar({super.key});

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:retailpos/Model/cart_item_model.dart';
-import 'package:retailpos/Model/product_model.dart';
+import 'package:pocketpos/Model/cart_item_model.dart';
+import 'package:pocketpos/Model/product_model.dart';
 
 class CartListProvider with ChangeNotifier {
   final List<CartItem> _cartItems = [];

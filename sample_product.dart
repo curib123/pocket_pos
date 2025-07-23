@@ -1,7 +1,7 @@
-import 'package:retailpos/Model/loose_stock.dart';
-import 'package:retailpos/Model/product_model.dart';
-import 'package:retailpos/Model/product_stock.dart';
-import 'package:retailpos/Model/stock_log.dart';
+import 'package:pocketpos/Model/loose_stock.dart';
+import 'package:pocketpos/Model/product_model.dart';
+import 'package:pocketpos/Model/product_stock.dart';
+import 'package:pocketpos/Model/stock_log.dart';
 
 final sampleProduct = Product(
   id: 'prod001',

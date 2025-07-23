@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:retailpos/Provider/ProductProvider.dart';
-import 'package:retailpos/View/Components/Custom/CustomButton.dart';
-import 'package:retailpos/View/Components/Custom/CustomTextField.dart';
+import 'package:pocketpos/Provider/ProductProvider.dart';
+import 'package:pocketpos/View/Components/Custom/CustomButton.dart';
+import 'package:pocketpos/View/Components/Custom/CustomTextField.dart';
 
 Future<void> showPayAllLoansDialog({
   required BuildContext context,

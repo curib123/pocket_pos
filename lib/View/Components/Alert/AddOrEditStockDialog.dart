@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:retailpos/Helper/AppColor.dart';
-import 'package:retailpos/Model/product_stock.dart';
-import 'package:retailpos/View/Components/Custom/CustomTextField.dart';
-import 'package:retailpos/View/Components/Custom/CustomButton.dart';
-import 'package:retailpos/View/Components/Custom/CustomFlatDropdown.dart';
+import 'package:pocketpos/Helper/AppColor.dart';
+import 'package:pocketpos/Model/product_stock.dart';
+import 'package:pocketpos/View/Components/Custom/CustomTextField.dart';
+import 'package:pocketpos/View/Components/Custom/CustomButton.dart';
+import 'package:pocketpos/View/Components/Custom/CustomFlatDropdown.dart';
 import 'package:uuid/uuid.dart';
 
 class AddOrEditStockDialog extends StatefulWidget {

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:retailpos/View/Screen/AuthScreen.dart';
+import 'package:pocketpos/View/Screen/AuthScreen.dart';
 import 'package:provider/provider.dart';
-import 'package:retailpos/Provider/TabProvider.dart';
-import 'package:retailpos/View/Components/BottomNavigation.dart';
-import 'package:retailpos/View/Screen/DashBoardScreen.dart';    // <-- Example main screen
+import 'package:pocketpos/Provider/TabProvider.dart';
+import 'package:pocketpos/View/Components/BottomNavigation.dart';
+import 'package:pocketpos/View/Screen/DashBoardScreen.dart';    // <-- Example main screen
 
 class Home extends StatefulWidget {
   const Home({super.key});

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
-import 'package:retailpos/Model/loan_item.dart';
-import 'package:retailpos/Model/loose_stock.dart';
-import 'package:retailpos/Model/product_model.dart';
-import 'package:retailpos/Model/product_stock.dart';
-import 'package:retailpos/Model/stock_log.dart';
-import 'package:retailpos/View/Components/Alert/CustomNotificationDialog.dart';
+import 'package:pocketpos/Model/loan_item.dart';
+import 'package:pocketpos/Model/loose_stock.dart';
+import 'package:pocketpos/Model/product_model.dart';
+import 'package:pocketpos/Model/product_stock.dart';
+import 'package:pocketpos/Model/stock_log.dart';
+import 'package:pocketpos/View/Components/Alert/CustomNotificationDialog.dart';
 
 class ProductStockProvider extends ChangeNotifier {
   final Box<Product> _productBox;

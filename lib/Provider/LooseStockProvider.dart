@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:uuid/uuid.dart';
-import 'package:retailpos/Model/loose_stock.dart';
-import 'package:retailpos/Model/product_model.dart';
-import 'package:retailpos/Model/stock_log.dart';
+import 'package:pocketpos/Model/loose_stock.dart';
+import 'package:pocketpos/Model/product_model.dart';
+import 'package:pocketpos/Model/stock_log.dart';
 
 class LooseStockProvider extends ChangeNotifier {
   final Box<Product> _productBox;

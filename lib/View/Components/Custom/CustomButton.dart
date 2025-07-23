@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:retailpos/Helper/AppColor.dart';
-import 'package:retailpos/View/Components/ResponsiveText.dart';
+import 'package:pocketpos/Helper/AppColor.dart';
+import 'package:pocketpos/View/Components/ResponsiveText.dart';
 
 class CustomButton extends StatelessWidget {
   final String text;

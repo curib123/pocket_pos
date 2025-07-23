@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:retailpos/Helper/AppColor.dart';
-import 'package:retailpos/Model/loan_item.dart';
-import 'package:retailpos/View/Components/Custom/CustomButton.dart';
+import 'package:pocketpos/Helper/AppColor.dart';
+import 'package:pocketpos/Model/loan_item.dart';
+import 'package:pocketpos/View/Components/Custom/CustomButton.dart';
 
 
 
