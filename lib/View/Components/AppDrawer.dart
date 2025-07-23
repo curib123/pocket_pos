@@ -42,7 +42,7 @@ class AppDrawer extends StatelessWidget {
                       _buildDrawerItem(
                         icon: LucideIcons.settings,
                         text: 'Settings',
-                        onTap: () => Navigator.pushNamed(context, '/settings'),
+                        onTap: () {},
                       ),
                       const SizedBox(height: 8),
 
