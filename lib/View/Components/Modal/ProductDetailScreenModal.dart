@@ -662,20 +662,22 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                               children: [
                                 Expanded(
                                   child: CustomButton(
-                                    isSlimmer: false,
+                                    backgroundColor: AppColor.primary,
+                                    isSlimmer: true,
                                     text: 'Edit',
                                     icon: Icons.edit,
-                                    isFilled: false,
+                                    isFilled: true,
                                     onPressed: () => _openEditSheet(product),
                                   ),
                                 ),
                                 const SizedBox(width: 6),
                                 Expanded(
                                   child: CustomButton(
-                                    isSlimmer: false,
+                                    backgroundColor: AppColor.secondary,
+                                    isSlimmer: true,
                                     text: 'Restock',
                                     icon: Icons.inventory_2_outlined,
-                                    isFilled: false,
+                                    isFilled: true,
                                     onPressed: () => _openRestockSheet(product),
                                   ),
                                 ),
@@ -894,10 +896,19 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                 final parentId = variantProductProvider.getParentProductIdFromVariantId(widget.productId).toString();
                 variantProductProvider.deleteVariant(parentId, widget.productId);
               } else {
-                productProvider.deleteProduct(widget.productId);
+                productProvider.softDeleteProduct(widget.productId);
               }
 
               Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                     '🗑️ "${product.name}" has been deleted.'
+                  ),
+                  behavior: SnackBarBehavior.floating,
+                  backgroundColor: AppColor.textSecondary,
+                ),
+              );
             },
           ),
         );

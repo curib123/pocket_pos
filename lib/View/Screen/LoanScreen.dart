@@ -62,11 +62,6 @@ class _LoanScreenState extends State<LoanScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox(height: 10,),
-                Center(
-                  child: Text("Loan Overview",style: TextStyle(color: AppColor.primary,fontSize: 25),),
-                ),
-                SizedBox(height: 10,),
                 // Timeframe filter dropdown
                 CustomFlatDropdown<LoanFilterType>(
                   hint: "Select timeframe",

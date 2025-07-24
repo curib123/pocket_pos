@@ -206,7 +206,7 @@ class Product extends HiveObject {
       barcode: barcode ?? this.barcode,
       createdAt: createdAt ?? this.createdAt,
       lastModified: lastModified ?? this.lastModified,
-      deletedAt: deletedAt ?? this.deletedAt,
+      deletedAt: deletedAt,
       stocks: stocks ?? this.stocks,
       looseStock: looseStock ?? this.looseStock,
       logs: logs ?? this.logs,

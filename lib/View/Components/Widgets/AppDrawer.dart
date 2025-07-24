@@ -8,6 +8,7 @@ import 'package:pocketpos/Provider/ProductProvider.dart';
 import 'package:pocketpos/Provider/TabProvider.dart';
 import 'package:pocketpos/View/Components/Alert/CustomConfimDialog.dart';
 import 'package:pocketpos/View/Screen/ReceiptScreen.dart';
+import 'package:pocketpos/View/Screen/RestoreProductScreen.dart';
 import 'package:pocketpos/View/Screen/StockLogsHistoryScreen.dart';
 import 'package:provider/provider.dart';
 
@@ -17,8 +18,9 @@ class AppDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Drawer(
-      child: Consumer3<AuthProvider,TabProvider,ProductProvider>(
-        builder: (context,authProvider,tabProvider,productProvider,_) {
+      backgroundColor: AppColor.surface,
+      child: Consumer3<AuthProvider, TabProvider, ProductProvider>(
+        builder: (context, authProvider, tabProvider, productProvider, _) {
           return SafeArea(
             child: FutureBuilder<PackageInfo>(
               future: PackageInfo.fromPlatform(),
@@ -30,72 +32,68 @@ class AppDrawer extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 20),
                       _buildHeader(appName),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 24),
 
-                      _buildDrawerItem(
-                        icon: LucideIcons.history,
-                        text: 'Stock Logs',
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const StockLogsHistoryScreen()),
-                          );
-
-                        },
-                      ),
-                      _buildDrawerItem(
-                        icon: LucideIcons.receipt,
-                        text: 'View Receipts',
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const ReceiptScreen()),
-                          );
-                        },
-                      ),
-
-                      _buildDrawerItem(
-                        icon: LucideIcons.info,
-                        text: 'About',
-                        onTap: () {
-                          showAboutDialog(
-                            context: context,
-                            applicationName: appName,
-                            applicationVersion: 'v${snapshot.data?.version} (${snapshot.data?.buildNumber})',
-                            applicationLegalese: '© ${DateTime.now().year} NextTech\nAll rights reserved.',
-                            children: [
-                              const SizedBox(height: 16),
-                              const Text(
-                                "PocketPOS is your sleek, offline-first solution for inventory and sales management. "
-                                    "Built with for small teams.",
-                                style: TextStyle(height: 1.5),
-                              ),
-
-                              const SizedBox(height: 16),
-                            ],
-                          );
-                        },
-                      ),
+                      // Menu Items
+                      ...[
+                        _DrawerItem(
+                          icon: LucideIcons.history,
+                          label: 'Stock Logs',
+                          onTap: () => _push(context, const StockLogsHistoryScreen()),
+                        ),
+                        _DrawerItem(
+                          icon: LucideIcons.receipt,
+                          label: 'View Receipts',
+                          onTap: () => _push(context, const ReceiptScreen()),
+                        ),
+                        _DrawerItem(
+                          icon: LucideIcons.rotateCcw,
+                          label: 'Restore Products',
+                          onTap: () => _push(context, const RestoreProductScreen()),
+                        ),
+                        _DrawerItem(
+                          icon: LucideIcons.info,
+                          label: 'About',
+                          onTap: () {
+                            showAboutDialog(
+                              context: context,
+                              applicationName: appName,
+                              applicationVersion:
+                              'v${snapshot.data?.version} (${snapshot.data?.buildNumber})',
+                              applicationLegalese:
+                              '© ${DateTime.now().year} NextTech\nAll rights reserved.',
+                              children: const [
+                                SizedBox(height: 16),
+                                Text(
+                                  "PocketPOS is your sleek, offline-first solution for inventory and sales management. Built with love for small teams.",
+                                  style: TextStyle(height: 1.5),
+                                ),
+                                SizedBox(height: 16),
+                              ],
+                            );
+                          },
+                        ),
+                      ],
 
                       const Spacer(),
 
                       const Divider(thickness: 1, color: AppColor.textSecondary),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 12),
 
-                      _buildDrawerItem(
+                      _DrawerItem(
                         icon: LucideIcons.settings,
-                        text: 'Settings',
+                        label: 'Settings',
                         onTap: () {
+                          // Add your settings page here
                           showAboutDialog(context: context);
                         },
                       ),
                       const SizedBox(height: 8),
-
-                      _buildDrawerItem(
+                      _DrawerItem(
                         icon: LucideIcons.logOut,
-                        text: 'Logout',
+                        label: 'Logout',
                         onTap: () {
                           showDialog(
                             context: context,
@@ -105,25 +103,21 @@ class AppDrawer extends StatelessWidget {
                               title: 'Sign Out',
                               content: 'Are you sure you want to sign out? Your local data will be cleared.',
                               onConfirm: () async {
-                               await authProvider.signOut(tabProvider, productProvider, context);
-                                 Phoenix.rebirth(context);
+                                await authProvider.signOut(tabProvider, productProvider, context);
+                                Phoenix.rebirth(context);
                               },
                             ),
                           );
-
-
-
                         },
                       ),
-
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 16),
                     ],
                   ),
                 );
               },
             ),
           );
-        }
+        },
       ),
     );
   }
@@ -141,58 +135,71 @@ class AppDrawer extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 16),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              appName,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: AppColor.textPrimary,
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                appName,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  color: AppColor.textPrimary,
+                ),
               ),
-            ),
-            const SizedBox(height: 4),
-            const Text(
-              'Mobile POS and Inventory App',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 12,
-                color: AppColor.textSecondary,
-                overflow: TextOverflow.ellipsis,
+              const SizedBox(height: 4),
+              const Text(
+                'Mobile POS & Inventory',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColor.textSecondary,
+                ),
               ),
-            ),
-
-          ],
+            ],
+          ),
         ),
       ],
     );
   }
 
+  void _push(BuildContext context, Widget page) {
+    Navigator.push(context, MaterialPageRoute(builder: (_) => page));
+  }
+}
 
-  Widget _buildDrawerItem({
-    required IconData icon,
-    required String text,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(10),
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        child: Row(
-          children: [
-            Icon(icon, size: 20, color: AppColor.textSecondary),
-            const SizedBox(width: 16),
-            Text(
-              text,
-              style: const TextStyle(
-                fontSize: 16,
-                color: AppColor.textSecondary,
+class _DrawerItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _DrawerItem({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Row(
+            children: [
+              Icon(icon, size: 22, color: AppColor.textSecondary),
+              const SizedBox(width: 16),
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: AppColor.textPrimary,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

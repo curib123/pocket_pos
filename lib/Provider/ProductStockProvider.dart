@@ -68,6 +68,8 @@ class ProductStockProvider extends ChangeNotifier {
       print(' - ${s.id} | qty: ${s.quantity} | received: ${s.dateReceived}');
     }
 
+    double totalProfit = 0;
+
     for (final stock in sortedStocks) {
       if (remainingToDeduct <= 0) break;
       if (stock.quantity <= 0) continue;
@@ -81,19 +83,9 @@ class ProductStockProvider extends ChangeNotifier {
       if (index != -1) updatedStocks[index] = updated;
 
       final unitProfit = stock.retailPrice - stock.costPrice;
-      final totalProfit = unitProfit * deduct;
+       totalProfit = unitProfit * deduct;
 
-      logs.add(
-        StockLog(
-          id: 'log-${DateTime.now().millisecondsSinceEpoch}-${stock.id}',
-          productId: product.id,
-          quantity: deduct,
-          isPiece: false,
-          profit: totalProfit,
-          reason: isLoan ? StockLogReason.borrowed : reason,
-          remarks: '${isLoan ? 'Loaned' : reason.name} $deduct pack(s) from stock ${stock.id} in ${product.id}',
-        ),
-      );
+
 
       remainingToDeduct -= deduct;
     }
@@ -116,10 +108,14 @@ class ProductStockProvider extends ChangeNotifier {
         StockLog(
           id: 'log-${DateTime.now().millisecondsSinceEpoch}-loose',
           productId: product.id,
-          quantity: totalPiecesDeducted,
+          profit: totalProfit,
+          quantity: quantity,
           isPiece: true,
-            reason: isLoan ? StockLogReason.borrowed : reason, // ✅ use passed reason
-          remarks: 'Auto-synced: Deducted $totalPiecesDeducted pcs after ${isLoan ? 'loaning' : reason.name.toLowerCase()} $quantity pack(s)',
+          reason: isLoan ? StockLogReason.borrowed : reason, // ✅ use passed reason
+          remarks: isLoan
+              ? 'Loaned out $quantity pack(s) • $totalPiecesDeducted pcs deducted from inventory'
+              : '${reason.name} $quantity pack(s) • Deducted $totalPiecesDeducted pcs from stock',
+
         ),
       );
 
@@ -192,7 +188,6 @@ class ProductStockProvider extends ChangeNotifier {
     return true;
   }
 
-
   Future<bool> sellPiece(
       String productIdOrName,
       int quantity,
@@ -254,49 +249,37 @@ class ProductStockProvider extends ChangeNotifier {
 
     final updatedLooseStock = looseStock.copyWith(remainingPieces: looseAfter);
     List<ProductStock> updatedStocks = [...product.stocks];
-    List<StockLog> logs = [];
-
+    double totalPackProfit = 0;
     int remainingToDeduct = packsToDeduct;
+
     for (int i = 0; i < updatedStocks.length && remainingToDeduct > 0; i++) {
       final stock = updatedStocks[i];
       if (stock.quantity <= 0) continue;
 
-      final deduct = (stock.quantity >= remainingToDeduct)
-          ? remainingToDeduct
-          : stock.quantity;
-
+      final deduct = stock.quantity >= remainingToDeduct ? remainingToDeduct : stock.quantity;
       updatedStocks[i] = stock.copyWith(quantity: stock.quantity - deduct);
 
-      final unitProfit = (stock.retailPrice ?? 0) - (stock.costPrice ?? 0);
-      final totalProfit = unitProfit * deduct;
-
-      logs.add(StockLog(
-        id: 'log-${DateTime.now().millisecondsSinceEpoch}-pack-${stock.id}',
-        productId: product.id,
-        quantity: deduct,
-        isPiece: false,
-        profit: totalProfit,
-        reason: isLoan ? StockLogReason.borrowed : reason,
-        remarks: '${isLoan ? 'Loaned' : 'Auto-deducted'} $deduct pack(s) after selling $quantity pcs',
-      ));
-
+      final unitProfit = (stock.retailPrice ) - (stock.costPrice );
+      totalPackProfit += unitProfit * deduct;
       remainingToDeduct -= deduct;
     }
 
-    final retailPerPiece = (product.stocks.first.retailPrice ?? 0) / itemsPerPack;
-    final costPerPiece = (product.stocks.first.costPrice ?? 0) / itemsPerPack;
+    final retailPerPiece = (product.stocks.first.retailPrice) / itemsPerPack;
+    final costPerPiece = (product.stocks.first.costPrice) / itemsPerPack;
     final pieceProfit = (retailPerPiece - costPerPiece) * quantity;
+    final totalProfit = totalPackProfit + pieceProfit;
 
-    logs.add(StockLog(
+    final singleLog = StockLog(
       id: 'log-${DateTime.now().millisecondsSinceEpoch}-${product.id}',
       productId: product.id,
       quantity: quantity,
       isPiece: true,
-      profit: pieceProfit,
+      profit: totalProfit,
       reason: isLoan ? StockLogReason.borrowed : reason,
-      remarks: '${isLoan ? 'Loaned' : reason.name} $quantity piece(s)',
-    ));
+      remarks: '${isLoan ? 'Loaned' : reason.name} $quantity pcs, auto-deducted $packsToDeduct pack(s)',
+    );
 
+    print(singleLog.quantity);
     LoanItem? loanItem;
     if (isLoan) {
       final firstAvailableStock = updatedStocks.firstWhere(
@@ -328,7 +311,7 @@ class ProductStockProvider extends ChangeNotifier {
     final updatedProduct = product.copyWith(
       looseStock: updatedLooseStock,
       stocks: updatedStocks,
-      logs: [...product.logs, ...logs],
+      logs: [...product.logs, singleLog],
       loans: loanItem != null ? [...product.loans, loanItem] : product.loans,
       lastModified: DateTime.now(),
     );
@@ -343,14 +326,11 @@ class ProductStockProvider extends ChangeNotifier {
     }
 
     if (parent != null) {
-      final updatedVariants = parent.variants.map((v) =>
-      v.id == product.id ? updatedProduct : v).toList();
-
+      final updatedVariants = parent.variants.map((v) => v.id == product.id ? updatedProduct : v).toList();
       final updatedParent = parent.copyWith(
         variants: updatedVariants,
         lastModified: DateTime.now(),
       );
-
       await _productBox.put(updatedParent.id, updatedParent);
       print('🧬 Variant updated under parent: ${updatedParent.name}');
     } else {

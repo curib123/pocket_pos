@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
-import 'package:pocketpos/Helper/Enums/Enum.dart';
-import 'package:pocketpos/Model/loan_item.dart';
 import 'package:pocketpos/Model/product_model.dart';
 import 'package:pocketpos/Model/stock_log.dart';
 
@@ -24,17 +22,18 @@ class ProductProvider extends ChangeNotifier {
     }
   }
 
-  void refreshProducts({bool silently = false}) {
-    _products = _productBox.values
+  void refreshProducts() {
+    final products = _productBox.values
         .where((p) => p.deletedAt == null)
-        .toList()
-      ..sort((a, b) => b.lastModified.compareTo(a.lastModified));
+        .toList();
 
-    if (!silently) {
-    }
+    products.sort((a, b) => b.lastModified.compareTo(a.lastModified));
 
+    _products = products;
     notifyListeners();
   }
+
+
 
   bool barcodeExists(String barcode) {
     for (final product in _products) {
@@ -190,7 +189,7 @@ class ProductProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> deleteProduct(String id) async {
+  Future<void> softDeleteProduct(String id) async {
     try {
       final product = _productBox.get(id);
       if (product != null) {
@@ -216,31 +215,76 @@ class ProductProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> restoreProduct(String id) async {
+  Future<bool> hardDeleteProduct(String id) async {
     try {
       final product = _productBox.get(id);
+      if (product != null) {
+        await _productBox.delete(id);
+        refreshProducts();
+        return true;
+      }
+      return false; // product not found
+    } catch (e) {
+      // Optional: log or handle the error
+      return false;
+    }
+  }
+
+
+  Future<Product?> restoreProductById(String id) async {
+    try {
+      final product = _productBox.get(id);
+
       if (product != null && product.deletedAt != null) {
+        final now = DateTime.now();
         final log = StockLog(
-          id: 'log-${id}-restored',
+          id: 'log-$id-restored-${now.millisecondsSinceEpoch}',
           productId: id,
           quantity: 0,
           isPiece: false,
           reason: StockLogReason.restored,
           remarks: 'Product was restored',
+          dateLogged: now,
+          lastModified: now,
         );
 
         final restored = product.copyWith(
           deletedAt: null,
-          lastModified: DateTime.now(),
-          logs: [...product.logs, log],
+          lastModified: now,
+          logs: [...(product.logs ?? []), log], // safe spread
         );
 
         await _productBox.put(id, restored);
-        refreshProducts();
+        refreshProducts(); // assuming this calls notifyListeners()
+
+        debugPrint("✅ Product restored: ${restored.name} | deletedAt: ${restored.deletedAt} | lastModified: ${restored.lastModified}");
+        return restored;
+      } else {
+        debugPrint("⚠️ Cannot restore: Product not found or not deleted.");
       }
-    } catch (e) {
+    } catch (e, stack) {
+      debugPrint("❌ Restore failed: $e");
+      debugPrint("$stack");
     }
+
+    return null;
   }
+
+
+  List<String> getAllDeletedProductNames() {
+    return _productBox.values
+        .where((product) => product.deletedAt != null)
+        .map((product) => product.name)
+        .toList();
+  }
+
+
+  List<Product> getAllDeletedProducts() {
+    return _productBox.values
+        .where((product) => product.deletedAt != null)
+        .toList();
+  }
+
 
   Future<void> clearAll() async {
     try {

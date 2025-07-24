@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import 'package:pocketpos/Model/stock_log.dart';
 import 'package:pocketpos/View/Components/Custom/CustomFlatDropdown.dart';
-import 'package:provider/provider.dart';
 import 'package:pocketpos/Provider/ProductProvider.dart';
 import 'package:pocketpos/Provider/LogProvider.dart';
 import 'package:pocketpos/Helper/Classes_Methods/AppColor.dart';
@@ -33,26 +33,33 @@ class _StockLogsHistoryScreenState extends State<StockLogsHistoryScreen> {
     return Consumer2<ProductProvider, LogProvider>(
       builder: (context, productProvider, logProvider, _) {
         final products = productProvider.products;
-        final logs = logProvider.getLogs(
+
+        final logs = logProvider
+            .getLogs(
           productIdOrName: selectedProductIdOrName,
           dateRange: selectedRange,
-        ).where((log) => selectedReason == null || log.reason == selectedReason).toList(); // ✅ Apply filter here
+        )
+            .where((log) => selectedReason == null || log.reason == selectedReason)
+            .toList();
 
         return Scaffold(
           appBar: AppBar(
             leading: GestureDetector(
               onTap: () => Navigator.pop(context),
-              child: const Icon(Icons.arrow_back_ios_new),
+              child: const Icon(Icons.arrow_back_ios_new, color: Colors.black),
             ),
-            title: const Text("Stock Logs History"),
+            title: const Text("Stock Logs History", style: TextStyle(color: Colors.black)),
+            backgroundColor: Colors.white,
+            elevation: 0,
           ),
           body: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Column(
               children: [
+                // 🔽 Filters Row
                 Row(
                   children: [
-                    // ✅ Product Filter
+                    // Product dropdown
                     Expanded(
                       child: CustomFlatDropdown<String>(
                         hint: "All Products",
@@ -64,18 +71,22 @@ class _StockLogsHistoryScreenState extends State<StockLogsHistoryScreen> {
                         onChanged: (val) => setState(() => selectedProductIdOrName = val),
                         itemBuilder: (val) {
                           final product = productProvider.getProductById(val);
-                          return Text(product?.name ?? "Unknown",style: TextStyle(fontSize: 14,overflow: TextOverflow.ellipsis),);
+                          return Text(
+                            product?.name ?? "Deleted",
+                            style: const TextStyle(fontSize: 14, overflow: TextOverflow.ellipsis),
+                          );
                         },
                       ),
                     ),
                     const SizedBox(width: 12),
-                    // ✅ Date Picker Button
+                    // Date picker
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColor.secondarySurface,
                         foregroundColor: AppColor.textPrimary,
                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        elevation: 0,
                       ),
                       onPressed: () async {
                         final picked = await showDateRangePicker(
@@ -84,9 +95,7 @@ class _StockLogsHistoryScreenState extends State<StockLogsHistoryScreen> {
                           lastDate: DateTime.now(),
                           initialDateRange: selectedRange,
                         );
-                        if (picked != null) {
-                          setState(() => selectedRange = picked);
-                        }
+                        if (picked != null) setState(() => selectedRange = picked);
                       },
                       child: Text(
                         selectedRange == null
@@ -98,55 +107,81 @@ class _StockLogsHistoryScreenState extends State<StockLogsHistoryScreen> {
                   ],
                 ),
 
-                // ✅ Reason Filter Dropdown
-                CustomFlatDropdown<StockLogReason>(
-                  hint: "All Reasons",
-                  value: selectedReason,
-                  items: StockLogReason.values,
-                  onChanged: (val) => setState(() => selectedReason = val),
-                  itemBuilder: (val) => Text(val.name),
+                // Reason filter
+                Padding(
+                  padding: const EdgeInsets.only(top: 0),
+                  child: CustomFlatDropdown<StockLogReason>(
+                    hint: "All Reasons",
+                    value: selectedReason,
+                    items: StockLogReason.values,
+                    onChanged: (val) => setState(() => selectedReason = val),
+                    itemBuilder: (val) => Text(val.name, style: const TextStyle(fontSize: 13)),
+                  ),
                 ),
 
-                const SizedBox(height: 20),
+                const SizedBox(height: 16),
 
-                // 🔄 List of Logs
+                // 🔄 Logs List
                 Expanded(
                   child: logs.isEmpty
                       ? const Center(child: Text("No logs found"))
-                      : ListView.builder(
+                      : ListView.separated(
                     itemCount: logs.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 10),
                     itemBuilder: (context, index) {
                       final log = logs[index];
                       final product = productProvider.getProductById(log.productId);
+
                       return Container(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        padding: const EdgeInsets.all(14),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                         decoration: BoxDecoration(
-                          color: AppColor.secondarySurface,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.03),
-                              blurRadius: 4,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
+                          color: Colors.grey.shade50,
+                          border: Border.all(color: Colors.grey.shade200),
+                          borderRadius: BorderRadius.circular(10),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(product?.name ?? "Unknown Product",
-                                style: const TextStyle(fontWeight: FontWeight.w600)),
+                            Text(
+                              product?.name ?? "Deleted Product",
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
                             const SizedBox(height: 4),
-                            Text("Reason: ${log.reason.name}"),
-                            if (log.remarks != null) Text("Remarks: ${log.remarks}"),
-                            Text("Qty: ${log.quantity} ${log.isPiece ? 'pcs' : ''}"),
+                            Row(
+                              children: [
+                                Text(
+                                  "Reason: ${log.reason.name}",
+                                  style: const TextStyle(fontSize: 12, color: Colors.black87),
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  "Qty: ${log.quantity} ${log.isPiece ? 'pcs' : 'pack'}",
+                                  style: const TextStyle(fontSize: 12, color: Colors.black54),
+                                ),
+                              ],
+                            ),
+                            if (log.remarks != null && log.remarks!.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 2),
+                                child: Text(
+                                  "Note: ${log.remarks!}",
+                                  style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
+                                ),
+                              ),
                             const SizedBox(height: 6),
                             Align(
                               alignment: Alignment.bottomRight,
                               child: Text(
                                 DateFormat('MMM d, yyyy • h:mm a').format(log.dateLogged),
-                                style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.black45,
+                                  fontFamily: 'RobotoMono',
+                                ),
                               ),
                             ),
                           ],

@@ -134,17 +134,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> with Single
                   result.error ?? 'An unknown error occurred.',
                   textAlign: TextAlign.center,
                 ),
-                if (!result.success)
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      // Add manual logic
-                    },
-                    child: const Text(
-                      "Can't find it? Add manually",
-                      style: TextStyle(color: Colors.amber, fontWeight: FontWeight.w500),
-                    ),
-                  ),
+
               ],
             ),
             confirmText: widget.multiScan ? 'Scan Another' : 'Done',
@@ -167,7 +157,14 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> with Single
                   });
                 }
               } else {
-                setState(() => _canScan = true);
+                setState(() {
+                  _canScan = true;
+                  _showScanHint = true;
+                  _scannedBarcodes.clear();
+                });
+                Future.delayed(const Duration(seconds: 2), () {
+                  if (mounted) setState(() => _showScanHint = false);
+                });
               }
             },
             children: [BouncingCartIcon()],
