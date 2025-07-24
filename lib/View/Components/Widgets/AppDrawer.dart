@@ -3,12 +3,14 @@ import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:pocketpos/Helper/Classes_Methods/AppColor.dart';
+import 'package:pocketpos/Helper/Database/SecureStorageServices.dart';
 import 'package:pocketpos/Provider/AuthProvider.dart';
 import 'package:pocketpos/Provider/ProductProvider.dart';
 import 'package:pocketpos/Provider/TabProvider.dart';
 import 'package:pocketpos/View/Components/Alert/CustomConfimDialog.dart';
 import 'package:pocketpos/View/Screen/ReceiptScreen.dart';
 import 'package:pocketpos/View/Screen/RestoreProductScreen.dart';
+import 'package:pocketpos/View/Screen/SetupCategoryScreen.dart';
 import 'package:pocketpos/View/Screen/StockLogsHistoryScreen.dart';
 import 'package:provider/provider.dart';
 
@@ -17,112 +19,126 @@ class AppDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final secureStorage = SecureStorageService();
+
     return Drawer(
       backgroundColor: AppColor.surface,
-      child: Consumer3<AuthProvider, TabProvider, ProductProvider>(
-        builder: (context, authProvider, tabProvider, productProvider, _) {
-          return SafeArea(
-            child: FutureBuilder<PackageInfo>(
-              future: PackageInfo.fromPlatform(),
-              builder: (context, snapshot) {
-                final appName = snapshot.data?.appName ?? '...';
+      child: FutureBuilder<Map<String, String?>>(
+        future: secureStorage.readUser(),
+        builder: (context, userSnapshot) {
+          final user = userSnapshot.data ?? {};
 
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 20),
-                      _buildHeader(appName),
-                      const SizedBox(height: 24),
+          return Consumer3<AuthProvider, TabProvider, ProductProvider>(
+            builder: (context, authProvider, tabProvider, productProvider, _) {
+              return SafeArea(
+                child: FutureBuilder<PackageInfo>(
+                  future: PackageInfo.fromPlatform(),
+                  builder: (context, snapshot) {
+                    final appName = snapshot.data?.appName ?? '...';
+                    final version = snapshot.data?.version ?? '1.0.0';
+                    final buildNumber = snapshot.data?.buildNumber ?? '1';
 
-                      // Menu Items
-                      ...[
-                        _DrawerItem(
-                          icon: LucideIcons.history,
-                          label: 'Stock Logs',
-                          onTap: () => _push(context, const StockLogsHistoryScreen()),
-                        ),
-                        _DrawerItem(
-                          icon: LucideIcons.receipt,
-                          label: 'View Receipts',
-                          onTap: () => _push(context, const ReceiptScreen()),
-                        ),
-                        _DrawerItem(
-                          icon: LucideIcons.rotateCcw,
-                          label: 'Restore Products',
-                          onTap: () => _push(context, const RestoreProductScreen()),
-                        ),
-                        _DrawerItem(
-                          icon: LucideIcons.info,
-                          label: 'About',
-                          onTap: () {
-                            showAboutDialog(
-                              context: context,
-                              applicationName: appName,
-                              applicationVersion:
-                              'v${snapshot.data?.version} (${snapshot.data?.buildNumber})',
-                              applicationLegalese:
-                              '© ${DateTime.now().year} NextTech\nAll rights reserved.',
-                              children: const [
-                                SizedBox(height: 16),
-                                Text(
-                                  "PocketPOS is your sleek, offline-first solution for inventory and sales management. Built with love for small teams.",
-                                  style: TextStyle(height: 1.5),
+                    final storeName = user['storeName'] ?? 'Your Store';
+                    final ownerName = user['ownerName'] ?? 'Owner';
+
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 20),
+                          _buildHeader(storeName, ownerName),
+                          const SizedBox(height: 24),
+
+                          // Drawer Menu Items
+                          _DrawerItem(
+                            icon: LucideIcons.history,
+                            label: 'Activity Logs',
+                            onTap: () => _push(context, const StockLogsHistoryScreen()),
+                          ),
+                          _DrawerItem(
+                            icon: LucideIcons.receipt,
+                            label: 'View Receipts',
+                            onTap: () => _push(context, const ReceiptScreen()),
+                          ),
+                          _DrawerItem(
+                            icon: LucideIcons.rotateCcw,
+                            label: 'Restore Products',
+                            onTap: () => _push(context, const RestoreProductScreen()),
+                          ),
+                          _DrawerItem(
+                            icon: LucideIcons.tags, // 🔥 or try LucideIcons.folderCog / grid / layers
+                            label: 'Setup Category',
+                            onTap: () => _push(context, const SetupCategoryScreen()),
+                          ),
+
+                          _DrawerItem(
+                            icon: LucideIcons.info,
+                            label: 'About',
+                            onTap: () {
+                              showAboutDialog(
+                                context: context,
+                                applicationName: appName,
+                                applicationVersion: 'v$version ($buildNumber)',
+                                applicationLegalese: '© ${DateTime.now().year} NextTech\nAll rights reserved.',
+                                children: const [
+                                  SizedBox(height: 16),
+                                  Text(
+                                    "PocketPOS is your sleek, offline-first solution for inventory and sales management. Built with love for small teams.",
+                                    style: TextStyle(height: 1.5),
+                                  ),
+                                  SizedBox(height: 16),
+                                ],
+                              );
+                            },
+                          ),
+
+                          const Spacer(),
+                          const Divider(thickness: 1, color: AppColor.textSecondary),
+                          const SizedBox(height: 12),
+
+                          _DrawerItem(
+                            icon: LucideIcons.settings,
+                            label: 'Settings',
+                            onTap: () {
+                              showAboutDialog(context: context);
+                            },
+                          ),
+                          const SizedBox(height: 8),
+                          _DrawerItem(
+                            icon: LucideIcons.logOut,
+                            label: 'Logout',
+                            onTap: () {
+                              showDialog(
+                                context: context,
+                                builder: (context) => CustomConfirmDialog(
+                                  icon: Icons.logout_rounded,
+                                  isPop: false,
+                                  title: 'Sign Out',
+                                  content: 'Are you sure you want to sign out? Your local data will be cleared.',
+                                  onConfirm: () async {
+                                    await authProvider.signOut(tabProvider, productProvider, context);
+                                    Phoenix.rebirth(context);
+                                  },
                                 ),
-                                SizedBox(height: 16),
-                              ],
-                            );
-                          },
-                        ),
-                      ],
-
-                      const Spacer(),
-
-                      const Divider(thickness: 1, color: AppColor.textSecondary),
-                      const SizedBox(height: 12),
-
-                      _DrawerItem(
-                        icon: LucideIcons.settings,
-                        label: 'Settings',
-                        onTap: () {
-                          // Add your settings page here
-                          showAboutDialog(context: context);
-                        },
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                        ],
                       ),
-                      const SizedBox(height: 8),
-                      _DrawerItem(
-                        icon: LucideIcons.logOut,
-                        label: 'Logout',
-                        onTap: () {
-                          showDialog(
-                            context: context,
-                            builder: (context) => CustomConfirmDialog(
-                              icon: Icons.logout_rounded,
-                              isPop: false,
-                              title: 'Sign Out',
-                              content: 'Are you sure you want to sign out? Your local data will be cleared.',
-                              onConfirm: () async {
-                                await authProvider.signOut(tabProvider, productProvider, context);
-                                Phoenix.rebirth(context);
-                              },
-                            ),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                    ],
-                  ),
-                );
-              },
-            ),
+                    );
+                  },
+                ),
+              );
+            },
           );
         },
       ),
     );
   }
 
-  Widget _buildHeader(String appName) {
+  Widget _buildHeader(String storeName, String ownerName) {
     return Row(
       children: [
         const CircleAvatar(
@@ -140,11 +156,19 @@ class AppDrawer extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                appName,
+                storeName,
                 style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w600,
                   color: AppColor.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                ownerName,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: AppColor.textSecondary,
                 ),
               ),
               const SizedBox(height: 4),

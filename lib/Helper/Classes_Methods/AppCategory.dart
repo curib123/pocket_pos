@@ -37,77 +37,136 @@ class StoreCategory {
     "Toys & Games", "Sports & Fitness", "Books & Magazines", "Gifts & Stationery", "Seasonal Items", "Miscellaneous",
   ];
 
+  static const Map<String, String> friendlyNames = {
+    "Groceries": "Daily Groceries",
+    "Fruits & Vegetables": "Fresh Produce",
+    "Snacks": "Quick Bites",
+    "Dairy Products": "Milk & Dairy",
+    "Frozen Foods": "Frozen Picks",
+    "Beverages": "Drinks & Sips",
+    "Canned Goods": "Canned Essentials",
+    "Bakery": "Bakery Treats",
+    "Meat & Poultry": "Meat Corner",
+    "Seafood": "Fresh Seafood",
+
+    "Cleaning Supplies": "Cleaning Must-Haves",
+    "Laundry Products": "Laundry Essentials",
+    "Kitchen Supplies": "Kitchen Tools",
+    "Bathroom Essentials": "Bath Time",
+    "Paper Products": "Paper Goods",
+    "Storage & Organization": "Storage Hacks",
+
+    "Toiletries": "Toiletry Kit",
+    "Skincare": "Skincare Goodies",
+    "Haircare": "Hair Essentials",
+    "Oral Care": "Dental Care",
+    "Health & Wellness": "Wellness Zone",
+
+    "Mobile Phones": "Smartphones",
+    "Accessories": "Phone Accessories",
+    "Home Appliances": "Appliances",
+    "Chargers & Batteries": "Chargers & Power",
+    "Computers & Tablets": "Computing",
+
+    "Men's Clothing": "Men's Wear",
+    "Women's Clothing": "Women's Wear",
+    "Children's Clothing": "Kids’ Fashion",
+    "Footwear": "Shoes & Kicks",
+    "Fashion Accessories": "Style Accessories",
+
+    "Stationery": "Stationery Picks",
+    "Notebooks & Paper": "Notebooks",
+    "Writing Instruments": "Pens & Markers",
+    "Art Materials": "Art Stuff",
+    "Office Equipment": "Office Tools",
+
+    "Baby Food": "Baby Meals",
+    "Diapers": "Diapers & Wipes",
+    "Baby Care": "Baby Essentials",
+
+    "Pet Food": "Pet Snacks",
+    "Pet Care": "Pet Wellness",
+    "Pet Accessories": "Pet Gear",
+
+    "Furniture": "Home Furniture",
+    "Lighting": "Home Lighting",
+    "Home Decor": "Decor Vibes",
+    "Bedding & Linens": "Sheets & Bedding",
+    "Tools & Hardware": "DIY Tools",
+
+    "Car Accessories": "Car Add-ons",
+    "Motor Oils": "Motor Fluids",
+    "Car Maintenance": "Car Fixes",
+
+    "Toys & Games": "Fun & Games",
+    "Sports & Fitness": "Active Life",
+    "Books & Magazines": "Reads & Mags",
+    "Gifts & Stationery": "Gifts & Cards",
+    "Seasonal Items": "Seasonal Picks",
+    "Miscellaneous": "Others",
+  };
 
   static const Map<String, IconData> icons = {
-    // Food & Beverages
     "Groceries": LucideIcons.shoppingCart,
     "Fruits & Vegetables": LucideIcons.apple,
     "Snacks": LucideIcons.pizza,
-    "Dairy Products": LucideIcons.milk,
+    "Dairy Products": LucideIcons.glassWater,
     "Frozen Foods": LucideIcons.snowflake,
     "Beverages": LucideIcons.wine,
     "Canned Goods": LucideIcons.box,
-    "Meat & Poultry": LucideIcons.beef,
+    "Bakery": LucideIcons.cakeSlice,
+    "Meat & Poultry": LucideIcons.drumstick,
     "Seafood": LucideIcons.fish,
 
-    // Household Items
     "Cleaning Supplies": LucideIcons.sprayCan,
-    "Laundry Products": LucideIcons.soup,
-    "Kitchen Supplies": LucideIcons.utensils,
-    "Bathroom Essentials": LucideIcons.bath,
+    "Laundry Products": LucideIcons.shirt,
+    "Kitchen Supplies": LucideIcons.pocketKnife,
+    "Bathroom Essentials": LucideIcons.showerHead,
     "Paper Products": LucideIcons.fileText,
     "Storage & Organization": LucideIcons.archive,
 
-    // Personal Care
-    "Toiletries": LucideIcons.showerHead,
+    "Toiletries": LucideIcons.partyPopper,
     "Skincare": LucideIcons.sparkles,
     "Haircare": LucideIcons.scissors,
     "Oral Care": LucideIcons.smile,
     "Health & Wellness": LucideIcons.heartPulse,
 
-    // Electronics
     "Mobile Phones": LucideIcons.smartphone,
     "Accessories": LucideIcons.headphones,
     "Home Appliances": LucideIcons.airVent,
     "Chargers & Batteries": LucideIcons.batteryCharging,
     "Computers & Tablets": LucideIcons.monitor,
 
-    // Clothing & Apparel
     "Men's Clothing": LucideIcons.shirt,
     "Women's Clothing": LucideIcons.shirt,
     "Children's Clothing": LucideIcons.user,
-    "Footwear": LucideIcons.tag,
+    "Footwear": LucideIcons.footprints,
     "Fashion Accessories": LucideIcons.watch,
 
-    // Office & School Supplies
+    "Stationery": LucideIcons.clipboardList,
     "Notebooks & Paper": LucideIcons.bookOpen,
     "Writing Instruments": LucideIcons.pencil,
     "Art Materials": LucideIcons.paintbrush,
     "Office Equipment": LucideIcons.printer,
 
-    // Baby Products
     "Baby Food": LucideIcons.baby,
     "Diapers": LucideIcons.baby,
     "Baby Care": LucideIcons.baby,
 
-    // Pet Supplies
     "Pet Food": LucideIcons.bone,
     "Pet Care": LucideIcons.heart,
-    "Pet Accessories": LucideIcons.box,
+    "Pet Accessories": LucideIcons.dog,
 
-    // Home & Living
     "Furniture": LucideIcons.sofa,
     "Lighting": LucideIcons.lightbulb,
     "Home Decor": LucideIcons.image,
     "Bedding & Linens": LucideIcons.bed,
     "Tools & Hardware": LucideIcons.wrench,
 
-    // Automotive
     "Car Accessories": LucideIcons.car,
     "Motor Oils": LucideIcons.droplets,
     "Car Maintenance": LucideIcons.settings,
 
-    // Others
     "Toys & Games": LucideIcons.gamepad2,
     "Sports & Fitness": LucideIcons.dumbbell,
     "Books & Magazines": LucideIcons.bookOpen,
@@ -115,7 +174,6 @@ class StoreCategory {
     "Seasonal Items": LucideIcons.sun,
     "Miscellaneous": LucideIcons.boxes,
   };
-
 
   static const Map<String, Color> colors = {
     // Food & Beverages
