@@ -11,6 +11,8 @@ import 'package:pocketpos/Model/stock_log.dart';
 import 'package:pocketpos/Provider/AuthProvider.dart';
 import 'package:pocketpos/Provider/CartListProvider.dart';
 import 'package:pocketpos/Provider/CurrencyProvider.dart';
+import 'package:pocketpos/Provider/LoanProvider.dart';
+import 'package:pocketpos/Provider/LogProvider.dart';
 import 'package:pocketpos/Provider/LooseStockProvider.dart';
 import 'package:pocketpos/Provider/ProductAnalyticsProvider.dart';
 import 'package:pocketpos/Provider/ProductProvider.dart';
@@ -69,6 +71,8 @@ Future<void> main() async {
           ChangeNotifierProvider(create: (_) => StoreCategoryProvider()),
           ChangeNotifierProvider(create: (_) => SwitchProvider()),
           ChangeNotifierProvider(create: (_) => CurrencyProvider()),
+  ChangeNotifierProvider(create: (_) => LoanProvider(productBox)),
+  ChangeNotifierProvider(create: (_) => LogProvider(productBox)),
           ChangeNotifierProvider(create: (_) => CartListProvider(productBox)),
         ],
         child: const MyApp(),

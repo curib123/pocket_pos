@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:pocketpos/Helper/Classes_Methods/helper_methods.dart';
 import 'package:pocketpos/Provider/ProductProvider.dart';
 import 'package:pocketpos/Provider/ProductSync.dart';
-import 'package:pocketpos/View/Components/AppDrawer.dart';
-import 'package:pocketpos/View/Components/SearchAndCartRow.dart';
+import 'package:pocketpos/View/Components/Widgets/AppDrawer.dart';
+import 'package:pocketpos/View/Components/Widgets/SearchAndCartRow.dart';
 import 'package:provider/provider.dart';
 
 class DashBoardScreen extends StatefulWidget {

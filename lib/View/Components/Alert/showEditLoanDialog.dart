@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:pocketpos/Provider/LoanProvider.dart';
 import 'package:pocketpos/View/Components/Alert/CustomConfimDialog.dart';
 import 'package:provider/provider.dart';
-import 'package:pocketpos/Provider/ProductProvider.dart';
 import 'package:pocketpos/View/Components/Custom/CustomButton.dart';
 import 'package:pocketpos/View/Components/Custom/CustomTextField.dart';
 
@@ -96,8 +96,8 @@ Future<void> showEditLoanDialog({
                   width: 100,
                 ),
                 const SizedBox(width: 12),
-                Consumer<ProductProvider>(
-                  builder: (context, productProvider, _) {
+                Consumer<LoanProvider>(
+                  builder: (context, loanProvider, _) {
                     return CustomButton(
                       text: isLoading ? 'Saving...' : 'Save',
                       isDisabled: isLoading,
@@ -109,7 +109,6 @@ Future<void> showEditLoanDialog({
                         final newPrice = double.parse(priceController.text.trim());
                         final newBorrowerName = borrowerController.text.trim();
 
-                        Navigator.pop(context);
                         try {
                           await showDialog(
                             context: context,
@@ -118,7 +117,7 @@ Future<void> showEditLoanDialog({
                               title: 'Update Loan Details',
                               content: 'Are you sure you want to update this loan information?',
                               onConfirm: () async {
-                                await productProvider.editLoanForProduct(
+                                await loanProvider.editLoanForProduct(
                                   productId: productId,
                                   borrowerName: borrowerName,
                                   loanDate: loanDate,

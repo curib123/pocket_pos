@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:pocketpos/Helper/Classes_Methods/AppColor.dart';
 import 'package:pocketpos/View/Components/Custom/CustomButton.dart';
-import 'package:pocketpos/View/Components/ResponsiveText.dart';
+import 'package:pocketpos/View/Components/Widgets/ResponsiveText.dart';
 
 class CustomConfirmDialog extends StatelessWidget {
   final String title;
@@ -87,8 +87,8 @@ class CustomConfirmDialog extends StatelessWidget {
                           text: cancelText,
                           isFilled: false,
                           onPressed: () {
-                            if (onCancel != null) onCancel!();
                             Navigator.pop(context);
+                            if (onCancel != null) onCancel!();
                           },
                           isSlimmer: true,
                         ),
@@ -99,8 +99,9 @@ class CustomConfirmDialog extends StatelessWidget {
                           backgroundColor: AppColor.primary,
                           text: confirmText,
                           onPressed: () {
-                            onConfirm();
                             if (isPop == true) Navigator.pop(context);
+                            onConfirm();
+
                           },
                           isFilled: true,
                           isSlimmer: true,

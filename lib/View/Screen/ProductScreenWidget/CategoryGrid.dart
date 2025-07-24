@@ -4,7 +4,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'package:provider/provider.dart';
 import 'package:pocketpos/Helper/Classes_Methods/AppColor.dart';
 import 'package:pocketpos/Helper/Classes_Methods/AppCategory.dart';
-import 'package:pocketpos/View/Screen/ProductListScreen.dart';
+import 'package:pocketpos/View/Screen/ProductScreenWidget/ProductListScreen.dart';
 import 'package:pocketpos/Provider/ProductProvider.dart';
 import 'package:pocketpos/Provider/StoreCategoryProvider.dart';
 import 'package:pocketpos/Provider/SwitchProvider.dart';

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pocketpos/Model/stock_log.dart';
+import 'package:pocketpos/Provider/LoanProvider.dart';
 import 'package:provider/provider.dart';
 import 'package:pocketpos/Helper/Classes_Methods/AppColor.dart';
 import 'package:pocketpos/Model/cart_item_model.dart';
@@ -188,9 +189,9 @@ class _PaymentDialogState extends State<PaymentDialog> {
                   ),
                   const SizedBox(height: 16),
 
-                  Consumer<ProductProvider>(
-                    builder: (context, productProvider, child) {
-                      final loanerNames = productProvider.getAllLoanerNames();
+                  Consumer<LoanProvider>(
+                    builder: (context, loanProvider, child) {
+                      final loanerNames = loanProvider.getAllLoanerNames();
 
                       return selectedPaymentType == 'Cash'
                           ? CustomTextField(

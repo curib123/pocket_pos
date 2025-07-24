@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:pocketpos/Helper/Classes_Methods/AppColor.dart';
 import 'package:pocketpos/View/Components/Custom/CustomButton.dart';
 import 'package:pocketpos/View/Components/Custom/CustomTextField.dart';
-import 'package:pocketpos/View/Components/ResponsiveText.dart';
+import 'package:pocketpos/View/Components/Widgets/ResponsiveText.dart';
 
 class AuthFormWidget extends StatefulWidget {
   final void Function({

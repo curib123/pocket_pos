@@ -4,7 +4,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:pocketpos/View/Components/Alert/CustomConfimDialog.dart';
 import 'package:pocketpos/View/Components/Alert/CustomNotificationDialog.dart';
-import 'package:pocketpos/View/Components/BouncingCartIcon.dart';
+import 'package:pocketpos/View/Components/Widgets/BouncingCartIcon.dart';
 import 'package:provider/provider.dart';
 import 'package:vibration/vibration.dart';
 import 'package:pocketpos/Provider/CartListProvider.dart';
@@ -26,12 +26,7 @@ class BarcodeScannerScreen extends StatefulWidget {
 }
 
 class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> with SingleTickerProviderStateMixin {
-  final MobileScannerController controller = MobileScannerController(
-      detectionSpeed: DetectionSpeed.normal,
-      invertImage: true,
-      facing: CameraFacing.back,
-      autoZoom: true
-  );
+  final MobileScannerController controller = MobileScannerController(autoZoom: true);
 
   final Set<String> _scannedBarcodes = {};
   final List<Map<String, dynamic>> _scannedItems = [];
@@ -55,7 +50,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> with Single
 
     _lineController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1600),
+      duration: const Duration(milliseconds: 1000),
     )..repeat(reverse: true);
 
     _lineAnimation = Tween<double>(begin: 0, end: 1).animate(
@@ -284,23 +279,30 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> with Single
               },
             ),
 
+          Positioned(
+              top: 30,
+              left: 0,
+              child: Row(
+                children: [
+                  IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: Icon(Icons.arrow_back_ios_new,size: 30,color: Colors.white,)),
+                  Row(
+                    children: [
+                      Icon(Icons.qr_code_2,color: Colors.white,),
+                      SizedBox(width: 10,),
+                      Text("Barcode Scan",style: TextStyle(color: Colors.white,fontSize: 20),),
+                    ],
+                  )
+                ],
+              )),
           // 🔦 Flash + Flip
           Positioned(
             top: 30,
             right: 0,
             child: Row(
               children: [
-                IconButton(
-                  icon: const Icon(Icons.cameraswitch_rounded, color: Colors.white, size: 28),
-                  onPressed: () async {
-                    await controller.switchCamera();
-                    setState(() {
-                      _cameraFacing = _cameraFacing == CameraFacing.back
-                          ? CameraFacing.front
-                          : CameraFacing.back;
-                    });
-                  },
-                ),
+                BouncingCartIcon(iconColor: Colors.white,),
                 ValueListenableBuilder<MobileScannerState>(
                   valueListenable: controller,
                   builder: (_, state, __) {

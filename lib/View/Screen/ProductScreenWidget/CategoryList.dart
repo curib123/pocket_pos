@@ -7,7 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:pocketpos/Helper/Classes_Methods/AppColor.dart';
 import 'package:pocketpos/Helper/Classes_Methods/AppCategory.dart';
-import 'package:pocketpos/View/Screen/ProductListScreen.dart';
+import 'package:pocketpos/View/Screen/ProductScreenWidget/ProductListScreen.dart';
 import 'package:pocketpos/Provider/ProductProvider.dart';
 
 class CategoryList extends StatefulWidget {

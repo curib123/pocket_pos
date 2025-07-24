@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:pocketpos/Helper/Classes_Methods/AppColor.dart';
-import 'package:pocketpos/View/Components/AnimatedScannerIcon.dart';
-import 'package:pocketpos/View/Components/BouncingCartIcon.dart';
-import 'package:pocketpos/View/Components/ProductSearchDelegate.dart';
+import 'package:pocketpos/View/Components/Widgets/AnimatedScannerIcon.dart';
+import 'package:pocketpos/View/Components/Widgets/BouncingCartIcon.dart';
+import 'package:pocketpos/View/Components/Widgets/ProductSearchDelegate.dart';
 import 'package:provider/provider.dart';
 import 'package:pocketpos/Provider/ProductProvider.dart';
 
@@ -20,7 +20,7 @@ class SearchAndCartAppBar extends StatelessWidget implements PreferredSizeWidget
         height: preferredSize.height,
         padding: const EdgeInsets.symmetric(horizontal: 12),
         decoration: BoxDecoration(
-          color: Theme.of(context).scaffoldBackgroundColor,
+          color: Colors.white,
         ),
         child: Row(
           children: [

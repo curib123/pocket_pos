@@ -6,8 +6,9 @@ import 'package:pocketpos/View/Components/Modal/CartListModal.dart';
 import 'package:provider/provider.dart';
 
 class BouncingCartIcon extends StatelessWidget {
+  final Color? iconColor;
   const BouncingCartIcon({
-    super.key
+    super.key,  this.iconColor = AppColor.primary,
   });
 
   @override
@@ -34,9 +35,9 @@ class BouncingCartIcon extends StatelessWidget {
                   );
 
                 },
-                child: const Padding(
-                  padding: EdgeInsets.all(8.0),
-                  child: Icon(Icons.shopping_cart_outlined, size: 40,color: AppColor.primary,),
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Icon(Icons.shopping_cart_outlined, size: 40,color: iconColor,),
                 ),
               ),
               if (cartProvider.cartItems.length > 0)

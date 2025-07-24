@@ -7,6 +7,8 @@ import 'package:pocketpos/Provider/AuthProvider.dart';
 import 'package:pocketpos/Provider/ProductProvider.dart';
 import 'package:pocketpos/Provider/TabProvider.dart';
 import 'package:pocketpos/View/Components/Alert/CustomConfimDialog.dart';
+import 'package:pocketpos/View/Screen/ReceiptScreen.dart';
+import 'package:pocketpos/View/Screen/StockLogsHistoryScreen.dart';
 import 'package:provider/provider.dart';
 
 class AppDrawer extends StatelessWidget {
@@ -15,7 +17,6 @@ class AppDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Drawer(
-      backgroundColor: AppColor.background,
       child: Consumer3<AuthProvider,TabProvider,ProductProvider>(
         builder: (context,authProvider,tabProvider,productProvider,_) {
           return SafeArea(
@@ -33,6 +34,50 @@ class AppDrawer extends StatelessWidget {
                       _buildHeader(appName),
                       const SizedBox(height: 16),
 
+                      _buildDrawerItem(
+                        icon: LucideIcons.history,
+                        text: 'Stock Logs',
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const StockLogsHistoryScreen()),
+                          );
+
+                        },
+                      ),
+                      _buildDrawerItem(
+                        icon: LucideIcons.receipt,
+                        text: 'View Receipts',
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const ReceiptScreen()),
+                          );
+                        },
+                      ),
+
+                      _buildDrawerItem(
+                        icon: LucideIcons.info,
+                        text: 'About',
+                        onTap: () {
+                          showAboutDialog(
+                            context: context,
+                            applicationName: appName,
+                            applicationVersion: 'v${snapshot.data?.version} (${snapshot.data?.buildNumber})',
+                            applicationLegalese: '© ${DateTime.now().year} NextTech\nAll rights reserved.',
+                            children: [
+                              const SizedBox(height: 16),
+                              const Text(
+                                "PocketPOS is your sleek, offline-first solution for inventory and sales management. "
+                                    "Built with for small teams.",
+                                style: TextStyle(height: 1.5),
+                              ),
+
+                              const SizedBox(height: 16),
+                            ],
+                          );
+                        },
+                      ),
 
                       const Spacer(),
 
@@ -42,7 +87,9 @@ class AppDrawer extends StatelessWidget {
                       _buildDrawerItem(
                         icon: LucideIcons.settings,
                         text: 'Settings',
-                        onTap: () {},
+                        onTap: () {
+                          showAboutDialog(context: context);
+                        },
                       ),
                       const SizedBox(height: 8),
 

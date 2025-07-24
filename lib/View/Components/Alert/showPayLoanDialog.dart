@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:pocketpos/Provider/LoanProvider.dart';
 import 'package:pocketpos/View/Components/Alert/CustomConfimDialog.dart';
 import 'package:provider/provider.dart';
-import 'package:pocketpos/Provider/ProductProvider.dart';
 import 'package:pocketpos/View/Components/Custom/CustomButton.dart';
 import 'package:pocketpos/View/Components/Custom/CustomTextField.dart';
 
@@ -44,7 +44,7 @@ Future<void> showPayLoanDialog({
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Max payable: ₱${maxPayableAmount.toStringAsFixed(2)}',
+                  'Max payable: ${maxPayableAmount.toStringAsFixed(2)}',
                   style: const TextStyle(
                     fontSize: 14,
                     color: Colors.grey,
@@ -79,8 +79,8 @@ Future<void> showPayLoanDialog({
                   width: 100,
                 ),
                 const SizedBox(width: 12),
-                Consumer<ProductProvider>(
-                  builder: (context, productProvider, _) {
+                Consumer<LoanProvider>(
+                  builder: (context, loanProvider, _) {
                     return CustomButton(
                       text: isLoading ? 'Processing...' : 'Pay',
                       isDisabled: isLoading,
@@ -88,17 +88,16 @@ Future<void> showPayLoanDialog({
                         if (!formKey.currentState!.validate()) return;
 
                         final amount = double.parse(controller.text.trim());
-                        Navigator.pop(context);
                         await showDialog(
                           context: context,
                           builder: (context) => CustomConfirmDialog(
                             icon: LucideIcons.checkCircle2,
                             title: 'Confirm Loan Payment',
-                            content: 'Proceed to pay ₱${amount.toStringAsFixed(2)} for "$borrowerName"?',
+                            content: 'Proceed to pay ${amount.toStringAsFixed(2)} for "$borrowerName"?',
                             onConfirm: () async {
                               try {
                                 setState(() => isLoading = true);
-                                await productProvider.payLoanForProduct(
+                                await loanProvider.payLoanForProduct(
                                   productId: productId,
                                   borrowerName: borrowerName,
                                   amount: amount,

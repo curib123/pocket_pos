@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:pocketpos/Helper/Classes_Methods/AppColor.dart';
 import 'package:pocketpos/Model/product_model.dart';
@@ -9,7 +8,7 @@ import 'package:pocketpos/Provider/CurrencyProvider.dart';
 import 'package:pocketpos/Provider/ProductProvider.dart';
 import 'package:pocketpos/Provider/StoreCategoryProvider.dart';
 import 'package:pocketpos/Provider/SwitchProvider.dart';
-import 'package:pocketpos/View/Components/BouncingCartIcon.dart';
+import 'package:pocketpos/View/Components/Widgets/BouncingCartIcon.dart';
 import 'package:pocketpos/View/Components/Custom/CustomButton.dart';
 import 'package:pocketpos/View/Components/Custom/CustomFlatDropdown.dart';
 import 'package:pocketpos/View/Components/Modal/ProductDetailScreenModal.dart';
@@ -50,50 +49,6 @@ class _ProductListScreenState extends State<ProductListScreen> {
     _debounce?.cancel();
     super.dispose();
   }
-
-  InputDecoration _dropdownDecoration(String label) {
-    return InputDecoration(
-      labelText: label,
-      filled: true,
-      fillColor: Colors.grey[100],
-      contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide.none,
-      ),
-    );
-  }
-
-  Widget _buildFilterDropdown({
-    required String label,
-    required String value,
-    required List<String> items,
-    required void Function(String?) onChanged,
-    required double width,
-  }) {
-    return SizedBox(
-      width: width,
-      child: DropdownButtonFormField<String>(
-        value: value,
-        isExpanded: true, // <--- Important for preventing overflow
-        items: items.map((e) {
-          return DropdownMenuItem(
-            value: e,
-            child: Text(
-              e,
-              overflow: TextOverflow.ellipsis, // Avoids overflow for long text
-              style:  TextStyle(fontSize: 14,color: Colors.grey,fontWeight: FontWeight.w300),
-            ),
-          );
-        }).toList(),
-        onChanged: onChanged,
-        decoration: _dropdownDecoration(label),
-        style: const TextStyle(fontSize: 12),
-      ),
-    );
-  }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -270,7 +225,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                                     ? Icons.layers_rounded
                                     : Icons.dashboard_rounded,
                                 size: 30,
-                                color: AppColor.textPrimary,
+                                color: AppColor.primary,
                               ),
                             ),
                           ],

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:pocketpos/View/Screen/AuthScreen.dart';
 import 'package:provider/provider.dart';
 import 'package:pocketpos/Provider/TabProvider.dart';
-import 'package:pocketpos/View/Components/BottomNavigation.dart';
+import 'package:pocketpos/View/Components/Widgets/BottomNavigation.dart';
 import 'package:pocketpos/View/Screen/DashBoardScreen.dart';    // <-- Example main screen
 
 class Home extends StatefulWidget {
@@ -48,6 +48,7 @@ class _HomeState extends State<Home> {
     return Consumer<TabProvider>(
       builder: (context, tabProvider, child) {
         return Scaffold(
+          backgroundColor: Colors.white,
           body: tabProvider.screens[tabProvider.currentIndex],
           bottomNavigationBar: BottomNavigation(
             currentIndex: tabProvider.currentIndex,

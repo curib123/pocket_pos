@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:intl/intl.dart';
 import 'package:pocketpos/Helper/Classes_Methods/AppColor.dart';
 import 'package:pocketpos/Model/loan_item.dart';
 import 'package:pocketpos/Provider/CurrencyProvider.dart';
 import 'package:pocketpos/View/Components/Custom/CustomButton.dart';
 import 'package:provider/provider.dart';
-
-
 
 typedef LoanActionCallback = void Function(LoanItem loan);
 
@@ -26,19 +25,20 @@ class LoanCardWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final dueAmount = loan.amount - loan.paid;
     final isDue = dueAmount > 0;
+    final formattedDate = DateFormat('MMMM d, y').format(loan.loanDate);
 
     return Material(
       color: Colors.white,
       borderRadius: BorderRadius.circular(14),
-      elevation: 0, // Flat style, no shadow
+      elevation: 0,
       child: Consumer<CurrencyProvider>(
-        builder: (context,currencyProvider,_) {
+        builder: (context, currencyProvider, _) {
           return InkWell(
             borderRadius: BorderRadius.circular(14),
             onTap: () {},
             child: Container(
               padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
-              margin: const EdgeInsets.symmetric(vertical: 10 ),
+              margin: const EdgeInsets.symmetric(vertical: 10),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
@@ -49,7 +49,7 @@ class LoanCardWidget extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Title with due indicator dot
+                  // Title row with due dot
                   Row(
                     children: [
                       Expanded(
@@ -73,9 +73,9 @@ class LoanCardWidget extends StatelessWidget {
                         ),
                     ],
                   ),
-          
+
                   const SizedBox(height: 12),
-          
+
                   // Info Chips
                   Wrap(
                     spacing: 20,
@@ -84,7 +84,7 @@ class LoanCardWidget extends StatelessWidget {
                       _InfoChip(
                         icon: Icons.pending_outlined,
                         label: "Due Amount",
-                        value: "${currencyProvider.formatAmount(dueAmount)}",
+                        value: currencyProvider.formatAmount(dueAmount),
                         valueColor: isDue ? Colors.redAccent[600] : Colors.green.shade600,
                         iconColor: isDue ? Colors.redAccent[600] : Colors.green.shade600,
                         labelColor: AppColor.textSecondary,
@@ -92,17 +92,25 @@ class LoanCardWidget extends StatelessWidget {
                       _InfoChip(
                         icon: Icons.payment_outlined,
                         label: "Paid",
-                        value: "${currencyProvider.formatAmount(loan.paid)}",
+                        value: currencyProvider.formatAmount(loan.paid),
                         labelColor: AppColor.textSecondary,
                         valueColor: AppColor.textPrimary,
                         iconColor: Colors.grey.shade500,
                       ),
+                      _InfoChip(
+                        icon: Icons.calendar_today_outlined,
+                        label: "Date",
+                        value: formattedDate,
+                        labelColor: AppColor.textSecondary,
+                        iconColor: Colors.blueGrey,
+                        valueColor: AppColor.textPrimary,
+                      ),
                     ],
                   ),
-          
+
                   const SizedBox(height: 18),
-          
-                  // Buttons row with your CustomButton slim style
+
+                  // Buttons
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
@@ -138,7 +146,7 @@ class LoanCardWidget extends StatelessWidget {
               ),
             ),
           );
-        }
+        },
       ),
     );
   }

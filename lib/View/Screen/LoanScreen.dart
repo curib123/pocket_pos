@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:pocketpos/View/Components/AppDrawer.dart';
+import 'package:pocketpos/Provider/LoanProvider.dart';
+import 'package:pocketpos/View/Components/Widgets/AppDrawer.dart';
+import 'package:pocketpos/View/Components/Widgets/SearchAndCartRow.dart';
 import 'package:provider/provider.dart';
 import 'package:pocketpos/Helper/Enums/Enum.dart';
 import 'package:pocketpos/Provider/CurrencyProvider.dart';
-import 'package:pocketpos/Provider/ProductProvider.dart';
 import 'package:pocketpos/Helper/Classes_Methods/AppColor.dart';
 import 'package:pocketpos/View/Components/Alert/showEditLoanDialog.dart';
 import 'package:pocketpos/View/Components/Alert/showPayAllDialog.dart';
@@ -20,31 +21,32 @@ class LoanScreen extends StatefulWidget {
 }
 
 class _LoanScreenState extends State<LoanScreen> {
-  String? selectedBorrower;
+  String? selectedBorrower ;
   LoanFilterType selectedFilter = LoanFilterType.day;
 
   @override
   Widget build(BuildContext context) {
-    return Consumer2<ProductProvider, CurrencyProvider>(
-      builder: (context, productProvider, currencyProvider, _) {
-        final allLoans = productProvider.getAllLoans();
-        final loaners = productProvider.getAllLoanerNames();
+    return Consumer2<LoanProvider, CurrencyProvider>(
+      builder: (context, LoanProvider, currencyProvider, _) {
+        final allLoans = LoanProvider.getAllLoans();
+        final loaners = LoanProvider.getAllLoanerNames();
+        final totalExistingLoanQuantity = LoanProvider.getTotalLoanAmountForBorrower(selectedBorrower ?? '') ;
 
         // ✅ Reset borrower if name was changed and no longer exists
         if (selectedBorrower != null && !loaners.contains(selectedBorrower)) {
           selectedBorrower = null;
         }
 
-        final metrics = productProvider.generateLoanMetrics(filter: selectedFilter);
+
+        final metrics = LoanProvider.generateLoanMetrics(filter: selectedFilter);
         final totalLoanCount = metrics['totalLoanCount'] as int? ?? 0;
-        final totalLoanQuantity = metrics['totalLoanQuantity'] as int? ?? 0;
         final totalLoanAmount = metrics['totalLoanAmount'] as double? ?? 0.0;
 
         final totalUnpaid = allLoans
             .where((loan) => !loan.isReturned)
             .fold<double>(0, (sum, loan) => sum + (loan.amount - loan.paid));
 
-        final unpaidBorrowers = productProvider
+        final unpaidBorrowers = LoanProvider
             .getAllLoansByLoanerName()
             .entries
             .where((entry) => entry.value.any(
@@ -54,16 +56,17 @@ class _LoanScreenState extends State<LoanScreen> {
 
         return Scaffold(
           drawer: AppDrawer(),
-          appBar: AppBar(
-            title: const Text("Loan Overview", style: TextStyle(color: AppColor.textSecondary)),
-            centerTitle: true,
-            backgroundColor: AppColor.surface,
-          ),
+          appBar: SearchAndCartAppBar(),
           body: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                SizedBox(height: 10,),
+                Center(
+                  child: Text("Loan Overview",style: TextStyle(color: AppColor.primary,fontSize: 25),),
+                ),
+                SizedBox(height: 10,),
                 // Timeframe filter dropdown
                 CustomFlatDropdown<LoanFilterType>(
                   hint: "Select timeframe",
@@ -149,7 +152,7 @@ class _LoanScreenState extends State<LoanScreen> {
                     child: Row(
                       children: [
                         Text(
-                          'Total: ${currencyProvider.formatAmount(productProvider.getTotalLoanAmountForBorrower(selectedBorrower!))}',
+                          'Total: ${currencyProvider.formatAmount(totalExistingLoanQuantity)}',
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w600,
@@ -166,7 +169,7 @@ class _LoanScreenState extends State<LoanScreen> {
                               showPayAllLoansDialog(
                                 context: context,
                                 borrowerName: selectedBorrower!,
-                                total: productProvider.getTotalLoanAmountForBorrower(selectedBorrower!),
+                                total: LoanProvider.getTotalLoanAmountForBorrower(selectedBorrower!),
                               );
                             },
                           ),
@@ -177,7 +180,7 @@ class _LoanScreenState extends State<LoanScreen> {
                   const SizedBox(height: 10),
 
                   // List of Loan Cards
-                  ...(productProvider.getAllLoansByLoanerName()[selectedBorrower!]
+                  ...(LoanProvider.getAllLoansByLoanerName()[selectedBorrower!]
                       ?.map(
                         (loan) => Padding(
                       padding: const EdgeInsets.only(bottom: 8.0),

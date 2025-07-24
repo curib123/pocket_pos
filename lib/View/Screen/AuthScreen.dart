@@ -3,10 +3,10 @@ import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:pocketpos/Helper/Classes_Methods/helper_methods.dart';
 import 'package:pocketpos/Provider/TabProvider.dart';
 import 'package:pocketpos/View/Components/Alert/CustomNotificationDialog.dart';
-import 'package:pocketpos/View/Components/ResponsiveText.dart';
+import 'package:pocketpos/View/Components/Widgets/ResponsiveText.dart';
 import 'package:provider/provider.dart';
 import 'package:pocketpos/Helper/Classes_Methods/AppColor.dart';
-import 'package:pocketpos/View/Components/AuthFormWidget.dart';
+import 'package:pocketpos/View/Components/Widgets/AuthFormWidget.dart';
 import 'package:pocketpos/Provider/AuthProvider.dart';
 
 class AuthScreen extends StatefulWidget {
@@ -27,10 +27,10 @@ class _AuthScreenState extends State<AuthScreen> {
   Widget build(BuildContext context) {
     return Consumer2<AuthProvider, TabProvider>(
       builder: (context, authProvider, tabProvider, _) {
-        return SafeArea(
-          child: Scaffold(
-            backgroundColor: AppColor.background,
-            body: Center(
+        return Scaffold(
+          backgroundColor: AppColor.background,
+          body: SafeArea(
+            child: Center(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                 child: AnimatedContainer(
@@ -60,7 +60,7 @@ class _AuthScreenState extends State<AuthScreen> {
                         ),
                       ),
                       const SizedBox(height: 20),
-          
+            
                       // Auth Form
                       AuthFormWidget(
                         isSignUp: _isSignUp,
@@ -86,11 +86,11 @@ class _AuthScreenState extends State<AuthScreen> {
                                 password: password,
                               );
                             }
-          
+            
                             final userData = await authProvider.getStoredUser();
                             final storeNameOffline = userData['storeName'] ?? 'your store';
                             final ownerNameOffline = userData['ownerName'] ?? 'Owner';
-          
+            
                             await showDialog(
                               context: context,
                               builder: (_) => CustomNotificationDialog(
@@ -129,7 +129,7 @@ class _AuthScreenState extends State<AuthScreen> {
                           }
                         },
                       ),
-          
+            
                       if (authProvider.isLoading)
                         const Padding(
                           padding: EdgeInsets.only(top: 20),

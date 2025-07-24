@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:pocketpos/Provider/LoanProvider.dart';
 import 'package:pocketpos/View/Components/Alert/CustomConfimDialog.dart';
 import 'package:provider/provider.dart';
-import 'package:pocketpos/Provider/ProductProvider.dart';
 import 'package:pocketpos/View/Components/Custom/CustomButton.dart';
 import 'package:pocketpos/View/Components/Custom/CustomTextField.dart';
 
@@ -85,8 +85,8 @@ Future<void> showPayAllLoansDialog({
                   width: 100,
                 ),
                 const SizedBox(width: 12),
-                Consumer<ProductProvider>(
-                  builder: (context, productProvider, _) {
+                Consumer<LoanProvider>(
+                  builder: (context, loanProvider, _) {
                     return CustomButton(
                       text: isLoading ? 'Processing...' : 'Pay All',
                       isDisabled: isLoading,
@@ -95,7 +95,6 @@ Future<void> showPayAllLoansDialog({
 
 
                         final amount = double.parse(controller.text.trim());
-                        Navigator.pop(context);
                         await showDialog(
                           context: context,
                           builder: (context) => CustomConfirmDialog(
@@ -105,7 +104,7 @@ Future<void> showPayAllLoansDialog({
                             onConfirm: () async {
                               setState(() => isLoading = true);
                               try {
-                                await productProvider.payAllLoansByBorrower(
+                                await loanProvider.payAllLoansByBorrower(
                                   borrowerName,
                                   amount,
                                   track: true,
