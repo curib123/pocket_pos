@@ -34,6 +34,7 @@ class AuthProvider with ChangeNotifier {
       if (userId != null) {
         await _supabase.from('stores').insert({
           'id': userId,
+          'user_id': userId,
           'email': email,
           'store_name': storeName,
           'owner_name': ownerName,

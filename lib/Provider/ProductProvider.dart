@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
+import 'package:pocketpos/Helper/Database/SupabaseProductServices.dart';
 import 'package:pocketpos/Model/product_model.dart';
 import 'package:pocketpos/Model/stock_log.dart';
 
 class ProductProvider extends ChangeNotifier {
   final Box<Product> _productBox;
+  final SupabaseProductServices _supabaseService = SupabaseProductServices();
 
   List<Product> _products = [];
   List<Product> get products => _products;
@@ -219,7 +221,13 @@ class ProductProvider extends ChangeNotifier {
     try {
       final product = _productBox.get(id);
       if (product != null) {
+        // 🕒 Update lastModified before deletion (for logging/sync purposes)
+        final updated = product.copyWith(lastModified: DateTime.now());
+        await _productBox.put(id, updated);
+
+        // 🗑 Actually delete the product from the box
         await _productBox.delete(id);
+
         refreshProducts();
         return true;
       }
@@ -229,6 +237,7 @@ class ProductProvider extends ChangeNotifier {
       return false;
     }
   }
+
 
 
   Future<Product?> restoreProductById(String id) async {

@@ -30,7 +30,7 @@ class Product extends HiveObject {
   final String? unit;
 
   @HiveField(7)
-  final String? imagePath;
+  late final String? imagePath;
 
   @HiveField(8)
   final DateTime createdAt;

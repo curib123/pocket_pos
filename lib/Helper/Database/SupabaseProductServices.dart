@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path/path.dart' as p;
@@ -105,10 +106,48 @@ class SupabaseProductServices {
     }
   }
 
-  /// ⬆️ Compress, upload, and upsert products
-  Future<void> upsertProductsListToServer(
-      List<Product> updatedSubset,
-      ) async {
+  Future<List<Product>> fetchProductsFromServerRaw() async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) {
+      print('❌ No user logged in.');
+      return [];
+    }
+
+    print('🔄 Fetching products (raw) for user: $userId');
+    final List<Product> products = [];
+
+    try {
+      for (int i = 0;; i += 200) {
+        final row = await _client
+            .from('products')
+            .select('data')
+            .eq('user_id', userId)
+            .range(i, i + 199);
+
+        final rawData = row.isNotEmpty && row[0]['data'] is List
+            ? row[0]['data'] as List
+            : [];
+
+        if (rawData.isEmpty) break;
+
+        for (final map in rawData.cast<Map<String, dynamic>>()) {
+          final product = Product.fromMap(map);
+          if (product.deletedAt == null) {
+            products.add(product);
+          }
+        }
+      }
+
+      print('📦 Supabase raw fetch: ${products.length} item(s)');
+      return products;
+    } catch (e) {
+      print('❌ Error fetching raw products: $e');
+      return [];
+    }
+  }
+
+  /// ⬆️ Compress, upload, and upsert products (including variant images)
+  Future<void> upsertProductsListToServer(List<Product> updatedSubset) async {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) {
       print('❌ Cannot upsert: No user logged in.');
@@ -118,55 +157,29 @@ class SupabaseProductServices {
     final now = DateTime.now().toIso8601String();
     final tempDir = await getTemporaryDirectory();
 
-    // 1️⃣ Fetch existing product list
-    final existing = await fetchProductsFromServer();
-
-    // 2️⃣ Create a new map of all products
+    // 1️⃣ Fetch existing product list from server
+    final existing = await fetchProductsFromServerRaw();
     final productMap = {for (var p in existing) p.id: p};
 
-    // 3️⃣ Process and overwrite any updated entries
+    // 2️⃣ Loop through updated products
     await processInChunks<Product>(updatedSubset, (product) async {
-      String? finalImagePath = product.imagePath;
+      String? finalImagePath = await _uploadImageIfNeeded(product.imagePath, tempDir, product.name,userId);
 
-      if (finalImagePath != null && !finalImagePath.startsWith('http')) {
-        final originalFile = File(finalImagePath);
-        if (await originalFile.exists()) {
-          try {
-            final fileNameBase = p.basenameWithoutExtension(finalImagePath);
-            final compressedPath =
-            p.join(tempDir.path, 'compressed_$fileNameBase.jpg');
-
-            final XFile? compressed = await FlutterImageCompress.compressAndGetFile(
-              originalFile.path,
-              compressedPath,
-              quality: 75,
-            );
-
-            final fileToUpload = compressed != null
-                ? File(compressed.path)
-                : originalFile;
-
-            final fileName =
-                'product_${DateTime.now().millisecondsSinceEpoch}_${p.basename(fileToUpload.path)}';
-            final storagePath = 'products/$fileName';
-
-            await _client.storage.from('products').upload(storagePath, fileToUpload);
-            final signedUrl = await _client.storage
-                .from('products')
-                .createSignedUrl(storagePath, 60 * 60 * 24 * 365);
-
-            finalImagePath = signedUrl;
-          } catch (e) {
-            print('⚠️ Image upload failed for ${product.name}: $e');
-          }
-        }
+      // 🧬 Handle variant images too
+      final updatedVariants = <Product>[];
+      for (var variant in product.variants) {
+        final variantImage = await _uploadImageIfNeeded(variant.imagePath, tempDir, variant.name,userId);
+        updatedVariants.add(variant.copyWith(imagePath: variantImage));
       }
 
       // Replace in map
-      productMap[product.id] = product.copyWith(imagePath: finalImagePath);
+      productMap[product.id] = product.copyWith(
+        imagePath: finalImagePath,
+        variants: updatedVariants,
+      );
     });
 
-    // 4️⃣ Final cleaned and sorted list
+    // 3️⃣ Final cleaned and sorted list
     final cleanedProducts = productMap.values
         .where((p) => !(p.imagePath?.contains('your-project-id') ?? false))
         .map((p) => p.toMap())
@@ -182,14 +195,64 @@ class SupabaseProductServices {
       await _client.from('products').upsert(payload, onConflict: 'user_id');
       print('✅ Upload complete with ${cleanedProducts.length} items!');
 
-      // 🧹 Auto-clean unused images after upsert
       final updatedProducts = productMap.values.toList();
       await _deleteUnusedImagesForCurrentUser(updatedProducts);
     } catch (e) {
       print('❌ Upload failed: $e');
     }
-
   }
+
+  bool _isAlreadyUploaded(String? path) {
+    if (path == null) return false;
+    final uri = Uri.tryParse(path);
+    final filename = uri?.pathSegments.last;
+    return filename != null && filename.startsWith('product_') && filename.endsWith('.jpg');
+  }
+
+
+  Future<String?> _uploadImageIfNeeded(String? path, Directory tempDir, String label, String userId) async {
+    if (path == null || path.startsWith('http') || _isAlreadyUploaded(path)) return path;
+
+    final originalFile = File(path);
+    if (!await originalFile.exists()) return path;
+
+    try {
+      final fileNameBase = p.basenameWithoutExtension(path);
+      final compressedPath = p.join(tempDir.path, 'compressed_$fileNameBase.jpg');
+
+      final XFile? compressed = await FlutterImageCompress.compressAndGetFile(
+        originalFile.path,
+        compressedPath,
+        quality: 75,
+      );
+
+      final fileToUpload = compressed != null ? File(compressed.path) : originalFile;
+
+      // 💡 Generate deterministic hash for file content to avoid duplicate uploads
+      final bytes = await fileToUpload.readAsBytes();
+      final hash = sha256.convert(bytes).toString().substring(0, 10); // 10-char hash
+      final fileName = 'product_${userId}_$hash.jpg';
+      final storagePath = 'products/$fileName';
+
+      final exists = await _client.storage.from('products').list(path: 'products');
+      if (exists.any((f) => f.name == fileName)) {
+        print('🟡 Skipped upload: $fileName already exists.');
+      } else {
+        await _client.storage.from('products').upload(storagePath, fileToUpload);
+        print('📸 Uploaded image for $label');
+      }
+
+      final signedUrl = await _client.storage
+          .from('products')
+          .createSignedUrl(storagePath, 60 * 60 * 24 * 365);
+
+      return signedUrl;
+    } catch (e) {
+      print('⚠️ Image upload failed for $label: $e');
+      return path;
+    }
+  }
+
 
   /// 🗑 Delete all products
   Future<void> deleteAllProductsFromServer() async {
@@ -240,13 +303,28 @@ class SupabaseProductServices {
   /// 📥 Silent image downloader
   Future<void> downloadImageWithDioSilent(String url, String fileName) async {
     if (url.contains('your-project-id')) return;
+
     try {
       final dir = await getApplicationDocumentsDirectory();
       final savePath = p.join(dir.path, fileName);
 
-      final response = await _dio.download(url, savePath, options: Options(responseType: ResponseType.bytes));
+      // Avoid re-downloading if file already exists
+      final file = File(savePath);
+      if (await file.exists()) {
+        print('⚠️ Skipping download: $fileName already exists.');
+        return;
+      }
+
+      final response = await _dio.download(
+        url,
+        savePath,
+        options: Options(responseType: ResponseType.bytes),
+      );
+
       if (response.statusCode == 200) {
         print('✅ Downloaded: $fileName');
+      } else {
+        print('❌ Unexpected status code: ${response.statusCode}');
       }
     } catch (e) {
       print('❌ Dio download error: $e');
@@ -264,42 +342,91 @@ class SupabaseProductServices {
     final bucket = _client.storage.from('products');
     final referencedFiles = <String>{};
 
-    // 1️⃣ Get all filenames used in imagePath
-    for (final product in userProducts) {
-      final path = product.imagePath;
-      if (path != null && path.contains('/products/')) {
-        final uri = Uri.parse(path);
+    // 1️⃣ Collect all image filenames from signed URLs
+    void collectImageFileNames(String? imagePath) {
+      if (imagePath == null) return;
+
+      try {
+        final uri = Uri.parse(imagePath);
         final segments = uri.pathSegments;
-        final index = segments.indexOf('products');
-        if (index != -1 && index + 1 < segments.length) {
-          referencedFiles.add(segments[index + 1]);
+        final filename = segments.isNotEmpty ? segments.last.split('?').first : null;
+
+        if (filename != null && filename.startsWith('product_${userId}_')) {
+          referencedFiles.add(filename);
+          print('📎 Referenced image: $filename');
         }
+      } catch (e) {
+        print('⚠️ Failed to parse imagePath: $imagePath -> $e');
+      }
+    }
+
+    for (final product in userProducts) {
+      collectImageFileNames(product.imagePath);
+      for (final variant in product.variants) {
+        collectImageFileNames(variant.imagePath);
       }
     }
 
     try {
-      // 2️⃣ List all images in 'products/' bucket
-      final files = await bucket.list(path: '');
+      // 2️⃣ List all files in the 'products' folder
+      final files = await bucket.list(path: 'products');
 
-      // 3️⃣ Filter and delete unused ones
+      // 3️⃣ Filter unused files for this user
       final toDelete = files
-          .where((file) => !referencedFiles.contains(file.name))
+          .where((file) =>
+      file.name.startsWith('product_${userId}_') &&
+          !referencedFiles.contains(file.name))
           .map((file) => file.name)
           .toList();
 
       if (toDelete.isEmpty) {
-        print('🧼 No unused images to delete.');
+        print('🧼 No unused images to delete for user $userId.');
         return;
       }
 
       await processInChunks<String>(toDelete, (fileName) async {
-        await bucket.remove([fileName]);
+        await bucket.remove(['products/$fileName']);
         print('🗑️ Deleted unused image: $fileName');
       });
 
-      print('✅ Cleaned up ${toDelete.length} image(s) for user $userId');
+      print('✅ Cleaned up ${toDelete.length} unused image(s) for user $userId');
     } catch (e) {
       print('❌ Failed to clean up unused images: $e');
+    }
+  }
+
+  Future<void> hardDeleteProductFromServer(String productId) async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) return;
+
+    try {
+      final row = await _client
+          .from('products')
+          .select('data')
+          .eq('user_id', userId)
+          .maybeSingle();
+
+      final rawData = row?['data'] as List? ?? [];
+      final products = rawData.map((e) => Product.fromMap(e)).toList();
+
+      final productToDelete = products.firstWhere(
+            (p) => p.id == productId,
+        orElse: () => throw Exception('Product not found'),
+      );
+
+      final imagePath = productToDelete.imagePath;
+      if (imagePath != null && imagePath.contains('product_')) {
+        final fileName = Uri.parse(imagePath).pathSegments.last;
+        await _client.storage.from('products').remove(['products/$fileName']);
+        print('🗑️ Deleted image from storage: $fileName');
+      }
+
+      final updated = products.where((p) => p.id != productId).toList();
+      await upsertProductsListToServer(updated);
+
+      print('✅ Hard-deleted product $productId for user $userId');
+    } catch (e) {
+      print('❌ Hard delete failed: $e');
     }
   }
 

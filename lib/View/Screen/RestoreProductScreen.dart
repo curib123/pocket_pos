@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:pocketpos/Helper/Classes_Methods/AppColor.dart';
+import 'package:pocketpos/Helper/Classes_Methods/helper_methods.dart';
 import 'package:provider/provider.dart';
 import 'package:pocketpos/View/Components/Alert/CustomConfimDialog.dart';
 import 'package:pocketpos/View/Components/Custom/CustomButton.dart';
@@ -127,14 +128,14 @@ class RestoreProductScreen extends StatelessWidget {
                           cancelText: "Cancel",
                           isPop: true,
                           onConfirm: () async {
-                            final success = await provider.hardDeleteProduct(product.id);
-
+                            await refreshProduct(context);
+                           bool success = await HardDeleteProductByID(context, product.id);
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(
                                   success
                                       ? '🗑️ "${product.name}" has been permanently deleted.'
-                                      : '⚠️ Deletion failed. Try again later.',
+                                      : '⚠️ Deletion failed. No internet connection. Try again later.',
                                 ),
                                 behavior: SnackBarBehavior.floating,
                               ),

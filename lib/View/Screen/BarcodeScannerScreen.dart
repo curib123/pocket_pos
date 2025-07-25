@@ -26,7 +26,11 @@ class BarcodeScannerScreen extends StatefulWidget {
 }
 
 class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> with SingleTickerProviderStateMixin {
-  final MobileScannerController controller = MobileScannerController(autoZoom: true);
+  final MobileScannerController controller = MobileScannerController(
+      autoZoom: true,
+    torchEnabled: false,
+    facing: CameraFacing.back, // ✅ flash works only on back
+  );
 
   final Set<String> _scannedBarcodes = {};
   final List<Map<String, dynamic>> _scannedItems = [];

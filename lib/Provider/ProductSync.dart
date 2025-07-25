@@ -9,6 +9,18 @@ class ProductSync {
 
   ProductSync(this._productBox);
 
+
+  /// ⬆️ Save a list of products directly to Supabase (bypasses sync logic)
+  Future<bool> HardDeleteProductByID(String productId) async {
+    try {
+      await _supabaseService.hardDeleteProductFromServer(productId);
+      return true;
+    } catch (e) {
+      print('❌ HardDeleteProductByID failed: $e');
+      return false;
+    }
+  }
+
   /// 🡇 Pull from Supabase, push to Hive
   Future<void> syncFromSupabase(BuildContext context) async {
     try {
