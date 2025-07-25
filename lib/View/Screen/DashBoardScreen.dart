@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:pocketpos/Helper/Classes_Methods/helper_methods.dart';
-import 'package:pocketpos/Provider/ProductProvider.dart';
-import 'package:pocketpos/Provider/ProductSync.dart';
+import 'package:pocketpos/View/Components/Alert/showResultDialogAfterSync.dart';
 import 'package:pocketpos/View/Components/Widgets/AppDrawer.dart';
 import 'package:pocketpos/View/Components/Widgets/SearchAndCartRow.dart';
-import 'package:provider/provider.dart';
 
 class DashBoardScreen extends StatefulWidget {
   const DashBoardScreen({super.key});
@@ -28,8 +26,27 @@ class _DashBoardScreenState extends State<DashBoardScreen> {
     return Scaffold(
       drawer: AppDrawer(),
       appBar: SearchAndCartAppBar(),
-      body: Center(
-        child: Text("Welcome"),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          showResultDialogAfterAsync(
+            context: context,
+            asyncMethod: () async {
+              await autoSync(context);
+              await refreshProduct(context);
+              return "Products refreshed and synced ✨";
+            },
+            onComplete: () {
+
+            } ,
+          );
+        },
+        child: ListView(
+          children: [
+            Center(
+              child: Text("Welcome"),
+            ),
+          ],
+        ),
       ),
     );
   }

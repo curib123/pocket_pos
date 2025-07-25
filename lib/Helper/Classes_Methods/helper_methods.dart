@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 
 Future<void> autoSync(BuildContext context) async {
   final syncProvider = Provider.of<ProductSync>(context, listen: false);
-  await syncProvider.autoSync();
+  await syncProvider.autoSync(context);
 }
 Future<void> refreshProduct(BuildContext context) async {
   final productProvider = context.read<ProductProvider>();

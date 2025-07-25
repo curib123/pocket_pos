@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:hive/hive.dart';
 import 'package:pocketpos/Model/product_model.dart';
 import 'package:pocketpos/Helper/Database/SupabaseProductServices.dart';
@@ -9,7 +10,7 @@ class ProductSync {
   ProductSync(this._productBox);
 
   /// 🡇 Pull from Supabase, push to Hive
-  Future<void> syncFromSupabase() async {
+  Future<void> syncFromSupabase(BuildContext context) async {
     try {
       final serverProducts = await _supabaseService.fetchProductsFromServer();
 
@@ -39,7 +40,6 @@ class ProductSync {
       for (final id in toDelete) {
         final product = _productBox.get(id);
 
-        // 🛡️ Skip deleting local products that have never been synced
         final isUnsyncedLocalOnly = product?.lastModified != null &&
             (product!.createdAt == product.lastModified ||
                 product.lastModified.difference(product.createdAt).inSeconds <= 5);
@@ -59,8 +59,9 @@ class ProductSync {
     }
   }
 
+
   /// 🡅 Push from Hive to Supabase
-  Future<void> syncToSupabase() async {
+  Future<void> syncToSupabase(BuildContext context) async {
     try {
       final serverProducts = await _supabaseService.fetchProductsFromServer();
       final serverMap = {for (var p in serverProducts) p.id: p};
@@ -80,7 +81,6 @@ class ProductSync {
         }
       }
 
-      // Add new server entries that don't exist locally and aren't deleted
       for (final server in serverProducts) {
         if (!localMap.containsKey(server.id) && server.deletedAt == null) {
           mergedProducts.add(server);
@@ -90,7 +90,7 @@ class ProductSync {
       if (mergedProducts.isEmpty) {
         print('ℹ️ No changes to sync. All products are up to date.');
       } else {
-        await _supabaseService.upsertProductsListToServer(mergedProducts);
+        await _supabaseService.upsertProductsListToServer(mergedProducts, );
         print('✅ Synced ${mergedProducts.length} product(s) to Supabase.');
       }
     } catch (e) {
@@ -98,9 +98,9 @@ class ProductSync {
     }
   }
 
-  /// 🔁 Sync both ways (recommended for initial launch or manual sync)
-  Future<void> autoSync() async {
-    await syncToSupabase();
-    await syncFromSupabase();
+  /// 🔁 Full sync (push, pull, and image sync)
+  Future<void> autoSync(BuildContext context) async {
+    await syncToSupabase(context);
+    await syncFromSupabase(context);
   }
 }

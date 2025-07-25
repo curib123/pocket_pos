@@ -202,7 +202,7 @@ class Product extends HiveObject {
       isSoldByPiece: isSoldByPiece ?? this.isSoldByPiece,
       piecesPerPack: piecesPerPack ?? this.piecesPerPack,
       unit: unit ?? this.unit,
-      imagePath: imagePath ?? this.imagePath,
+      imagePath: imagePath?.isNotEmpty == true ? imagePath : this.imagePath,
       barcode: barcode ?? this.barcode,
       createdAt: createdAt ?? this.createdAt,
       lastModified: lastModified ?? this.lastModified,

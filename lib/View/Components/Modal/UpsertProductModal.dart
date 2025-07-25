@@ -1,9 +1,11 @@
 
 import 'dart:io';
+import 'package:path/path.dart' as p;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:pocketpos/Helper/Classes_Methods/ProductUnits.dart';
 import 'package:pocketpos/Model/loose_stock.dart';
 import 'package:pocketpos/Model/product_model.dart';
@@ -134,9 +136,22 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
   Future<void> _pickImage(ImageSource source) async {
     final picker = ImagePicker();
     final picked = await picker.pickImage(source: source, imageQuality: 75);
-    if (picked != null) {
-      setState(() => _selectedImage = File(picked.path));
-    }
+
+    if (picked == null) return;
+
+    final originalFile = File(picked.path);
+
+    final appDir = await getApplicationDocumentsDirectory();
+    final newFileName = 'image_${DateTime.now().millisecondsSinceEpoch}${p.extension(picked.path)}';
+    final newPath = p.join(appDir.path, newFileName);
+
+    final movedFile = await originalFile.copy(newPath);
+
+    setState(() {
+      _selectedImage = movedFile;
+    });
+
+    print('📁 Image moved and set to: ${movedFile.path}');
   }
 
   Color get themeAccent {

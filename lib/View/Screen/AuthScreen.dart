@@ -3,6 +3,7 @@ import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:pocketpos/Helper/Classes_Methods/helper_methods.dart';
 import 'package:pocketpos/Provider/TabProvider.dart';
 import 'package:pocketpos/View/Components/Alert/CustomNotificationDialog.dart';
+import 'package:pocketpos/View/Components/Alert/showResultDialogAfterSync.dart';
 import 'package:pocketpos/View/Components/Widgets/ResponsiveText.dart';
 import 'package:provider/provider.dart';
 import 'package:pocketpos/Helper/Classes_Methods/AppColor.dart';
@@ -104,12 +105,19 @@ class _AuthScreenState extends State<AuthScreen> {
                                   if (isSignUp) {
                                     _toggleAuthMode();
                                   } else {
-                                      autoSync(context);
-                                      refreshProduct(context);
-                                    await tabProvider.setFirstTimeFlag(false);
-                                    if (!tabProvider.isFirstTime) {
-                                      Phoenix.rebirth(context);
-                                    }
+
+                                    showResultDialogAfterAsync(
+                                      context: context,
+                                      asyncMethod: () async {
+                                        await autoSync(context);
+                                        await refreshProduct(context);
+                                        return "Products refreshed and synced ✨";
+                                      },
+                                      onComplete: () {
+                                        tabProvider.setFirstTimeFlag(false);
+                                      } ,
+                                    );
+
                                   }
                                 },
                               ),
