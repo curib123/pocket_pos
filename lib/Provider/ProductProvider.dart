@@ -35,61 +35,87 @@ class ProductProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-
-
   bool barcodeExists(String barcode) {
     for (final product in _products) {
-      if (product.barcode == barcode) return true;
+      if (product.deletedAt == null && product.barcode == barcode) {
+        return true;
+      }
+
       for (final variant in product.variants) {
-        if (variant.barcode == barcode) return true;
+        if (variant.deletedAt == null && variant.barcode == barcode) {
+          return true;
+        }
       }
     }
     return false;
   }
 
 
+
   Product? getProductOrVariantByBarcode(String barcode) {
     for (final product in _products) {
-      if (product.barcode == barcode) return product;
+      if (product.deletedAt == null && product.barcode == barcode) {
+        return product;
+      }
 
       for (final variant in product.variants) {
-        if (variant.barcode == barcode) return variant;
+        if (variant.deletedAt == null && variant.barcode == barcode) {
+          return variant;
+        }
       }
     }
     return null;
   }
 
-
   List<Product> getProductsByCategory(String category) =>
-      _products.where((product) => product.category == category).toList();
+      _products.where((p) => p.category == category && p.deletedAt == null).toList();
 
   Product? getProductById(String id) {
     for (final product in _products) {
-      if (product.id == id) return product;
+      if (product.deletedAt == null && product.id == id) return product;
+
       for (final variant in product.variants) {
-        if (variant.id == id) return variant;
+        if (variant.deletedAt == null && variant.id == id) return variant;
       }
     }
     return null;
   }
 
+
   List<Product> getAllProductsWithVariants() {
     final List<Product> all = [];
+
     for (final product in _products) {
       all.add(product);
-      all.addAll(product.variants);
+
+      final activeVariants = product.variants
+          .where((variant) => variant.deletedAt == null)
+          .toList();
+
+      all.addAll(activeVariants);
     }
+
     return all;
   }
 
+
   List<Product> getAllProductsWithVariantsByCategory(String category) {
     final List<Product> all = [];
+
     for (final product in _products) {
-      if (product.category == category) all.add(product);
-      for (final variant in product.variants) {
-        if (variant.category == category) all.add(variant);
+      // Add main product if it matches category and not deleted
+      if (product.category == category && product.deletedAt == null) {
+        all.add(product);
       }
+
+      // Add only active (not soft-deleted) variants in that category
+      final activeVariants = product.variants.where(
+            (v) => v.category == category && v.deletedAt == null,
+      );
+
+      all.addAll(activeVariants);
     }
+
     return all;
   }
 
@@ -217,81 +243,15 @@ class ProductProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> hardDeleteProduct(String id) async {
+  /// ⬆️ Save a list of products directly to Supabase (bypasses sync logic)
+  Future<bool> HardDeleteProductByID(String productId) async {
     try {
-      final product = _productBox.get(id);
-      if (product != null) {
-        // 🕒 Update lastModified before deletion (for logging/sync purposes)
-        final updated = product.copyWith(lastModified: DateTime.now());
-        await _productBox.put(id, updated);
-
-        // 🗑 Actually delete the product from the box
-        await _productBox.delete(id);
-
-        refreshProducts();
-        return true;
-      }
-      return false; // product not found
+      await _supabaseService.hardDeleteProductFromServer(productId);
+      return true;
     } catch (e) {
-      // Optional: log or handle the error
+      print('❌ HardDeleteProductByID failed: $e');
       return false;
     }
-  }
-
-
-
-  Future<Product?> restoreProductById(String id) async {
-    try {
-      final product = _productBox.get(id);
-
-      if (product != null && product.deletedAt != null) {
-        final now = DateTime.now();
-        final log = StockLog(
-          id: 'log-$id-restored-${now.millisecondsSinceEpoch}',
-          productId: id,
-          quantity: 0,
-          isPiece: false,
-          reason: StockLogReason.restored,
-          remarks: 'Product was restored',
-          dateLogged: now,
-          lastModified: now,
-        );
-
-        final restored = product.copyWith(
-          deletedAt: null,
-          lastModified: now,
-          logs: [...(product.logs ?? []), log], // safe spread
-        );
-
-        await _productBox.put(id, restored);
-        refreshProducts(); // assuming this calls notifyListeners()
-
-        debugPrint("✅ Product restored: ${restored.name} | deletedAt: ${restored.deletedAt} | lastModified: ${restored.lastModified}");
-        return restored;
-      } else {
-        debugPrint("⚠️ Cannot restore: Product not found or not deleted.");
-      }
-    } catch (e, stack) {
-      debugPrint("❌ Restore failed: $e");
-      debugPrint("$stack");
-    }
-
-    return null;
-  }
-
-
-  List<String> getAllDeletedProductNames() {
-    return _productBox.values
-        .where((product) => product.deletedAt != null)
-        .map((product) => product.name)
-        .toList();
-  }
-
-
-  List<Product> getAllDeletedProducts() {
-    return _productBox.values
-        .where((product) => product.deletedAt != null)
-        .toList();
   }
 
 

@@ -9,18 +9,6 @@ class ProductSync {
 
   ProductSync(this._productBox);
 
-
-  /// ⬆️ Save a list of products directly to Supabase (bypasses sync logic)
-  Future<bool> HardDeleteProductByID(String productId) async {
-    try {
-      await _supabaseService.hardDeleteProductFromServer(productId);
-      return true;
-    } catch (e) {
-      print('❌ HardDeleteProductByID failed: $e');
-      return false;
-    }
-  }
-
   /// 🡇 Pull from Supabase, push to Hive
   Future<void> syncFromSupabase(BuildContext context) async {
     try {
@@ -33,11 +21,12 @@ class ProductSync {
 
       final serverIds = <String>{};
 
-      for (var serverProduct in serverProducts) {
+      for (final serverProduct in serverProducts) {
         final localProduct = _productBox.get(serverProduct.id);
         final serverTime = serverProduct.lastModified;
-        final localTime = localProduct?.lastModified ?? DateTime(2000);
+        final localTime = localProduct?.lastModified ?? DateTime.fromMillisecondsSinceEpoch(0);
 
+        // 📥 Update local if server is newer
         if (localProduct == null || serverTime.isAfter(localTime)) {
           await _productBox.put(serverProduct.id, serverProduct);
         }
@@ -45,18 +34,19 @@ class ProductSync {
         serverIds.add(serverProduct.id);
       }
 
-      // 🧠 Handle soft-deleting local items not found on server
+      // 🧹 Soft-delete local products that are missing on the server
       final localIds = _productBox.keys.cast<String>().toSet();
-      final toDelete = localIds.difference(serverIds);
+      final toSoftDelete = localIds.difference(serverIds);
 
-      for (final id in toDelete) {
+      for (final id in toSoftDelete) {
         final product = _productBox.get(id);
 
-        final isUnsyncedLocalOnly = product?.lastModified != null &&
+        final isNewlyCreatedLocally = product?.lastModified != null &&
             (product!.createdAt == product.lastModified ||
                 product.lastModified.difference(product.createdAt).inSeconds <= 5);
 
-        if (product != null && product.deletedAt == null && !isUnsyncedLocalOnly) {
+        // 🗑️ Mark as deleted only if not a recent local-only entry
+        if (product != null && product.deletedAt == null && !isNewlyCreatedLocally) {
           final updated = product.copyWith(
             deletedAt: DateTime.now(),
             lastModified: DateTime.now(),
@@ -66,18 +56,17 @@ class ProductSync {
       }
 
       print('☁️ Synced ${serverProducts.length} product(s) from Supabase.');
-    } catch (e) {
+    } catch (e, stack) {
       print('❌ Supabase sync (download) failed: $e');
+      debugPrintStack(stackTrace: stack);
     }
   }
-
 
   /// 🡅 Push from Hive to Supabase
   Future<void> syncToSupabase(BuildContext context) async {
     try {
       final serverProducts = await _supabaseService.fetchProductsFromServer();
       final serverMap = {for (var p in serverProducts) p.id: p};
-
       final localProducts = _productBox.values.toList();
       final localMap = {for (var p in localProducts) p.id: p};
 
@@ -86,13 +75,15 @@ class ProductSync {
       for (final local in localProducts) {
         final server = serverMap[local.id];
         final localTime = local.lastModified;
-        final serverTime = server?.lastModified ?? DateTime(2000);
+        final serverTime = server?.lastModified ?? DateTime.fromMillisecondsSinceEpoch(0);
 
+        // 🔼 If local is newer or doesn't exist on server, add to push list
         if (server == null || localTime.isAfter(serverTime)) {
           mergedProducts.add(local);
         }
       }
 
+      // 🧪 Also consider pulling in server-only entries (just in case they weren’t merged before)
       for (final server in serverProducts) {
         if (!localMap.containsKey(server.id) && server.deletedAt == null) {
           mergedProducts.add(server);
@@ -102,11 +93,12 @@ class ProductSync {
       if (mergedProducts.isEmpty) {
         print('ℹ️ No changes to sync. All products are up to date.');
       } else {
-        await _supabaseService.upsertProductsListToServer(mergedProducts, );
+        await _supabaseService.upsertProductsListToServer(mergedProducts);
         print('✅ Synced ${mergedProducts.length} product(s) to Supabase.');
       }
-    } catch (e) {
+    } catch (e, stack) {
       print('❌ Supabase sync (upload) failed: $e');
+      debugPrintStack(stackTrace: stack);
     }
   }
 

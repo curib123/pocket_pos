@@ -163,16 +163,26 @@ class SupabaseProductServices {
 
     // 2️⃣ Loop through updated products
     await processInChunks<Product>(updatedSubset, (product) async {
-      String? finalImagePath = await _uploadImageIfNeeded(product.imagePath, tempDir, product.name,userId);
+      final finalImagePath = await _uploadImageIfNeeded(
+        product.imagePath,
+        tempDir,
+        product.name,
+        userId, // 👈 only userId
+      );
 
-      // 🧬 Handle variant images too
+      // 🔁 Handle variant images too
       final updatedVariants = <Product>[];
       for (var variant in product.variants) {
-        final variantImage = await _uploadImageIfNeeded(variant.imagePath, tempDir, variant.name,userId);
+        final variantImage = await _uploadImageIfNeeded(
+          variant.imagePath,
+          tempDir,
+          variant.name,
+          userId,
+        );
         updatedVariants.add(variant.copyWith(imagePath: variantImage));
       }
 
-      // Replace in map
+      // 🔄 Update product in map
       productMap[product.id] = product.copyWith(
         imagePath: finalImagePath,
         variants: updatedVariants,
@@ -196,7 +206,7 @@ class SupabaseProductServices {
       print('✅ Upload complete with ${cleanedProducts.length} items!');
 
       final updatedProducts = productMap.values.toList();
-      await _deleteUnusedImagesForCurrentUser(updatedProducts);
+      await _deleteUnusedImagesForCurrentUser(updatedProducts, userId); // 🧹 use userId now
     } catch (e) {
       print('❌ Upload failed: $e');
     }
@@ -210,7 +220,12 @@ class SupabaseProductServices {
   }
 
 
-  Future<String?> _uploadImageIfNeeded(String? path, Directory tempDir, String label, String userId) async {
+  Future<String?> _uploadImageIfNeeded(
+      String? path,
+      Directory tempDir,
+      String label,
+      String userId,
+      ) async {
     if (path == null || path.startsWith('http') || _isAlreadyUploaded(path)) return path;
 
     final originalFile = File(path);
@@ -228,28 +243,110 @@ class SupabaseProductServices {
 
       final fileToUpload = compressed != null ? File(compressed.path) : originalFile;
 
-      // 💡 Generate deterministic hash for file content to avoid duplicate uploads
+      // 🧠 Create hash for uniqueness
       final bytes = await fileToUpload.readAsBytes();
-      final hash = sha256.convert(bytes).toString().substring(0, 10); // 10-char hash
-      final fileName = 'product_${userId}_$hash.jpg';
-      final storagePath = 'products/$fileName';
+      final hash = sha256.convert(bytes).toString().substring(0, 10);
 
-      final exists = await _client.storage.from('products').list(path: 'products');
-      if (exists.any((f) => f.name == fileName)) {
+      // 🔤 Sanitize product name and user ID for path safety
+      final sanitizedProduct = label.toLowerCase().replaceAll(RegExp(r'[^\w]+'), '-');
+      final sanitizedUserId = userId.toLowerCase().replaceAll(RegExp(r'[^\w]+'), '-');
+
+      // 🧾 Filename: product-userid-productname-image-hash.jpg
+      final fileName = 'product-$sanitizedUserId-$sanitizedProduct-image-$hash.jpg';
+
+      // 📁 Path: products/{userId}/{filename}
+      final storagePath = 'products/$sanitizedUserId/$fileName';
+
+      // 🔍 Check if file already exists
+      final existing = await _client.storage
+          .from('products')
+          .list(path: 'products/$sanitizedUserId');
+
+      if (existing.any((f) => f.name == fileName)) {
         print('🟡 Skipped upload: $fileName already exists.');
       } else {
         await _client.storage.from('products').upload(storagePath, fileToUpload);
-        print('📸 Uploaded image for $label');
+        print('📸 Uploaded image for "$label"');
       }
 
       final signedUrl = await _client.storage
           .from('products')
-          .createSignedUrl(storagePath, 60 * 60 * 24 * 365);
+          .createSignedUrl(storagePath, 60 * 60 * 24 * 365); // 1 year
 
       return signedUrl;
     } catch (e) {
-      print('⚠️ Image upload failed for $label: $e');
+      print('⚠️ Image upload failed for "$label": $e');
       return path;
+    }
+  }
+
+  Future<void> hardDeleteProductFromServer(String productId) async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) return;
+
+    try {
+      final row = await _client
+          .from('products')
+          .select('data')
+          .eq('user_id', userId)
+          .maybeSingle();
+
+      final rawData = row?['data'] as List? ?? [];
+      final products = rawData.map((e) => Product.fromMap(e)).toList();
+
+      // 🔍 Try finding a main product first
+      final index = products.indexWhere((p) => p.id == productId);
+
+      if (index != -1) {
+        final productToDelete = products[index];
+
+        // 🧹 Delete image if exists
+        final imagePath = productToDelete.imagePath;
+        if (imagePath != null && imagePath.contains('product_')) {
+          final fileName = Uri.parse(imagePath).pathSegments.last;
+          await _client.storage.from('products').remove(['products/$userId/$fileName']);
+          print('🗑️ Deleted image from storage: $fileName');
+        }
+
+        products.removeAt(index);
+      } else {
+        // 🔍 Search ONLY inside parent products (hasVariant == true && isVariant == false)
+        bool found = false;
+
+        for (int i = 0; i < products.length; i++) {
+          final parent = products[i];
+          if (parent.hasVariant == true && parent.isVariant == false) {
+            final variantIndex = parent.variants.indexWhere((v) => v.id == productId);
+
+            if (variantIndex != -1) {
+              final variantToDelete = parent.variants[variantIndex];
+
+              // 🧹 Delete variant image if any
+              final imagePath = variantToDelete.imagePath;
+              if (imagePath != null && imagePath.contains('product_')) {
+                final fileName = Uri.parse(imagePath).pathSegments.last;
+                await _client.storage.from('products').remove(['products/$userId/$fileName']);
+                print('🗑️ Deleted variant image from storage: $fileName');
+              }
+
+              // ✂️ Remove that variant
+              parent.variants.removeAt(variantIndex);
+              found = true;
+              break;
+            }
+          }
+        }
+
+        if (!found) throw Exception('Product not found');
+      }
+
+      // 🆙 Push updates
+      await upsertProductsListToServer(products);
+      await fetchProductsFromServer();
+
+      print('✅ Hard-deleted product or variant $productId for user $userId');
+    } catch (e) {
+      print('❌ Hard delete failed: $e');
     }
   }
 
@@ -271,6 +368,36 @@ class SupabaseProductServices {
       print('❌ Clear failed: $e');
     }
   }
+
+  /// 🧹 Find all deleted products AND variants from local cache
+  Future<List<Product>> findDeletedProductsAndVariants() async {
+    final allProducts = await fetchProductsFromServerRaw();
+    final List<Product> deletedItems = [];
+
+    for (final product in allProducts) {
+      // 🛑 Main product is deleted
+      if (product.deletedAt != null) {
+        print('🗑️ Deleted main product: ${product.name} (${product.id})');
+        deletedItems.add(product);
+      }
+
+      // 🔍 Check deleted variants if it's a parent product
+      if (product.hasVariant == true && product.isVariant == false) {
+        for (final variant in product.variants) {
+          if (variant.deletedAt != null) {
+            print('🗑️ Deleted variant: ${variant.name} (${variant.id}) under ${product.name}');
+            deletedItems.add(variant);
+          }
+        }
+      }
+    }
+
+    print('✅ Total deleted items found: ${deletedItems.length}');
+    return deletedItems;
+  }
+
+
+
 
   /// ❌ Soft delete a product
   Future<void> softDeleteProductFromServer(String productId) async {
@@ -332,18 +459,22 @@ class SupabaseProductServices {
   }
 
   /// 🧹 Auto-delete unused images from Supabase bucket for current user
-  Future<void> _deleteUnusedImagesForCurrentUser(List<Product> userProducts) async {
+  Future<void> _deleteUnusedImagesForCurrentUser(
+      List<Product> userProducts,
+      String username,
+      ) async {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) {
       print('❌ No user logged in.');
       return;
     }
 
+    final sanitizedUsername = username.toLowerCase().replaceAll(RegExp(r'[^\w]+'), '-');
     final bucket = _client.storage.from('products');
-    final referencedFiles = <String>{};
+    final referencedFiles = <String, String>{}; // filename => productName
 
-    // 1️⃣ Collect all image filenames from signed URLs
-    void collectImageFileNames(String? imagePath) {
+    // 🧹 Collect all image filenames tied to products and variants
+    void collectImageFileNames(String? imagePath, String productName) {
       if (imagePath == null) return;
 
       try {
@@ -351,82 +482,56 @@ class SupabaseProductServices {
         final segments = uri.pathSegments;
         final filename = segments.isNotEmpty ? segments.last.split('?').first : null;
 
-        if (filename != null && filename.startsWith('product_${userId}_')) {
-          referencedFiles.add(filename);
-          print('📎 Referenced image: $filename');
+        if (filename != null &&
+            filename.startsWith('product-$sanitizedUsername-') &&
+            filename.contains('-image-')) {
+          referencedFiles[filename] = productName;
+          print('📎 Referenced: $filename ← "$productName"');
         }
       } catch (e) {
-        print('⚠️ Failed to parse imagePath: $imagePath -> $e');
+        print('⚠️ Failed to parse imagePath: $imagePath → $e');
       }
     }
 
     for (final product in userProducts) {
-      collectImageFileNames(product.imagePath);
+      collectImageFileNames(product.imagePath, product.name);
       for (final variant in product.variants) {
-        collectImageFileNames(variant.imagePath);
+        collectImageFileNames(variant.imagePath, '${product.name} / ${variant.name}');
       }
     }
 
     try {
-      // 2️⃣ List all files in the 'products' folder
-      final files = await bucket.list(path: 'products');
+      // 📂 Grab all files in this user's image folder
+      final files = await bucket.list(path: 'products/$sanitizedUsername');
 
-      // 3️⃣ Filter unused files for this user
+      // 🔍 Find unused images (those not referenced above)
       final toDelete = files
           .where((file) =>
-      file.name.startsWith('product_${userId}_') &&
-          !referencedFiles.contains(file.name))
+      file.name.startsWith('product-$sanitizedUsername-') &&
+          file.name.contains('-image-') &&
+          !referencedFiles.containsKey(file.name))
           .map((file) => file.name)
           .toList();
 
       if (toDelete.isEmpty) {
-        print('🧼 No unused images to delete for user $userId.');
+        print('🧼 No unused images to delete for user "$sanitizedUsername".');
         return;
       }
 
       await processInChunks<String>(toDelete, (fileName) async {
-        await bucket.remove(['products/$fileName']);
-        print('🗑️ Deleted unused image: $fileName');
+        await bucket.remove(['products/$sanitizedUsername/$fileName']);
+        print('🗑️ Deleted unused image: $fileName (no linked product)');
       });
 
-      print('✅ Cleaned up ${toDelete.length} unused image(s) for user $userId');
+      print('✅ Cleaned ${toDelete.length} unused image(s) for user "$sanitizedUsername".');
     } catch (e) {
-      print('❌ Failed to clean up unused images: $e');
+      print('❌ Image cleanup failed for user "$sanitizedUsername": $e');
     }
-  }
 
-  Future<void> hardDeleteProductFromServer(String productId) async {
-    final userId = _client.auth.currentUser?.id;
-    if (userId == null) return;
-
-    try {
-      final row = await _client
-          .from('products')
-          .select('data')
-          .eq('user_id', userId)
-          .maybeSingle();
-
-      final rawData = row?['data'] as List? ?? [];
-      final products = rawData.map((e) => Product.fromMap(e)).toList();
-
-      final productToDelete = products.firstWhere(
-            (p) => p.id == productId,
-        orElse: () => throw Exception('Product not found'),
-      );
-
-      final imagePath = productToDelete.imagePath;
-      if (imagePath != null && imagePath.contains('product_')) {
-        final fileName = Uri.parse(imagePath).pathSegments.last;
-        await _client.storage.from('products').remove(['products/$fileName']);
-        print('🗑️ Deleted image from storage: $fileName');
-      }
-
-      final updated = products.where((p) => p.id != productId).toList();
-      await upsertProductsListToServer(updated);
-
-      print('✅ Hard-deleted product $productId for user $userId');
-    } catch (e) {
-      print('❌ Hard delete failed: $e');
+    // Optional: log the referenced files summary
+    print('📋 Referenced image count: ${referencedFiles.length}');
+    for (var entry in referencedFiles.entries) {
+      print('   → ${entry.key} ← ${entry.value}');
     }
   }
 

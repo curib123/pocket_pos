@@ -11,8 +11,8 @@ Future<void> autoSync(BuildContext context) async {
 
 Future<bool> HardDeleteProductByID(BuildContext context, String productID) async {
   try {
-    final syncProvider = Provider.of<ProductSync>(context, listen: false);
-    final success = await syncProvider.HardDeleteProductByID(productID);
+    final productProvider = Provider.of<ProductProvider>(context, listen: false);
+    final success = await productProvider.HardDeleteProductByID(productID);
     return success;
   } catch (e) {
     print('❌ Failed to hard delete product: $e');

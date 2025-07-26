@@ -197,68 +197,36 @@ class VariantProductProvider extends ChangeNotifier {
       debugPrint("🧯 Stack trace:\n$stack");
     }
   }
-
   Future<void> deleteVariant(String idOrName, String variantId) async {
     try {
       final parent = _getParent(idOrName);
       if (parent == null) return;
 
-      final matchingVariants = parent.variants.where((v) => v.id == variantId).toList();
+      final variantIndex = parent.variants.indexWhere((v) => v.id == variantId);
+      if (variantIndex == -1) return;
 
-      if (matchingVariants.isEmpty) {
+      final variantToDelete = parent.variants[variantIndex];
 
-        return;
-      }
+      // ✅ Skip if already deleted
+      if (variantToDelete.deletedAt != null) return;
 
-      final variantToDelete = matchingVariants.first;
-
-      final List<StockLog> logs = [];
-
-      for (final stock in variantToDelete.stocks) {
-        if (stock.quantity > 0) {
-          logs.add(
-            StockLog(
-              id: 'log-${stock.id}-removed',
-              productId: variantId,
-              quantity: stock.quantity,
-              isPiece: false,
-              reason: StockLogReason.deleted,
-              remarks: 'Removed stock on variant delete',
-            ),
-          );
-        }
-      }
-
-      final looseQty = variantToDelete.looseStock?.remainingPieces ?? 0;
-      if (looseQty > 0) {
-        logs.add(
-          StockLog(
-            id: 'log-${variantId}-loose-removed',
-            productId: variantId,
-            quantity: looseQty,
-            isPiece: true,
-            reason: StockLogReason.deleted,
-            remarks: 'Removed loose stock on variant delete',
-          ),
-        );
-      }
-
-      final updatedVariants = parent.variants.where((v) => v.id != variantId).toList();
+      final updatedVariants = [...parent.variants];
+      updatedVariants[variantIndex] = variantToDelete.copyWith(
+        deletedAt: DateTime.now(),
+        lastModified: DateTime.now(),
+      );
 
       final updatedParent = parent.copyWith(
         variants: updatedVariants,
-        hasVariant: updatedVariants.isNotEmpty,
         lastModified: DateTime.now(),
-        logs: [...parent.logs, ...logs],
       );
 
       await _productBox.put(updatedParent.id, updatedParent);
       _productProvider.refreshProducts();
       notifyListeners();
-
-
     } catch (e) {
-
+      print('❌ Error soft deleting variant: $e');
     }
   }
+
 }
