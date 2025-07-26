@@ -8,99 +8,72 @@ class ProductSync {
 
   ProductSync(this._productBox);
 
-  /// 🡇 Pull from Supabase, push to Hive
-  Future<void> syncFromSupabase() async {
+  Future<void> autoSync() async {
     try {
       final serverProducts = await _supabaseService.fetchProductsFromServer();
-
-      if (serverProducts.isEmpty) {
-        print("⚠️ No products fetched from Supabase.");
-        return;
-      }
-
-      final serverIds = <String>{};
-
-      for (var serverProduct in serverProducts) {
-        final localProduct = _productBox.get(serverProduct.id);
-        final serverTime = serverProduct.lastModified;
-        final localTime = localProduct?.lastModified ?? DateTime(2000);
-
-        if (localProduct == null || serverTime.isAfter(localTime)) {
-          await _productBox.put(serverProduct.id, serverProduct);
-        }
-
-        serverIds.add(serverProduct.id);
-      }
-
-      // 🧠 Handle soft-deleting local items not found on server
-      final localIds = _productBox.keys.cast<String>().toSet();
-      final toDelete = localIds.difference(serverIds);
-
-      for (final id in toDelete) {
-        final product = _productBox.get(id);
-
-        // 🛡️ Skip deleting local products that have never been synced
-        final isUnsyncedLocalOnly = product?.lastModified != null &&
-            (product!.createdAt == product.lastModified ||
-                product.lastModified.difference(product.createdAt).inSeconds <= 5);
-
-        if (product != null && product.deletedAt == null && !isUnsyncedLocalOnly) {
-          final updated = product.copyWith(
-            deletedAt: DateTime.now(),
-            lastModified: DateTime.now(),
-          );
-          await _productBox.put(id, updated);
-        }
-      }
-
-      print('☁️ Synced ${serverProducts.length} product(s) from Supabase.');
-    } catch (e) {
-      print('❌ Supabase sync (download) failed: $e');
-    }
-  }
-
-  /// 🡅 Push from Hive to Supabase
-  Future<void> syncToSupabase() async {
-    try {
-      final serverProducts = await _supabaseService.fetchProductsFromServer();
-      final serverMap = {for (var p in serverProducts) p.id: p};
-
       final localProducts = _productBox.values.toList();
+
+      final serverMap = {for (var p in serverProducts) p.id: p};
       final localMap = {for (var p in localProducts) p.id: p};
 
-      final mergedProducts = <Product>[];
+      final updatedToServer = <Product>[];
+      final updatedToLocal = <Product>{};
+      final allIds = {...serverMap.keys, ...localMap.keys};
 
-      for (final local in localProducts) {
-        final server = serverMap[local.id];
-        final localTime = local.lastModified;
+      for (final id in allIds) {
+        final server = serverMap[id];
+        final local = localMap[id];
+
         final serverTime = server?.lastModified ?? DateTime(2000);
+        final localTime = local?.lastModified ?? DateTime(2000);
 
-        if (server == null || localTime.isAfter(serverTime)) {
-          mergedProducts.add(local);
+        if (server != null && local != null) {
+          if (localTime.isAfter(serverTime)) {
+            // ✅ Local is newer → upload to server
+            updatedToServer.add(local);
+          } else if (serverTime.isAfter(localTime)) {
+            // ⬇️ Server is newer → overwrite local
+            updatedToLocal.add(server);
+          } else {
+            // ⏸️ Both same → do nothing
+            // print('⏸️ Skipping sync for $id — same timestamp');
+          }
+        } else if (server != null) {
+          // 📥 Server-only entry
+          updatedToLocal.add(server);
+        } else if (local != null) {
+          // 📤 Local-only entry
+          updatedToServer.add(local);
         }
       }
 
-      // Add new server entries that don't exist locally and aren't deleted
-      for (final server in serverProducts) {
-        if (!localMap.containsKey(server.id) && server.deletedAt == null) {
-          mergedProducts.add(server);
+      // ✅ Save server-updated products to Hive
+      for (final product in updatedToLocal) {
+        await _productBox.put(product.id, product);
+      }
+
+      // ⬆️ Push local-updated products to Supabase
+      if (updatedToServer.isNotEmpty) {
+        await _supabaseService.upsertOnlyChangedProducts(updatedToServer);
+      }
+
+      print('🔁 Synced: ${updatedToLocal.length} from server → local, ${updatedToServer.length} from local → server.');
+
+      // 🚫 Skipping soft-delete of local-only products
+      final serverIds = serverMap.keys.toSet();
+      final localIds = _productBox.keys.cast<String>().toSet();
+      final toKeepLocal = localIds.difference(serverIds);
+
+      for (final id in toKeepLocal) {
+        final product = _productBox.get(id);
+        if (product != null && product.deletedAt == null) {
+          print("🛡️ Keeping local-only product: ${product.name} (${product.id})");
         }
       }
 
-      if (mergedProducts.isEmpty) {
-        print('ℹ️ No changes to sync. All products are up to date.');
-      } else {
-        await _supabaseService.upsertProductsListToServer(mergedProducts);
-        print('✅ Synced ${mergedProducts.length} product(s) to Supabase.');
-      }
     } catch (e) {
-      print('❌ Supabase sync (upload) failed: $e');
+      print('❌ Auto sync failed: $e');
     }
   }
 
-  /// 🔁 Sync both ways (recommended for initial launch or manual sync)
-  Future<void> autoSync() async {
-    await syncToSupabase();
-    await syncFromSupabase();
-  }
 }

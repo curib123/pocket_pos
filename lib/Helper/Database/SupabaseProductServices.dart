@@ -27,7 +27,7 @@ class SupabaseProductServices {
       }
 
       final rawData = res['data'];
-      if (rawData is! List) {
+      if (rawData is! List<dynamic>) {
         print('⚠️ Invalid data format from Supabase.');
         return [];
       }
@@ -35,8 +35,8 @@ class SupabaseProductServices {
       print('📦 Supabase fetched: ${rawData.length} item(s)');
 
       return rawData
-          .map((item) => Product.fromMap(item as Map<String, dynamic>))
-          .where((product) => product.deletedAt == null)
+          .whereType<Map<String, dynamic>>()
+          .map((item) => Product.fromMap(item))
           .toList();
     } catch (e) {
       print('❌ Error fetching products: $e');
@@ -44,95 +44,68 @@ class SupabaseProductServices {
     }
   }
 
-  /// ⬆️ Upsert full list of products into a single row for this user
-  Future<void> upsertProductsListToServer(List<Product> products) async {
+  /// ⬆️ Upload only products that are new or changed (based on `lastModified`)
+  Future<void> upsertOnlyChangedProducts(List<Product> localProducts) async {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) {
       print('❌ Cannot upsert: No user logged in.');
       return;
     }
 
+    final serverProducts = await fetchProductsFromServer();
     final now = DateTime.now().toIso8601String();
+
+    // Convert server list to map for faster lookup
+    final serverMap = {
+      for (var product in serverProducts) product.id: product,
+    };
+
+    // 🚮 Step 1: Delete permanently marked products from server
+    final permanentlyDeleted = localProducts
+        .where((p) => p.isDeletedPermanent == true)
+        .toList();
+
+    if (permanentlyDeleted.isNotEmpty) {
+      try {
+        print('🗑️ Deleting ${permanentlyDeleted.length} permanently deleted product(s)...');
+
+        await _client.rpc('delete_products_by_ids', params: {
+          'user_id': userId,
+          'ids': permanentlyDeleted.map((p) => p.id).toList(),
+        });
+
+        print('✅ Permanent deletions complete.');
+      } catch (e) {
+        print('❌ Failed to delete permanently deleted products: $e');
+      }
+    }
+
+    // Step 2: Filter products that are new or modified
+    final changedOrNew = localProducts.where((local) {
+      if (local.isDeletedPermanent == true) return false; // Already deleted
+      final server = serverMap[local.id];
+      if (server == null) return true; // New product
+      return local.lastModified.isAfter(server.lastModified);
+    }).toList();
+
+    if (changedOrNew.isEmpty) {
+      print('✅ No changes to upload.');
+      return;
+    }
 
     final payload = {
       'user_id': userId,
-      'data': products.map((p) => p.toMap()).toList(),
+      'data': changedOrNew.map((p) => p.toMap()).toList(),
       'updated_at': now,
     };
 
-    print('⬆️ Uploading ${products.length} product(s) to Supabase...');
+    print('⬆️ Uploading ${changedOrNew.length} changed product(s) to Supabase...');
 
     try {
-      await _client
-          .from('products')
-          .upsert(payload, onConflict: 'user_id');
-
+      await _client.from('products').upsert(payload, onConflict: 'user_id');
       print('✅ Upload complete!');
     } catch (e) {
       print('❌ Upload failed: $e');
-    }
-  }
-
-  /// 🗑 Soft delete all products (clear product list on server)
-  Future<void> deleteAllProductsFromServer() async {
-    final userId = _client.auth.currentUser?.id;
-    if (userId == null) {
-      print('❌ Cannot delete: No user logged in.');
-      return;
-    }
-
-    try {
-      await _client.from('products').upsert({
-        'user_id': userId,
-        'data': [],
-        'updated_at': DateTime.now().toIso8601String(),
-      });
-
-      print('🗑 All products cleared for user $userId');
-    } catch (e) {
-      print('❌ Failed to clear products: $e');
-    }
-  }
-
-  /// ❌ Soft delete a single product by setting its `deletedAt` and `lastModified`
-  Future<void> softDeleteProductFromServer(String productId) async {
-    final userId = _client.auth.currentUser?.id;
-    if (userId == null) {
-      print('❌ Cannot soft delete: No user logged in.');
-      return;
-    }
-
-    try {
-      final res = await _client
-          .from('products')
-          .select()
-          .eq('user_id', userId)
-          .maybeSingle();
-
-      final rawData = res?['data'];
-      if (rawData == null || rawData is! List) {
-        print('❌ No product list found for user.');
-        return;
-      }
-
-      final productList = rawData
-          .map((item) => Product.fromMap(item as Map<String, dynamic>))
-          .toList();
-
-      final updatedList = productList.map((product) {
-        if (product.id == productId) {
-          return product.copyWith(
-            deletedAt: DateTime.now(),
-            lastModified: DateTime.now(),
-          );
-        }
-        return product;
-      }).toList();
-
-      await upsertProductsListToServer(updatedList);
-      print('🗑 Soft-deleted product $productId for user $userId');
-    } catch (e) {
-      print('❌ Soft delete failed: $e');
     }
   }
 }

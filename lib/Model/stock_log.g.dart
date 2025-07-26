@@ -96,6 +96,8 @@ class StockLogReasonAdapter extends TypeAdapter<StockLogReason> {
         return StockLogReason.restored;
       case 10:
         return StockLogReason.cleared;
+      case 11:
+        return StockLogReason.consumed;
       default:
         return StockLogReason.sold;
     }

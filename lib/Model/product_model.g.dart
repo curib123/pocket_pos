@@ -36,13 +36,14 @@ class ProductAdapter extends TypeAdapter<Product> {
       variants: (fields[15] as List).cast<Product>(),
       isVariant: fields[16] as bool,
       loans: (fields[18] as List).cast<LoanItem>(),
+      isDeletedPermanent: fields[19] as bool,
     );
   }
 
   @override
   void write(BinaryWriter writer, Product obj) {
     writer
-      ..writeByte(19)
+      ..writeByte(20)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -80,7 +81,9 @@ class ProductAdapter extends TypeAdapter<Product> {
       ..writeByte(17)
       ..write(obj.barcode)
       ..writeByte(18)
-      ..write(obj.loans);
+      ..write(obj.loans)
+      ..writeByte(19)
+      ..write(obj.isDeletedPermanent);
   }
 
   @override

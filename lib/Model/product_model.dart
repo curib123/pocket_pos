@@ -63,7 +63,10 @@ class Product extends HiveObject {
   final String? barcode;
 
   @HiveField(18)
-  final List<LoanItem> loans; // 🆕 Loan list
+  final List<LoanItem> loans;
+
+  @HiveField(19)
+  final bool isDeletedPermanent; // 🆕 Added
 
   // 🧮 Computed
   int get totalQuantity {
@@ -122,7 +125,8 @@ class Product extends HiveObject {
     this.hasVariant = false,
     this.variants = const [],
     this.isVariant = false,
-    this.loans = const [], // 🆕 default empty
+    this.loans = const [],
+    this.isDeletedPermanent = false, // 🆕 default false
   });
 
   Map<String, dynamic> toMap() {
@@ -145,7 +149,8 @@ class Product extends HiveObject {
       'hasVariant': hasVariant,
       'variants': variants.map((v) => v.toMap()).toList(),
       'isVariant': isVariant,
-      'loans': loans.map((l) => l.toMap()).toList(), // 🆕
+      'loans': loans.map((l) => l.toMap()).toList(),
+      'isDeletedPermanent': isDeletedPermanent, // 🆕
     };
   }
 
@@ -169,7 +174,8 @@ class Product extends HiveObject {
       hasVariant: map['hasVariant'] ?? false,
       variants: (map['variants'] as List?)?.map((v) => Product.fromMap(v)).toList() ?? [],
       isVariant: map['isVariant'] ?? false,
-      loans: (map['loans'] as List?)?.map((l) => LoanItem.fromMap(l)).toList() ?? [], // 🆕
+      loans: (map['loans'] as List?)?.map((l) => LoanItem.fromMap(l)).toList() ?? [],
+      isDeletedPermanent: map['isDeletedPermanent'] ?? false, // 🆕
     );
   }
 
@@ -192,7 +198,8 @@ class Product extends HiveObject {
     List<Product>? variants,
     bool? hasVariant,
     bool? isVariant,
-    List<LoanItem>? loans, // 🆕
+    List<LoanItem>? loans,
+    bool? isDeletedPermanent, // 🆕
   }) {
     return Product(
       id: id ?? this.id,
@@ -214,6 +221,7 @@ class Product extends HiveObject {
       hasVariant: hasVariant ?? this.hasVariant,
       isVariant: isVariant ?? this.isVariant,
       loans: loans ?? this.loans,
+      isDeletedPermanent: isDeletedPermanent ?? this.isDeletedPermanent, // 🆕
     );
   }
 }

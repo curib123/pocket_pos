@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:pocketpos/Helper/Classes_Methods/helper_methods.dart';
 import 'package:pocketpos/Provider/ProductProvider.dart';
 import 'package:pocketpos/Provider/ProductSync.dart';
+import 'package:pocketpos/View/Components/Alert/showLoadingAndNotify.dart';
 import 'package:pocketpos/View/Components/Widgets/AppDrawer.dart';
 import 'package:pocketpos/View/Components/Widgets/SearchAndCartRow.dart';
 import 'package:provider/provider.dart';
@@ -28,8 +29,17 @@ class _DashBoardScreenState extends State<DashBoardScreen> {
     return Scaffold(
       drawer: AppDrawer(),
       appBar: SearchAndCartAppBar(),
-      body: Center(
-        child: Text("Welcome"),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          await showLoadingAndNotify(context: context, task: () async => await autoSync(context));
+        },
+        child: ListView(
+          children: [
+            Center(
+              child: Text("Welcome"),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -3,11 +3,13 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:pocketpos/Helper/Classes_Methods/AppColor.dart';
+import 'package:pocketpos/Helper/Classes_Methods/helper_methods.dart';
 import 'package:pocketpos/Model/product_model.dart';
 import 'package:pocketpos/Provider/CurrencyProvider.dart';
 import 'package:pocketpos/Provider/ProductProvider.dart';
 import 'package:pocketpos/Provider/StoreCategoryProvider.dart';
 import 'package:pocketpos/Provider/SwitchProvider.dart';
+import 'package:pocketpos/View/Components/Alert/showLoadingAndNotify.dart';
 import 'package:pocketpos/View/Components/Widgets/BouncingCartIcon.dart';
 import 'package:pocketpos/View/Components/Custom/CustomButton.dart';
 import 'package:pocketpos/View/Components/Custom/CustomFlatDropdown.dart';
@@ -180,151 +182,156 @@ class _ProductListScreenState extends State<ProductListScreen> {
 
               final visibleProducts = filteredProducts.take(_loadedCount).toList();
 
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8,horizontal: 10),
-                child: Column(
-                  children: [
-                    // Search Bar
-                    FadeInDown(
-                      duration: const Duration(milliseconds: 600),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 10),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: TextField(
-                                decoration: InputDecoration(
-                                  hintText: 'Search product...',
-                                  prefixIcon: const Icon(Icons.search),
-                                  filled: true,
-                                  fillColor: Colors.grey[100],
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide.none,
+              return RefreshIndicator(
+                onRefresh: () async {
+                  await showLoadingAndNotify(context: context, task: () async => await autoSync(context));
+                },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8,horizontal: 10),
+                  child: Column(
+                    children: [
+                      // Search Bar
+                      FadeInDown(
+                        duration: const Duration(milliseconds: 600),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  decoration: InputDecoration(
+                                    hintText: 'Search product...',
+                                    prefixIcon: const Icon(Icons.search),
+                                    filled: true,
+                                    fillColor: Colors.grey[100],
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide.none,
+                                    ),
                                   ),
-                                ),
-                                onChanged: (value) {
-                                  if (_debounce?.isActive ?? false) _debounce!.cancel();
-                                  _debounce = Timer(const Duration(milliseconds: 300), () {
-                                    setState(() {
-                                      _searchQuery = value;
-                                      _loadedCount = 50;
+                                  onChanged: (value) {
+                                    if (_debounce?.isActive ?? false) _debounce!.cancel();
+                                    _debounce = Timer(const Duration(milliseconds: 300), () {
+                                      setState(() {
+                                        _searchQuery = value;
+                                        _loadedCount = 50;
+                                      });
                                     });
-                                  });
+                                  },
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              IconButton(
+                                onPressed: () {
+                                  switchProvider.toggleProductGridView();
                                 },
+                                icon: Icon(
+                                  switchProvider.isProductGridView
+                                      ? Icons.layers_rounded
+                                      : Icons.dashboard_rounded,
+                                  size: 30,
+                                  color: AppColor.primary,
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 10),
-                            IconButton(
-                              onPressed: () {
-                                switchProvider.toggleProductGridView();
-                              },
-                              icon: Icon(
-                                switchProvider.isProductGridView
-                                    ? Icons.layers_rounded
-                                    : Icons.dashboard_rounded,
-                                size: 30,
-                                color: AppColor.primary,
-                              ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
-                    ),
 
-                    // Filter Dropdowns
-                    FadeInDown(
-                      duration: const Duration(milliseconds: 400),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 5),
-                        child: LayoutBuilder(
-                          builder: (context, constraints) {
-                            double spacing = 12;
-                            int columnCount = widget.category.isNotEmpty ? 2 : 3;
-                            double itemWidth = (constraints.maxWidth - (spacing * (columnCount - 1))) / columnCount;
+                      // Filter Dropdowns
+                      FadeInDown(
+                        duration: const Duration(milliseconds: 400),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 5),
+                          child: LayoutBuilder(
+                            builder: (context, constraints) {
+                              double spacing = 12;
+                              int columnCount = widget.category.isNotEmpty ? 2 : 3;
+                              double itemWidth = (constraints.maxWidth - (spacing * (columnCount - 1))) / columnCount;
 
-                            return Wrap(
-                              spacing: spacing,
-                              runSpacing: 10,
-                              children: [
+                              return Wrap(
+                                spacing: spacing,
+                                runSpacing: 10,
+                                children: [
 
-                                if (widget.category.isEmpty)
+                                  if (widget.category.isEmpty)
+                                    SizedBox(
+                                      width: itemWidth,
+                                      child: CustomFlatDropdown<String>(
+                                        hint: 'Select Category',
+                                        value: _selectedCategoryFilter,
+                                        items: ['All', ...storeCategoryProvider.visibleCategories.toList()],
+                                        onChanged: (value) {
+                                          setState(() {
+                                            _selectedCategoryFilter = value!;
+                                            _loadedCount = 50;
+                                          });
+                                        },
+                                        itemBuilder: (val) => Text(val),
+                                      ),
+                                    ),
+
+                                  // Sort Filter
                                   SizedBox(
                                     width: itemWidth,
                                     child: CustomFlatDropdown<String>(
-                                      hint: 'Select Category',
-                                      value: _selectedCategoryFilter,
-                                      items: ['All', ...storeCategoryProvider.visibleCategories.toList()],
+                                      hint: 'Select Sort',
+                                      value: _selectedSort,
+                                      items: ['Newest', 'Oldest', 'Price ↑', 'Price ↓', 'Quantity ↑', 'Quantity ↓','Alphabetical'],
                                       onChanged: (value) {
                                         setState(() {
-                                          _selectedCategoryFilter = value!;
-                                          _loadedCount = 50;
+                                          _selectedSort = value!;
                                         });
                                       },
                                       itemBuilder: (val) => Text(val),
                                     ),
                                   ),
 
-                                // Sort Filter
-                                SizedBox(
-                                  width: itemWidth,
-                                  child: CustomFlatDropdown<String>(
-                                    hint: 'Select Sort',
-                                    value: _selectedSort,
-                                    items: ['Newest', 'Oldest', 'Price ↑', 'Price ↓', 'Quantity ↑', 'Quantity ↓','Alphabetical'],
-                                    onChanged: (value) {
-                                      setState(() {
-                                        _selectedSort = value!;
-                                      });
-                                    },
-                                    itemBuilder: (val) => Text(val),
+                                  // Stock Filter
+                                  SizedBox(
+                                    width: itemWidth,
+                                    child: CustomFlatDropdown<String>(
+                                      hint: 'Select Stock Status',
+                                      value: _selectedStockStatus,
+                                      items: ['All', 'In Stock', 'Out of Stock', 'Low Stock','Main Stock','Variant Stock'],
+                                      onChanged: (value) {
+                                        setState(() {
+                                          _selectedStockStatus = value!;
+                                        });
+                                      },
+                                      itemBuilder: (val) => Text(val),
+                                    ),
                                   ),
-                                ),
-
-                                // Stock Filter
-                                SizedBox(
-                                  width: itemWidth,
-                                  child: CustomFlatDropdown<String>(
-                                    hint: 'Select Stock Status',
-                                    value: _selectedStockStatus,
-                                    items: ['All', 'In Stock', 'Out of Stock', 'Low Stock','Main Stock','Variant Stock'],
-                                    onChanged: (value) {
-                                      setState(() {
-                                        _selectedStockStatus = value!;
-                                      });
-                                    },
-                                    itemBuilder: (val) => Text(val),
-                                  ),
-                                ),
-                              ],
-                            );
-                          },
+                                ],
+                              );
+                            },
+                          ),
                         ),
                       ),
-                    ),
 
 
-                    // Product List/Grid
-                    Expanded(
-                      child: NotificationListener<ScrollNotification>(
-                        onNotification: (scrollInfo) {
-                          if (scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent &&
-                              _loadedCount < filteredProducts.length) {
-                            setState(() {
-                              _loadedCount += _loadIncrement;
-                            });
-                          }
-                          return false;
-                        },
-                        child: visibleProducts.isEmpty
-                            ? _buildEmptyState()
-                            : switchProvider.isProductGridView
-                            ? _buildGridView(visibleProducts, currencyFormat, switchProvider)
-                            : _buildListView(visibleProducts, currencyFormat, switchProvider),
+                      // Product List/Grid
+                      Expanded(
+                        child: NotificationListener<ScrollNotification>(
+                          onNotification: (scrollInfo) {
+                            if (scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent &&
+                                _loadedCount < filteredProducts.length) {
+                              setState(() {
+                                _loadedCount += _loadIncrement;
+                              });
+                            }
+                            return false;
+                          },
+                          child: visibleProducts.isEmpty
+                              ? _buildEmptyState()
+                              : switchProvider.isProductGridView
+                              ? _buildGridView(visibleProducts, currencyFormat, switchProvider)
+                              : _buildListView(visibleProducts, currencyFormat, switchProvider),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               );
             },

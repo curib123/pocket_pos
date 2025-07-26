@@ -219,16 +219,23 @@ class ProductProvider extends ChangeNotifier {
     try {
       final product = _productBox.get(id);
       if (product != null) {
-        await _productBox.delete(id);
+        final updated = product.copyWith(
+          isDeletedPermanent: true,
+          lastModified: DateTime.now(),
+        );
+        await _productBox.put(id, updated);
         refreshProducts();
+        notifyListeners(); // 🛎️ Let the UI know
         return true;
       }
       return false; // product not found
     } catch (e) {
-      // Optional: log or handle the error
+      // Optional: log error
+      print('❌ hardDeleteProduct failed: $e');
       return false;
     }
   }
+
 
 
   Future<Product?> restoreProductById(String id) async {
@@ -279,9 +286,11 @@ class ProductProvider extends ChangeNotifier {
   }
 
 
+
   List<Product> getAllDeletedProducts() {
     return _productBox.values
-        .where((product) => product.deletedAt != null)
+        .where((product) =>
+    product.deletedAt != null && product.isDeletedPermanent == false)
         .toList();
   }
 
