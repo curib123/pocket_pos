@@ -35,8 +35,9 @@ class SupabaseProductServices {
       print('📦 Supabase fetched: ${rawData.length} item(s)');
 
       return rawData
-          .whereType<Map<String, dynamic>>()
+          .whereType<Map<String, dynamic>>() // 👈 ensures type safety
           .map((item) => Product.fromMap(item))
+          .where((product) => product.deletedAt == null)
           .toList();
     } catch (e) {
       print('❌ Error fetching products: $e');
@@ -60,32 +61,11 @@ class SupabaseProductServices {
       for (var product in serverProducts) product.id: product,
     };
 
-    // 🚮 Step 1: Delete permanently marked products from server
-    final permanentlyDeleted = localProducts
-        .where((p) => p.isDeletedPermanent == true)
-        .toList();
-
-    if (permanentlyDeleted.isNotEmpty) {
-      try {
-        print('🗑️ Deleting ${permanentlyDeleted.length} permanently deleted product(s)...');
-
-        await _client.rpc('delete_products_by_ids', params: {
-          'user_id': userId,
-          'ids': permanentlyDeleted.map((p) => p.id).toList(),
-        });
-
-        print('✅ Permanent deletions complete.');
-      } catch (e) {
-        print('❌ Failed to delete permanently deleted products: $e');
-      }
-    }
-
-    // Step 2: Filter products that are new or modified
+    // Filter products that are new or modified AND not permanently deleted
     final changedOrNew = localProducts.where((local) {
-      if (local.isDeletedPermanent == true) return false; // Already deleted
       final server = serverMap[local.id];
-      if (server == null) return true; // New product
-      return local.lastModified.isAfter(server.lastModified);
+      final isChanged = server == null || local.lastModified.isAfter(server.lastModified);
+      return isChanged && local.isDeletedPermanent != true;
     }).toList();
 
     if (changedOrNew.isEmpty) {
@@ -102,7 +82,9 @@ class SupabaseProductServices {
     print('⬆️ Uploading ${changedOrNew.length} changed product(s) to Supabase...');
 
     try {
-      await _client.from('products').upsert(payload, onConflict: 'user_id');
+      await _client
+          .from('products')
+          .upsert(payload, onConflict: 'user_id');
       print('✅ Upload complete!');
     } catch (e) {
       print('❌ Upload failed: $e');

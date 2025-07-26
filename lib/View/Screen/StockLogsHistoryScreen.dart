@@ -19,6 +19,12 @@ class _StockLogsHistoryScreenState extends State<StockLogsHistoryScreen> {
   DateTimeRange? selectedRange;
   StockLogReason? selectedReason;
 
+  final ScrollController _scrollController = ScrollController();
+  List<StockLog> paginatedLogs = [];
+  bool isLoadingMore = false;
+  int currentPage = 0;
+  final int pageSize = 50;
+
   @override
   void initState() {
     super.initState();
@@ -26,6 +32,53 @@ class _StockLogsHistoryScreenState extends State<StockLogsHistoryScreen> {
       start: DateTime.now().subtract(const Duration(days: 7)),
       end: DateTime.now(),
     );
+
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+        final logProvider = Provider.of<LogProvider>(context, listen: false);
+        loadMoreLogs(logProvider);
+      }
+    });
+  }
+
+  void loadInitialLogs(LogProvider logProvider) {
+    currentPage = 0;
+    paginatedLogs = [];
+    loadMoreLogs(logProvider);
+  }
+
+  void loadMoreLogs(LogProvider logProvider) {
+    if (isLoadingMore) return;
+
+    setState(() => isLoadingMore = true);
+
+    final allLogs = logProvider
+        .getLogs(
+      productIdOrName: selectedProductIdOrName,
+      dateRange: selectedRange,
+    )
+        .where((log) => selectedReason == null || log.reason == selectedReason)
+        .toList();
+
+    final start = currentPage * pageSize;
+    final end = (start + pageSize).clamp(0, allLogs.length);
+
+    if (start >= allLogs.length) {
+      setState(() => isLoadingMore = false);
+      return;
+    }
+
+    final newLogs = allLogs.sublist(start, end);
+
+    setState(() {
+      paginatedLogs.addAll(newLogs);
+      currentPage++;
+      isLoadingMore = false;
+    });
+  }
+
+  void onFilterChanged(LogProvider logProvider) {
+    loadInitialLogs(logProvider);
   }
 
   @override
@@ -34,13 +87,12 @@ class _StockLogsHistoryScreenState extends State<StockLogsHistoryScreen> {
       builder: (context, productProvider, logProvider, _) {
         final products = productProvider.products;
 
-        final logs = logProvider
-            .getLogs(
-          productIdOrName: selectedProductIdOrName,
-          dateRange: selectedRange,
-        )
-            .where((log) => selectedReason == null || log.reason == selectedReason)
-            .toList();
+        // ⛳ Lazy load logs initially
+        if (paginatedLogs.isEmpty && !isLoadingMore) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            loadInitialLogs(logProvider);
+          });
+        }
 
         return Scaffold(
           appBar: AppBar(
@@ -56,10 +108,8 @@ class _StockLogsHistoryScreenState extends State<StockLogsHistoryScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Column(
               children: [
-                // 🔽 Filters Row
                 Row(
                   children: [
-                    // Product dropdown
                     Expanded(
                       child: CustomFlatDropdown<String>(
                         hint: "All Products",
@@ -68,7 +118,10 @@ class _StockLogsHistoryScreenState extends State<StockLogsHistoryScreen> {
                           ...products.map((p) => p.id),
                           ...products.expand((p) => p.variants.map((v) => v.id)),
                         ],
-                        onChanged: (val) => setState(() => selectedProductIdOrName = val),
+                        onChanged: (val) {
+                          setState(() => selectedProductIdOrName = val);
+                          onFilterChanged(logProvider);
+                        },
                         itemBuilder: (val) {
                           final product = productProvider.getProductById(val);
                           return Text(
@@ -79,7 +132,6 @@ class _StockLogsHistoryScreenState extends State<StockLogsHistoryScreen> {
                       ),
                     ),
                     const SizedBox(width: 12),
-                    // Date picker
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColor.secondarySurface,
@@ -95,7 +147,10 @@ class _StockLogsHistoryScreenState extends State<StockLogsHistoryScreen> {
                           lastDate: DateTime.now(),
                           initialDateRange: selectedRange,
                         );
-                        if (picked != null) setState(() => selectedRange = picked);
+                        if (picked != null) {
+                          setState(() => selectedRange = picked);
+                          onFilterChanged(logProvider);
+                        }
                       },
                       child: Text(
                         selectedRange == null
@@ -106,30 +161,38 @@ class _StockLogsHistoryScreenState extends State<StockLogsHistoryScreen> {
                     ),
                   ],
                 ),
-
-                // Reason filter
                 Padding(
                   padding: const EdgeInsets.only(top: 0),
                   child: CustomFlatDropdown<StockLogReason>(
                     hint: "All Reasons",
                     value: selectedReason,
                     items: StockLogReason.values,
-                    onChanged: (val) => setState(() => selectedReason = val),
+                    onChanged: (val) {
+                      setState(() => selectedReason = val);
+                      onFilterChanged(logProvider);
+                    },
                     itemBuilder: (val) => Text(val.name, style: const TextStyle(fontSize: 13)),
                   ),
                 ),
-
                 const SizedBox(height: 16),
-
-                // 🔄 Logs List
                 Expanded(
-                  child: logs.isEmpty
+                  child: paginatedLogs.isEmpty && !isLoadingMore
                       ? const Center(child: Text("No logs found"))
                       : ListView.separated(
-                    itemCount: logs.length,
+                    controller: _scrollController,
+                    itemCount: paginatedLogs.length + 1,
                     separatorBuilder: (_, __) => const SizedBox(height: 10),
                     itemBuilder: (context, index) {
-                      final log = logs[index];
+                      if (index == paginatedLogs.length) {
+                        return isLoadingMore
+                            ? const Padding(
+                          padding: EdgeInsets.all(16),
+                          child: Center(child: CircularProgressIndicator()),
+                        )
+                            : const SizedBox.shrink();
+                      }
+
+                      final log = paginatedLogs[index];
                       final product = productProvider.getProductById(log.productId);
 
                       return Container(
@@ -197,4 +260,11 @@ class _StockLogsHistoryScreenState extends State<StockLogsHistoryScreen> {
       },
     );
   }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 }
+

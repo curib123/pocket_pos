@@ -10,16 +10,21 @@ class SetupCategoryScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final themeColor = AppColor.primary;
-    final sortedCategories = [...StoreCategory.all]..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+
+    // Sort categories alphabetically (case-insensitive)
+    final sortedCategories = [...StoreCategory.all]
+      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
 
     return Scaffold(
       appBar: AppBar(
-        leading: GestureDetector(
-          onTap: () => Navigator.pop(context),
-          child: const Icon(Icons.arrow_back_ios_new, color: Colors.black),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black),
+          onPressed: () => Navigator.pop(context),
         ),
         title: const Text('Setup Categories'),
         foregroundColor: themeColor,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
       ),
       body: Consumer<StoreCategoryProvider>(
         builder: (context, provider, _) {
@@ -29,10 +34,10 @@ class SetupCategoryScreen extends StatelessWidget {
               spacing: 12,
               runSpacing: 12,
               children: sortedCategories.map((category) {
-                final isSelected = !provider.isHidden(category);
+                final isVisible = !provider.isHidden(category);
                 return _PillToggle(
                   label: category,
-                  isSelected: isSelected,
+                  isSelected: isVisible,
                   color: themeColor,
                   onTap: () => provider.toggleVisibility(category),
                 );
@@ -68,7 +73,9 @@ class _PillToggle extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
         decoration: BoxDecoration(
           color: isSelected ? color : Colors.grey.shade100,
-          border: Border.all(color: isSelected ? color : Colors.grey.shade300),
+          border: Border.all(
+            color: isSelected ? color : Colors.grey.shade300,
+          ),
           borderRadius: BorderRadius.circular(50),
         ),
         child: Text(

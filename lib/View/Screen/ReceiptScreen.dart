@@ -1,4 +1,3 @@
-// ✨ No change here — imports are fine
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -20,6 +19,12 @@ class ReceiptScreen extends StatefulWidget {
 class _ReceiptScreenState extends State<ReceiptScreen> {
   String? selectedProductIdOrName;
   DateTimeRange? selectedRange;
+  final ScrollController _scrollController = ScrollController();
+
+  List<StockLog> paginatedLogs = [];
+  int currentPage = 0;
+  final int pageSize = 50;
+  bool isLoadingMore = false;
 
   @override
   void initState() {
@@ -28,6 +33,48 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
       start: DateTime.now().subtract(const Duration(days: 7)),
       end: DateTime.now(),
     );
+
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+        final logProvider = Provider.of<LogProvider>(context, listen: false);
+        loadMoreLogs(logProvider);
+      }
+    });
+  }
+
+  void loadInitialLogs(LogProvider logProvider) {
+    currentPage = 0;
+    paginatedLogs = [];
+    loadMoreLogs(logProvider);
+  }
+
+  void loadMoreLogs(LogProvider logProvider) {
+    if (isLoadingMore) return;
+
+    setState(() => isLoadingMore = true);
+
+    final allLogs = logProvider
+        .getLogs(
+      productIdOrName: selectedProductIdOrName,
+      dateRange: selectedRange,
+    )
+        .where((log) => log.reason == StockLogReason.sold)
+        .toList()
+      ..sort((a, b) => b.dateLogged.compareTo(a.dateLogged));
+
+    final start = currentPage * pageSize;
+    final end = (start + pageSize).clamp(0, allLogs.length);
+    if (start >= allLogs.length) {
+      setState(() => isLoadingMore = false);
+      return;
+    }
+
+    final newLogs = allLogs.sublist(start, end);
+    setState(() {
+      paginatedLogs.addAll(newLogs);
+      currentPage++;
+      isLoadingMore = false;
+    });
   }
 
   void _showReceiptDetails(BuildContext context, StockLog log, Product? product) {
@@ -118,14 +165,11 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
       builder: (context, productProvider, logProvider, currencyProvider, _) {
         final products = productProvider.products;
 
-        final logs = logProvider
-            .getLogs(
-          productIdOrName: selectedProductIdOrName,
-          dateRange: selectedRange,
-        )
-            .where((log) => log.reason == StockLogReason.sold)
-            .toList()
-          ..sort((a, b) => b.dateLogged.compareTo(a.dateLogged));
+        if (paginatedLogs.isEmpty && !isLoadingMore) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            loadInitialLogs(logProvider);
+          });
+        }
 
         return Scaffold(
           appBar: AppBar(
@@ -162,6 +206,7 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                         onChanged: (val) {
                           final id = val?.split('|').last;
                           setState(() => selectedProductIdOrName = id == 'null' ? null : id);
+                          loadInitialLogs(logProvider);
                         },
                         itemBuilder: (val) => Text(val.split('|').first, style: const TextStyle(fontSize: 14)),
                       ),
@@ -182,7 +227,10 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                           lastDate: DateTime.now(),
                           initialDateRange: selectedRange,
                         );
-                        if (picked != null) setState(() => selectedRange = picked);
+                        if (picked != null) {
+                          setState(() => selectedRange = picked);
+                          loadInitialLogs(logProvider);
+                        }
                       },
                       child: Text(
                         selectedRange == null
@@ -195,13 +243,23 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                 ),
                 const SizedBox(height: 10),
                 Expanded(
-                  child: logs.isEmpty
+                  child: paginatedLogs.isEmpty && !isLoadingMore
                       ? const Center(child: Text("No sales found"))
                       : ListView.separated(
-                    itemCount: logs.length,
+                    controller: _scrollController,
+                    itemCount: paginatedLogs.length + 1,
                     separatorBuilder: (_, __) => Divider(color: Colors.grey.shade200),
                     itemBuilder: (context, index) {
-                      final log = logs[index];
+                      if (index == paginatedLogs.length) {
+                        return isLoadingMore
+                            ? const Padding(
+                          padding: EdgeInsets.all(16),
+                          child: Center(child: CircularProgressIndicator()),
+                        )
+                            : const SizedBox.shrink();
+                      }
+
+                      final log = paginatedLogs[index];
                       final product = productProvider.getProductById(log.productId);
                       final dateStr = DateFormat('MMM d, h:mm a').format(log.dateLogged);
 
@@ -287,5 +345,11 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
         );
       },
     );
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 }

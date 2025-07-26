@@ -24,7 +24,7 @@ class ProductProvider extends ChangeNotifier {
 
   void refreshProducts() {
     final products = _productBox.values
-        .where((p) => p.deletedAt == null)
+        .where((p) => p.deletedAt == null && p.isDeletedPermanent != true)
         .toList();
 
     products.sort((a, b) => b.lastModified.compareTo(a.lastModified));
@@ -32,6 +32,7 @@ class ProductProvider extends ChangeNotifier {
     _products = products;
     notifyListeners();
   }
+
 
 
 
