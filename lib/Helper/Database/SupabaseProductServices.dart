@@ -4,7 +4,7 @@ import 'package:pocketpos/Model/product_model.dart';
 class SupabaseProductServices {
   final _client = Supabase.instance.client;
 
-  /// 📥 Fetch all product rows for the current user
+  /// 📥 Fetch all product rows for the current user (excluding permanently deleted)
   Future<List<Product>> fetchProductsFromServer() async {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) {
@@ -20,12 +20,14 @@ class SupabaseProductServices {
           .select()
           .eq('user_id', userId);
 
-      if (res.isEmpty) {
-        print('📦 Supabase fetched: 0 items');
+      final rawList = res as List<dynamic>;
+
+      if (rawList.isEmpty) {
+        print('📦 Supabase fetched: 0 products');
         return [];
       }
 
-      return res
+      final products = rawList
           .whereType<Map<String, dynamic>>()
           .map((data) {
         return Product.fromMap({
@@ -39,6 +41,9 @@ class SupabaseProductServices {
       })
           .where((product) => !product.isDeletedPermanent)
           .toList();
+
+      print('📦 Supabase fetched: ${products.length} product(s)');
+      return products;
     } catch (e) {
       print('❌ Error fetching products: $e');
       return [];
@@ -46,78 +51,48 @@ class SupabaseProductServices {
   }
 
   /// ⬆️ Upsert only new or modified products
-  Future<void> upsertOnlyChangedProducts(List<Product> localProducts) async {
+  Future<void> upsertOnlyChangedProducts(List<Product> productsToUpload) async {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) {
       print('❌ Cannot upsert: No user logged in.');
       return;
     }
 
-    final serverProducts = await fetchProductsFromServer();
-    final serverMap = {for (final p in serverProducts) p.id: p};
-
-    final changedOrNew = localProducts.where((local) {
-      final server = serverMap[local.id];
-      return (server == null || local.lastModified.isAfter(server.lastModified)) &&
-          local.isDeletedPermanent != true;
-    }).toList();
-
-    final toDelete = localProducts.where((local) {
-      final server = serverMap[local.id];
-      return local.isDeletedPermanent == true && server != null;
-    }).toList();
-
-    if (changedOrNew.isNotEmpty) {
-      final payload = changedOrNew.map((product) => {
-        'id': product.id,
-        'user_id': userId,
-        'name': product.name,
-        'category': product.category,
-        'isSoldByPack': product.isSoldByPack,
-        'isSoldByPiece': product.isSoldByPiece,
-        'piecesPerPack': product.piecesPerPack,
-        'unit': product.unit,
-        'imagePath': product.imagePath,
-        'barcode': product.barcode,
-        'createdAt': product.createdAt.toIso8601String(),
-        'lastModified': product.lastModified.toIso8601String(),
-        'deletedAt': product.isSoftDeleted,
-        'hasVariant': product.hasVariant,
-        'isVariant': product.isVariant,
-        'isDeletedPermanent': product.isDeletedPermanent,
-        'stocks': product.stocks.map((s) => s.toMap()).toList(),
-        'logs': product.logs.map((l) => l.toMap()).toList(),
-        'loans': product.loans.map((l) => l.toMap()).toList(),
-        'variants': product.variants.map((v) => v.toMap()).toList(),
-        'looseStock': product.looseStock?.toMap(),
-      }).toList();
-
-      print('⬆️ Uploading ${payload.length} product(s)...');
-      try {
-        await _client
-            .from('products')
-            .upsert(payload, onConflict: 'product_id'); // ✅ onConflict added here
-        print('✅ Upload complete!');
-      } catch (e) {
-        print('❌ Upload failed: $e');
-      }
-    } else {
-      print('✅ No products to upload.');
+    if (productsToUpload.isEmpty) {
+      print('🟢 No products to upload — already up-to-date.');
+      return;
     }
 
-    if (toDelete.isNotEmpty) {
-      final idsToDelete = toDelete.map((p) => p.id).toList();
-      print('🗑️ Deleting ${idsToDelete.length} product(s) from Supabase...');
+    final payload = productsToUpload.map((product) => {
+      'id': product.id,
+      'user_id': userId,
+      'name': product.name,
+      'category': product.category,
+      'isSoldByPack': product.isSoldByPack,
+      'isSoldByPiece': product.isSoldByPiece,
+      'piecesPerPack': product.piecesPerPack,
+      'unit': product.unit,
+      'imagePath': product.imagePath,
+      'barcode': product.barcode,
+      'createdAt': product.createdAt.toIso8601String(),
+      'lastModified': product.lastModified.toIso8601String(),
+      'isSoftDeleted': product.isSoftDeleted,
+      'hasVariant': product.hasVariant,
+      'isVariant': product.isVariant,
+      'isDeletedPermanent': product.isDeletedPermanent,
+      'stocks': product.stocks.map((s) => s.toMap()).toList(),
+      'logs': product.logs.map((l) => l.toMap()).toList(),
+      'loans': product.loans.map((l) => l.toMap()).toList(),
+      'variants': product.variants.map((v) => v.toMap()).toList(),
+      'looseStock': product.looseStock?.toMap(),
+    }).toList();
 
-      try {
-        await _client
-            .from('products')
-            .delete()
-            .filter('product_id', 'in', idsToDelete);
-        print('✅ Permanent delete complete!');
-      } catch (e) {
-        print('❌ Permanent delete failed: $e');
-      }
+    print('⬆️ Uploading ${payload.length} product(s) to Supabase...');
+    try {
+      await _client.from('products').upsert(payload, onConflict: 'id');
+      print('✅ Upload complete!');
+    } catch (e) {
+      print('❌ Upload failed: $e');
     }
   }
 }

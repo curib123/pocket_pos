@@ -886,6 +886,7 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
                                        }
 
 
+
                                        // Safe to toggle
                                          setState(() => _hasVariant = val);
                                        },
@@ -1088,6 +1089,20 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
                                         );
                                         return;
                                       }
+
+                                      if (_selectedCategory == null || _selectedCategory!.isEmpty) {
+                                        showDialog(
+                                          context: context,
+                                          builder: (context) => CustomNotificationDialog(
+                                            title: "Missing Category",
+                                            content: "Please select a category first before enabling variants.",
+                                            type: 'warning',
+                                            onConfirm: () => Navigator.pop(context),
+                                          ),
+                                        );
+                                        return;
+                                      }
+
 
                                       setState(() => _isSubmitting = true);
                                       await Future.delayed(const Duration(milliseconds: 300));

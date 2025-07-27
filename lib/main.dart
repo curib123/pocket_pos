@@ -66,7 +66,7 @@ Future<void> main() async {
 
           ChangeNotifierProvider(create: (_) => LooseStockProvider(productBox)),
           ChangeNotifierProvider(create: (_) => ProductAnalyticsProvider(productBox,analyticsBox)),
-          Provider(create: (_) => ProductSync(productBox)),
+          Provider(create: (_) => ProductSync()),
 
           ChangeNotifierProvider(create: (_) => StoreCategoryProvider()),
           ChangeNotifierProvider(create: (_) => SwitchProvider()),

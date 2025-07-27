@@ -22,6 +22,10 @@ class ProductProvider extends ChangeNotifier {
     }
   }
 
+  List<Product> getAllProductsInBox() {
+    return _productBox.values.toList();
+  }
+
   void refreshProducts() {
     final products = _productBox.values
         .where((p) => !p.isSoftDeleted && p.isDeletedPermanent != true)

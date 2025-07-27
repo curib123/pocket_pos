@@ -14,7 +14,8 @@ final sampleProduct = Product(
   imagePath: 'assets/images/marlboro.png',
   createdAt: DateTime.now().subtract(Duration(days: 10)),
   lastModified: DateTime.now(),
-  deletedAt: null,
+  loans: [],
+  isSoftDeleted: false,
   stocks: [
     ProductStock(
       id: 'stock001',
@@ -72,7 +73,6 @@ final sampleProduct = Product(
       imagePath: 'assets/images/marlboro_100s.png',
       createdAt: DateTime.now().subtract(Duration(days: 7)),
       lastModified: DateTime.now(),
-      deletedAt: null,
       stocks: [
         ProductStock(
           id: 'stock-v1-001',
@@ -105,7 +105,6 @@ final sampleProduct = Product(
       imagePath: 'assets/images/marlboro_soft.png',
       createdAt: DateTime.now().subtract(Duration(days: 5)),
       lastModified: DateTime.now(),
-      deletedAt: null,
       stocks: [
         ProductStock(
           id: 'stock-v2-001',
@@ -144,7 +143,6 @@ final sampleProduct = Product(
       imagePath: 'assets/images/marlboro_loose.png',
       createdAt: DateTime.now().subtract(Duration(days: 3)),
       lastModified: DateTime.now(),
-      deletedAt: null,
       stocks: [
         ProductStock(
           id: 'stock-v3-001',
