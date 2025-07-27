@@ -38,7 +38,10 @@ enum StockLogReason {
   cleared,     // 🧹 Product wiped in bulk clear
 
   @HiveField(11)
-  consumed
+  consumed,
+
+  @HiveField(12)
+  unknown,     // 🚨 Fallback enum for unexpected strings
 }
 
 @HiveType(typeId: 4)
@@ -90,33 +93,39 @@ class StockLog extends HiveObject {
   Map<String, dynamic> toMap() {
     return {
       'id': id,
-      'productId': productId,
+      'product_id': productId,
       'quantity': quantity,
       'isPiece': isPiece,
       'reason': reason.name,
-      'remarks': remarks,
+      'remarks': remarks ?? '',
       'dateLogged': dateLogged.toIso8601String(),
       'lastModified': lastModified.toIso8601String(),
       'deletedAt': deletedAt?.toIso8601String(),
-      'profit': profit,
+      'profit': profit ?? 0.0,
     };
   }
 
   factory StockLog.fromMap(Map<String, dynamic> map) {
     return StockLog(
-      id: map['id'],
-      productId: map['productId'],
-      quantity: map['quantity'],
-      isPiece: map['isPiece'],
+      id: map['id']?.toString() ?? '',
+      productId: map['product_id']?.toString() ?? '',
+      quantity: int.tryParse(map['quantity'].toString()) ?? 0,
+      isPiece: map['isPiece'] == true,
+      profit: map['profit'] != null
+          ? double.tryParse(map['profit'].toString()) ?? 0.0
+          : 0.0,
       reason: StockLogReason.values.firstWhere(
             (e) => e.name == map['reason'],
-        orElse: () => StockLogReason.sold,
+        orElse: () => StockLogReason.unknown,
       ),
-      remarks: map['remarks'],
-      dateLogged: DateTime.parse(map['dateLogged']),
-      lastModified: DateTime.parse(map['lastModified']),
-      deletedAt: map['deletedAt'] != null ? DateTime.parse(map['deletedAt']) : null,
-      profit: map['profit']?.toDouble(),
+      remarks: map['remarks']?.toString(),
+      dateLogged: DateTime.tryParse(map['dateLogged'] ?? '') ?? DateTime.now(),
+      lastModified:
+      DateTime.tryParse(map['lastModified'] ?? '') ?? DateTime.now(),
+      deletedAt: (map['deletedAt'] != null &&
+          map['deletedAt'].toString().isNotEmpty)
+          ? DateTime.tryParse(map['deletedAt'])
+          : null,
     );
   }
 

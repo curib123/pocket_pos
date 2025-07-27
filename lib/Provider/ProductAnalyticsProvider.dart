@@ -79,6 +79,7 @@ class ProductAnalyticsProvider extends ChangeNotifier {
         case StockLogReason.restored:
         case StockLogReason.cleared:
         case StockLogReason.consumed:
+        case StockLogReason.unknown:
         // 🔇 These reasons don’t affect analytics totals (for now)
           break;
       }

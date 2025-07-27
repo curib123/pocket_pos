@@ -21,9 +21,6 @@ class ProductSync {
       for (final local in localProducts) {
         final server = serverMap[local.id];
 
-        print("local name ${local.name}");
-        print("local lastModified ${local.lastModified}");
-        print("server lastModified ${server!.lastModified}");
         if (server == null) {
           print('📤 New local product "${local.name}" not found on server. Will upload.');
           toUpload.add(local);
@@ -47,7 +44,7 @@ class ProductSync {
 
       // 🔼 Upload changed/created products
       if (toUpload.isNotEmpty) {
-        await _supabaseService.upsertOnlyChangedProducts(toUpload);
+        await _supabaseService.syncChangedProductsAndLogs(toUpload);
         print('✅ Synced ${toUpload.length} local → Supabase.');
       }
 
