@@ -100,6 +100,16 @@ class ProductProvider extends ChangeNotifier {
   List<Map<String, dynamic>> exportToJsonList() =>
       _products.map((p) => p.toMap()).toList();
 
+  Future<void> silentUpsertProduct(Product product) async {
+    try {
+      // Just put the product in the box as-is (preserving everything exactly)
+      await _productBox.put(product.id, product);
+      refreshProducts();
+    } catch (e) {
+      print("⚠️ Error in silentUpsertProduct: $e");
+    }
+  }
+
   Future<void> upsertProduct(Product product) async {
     try {
       final existingIndex = _products.indexWhere((p) => p.id == product.id);

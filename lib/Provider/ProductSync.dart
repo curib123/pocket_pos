@@ -16,8 +16,14 @@ class ProductSync {
       final toUpload = <Product>[];
       final toSaveLocally = <Product>[];
 
+
+
       for (final local in localProducts) {
         final server = serverMap[local.id];
+
+        print("local name ${local.name}");
+        print("local lastModified ${local.lastModified}");
+        print("server lastModified ${server!.lastModified}");
         if (server == null) {
           print('📤 New local product "${local.name}" not found on server. Will upload.');
           toUpload.add(local);

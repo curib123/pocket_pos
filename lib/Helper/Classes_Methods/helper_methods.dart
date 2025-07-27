@@ -8,7 +8,7 @@ Future<void> autoSync(BuildContext context) async {
 
   await syncProvider.autoSync(
     productProvider.getAllProductsInBox(),
-        (product) async => await productProvider.upsertProduct(product),
+        (product) async => await productProvider.silentUpsertProduct(product),
   );
 }
 
