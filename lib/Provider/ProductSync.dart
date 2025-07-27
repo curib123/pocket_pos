@@ -30,7 +30,7 @@ class ProductSync {
         } else {
           // 🧠 Here we update even if timestamps are the same or server is newer
           print('📥 save locally');
-          toSaveLocally.add(local);
+          toSaveLocally.add(server);
         }
       }
 
