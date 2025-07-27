@@ -20,7 +20,7 @@ class VariantProductProvider extends ChangeNotifier {
     try {
       return _productBox.values.firstWhere(
             (p) =>
-        p.deletedAt == null &&
+        p.isSoftDeleted &&
             (p.id == idOrName ||
                 p.name.trim().toLowerCase() == idOrName.trim().toLowerCase()),
       );
@@ -38,7 +38,7 @@ class VariantProductProvider extends ChangeNotifier {
     try {
       final parent = _productBox.values.firstWhere(
             (product) =>
-        product.deletedAt == null &&
+        product.isSoftDeleted  &&
             product.hasVariant &&
             product.variants.any((v) => v.id == variantId),
       );

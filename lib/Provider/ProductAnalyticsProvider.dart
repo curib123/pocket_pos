@@ -14,7 +14,7 @@ class ProductAnalyticsProvider extends ChangeNotifier {
 
   Future<void> refreshAllAnalytics({DateFilterType? filterType}) async {
     for (final product in _productBox.values) {
-      if (product.deletedAt != null) continue;
+      if (product.isSoftDeleted ) continue;
       await _updateAnalytics(product, filterType: filterType);
     }
     _flagTopAndLowPerformers();

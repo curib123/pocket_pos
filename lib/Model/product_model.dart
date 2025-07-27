@@ -39,7 +39,7 @@ class Product extends HiveObject {
   final DateTime lastModified;
 
   @HiveField(10)
-  final DateTime? deletedAt;
+  final bool isSoftDeleted; // 🆕 replaces deletedAt
 
   @HiveField(11)
   final List<ProductStock> stocks;
@@ -66,26 +66,17 @@ class Product extends HiveObject {
   final List<LoanItem> loans;
 
   @HiveField(19)
-  final bool isDeletedPermanent; // 🆕 Added
+  final bool isDeletedPermanent;
 
-  // 🧮 Computed
-  int get totalQuantity {
-    final packQty = stocks.fold<int>(0, (sum, stock) => sum + stock.quantity);
-    return packQty;
-  }
+  // 🔢 Computed
+  int get totalQuantity => stocks.fold(0, (sum, stock) => sum + stock.quantity);
 
-  int get totalQuantityByPieces {
-    final packQty = stocks.fold<int>(0, (sum, stock) => sum + stock.quantity);
-    final totalQtyByPieces = packQty * (piecesPerPack ?? 1);
-    return totalQtyByPieces;
-  }
+  int get totalQuantityByPieces =>
+      totalQuantity * (piecesPerPack ?? 1);
 
-  // 📦 Get all logs for a specific reason
-  List<StockLog> getLogsByReason(StockLogReason reason) {
-    return logs.where((log) => log.reason == reason).toList();
-  }
+  List<StockLog> getLogsByReason(StockLogReason reason) =>
+      logs.where((log) => log.reason == reason).toList();
 
-  // 🗂 Group logs by reason
   Map<StockLogReason, List<StockLog>> get logsByReason {
     final Map<StockLogReason, List<StockLog>> grouped = {};
     for (final log in logs) {
@@ -94,7 +85,6 @@ class Product extends HiveObject {
     return grouped;
   }
 
-  // 📊 Count logs per reason
   Map<StockLogReason, int> get logCountsByReason {
     final Map<StockLogReason, int> counts = {};
     for (final log in logs) {
@@ -103,7 +93,6 @@ class Product extends HiveObject {
     return counts;
   }
 
-  // 🧾 Just an alias for readability
   List<StockLog> get allLogs => logs;
 
   Product({
@@ -118,7 +107,7 @@ class Product extends HiveObject {
     this.barcode,
     required this.createdAt,
     required this.lastModified,
-    this.deletedAt,
+    this.isSoftDeleted = false, // 🆕 default false
     this.stocks = const [],
     this.looseStock,
     this.logs = const [],
@@ -126,7 +115,7 @@ class Product extends HiveObject {
     this.variants = const [],
     this.isVariant = false,
     this.loans = const [],
-    this.isDeletedPermanent = false, // 🆕 default false
+    this.isDeletedPermanent = false,
   });
 
   Map<String, dynamic> toMap() {
@@ -142,7 +131,7 @@ class Product extends HiveObject {
       'barcode': barcode,
       'createdAt': createdAt.toIso8601String(),
       'lastModified': lastModified.toIso8601String(),
-      'deletedAt': deletedAt?.toIso8601String(),
+      'isSoftDeleted': isSoftDeleted, // ✅
       'stocks': stocks.map((s) => s.toMap()).toList(),
       'looseStock': looseStock?.toMap(),
       'logs': logs.map((l) => l.toMap()).toList(),
@@ -150,7 +139,7 @@ class Product extends HiveObject {
       'variants': variants.map((v) => v.toMap()).toList(),
       'isVariant': isVariant,
       'loans': loans.map((l) => l.toMap()).toList(),
-      'isDeletedPermanent': isDeletedPermanent, // 🆕
+      'isDeletedPermanent': isDeletedPermanent,
     };
   }
 
@@ -167,7 +156,7 @@ class Product extends HiveObject {
       barcode: map['barcode'],
       createdAt: DateTime.parse(map['createdAt']),
       lastModified: DateTime.parse(map['lastModified']),
-      deletedAt: map['deletedAt'] != null ? DateTime.parse(map['deletedAt']) : null,
+      isSoftDeleted: map['isSoftDeleted'] ?? false, // ✅
       stocks: (map['stocks'] as List?)?.map((s) => ProductStock.fromMap(s)).toList() ?? [],
       looseStock: map['looseStock'] != null ? LooseStock.fromMap(map['looseStock']) : null,
       logs: (map['logs'] as List?)?.map((l) => StockLog.fromMap(l)).toList() ?? [],
@@ -175,7 +164,7 @@ class Product extends HiveObject {
       variants: (map['variants'] as List?)?.map((v) => Product.fromMap(v)).toList() ?? [],
       isVariant: map['isVariant'] ?? false,
       loans: (map['loans'] as List?)?.map((l) => LoanItem.fromMap(l)).toList() ?? [],
-      isDeletedPermanent: map['isDeletedPermanent'] ?? false, // 🆕
+      isDeletedPermanent: map['isDeletedPermanent'] ?? false,
     );
   }
 
@@ -191,7 +180,7 @@ class Product extends HiveObject {
     String? barcode,
     DateTime? createdAt,
     DateTime? lastModified,
-    DateTime? deletedAt,
+    bool? isSoftDeleted, // ✅
     List<ProductStock>? stocks,
     LooseStock? looseStock,
     List<StockLog>? logs,
@@ -199,7 +188,7 @@ class Product extends HiveObject {
     bool? hasVariant,
     bool? isVariant,
     List<LoanItem>? loans,
-    bool? isDeletedPermanent, // 🆕
+    bool? isDeletedPermanent,
   }) {
     return Product(
       id: id ?? this.id,
@@ -213,7 +202,7 @@ class Product extends HiveObject {
       barcode: barcode ?? this.barcode,
       createdAt: createdAt ?? this.createdAt,
       lastModified: lastModified ?? this.lastModified,
-      deletedAt: deletedAt,
+      isSoftDeleted: isSoftDeleted ?? this.isSoftDeleted, // ✅
       stocks: stocks ?? this.stocks,
       looseStock: looseStock ?? this.looseStock,
       logs: logs ?? this.logs,
@@ -221,7 +210,7 @@ class Product extends HiveObject {
       hasVariant: hasVariant ?? this.hasVariant,
       isVariant: isVariant ?? this.isVariant,
       loans: loans ?? this.loans,
-      isDeletedPermanent: isDeletedPermanent ?? this.isDeletedPermanent, // 🆕
+      isDeletedPermanent: isDeletedPermanent ?? this.isDeletedPermanent,
     );
   }
 }

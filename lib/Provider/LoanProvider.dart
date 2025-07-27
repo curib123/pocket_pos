@@ -15,14 +15,13 @@ class LoanProvider with ChangeNotifier {
 
   void refreshProducts({bool silently = false}) {
     _products = _productBox.values
-        .where((p) => p.deletedAt == null)
+        .where((p) =>  !p.isDeletedPermanent)
         .toList()
       ..sort((a, b) => b.lastModified.compareTo(a.lastModified));
 
-    if (!silently) {
-      notifyListeners();
-    }
+    if (!silently) notifyListeners();
   }
+
 
   Product? getProductById(String id) {
     for (final product in _productBox.values) {

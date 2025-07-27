@@ -24,7 +24,7 @@ class ProductProvider extends ChangeNotifier {
 
   void refreshProducts() {
     final products = _productBox.values
-        .where((p) => p.deletedAt == null && p.isDeletedPermanent != true)
+        .where((p) => !p.isSoftDeleted && p.isDeletedPermanent != true)
         .toList();
 
     products.sort((a, b) => b.lastModified.compareTo(a.lastModified));
@@ -104,7 +104,7 @@ class ProductProvider extends ChangeNotifier {
       if (isNew) {
         final nameExists = _products.any((p) =>
         p.name.trim().toLowerCase() == product.name.trim().toLowerCase() &&
-            p.deletedAt == null);
+            !p.isSoftDeleted);
 
         if (nameExists) {
           return;
@@ -204,7 +204,7 @@ class ProductProvider extends ChangeNotifier {
         );
 
         final deleted = product.copyWith(
-          deletedAt: DateTime.now(),
+          isSoftDeleted: true,
           lastModified: DateTime.now(),
           logs: [...product.logs, log],
         );
@@ -243,7 +243,7 @@ class ProductProvider extends ChangeNotifier {
     try {
       final product = _productBox.get(id);
 
-      if (product != null && product.deletedAt != null) {
+      if (product != null && product.isSoftDeleted) {
         final now = DateTime.now();
         final log = StockLog(
           id: 'log-$id-restored-${now.millisecondsSinceEpoch}',
@@ -257,7 +257,7 @@ class ProductProvider extends ChangeNotifier {
         );
 
         final restored = product.copyWith(
-          deletedAt: null,
+          isSoftDeleted: false,
           lastModified: now,
           logs: [...(product.logs ?? []), log], // safe spread
         );
@@ -265,7 +265,7 @@ class ProductProvider extends ChangeNotifier {
         await _productBox.put(id, restored);
         refreshProducts(); // assuming this calls notifyListeners()
 
-        debugPrint("✅ Product restored: ${restored.name} | deletedAt: ${restored.deletedAt} | lastModified: ${restored.lastModified}");
+        debugPrint("✅ Product restored: ${restored.name} |  isSoftDeleted: true,: ${restored.isSoftDeleted} | lastModified: ${restored.lastModified}");
         return restored;
       } else {
         debugPrint("⚠️ Cannot restore: Product not found or not deleted.");
@@ -281,7 +281,7 @@ class ProductProvider extends ChangeNotifier {
 
   List<String> getAllDeletedProductNames() {
     return _productBox.values
-        .where((product) => product.deletedAt != null)
+        .where((product) => product.isSoftDeleted)
         .map((product) => product.name)
         .toList();
   }
@@ -291,7 +291,7 @@ class ProductProvider extends ChangeNotifier {
   List<Product> getAllDeletedProducts() {
     return _productBox.values
         .where((product) =>
-    product.deletedAt != null && product.isDeletedPermanent == false)
+    product.isSoftDeleted && product.isDeletedPermanent == false)
         .toList();
   }
 

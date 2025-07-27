@@ -66,7 +66,7 @@ class ProductSync {
 
       for (final id in toKeepLocal) {
         final product = _productBox.get(id);
-        if (product != null && product.deletedAt == null) {
+        if (product != null && !product.isSoftDeleted) {
           print("🛡️ Keeping local-only product: ${product.name} (${product.id})");
         }
       }

@@ -350,7 +350,7 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
       barcode: _barcodeController.text.trim() , // 👈 add this line
       createdAt: isEditing ? widget.existingProduct!.createdAt : DateTime.now(),
       lastModified: DateTime.now(),
-      deletedAt: null,
+      isSoftDeleted: false,
       stocks: updatedStocks,
       logs: widget.existingProduct?.logs ?? [],
       hasVariant: _hasVariant,

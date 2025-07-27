@@ -48,7 +48,7 @@ class CartListProvider with ChangeNotifier {
     final normalized = barcode.trim().toLowerCase();
 
     for (final product in _productBox.values) {
-      if (product.deletedAt != null) continue;
+      if (product.isSoftDeleted) continue;
 
       // 🔍 Check main product barcode
       if ((product.barcode ?? '').trim().toLowerCase() == normalized) {
@@ -58,7 +58,7 @@ class CartListProvider with ChangeNotifier {
       // 🔍 Check variants' barcodes
       if (product.hasVariant && product.variants.isNotEmpty) {
         for (final variant in product.variants.whereType<Product>()) {
-          if (variant.deletedAt != null) continue;
+          if (variant.isSoftDeleted) continue;
 
           if ((variant.barcode ?? '').trim().toLowerCase() == normalized) {
             return variant;

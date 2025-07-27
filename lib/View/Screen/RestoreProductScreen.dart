@@ -202,10 +202,12 @@ class RestoreProductScreen extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 6),
-        Text(
-          'Deleted: ${product.deletedAt?.toLocal().toString().split(' ')[0] ?? 'Unknown'}',
-          style: const TextStyle(fontSize: 11.5, color: Colors.grey),
-        ),
+        if (product.isSoftDeleted)
+          Text(
+            'Deleted: ${product.isSoftDeleted}',
+            style: const TextStyle(fontSize: 11.5, color: Colors.grey),
+          ),
+
       ],
     );
   }

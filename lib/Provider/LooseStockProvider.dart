@@ -16,7 +16,7 @@ class LooseStockProvider extends ChangeNotifier {
     final normalized = idOrName.trim().toLowerCase();
 
     for (final product in _productBox.values) {
-      if (product.deletedAt != null) continue;
+      if (product.isSoftDeleted) continue;
 
       // 🔍 Match main product
       if (product.id.toLowerCase() == normalized ||
@@ -27,7 +27,7 @@ class LooseStockProvider extends ChangeNotifier {
       // 🔍 Match from variants
       if (product.hasVariant && product.variants.isNotEmpty) {
         for (final variant in product.variants.whereType<Product>()) {
-          if (variant.deletedAt != null) continue;
+          if (variant.isSoftDeleted) continue;
 
           if (variant.id.toLowerCase() == normalized ||
               variant.name.trim().toLowerCase() == normalized) {

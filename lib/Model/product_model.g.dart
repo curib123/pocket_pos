@@ -28,7 +28,7 @@ class ProductAdapter extends TypeAdapter<Product> {
       barcode: fields[17] as String?,
       createdAt: fields[8] as DateTime,
       lastModified: fields[9] as DateTime,
-      deletedAt: fields[10] as DateTime?,
+      isSoftDeleted: fields[10] as bool,
       stocks: (fields[11] as List).cast<ProductStock>(),
       looseStock: fields[12] as LooseStock?,
       logs: (fields[13] as List).cast<StockLog>(),
@@ -65,7 +65,7 @@ class ProductAdapter extends TypeAdapter<Product> {
       ..writeByte(9)
       ..write(obj.lastModified)
       ..writeByte(10)
-      ..write(obj.deletedAt)
+      ..write(obj.isSoftDeleted)
       ..writeByte(11)
       ..write(obj.stocks)
       ..writeByte(12)
