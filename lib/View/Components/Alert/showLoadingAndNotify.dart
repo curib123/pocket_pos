@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:pocketpos/View/Components/Alert/CustomNotificationDialog.dart';
-
 Future<void> showLoadingAndNotify({
   required BuildContext context,
   required Future<void> Function() task,
+
+  // Success dialog props
   String successTitle = '🎉 Sync Complete',
   String successMessage = 'Your data has been successfully synced with the server. Everything is up to date!',
+  VoidCallback? onSuccessConfirm,
 
+  // Error dialog props
   String errorTitle = '⚠️ Sync Failed',
   String errorMessage = 'Something went wrong while syncing. Please check your connection and try again.',
-
+  VoidCallback? onErrorConfirm,
 }) async {
   final navigator = Navigator.of(context);
 
@@ -18,7 +21,7 @@ Future<void> showLoadingAndNotify({
     context: context,
     barrierDismissible: false,
     builder: (_) => WillPopScope(
-      onWillPop: () async => false, // disable back button
+      onWillPop: () async => false,
       child: const AlertDialog(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -43,7 +46,7 @@ Future<void> showLoadingAndNotify({
         type: "success",
         title: successTitle,
         content: successMessage,
-        onConfirm: () => navigator.pop(),
+        onConfirm: onSuccessConfirm ?? () => navigator.pop(),
       ),
     );
   } catch (e) {
@@ -56,7 +59,7 @@ Future<void> showLoadingAndNotify({
         type: "error",
         title: errorTitle,
         content: errorMessage,
-        onConfirm: () => navigator.pop(),
+        onConfirm: onErrorConfirm ?? () => navigator.pop(),
       ),
     );
   }

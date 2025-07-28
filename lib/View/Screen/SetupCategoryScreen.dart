@@ -11,7 +11,7 @@ class SetupCategoryScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final themeColor = AppColor.primary;
 
-    // Sort categories alphabetically (case-insensitive)
+    // Sort categories alphabetically
     final sortedCategories = [...StoreCategory.all]
       ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
 
@@ -28,21 +28,39 @@ class SetupCategoryScreen extends StatelessWidget {
       ),
       body: Consumer<StoreCategoryProvider>(
         builder: (context, provider, _) {
-          return Padding(
-            padding: const EdgeInsets.all(16),
-            child: Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              children: sortedCategories.map((category) {
-                final isVisible = !provider.isHidden(category);
-                return _PillToggle(
-                  label: category,
-                  isSelected: isVisible,
-                  color: themeColor,
-                  onTap: () => provider.toggleVisibility(category),
-                );
-              }).toList(),
-            ),
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              // Responsive crossAxisCount
+              int crossAxisCount = constraints.maxWidth < 600
+                  ? 2
+                  : constraints.maxWidth < 900
+                  ? 3
+                  : 4;
+
+              return Padding(
+                padding: const EdgeInsets.all(16),
+                child: GridView.builder(
+                  itemCount: sortedCategories.length,
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: crossAxisCount,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    childAspectRatio: 3.2, // Wider pills
+                  ),
+                  itemBuilder: (context, index) {
+                    final category = sortedCategories[index];
+                    final isVisible = !provider.isHidden(category);
+
+                    return _GlowingPillToggle(
+                      label: category,
+                      isSelected: isVisible,
+                      color: themeColor,
+                      onTap: () => provider.toggleVisibility(category),
+                    );
+                  },
+                ),
+              );
+            },
           );
         },
       ),
@@ -50,13 +68,13 @@ class SetupCategoryScreen extends StatelessWidget {
   }
 }
 
-class _PillToggle extends StatelessWidget {
+class _GlowingPillToggle extends StatelessWidget {
   final String label;
   final bool isSelected;
   final VoidCallback onTap;
   final Color color;
 
-  const _PillToggle({
+  const _GlowingPillToggle({
     required this.label,
     required this.isSelected,
     required this.onTap,
@@ -65,9 +83,8 @@ class _PillToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return GestureDetector(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(50),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
@@ -77,12 +94,27 @@ class _PillToggle extends StatelessWidget {
             color: isSelected ? color : Colors.grey.shade300,
           ),
           borderRadius: BorderRadius.circular(50),
+          boxShadow: isSelected
+              ? [
+            BoxShadow(
+              color: color.withOpacity(0.4),
+              blurRadius: 10,
+              spreadRadius: 1,
+              offset: const Offset(0, 3),
+            ),
+          ]
+              : [],
         ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontWeight: FontWeight.w500,
-            color: isSelected ? Colors.white : Colors.black87,
+        alignment: Alignment.center,
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontWeight: FontWeight.w500,
+              color: isSelected ? Colors.white : Colors.black87,
+            ),
           ),
         ),
       ),

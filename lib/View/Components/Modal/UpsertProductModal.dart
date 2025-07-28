@@ -230,7 +230,7 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
     return 'unit';
   }
 
-  Future<void> openAddVariantDialog() async {
+  Future<void> openAddVariantDialog(ProductProvider productProvider) async {
     final parent = Product(
       id: widget.existingProduct?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
       name: _nameController.text.trim(),
@@ -289,6 +289,20 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
       },
     );
 
+    final name = _nameController.text.trim();
+
+    if (productProvider.productExistsByName(name)) {
+      showDialog(
+        context: context,
+        builder: (context) => CustomNotificationDialog(
+          type: 'warning',
+          title: "Product Already Exists",
+          content: "A product or variant with the name \"$name\" already exists. Please use a different name.",
+        ),
+      );
+      return;
+    }
+
     if (newVariant != null) {
       setState(() {
         _variants.add(newVariant);
@@ -319,7 +333,19 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
       );
       return;
     }
+    final name = _nameController.text.trim();
 
+    if (productProvider.productExistsByName(name)) {
+      showDialog(
+        context: context,
+        builder: (context) => CustomNotificationDialog(
+          type: 'warning',
+          title: "Product Already Exists",
+          content: "A product or variant with the name \"$name\" already exists. Please use a different name.",
+        ),
+      );
+      return;
+    }
     final isEditing = widget.existingProduct != null;
     final productId = isEditing
         ? widget.existingProduct!.id
@@ -972,6 +998,21 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
                                                  icon: const Icon(Icons.edit, color: Colors.orange),
                                                  tooltip: "Edit Variant",
                                                  onPressed: () async {
+
+                                                   final name = _nameController.text.trim();
+
+                                                   if (productProvider.productExistsByName(name)) {
+                                                     showDialog(
+                                                       context: context,
+                                                       builder: (context) => CustomNotificationDialog(
+                                                         type: 'warning',
+                                                         title: "Product Already Exists",
+                                                         content: "A product or variant with the name \"$name\" already exists. Please use a different name.",
+                                                       ),
+                                                     );
+                                                     return;
+                                                   }
+
                                                    final editedVariant = await showModalBottomSheet<Product>(
                                                      context: context,
                                                      isScrollControlled: true,
@@ -1052,7 +1093,7 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
                                    borderColor: themeAccent,
                                    icon: Icons.add_circle_outline,
                                    text: "Add Variant",
-                                   onPressed: openAddVariantDialog,
+                                   onPressed: () => openAddVariantDialog(productProvider),
                                  ),
                                  const SizedBox(height: 16),
 

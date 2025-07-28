@@ -65,4 +65,41 @@ class LogProvider with ChangeNotifier {
         date.isBefore(range.end.add(const Duration(seconds: 1)));
   }
 
+  List<StockLog> getLogsChunked({
+    String? productIdOrName,
+    DateTimeRange? dateRange,
+    int offset = 0,
+    int limit = 100,
+  }) {
+    final allLogs = <StockLog>[];
+
+    for (final product in _productBox.values) {
+      final matchesProduct = productIdOrName == null ||
+          product.id == productIdOrName ||
+          product.name.toLowerCase().contains(productIdOrName.toLowerCase());
+
+      if (matchesProduct) allLogs.addAll(product.logs);
+
+      for (final variant in product.variants) {
+        final matchesVariant = productIdOrName == null ||
+            variant.id == productIdOrName ||
+            variant.name.toLowerCase().contains(productIdOrName.toLowerCase());
+
+        if (matchesVariant) allLogs.addAll(variant.logs);
+      }
+    }
+
+    if (dateRange != null) {
+      allLogs.retainWhere((log) => _inRange(log.dateLogged, dateRange));
+    }
+
+    // Sort logs newest first
+    allLogs.sort((a, b) => b.dateLogged.compareTo(a.dateLogged));
+
+    // Apply pagination (offset + limit)
+    final end = (offset + limit) > allLogs.length ? allLogs.length : (offset + limit);
+    return allLogs.sublist(offset, end);
+  }
+
+
 }

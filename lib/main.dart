@@ -4,7 +4,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:pocketpos/Model/loan_item.dart';
 import 'package:pocketpos/Model/loose_stock.dart';
-import 'package:pocketpos/Model/product_analytics.dart';
 import 'package:pocketpos/Model/product_model.dart';
 import 'package:pocketpos/Model/product_stock.dart';
 import 'package:pocketpos/Model/stock_log.dart';
@@ -14,7 +13,6 @@ import 'package:pocketpos/Provider/CurrencyProvider.dart';
 import 'package:pocketpos/Provider/LoanProvider.dart';
 import 'package:pocketpos/Provider/LogProvider.dart';
 import 'package:pocketpos/Provider/LooseStockProvider.dart';
-import 'package:pocketpos/Provider/ProductAnalyticsProvider.dart';
 import 'package:pocketpos/Provider/ProductProvider.dart';
 import 'package:pocketpos/Provider/ProductSync.dart';
 import 'package:pocketpos/Provider/StoreCategoryProvider.dart';
@@ -34,13 +32,11 @@ Future<void> main() async {
   Hive.registerAdapter(ProductAdapter());
   Hive.registerAdapter(ProductStockAdapter());
   Hive.registerAdapter(LooseStockAdapter());
-  Hive.registerAdapter(ProductAnalyticsAdapter());
   Hive.registerAdapter(StockLogAdapter());
   Hive.registerAdapter(StockLogReasonAdapter());
   Hive.registerAdapter(LoanItemAdapter());
 
   final productBox = await Hive.openBox<Product>('products');
-  final analyticsBox = await Hive.openBox<ProductAnalytics>('product_analytics');
 
 
   await Hive.openBox('categoryVisibility');
@@ -65,7 +61,6 @@ Future<void> main() async {
           ),
 
           ChangeNotifierProvider(create: (_) => LooseStockProvider(productBox)),
-          ChangeNotifierProvider(create: (_) => ProductAnalyticsProvider(productBox,analyticsBox)),
           Provider(create: (_) => ProductSync()),
 
           ChangeNotifierProvider(create: (_) => StoreCategoryProvider()),

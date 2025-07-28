@@ -42,3 +42,23 @@ extension UnitTypeExtension on UnitType {
   static UnitType fromJson(String label) => fromLabel(label);
 
 }
+
+enum DateFilterType {
+  day,
+  week,
+  month,
+  year;
+
+  String get label {
+    switch (this) {
+      case DateFilterType.day:
+        return 'Day';
+      case DateFilterType.week:
+        return 'Week';
+      case DateFilterType.month:
+        return 'Month';
+      case DateFilterType.year:
+        return 'Year';
+    }
+  }
+}

@@ -76,6 +76,16 @@ class ProductProvider extends ChangeNotifier {
     return null;
   }
 
+  bool productExistsByName(String name) {
+    for (final product in _products) {
+      if (product.name.toLowerCase() == name.toLowerCase()) return true;
+      for (final variant in product.variants) {
+        if (variant.name.toLowerCase() == name.toLowerCase()) return true;
+      }
+    }
+    return false;
+  }
+
   List<Product> getAllProductsWithVariants() {
     final List<Product> all = [];
     for (final product in _products) {

@@ -24,6 +24,7 @@ class _StockLogsHistoryScreenState extends State<StockLogsHistoryScreen> {
   bool isLoadingMore = false;
   int currentPage = 0;
   final int pageSize = 50;
+  bool hasMore = true;
 
   @override
   void initState() {
@@ -42,38 +43,32 @@ class _StockLogsHistoryScreenState extends State<StockLogsHistoryScreen> {
   }
 
   void loadInitialLogs(LogProvider logProvider) {
-    currentPage = 0;
-    paginatedLogs = [];
+    setState(() {
+      currentPage = 0;
+      paginatedLogs.clear();
+      hasMore = true;
+    });
     loadMoreLogs(logProvider);
   }
 
-  void loadMoreLogs(LogProvider logProvider) {
-    if (isLoadingMore) return;
+  void loadMoreLogs(LogProvider logProvider) async {
+    if (isLoadingMore || !hasMore) return;
 
     setState(() => isLoadingMore = true);
 
-    final allLogs = logProvider
-        .getLogs(
+    final offset = currentPage * pageSize;
+    final newLogs = logProvider.getLogsChunked(
       productIdOrName: selectedProductIdOrName,
       dateRange: selectedRange,
-    )
-        .where((log) => selectedReason == null || log.reason == selectedReason)
-        .toList();
-
-    final start = currentPage * pageSize;
-    final end = (start + pageSize).clamp(0, allLogs.length);
-
-    if (start >= allLogs.length) {
-      setState(() => isLoadingMore = false);
-      return;
-    }
-
-    final newLogs = allLogs.sublist(start, end);
+      limit: pageSize,
+      offset: offset,
+    ).where((log) => selectedReason == null || log.reason == selectedReason).toList();
 
     setState(() {
       paginatedLogs.addAll(newLogs);
       currentPage++;
       isLoadingMore = false;
+      if (newLogs.length < pageSize) hasMore = false;
     });
   }
 
@@ -87,7 +82,6 @@ class _StockLogsHistoryScreenState extends State<StockLogsHistoryScreen> {
       builder: (context, productProvider, logProvider, _) {
         final products = productProvider.products;
 
-        // ⛳ Lazy load logs initially
         if (paginatedLogs.isEmpty && !isLoadingMore) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             loadInitialLogs(logProvider);
@@ -100,7 +94,7 @@ class _StockLogsHistoryScreenState extends State<StockLogsHistoryScreen> {
               onTap: () => Navigator.pop(context),
               child: const Icon(Icons.arrow_back_ios_new, color: Colors.black),
             ),
-            title: const Text("Stock Logs History", style: TextStyle(color: Colors.black)),
+            title: const Text("Activity Logs", style: TextStyle(color: Colors.black)),
             backgroundColor: Colors.white,
             elevation: 0,
           ),
@@ -111,10 +105,11 @@ class _StockLogsHistoryScreenState extends State<StockLogsHistoryScreen> {
                 Row(
                   children: [
                     Expanded(
-                      child: CustomFlatDropdown<String>(
+                      child: CustomFlatDropdown<String?>(
                         hint: "All Products",
                         value: selectedProductIdOrName,
                         items: [
+                          null,
                           ...products.map((p) => p.id),
                           ...products.expand((p) => p.variants.map((v) => v.id)),
                         ],
@@ -123,6 +118,9 @@ class _StockLogsHistoryScreenState extends State<StockLogsHistoryScreen> {
                           onFilterChanged(logProvider);
                         },
                         itemBuilder: (val) {
+                          if (val == null) {
+                            return const Text("All Products", style: TextStyle(fontSize: 14));
+                          }
                           final product = productProvider.getProductById(val);
                           return Text(
                             product?.name ?? "Deleted",
@@ -163,16 +161,20 @@ class _StockLogsHistoryScreenState extends State<StockLogsHistoryScreen> {
                 ),
                 Padding(
                   padding: const EdgeInsets.only(top: 0),
-                  child: CustomFlatDropdown<StockLogReason>(
-                    hint: "All Reasons",
-                    value: selectedReason,
-                    items: StockLogReason.values,
-                    onChanged: (val) {
-                      setState(() => selectedReason = val);
-                      onFilterChanged(logProvider);
-                    },
-                    itemBuilder: (val) => Text(val.name, style: const TextStyle(fontSize: 13)),
-                  ),
+                  child: CustomFlatDropdown<StockLogReason?>(
+        hint: "All Reasons",
+        value: selectedReason,
+        items: [null, ...StockLogReason.values],
+        onChanged: (val) {
+        setState(() => selectedReason = val);
+        onFilterChanged(logProvider);
+        },
+        itemBuilder: (val) => Text(
+        val == null ? "All Reasons" : val.name,
+        style: const TextStyle(fontSize: 13),
+        ),
+
+        ),
                 ),
                 const SizedBox(height: 16),
                 Expanded(
@@ -180,16 +182,14 @@ class _StockLogsHistoryScreenState extends State<StockLogsHistoryScreen> {
                       ? const Center(child: Text("No logs found"))
                       : ListView.separated(
                     controller: _scrollController,
-                    itemCount: paginatedLogs.length + 1,
+                    itemCount: paginatedLogs.length + (hasMore ? 1 : 0),
                     separatorBuilder: (_, __) => const SizedBox(height: 10),
                     itemBuilder: (context, index) {
-                      if (index == paginatedLogs.length) {
-                        return isLoadingMore
-                            ? const Padding(
+                      if (index == paginatedLogs.length && hasMore) {
+                        return const Padding(
                           padding: EdgeInsets.all(16),
                           child: Center(child: CircularProgressIndicator()),
-                        )
-                            : const SizedBox.shrink();
+                        );
                       }
 
                       final log = paginatedLogs[index];
@@ -267,4 +267,3 @@ class _StockLogsHistoryScreenState extends State<StockLogsHistoryScreen> {
     super.dispose();
   }
 }
-
