@@ -110,7 +110,7 @@ class ProductStockProvider extends ChangeNotifier {
           productId: product.id,
           profit: totalProfit,
           quantity: quantity,
-          isPiece: true,
+          isPiece: false,
           reason: isLoan ? StockLogReason.borrowed : reason, // ✅ use passed reason
           remarks: isLoan
               ? 'Loaned out $quantity pack(s) • $totalPiecesDeducted pcs deducted from inventory'

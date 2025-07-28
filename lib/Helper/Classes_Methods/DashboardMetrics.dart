@@ -1,4 +1,5 @@
 import 'package:pocketpos/Model/product_model.dart';
+import 'package:pocketpos/Model/product_stock.dart';
 import 'package:pocketpos/Model/stock_log.dart';
 
 enum DateFilterType { day, week, month, year, range }
@@ -9,6 +10,9 @@ class DashboardMetrics {
   final int totalStocks;
 
   final int totalSoldItems;
+  final int totalSoldPerPack;
+  final int totalSoldPerPiece;
+
   final int totalExpiredItems;
   final int totalLoanItems;
   final int totalConsumedItems;
@@ -33,6 +37,8 @@ class DashboardMetrics {
     required this.totalVariants,
     required this.totalStocks,
     required this.totalSoldItems,
+    required this.totalSoldPerPack,
+    required this.totalSoldPerPiece,
     required this.totalExpiredItems,
     required this.totalLoanItems,
     required this.totalConsumedItems,
@@ -79,7 +85,8 @@ DashboardMetrics generateDashboardMetrics({
       break;
   }
 
-  final all = <Product>[];
+  final List<Product> all = [];
+
   for (final product in allProducts) {
     all.add(product);
     if (product.hasVariant && product.variants.isNotEmpty) {
@@ -88,7 +95,14 @@ DashboardMetrics generateDashboardMetrics({
   }
 
   int totalStocks = 0;
+  double unrealizedProfit = 0.0;
+  double possibleRevenue = 0.0;
+  double totalCost = 0.0;
+
+  // Tally logs by reason
   int totalSold = 0;
+  int totalSoldPerPack = 0;
+  int totalSoldPerPiece = 0;
   int totalExpired = 0;
   int totalLoan = 0;
   int totalConsumed = 0;
@@ -98,88 +112,97 @@ DashboardMetrics generateDashboardMetrics({
 
   double totalRevenue = 0.0;
   double currentRevenue = 0.0;
-
   double realizedProfit = 0.0;
   double currentProfit = 0.0;
-
-  double unrealizedProfit = 0.0;
-  double possibleRevenue = 0.0;
-
-  double totalCost = 0.0;
   double currentCost = 0.0;
 
-  for (final p in all) {
-    totalStocks += p.totalQuantity;
+  for (final product in all) {
+    totalStocks += product.totalQuantity;
 
-    for (final stock in p.stocks) {
-      unrealizedProfit += (stock.retailPrice - stock.costPrice) * stock.quantity;
-      possibleRevenue += stock.retailPrice * stock.quantity;
+    for (final stock in product.stocks) {
+      final retail = stock.retailPrice;
+      final cost = stock.costPrice;
+      final qty = stock.quantity;
+
+      unrealizedProfit += (retail - cost) * qty;
+      possibleRevenue += retail * qty;
+      totalCost += cost * qty;
     }
 
-    for (final log in p.logs) {
-      final isInRange = !log.dateLogged.isBefore(startDate) && !log.dateLogged.isAfter(endDate);
-      final piecesPerPack = p.piecesPerPack?.toDouble() ?? 1;
+    for (final log in product.logs) {
+      final inRange = !log.dateLogged.isBefore(startDate) && !log.dateLogged.isAfter(endDate);
+      final piecesPerPack = product.piecesPerPack?.toDouble() ?? 1.0;
 
-      final stock = p.stocks.where((s) => s.id == log.productId).firstOrNull;
+      final ProductStock? stock = (log.productId.isNotEmpty && product.stocks.any((s) => s.id == log.productId))
+          ? product.stocks.firstWhere((s) => s.id == log.productId)
+          : (product.stocks.isNotEmpty ? product.stocks.first : null);
+
       if (stock == null) continue;
 
-      final unitCost = log.isPiece
-          ? stock.costPrice / piecesPerPack
-          : stock.costPrice;
-
-      final unitRetail = log.isPiece
-          ? stock.retailPrice / piecesPerPack
-          : stock.retailPrice;
+      final unitCost = log.isPiece ? stock.costPrice / piecesPerPack : stock.costPrice;
+      final unitRetail = log.isPiece ? stock.retailPrice / piecesPerPack : stock.retailPrice;
+      final qty = log.quantity;
 
       switch (log.reason) {
         case StockLogReason.sold:
-          final logProfit = log.profit?.toDouble() ?? 0;
-          final logRevenue = unitRetail * log.quantity;
-          final logCost = unitCost * log.quantity;
+          final profit = log.profit?.toDouble() ?? 0.0;
+          final revenue = unitRetail * qty;
+          final cost = unitCost * qty;
 
-          totalSold += log.quantity;
-          realizedProfit += logProfit;
-          totalRevenue += logRevenue;
-          totalCost += logCost;
+          totalSold += qty;
+          if (log.isPiece) {
+            totalSoldPerPiece += qty;
+          } else {
+            totalSoldPerPack += qty;
+          }
 
-          if (isInRange) {
-            currentProfit += logProfit;
-            currentRevenue += logRevenue;
-            currentCost += logCost;
+          totalRevenue += revenue;
+          realizedProfit += profit;
+
+          if (inRange) {
+            currentRevenue += revenue;
+            currentProfit += profit;
+            currentCost += cost;
           }
           break;
+
         case StockLogReason.expired:
-          totalExpired += log.quantity;
+          totalExpired += qty;
           break;
+
         case StockLogReason.borrowed:
-          totalLoan += log.quantity;
+          totalLoan += qty;
           break;
+
         case StockLogReason.consumed:
-          totalConsumed += log.quantity;
+          totalConsumed += qty;
           break;
+
         case StockLogReason.added:
-          totalAdded += log.quantity;
+          totalAdded += qty;
           break;
+
         case StockLogReason.donated:
-          totalDonated += log.quantity;
+          totalDonated += qty;
           break;
+
         case StockLogReason.damaged:
-          totalDamaged += log.quantity;
+          totalDamaged += qty;
           break;
+
         default:
           break;
       }
     }
   }
 
-  final totalProducts = allProducts.length;
-  final totalVariants = all.fold(0, (sum, p) => sum + p.variants.length);
-
   return DashboardMetrics(
-    totalProducts: totalProducts,
-    totalVariants: totalVariants,
+    totalProducts: allProducts.length,
+    totalVariants: all.fold(0, (sum, p) => sum + p.variants.length),
     totalStocks: totalStocks,
     totalSoldItems: totalSold,
+    totalSoldPerPack: totalSoldPerPack,
+    totalSoldPerPiece: totalSoldPerPiece,
     totalExpiredItems: totalExpired,
     totalLoanItems: totalLoan,
     totalConsumedItems: totalConsumed,

@@ -44,10 +44,9 @@ class _PaymentDialogState extends State<PaymentDialog> {
     final sanitizedInput = paymentInput.replaceAll(RegExp(r'[^\d.]'), '');
     final payment = double.tryParse(sanitizedInput);
     final loanerName = loanerNameController.text.trim();
+    final isLoan = selectedPaymentType == 'Loan';
 
     if (cartList.isEmpty) return;
-
-    final isLoan = selectedPaymentType == 'Loan';
 
     if (isLoan && loanerName.isEmpty) {
       await showDialog(
@@ -74,13 +73,17 @@ class _PaymentDialogState extends State<PaymentDialog> {
 
         bool success = false;
         if (item.isSoldPerPiece && !item.isSoldPerPack) {
-          success = await productStockProvider.sellPack(productId, qty,StockLogReason.sold, isLoan: isLoan, borrowName: loanerName);
+          success = await productStockProvider.sellPack(productId, qty, StockLogReason.sold,
+              isLoan: isLoan, borrowName: loanerName);
         } else if (item.isSoldPerPack && !item.isSoldPerPiece) {
-          success = await productStockProvider.sellPack(productId, qty,StockLogReason.sold, isLoan: isLoan, borrowName: loanerName);
+          success = await productStockProvider.sellPack(productId, qty, StockLogReason.sold,
+              isLoan: isLoan, borrowName: loanerName);
         } else {
           success = sellingType == SellingType.pack
-              ? await productStockProvider.sellPack(productId, qty,StockLogReason.sold, isLoan: isLoan, borrowName: loanerName)
-              : await productStockProvider.sellPiece(productId, qty,StockLogReason.sold, context, isLoan: isLoan, borrowName: loanerName);
+              ? await productStockProvider.sellPack(productId, qty, StockLogReason.sold,
+              isLoan: isLoan, borrowName: loanerName)
+              : await productStockProvider.sellPiece(productId, qty, StockLogReason.sold, context,
+              isLoan: isLoan, borrowName: loanerName);
         }
 
         if (!success) {
@@ -109,13 +112,13 @@ class _PaymentDialogState extends State<PaymentDialog> {
       ),
     );
 
-
     productProvider.refreshProducts();
   }
+  double roundTo2Decimals(double value) => double.parse(value.toStringAsFixed(2));
 
   @override
   Widget build(BuildContext context) {
-    final bool isTablet = MediaQuery.of(context).size.width > 600;
+    final isTablet = MediaQuery.of(context).size.width > 600;
 
     return AlertDialog(
       backgroundColor: Colors.white,
@@ -142,7 +145,6 @@ class _PaymentDialogState extends State<PaymentDialog> {
                           change = 0;
                           paymentController.clear();
                           loanerNameController.clear();
-
                         });
                       },
                     ),
@@ -150,7 +152,6 @@ class _PaymentDialogState extends State<PaymentDialog> {
                   const SizedBox(height: 12),
                   Text('Payment Summary', style: Theme.of(context).textTheme.titleMedium, textAlign: TextAlign.center),
 
-                  // 🛒 Cart items
                   Container(
                     padding: const EdgeInsets.symmetric(vertical: 6),
                     constraints: const BoxConstraints(maxHeight: 120),
@@ -176,7 +177,6 @@ class _PaymentDialogState extends State<PaymentDialog> {
                   ),
                   const Divider(height: 24),
 
-                  // 💰 Total
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -194,28 +194,46 @@ class _PaymentDialogState extends State<PaymentDialog> {
                       final loanerNames = loanProvider.getAllLoanerNames();
 
                       return selectedPaymentType == 'Cash'
-                          ? CustomTextField(
-                        key: ValueKey(selectedPaymentType),
-                        label: 'Payment',
-                        hintText: '₱0.00',
-                        controller: paymentController,
-                        keyboardType: TextInputType.number,
-                        onChanged: (value) {
-                          final input = double.tryParse(value.replaceAll(RegExp(r'[^\d.]'), '')) ?? 0;
-                          setState(() {
-                            change = input - totalAmount;
-                          });
-                        },
-                        isRequired: true,
-                        prefixIcon: const Icon(Icons.monetization_on_outlined),
+                          ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          CustomTextField(
+                            key: ValueKey(selectedPaymentType),
+                            label: 'Payment',
+                            hintText: '₱0.00',
+                            controller: paymentController,
+                            keyboardType: TextInputType.number,
+                            onChanged: (value) {
+                              final sanitized = value.replaceAll(RegExp(r'[^\d.]'), '');
+                              final input = double.tryParse(sanitized) ?? 0;
+                              setState(() {
+                                change = roundTo2Decimals(input - totalAmount);
+                              });
+
+                            },
+                            isRequired: true,
+                            prefixIcon: const Icon(Icons.monetization_on_outlined),
+                          ),
+                          const SizedBox(height: 4),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: Text(
+                              change < 0
+                                  ? 'Insufficient by ${currencyProvider.formatAmount(change.abs())}'
+                                  : 'Change: ${currencyProvider.formatAmount(change)}',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: change < 0 ? Colors.red : Colors.green,
+                              ),
+                            ),
+                          ),
+                        ],
                       )
                           : Autocomplete<String>(
                         optionsBuilder: (TextEditingValue textEditingValue) {
-                          if (textEditingValue.text.isEmpty) {
-                            return const Iterable<String>.empty();
-                          }
-                          return loanerNames.where((name) =>
-                              name.toLowerCase().contains(textEditingValue.text.toLowerCase()));
+                          if (textEditingValue.text.isEmpty) return const Iterable<String>.empty();
+                          return loanerNames.where((name) => name.toLowerCase().contains(textEditingValue.text.toLowerCase()));
                         },
                         onSelected: (String selection) {
                           loanerNameController.text = selection;
@@ -248,11 +266,8 @@ class _PaymentDialogState extends State<PaymentDialog> {
                     },
                   ),
 
-
-
                   const SizedBox(height: 20),
 
-                  // ✅ Buttons
                   Row(
                     children: [
                       Expanded(
@@ -276,7 +291,7 @@ class _PaymentDialogState extends State<PaymentDialog> {
                               productProvider: productProvider,
                             ));
                           },
-                          isDisabled: selectedPaymentType == 'Cash' && change < 0,
+                          isDisabled: selectedPaymentType == 'Cash' && change <= 0.toDouble(),
                           isFilled: true,
                           isSlimmer: false,
                         ),
