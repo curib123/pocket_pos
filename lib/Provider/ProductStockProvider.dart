@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
+import 'package:pocketpos/Helper/Classes_Methods/helper_methods.dart';
 import 'package:pocketpos/Model/loan_item.dart';
 import 'package:pocketpos/Model/loose_stock.dart';
 import 'package:pocketpos/Model/product_model.dart';
@@ -496,5 +497,37 @@ class ProductStockProvider extends ChangeNotifier {
     } catch (e) {
     }
   }
+
+  List<Product> getProductsByStockRange({required int minQty, required int maxQty,required BuildContext context}) {
+    refreshProduct(context);
+    final List<Product> matchingProducts = [];
+
+    for (final product in _productBox.values) {
+      if (product.isSoftDeleted) continue;
+
+      // 🔢 Calculate total quantity from all ProductStock entries
+      final int totalQty = product.stocks.fold(0, (sum, s) => sum + s.quantity);
+
+      if (totalQty >= minQty && totalQty <= maxQty) {
+        matchingProducts.add(product);
+      }
+
+      // 🔍 Check variants if any
+      if (product.hasVariant && product.variants.isNotEmpty) {
+        for (final variant in product.variants.whereType<Product>()) {
+          if (variant.isSoftDeleted) continue;
+
+          final int variantQty = variant.stocks.fold(0, (sum, s) => sum + s.quantity);
+
+          if (variantQty >= minQty && variantQty <= maxQty) {
+            matchingProducts.add(variant);
+          }
+        }
+      }
+    }
+
+    return matchingProducts;
+  }
+
 }
 

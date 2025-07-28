@@ -21,7 +21,7 @@ class ProductImageHelper {
     required String imagePath,
     required String userId,
     required String productName,
-    int quality = 70,
+    int quality = 85,
   }) async {
     try {
       final file = File(imagePath);

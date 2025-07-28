@@ -37,9 +37,8 @@ class GreetingCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           gradient: LinearGradient(
             colors: [
-
-              AppColor.primary.withOpacity(0.80),
-              Colors.cyan.withOpacity(0.88),
+              AppColor.primary,
+              AppColor.primary.withOpacity(0.60),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -115,7 +114,7 @@ class GreetingCard extends StatelessWidget {
                         child: Text(
                           "Welcome to ${storeName.isNotEmpty ? storeName : 'Your Store'}",
                           style: TextStyle(
-                            fontSize: context.rf(11),
+                            fontSize: context.rf(12),
                             fontWeight: FontWeight.w500,
                             letterSpacing: 0.5,
                           ),
@@ -127,7 +126,7 @@ class GreetingCard extends StatelessWidget {
                   Text(
                     ownerName,
                     style: TextStyle(
-                      fontSize: context.rf(13),
+                      fontSize: context.rf(16),
                       color: Colors.white.withOpacity(0.95),
                       fontWeight: FontWeight.w500,
                     ),
@@ -136,7 +135,7 @@ class GreetingCard extends StatelessWidget {
                   Text(
                     "Keep growing your business.",
                     style: TextStyle(
-                      fontSize: context.rf(10),
+                      fontSize: context.rf(12),
                       color: Colors.white.withOpacity(0.7),
                       fontWeight: FontWeight.w400,
                     ),

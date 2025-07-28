@@ -479,12 +479,12 @@ class _ProductListScreenState extends State<ProductListScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             if (isPiece && !isPack)
-                              Text('₱0.00 / piece', style: TextStyle(color: Colors.grey)),
+                              Text('0.00 / piece', style: TextStyle(color: Colors.grey)),
                             if (isPack && !isPiece)
-                              Text('₱0.00 / pack', style: TextStyle(color: Colors.grey)),
+                              Text('0.00 / pack', style: TextStyle(color: Colors.grey)),
                             if (isPack && isPiece) ...[
-                              Text('₱0.00 / pack', style: TextStyle(color: Colors.grey)),
-                              Text('₱0.00 / piece', style: TextStyle(color: Colors.grey)),
+                              Text('0.00 / pack', style: TextStyle(color: Colors.grey)),
+                              Text('0.00 / piece', style: TextStyle(color: Colors.grey)),
                             ],
                           ],
                         ),

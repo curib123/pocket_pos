@@ -32,6 +32,10 @@ class DashboardMetrics {
   final double totalCost;
   final double currentCost;
 
+  final int lowStockCount;
+  final int mediumStockCount;
+  final int highStockCount;
+
   DashboardMetrics({
     required this.totalProducts,
     required this.totalVariants,
@@ -53,6 +57,9 @@ class DashboardMetrics {
     required this.possibleRevenue,
     required this.totalCost,
     required this.currentCost,
+    required this.lowStockCount,
+    required this.mediumStockCount,
+    required this.highStockCount,
   });
 }
 
@@ -99,7 +106,6 @@ DashboardMetrics generateDashboardMetrics({
   double possibleRevenue = 0.0;
   double totalCost = 0.0;
 
-  // Tally logs by reason
   int totalSold = 0;
   int totalSoldPerPack = 0;
   int totalSoldPerPiece = 0;
@@ -116,8 +122,22 @@ DashboardMetrics generateDashboardMetrics({
   double currentProfit = 0.0;
   double currentCost = 0.0;
 
+  int lowStockCount = 0;
+  int mediumStockCount = 0;
+  int highStockCount = 0;
+
   for (final product in all) {
-    totalStocks += product.totalQuantity;
+    final qty = product.totalQuantity;
+    totalStocks += qty;
+
+    // Stock level categorization
+    if (qty <= 10) {
+      lowStockCount++;
+    } else if (qty <= 50) {
+      mediumStockCount++;
+    } else {
+      highStockCount++;
+    }
 
     for (final stock in product.stocks) {
       final retail = stock.retailPrice;
@@ -217,5 +237,8 @@ DashboardMetrics generateDashboardMetrics({
     possibleRevenue: possibleRevenue,
     totalCost: totalCost,
     currentCost: currentCost,
+    lowStockCount: lowStockCount,
+    mediumStockCount: mediumStockCount,
+    highStockCount: highStockCount,
   );
 }

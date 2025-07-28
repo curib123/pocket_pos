@@ -334,8 +334,9 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
       return;
     }
     final name = _nameController.text.trim();
+    final isEditing = widget.existingProduct != null;
 
-    if (productProvider.productExistsByName(name)) {
+    if (productProvider.productExistsByName(name) && !isEditing) {
       showDialog(
         context: context,
         builder: (context) => CustomNotificationDialog(
@@ -346,7 +347,7 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
       );
       return;
     }
-    final isEditing = widget.existingProduct != null;
+
     final productId = isEditing
         ? widget.existingProduct!.id
         : DateTime
