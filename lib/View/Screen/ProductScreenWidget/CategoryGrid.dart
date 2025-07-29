@@ -9,6 +9,7 @@ import 'package:pocketpos/Provider/ProductProvider.dart';
 import 'package:pocketpos/Provider/StoreCategoryProvider.dart';
 import 'package:pocketpos/Provider/SwitchProvider.dart';
 import 'package:animate_do/animate_do.dart';
+import 'package:shimmer/shimmer.dart';
 
 class CategoryGrid extends StatelessWidget {
   final List<String> categories;
@@ -121,13 +122,16 @@ class CategoryGrid extends StatelessWidget {
                                 child: Icon(icon, color: color, size: 24),
                               ),
                               const SizedBox(height: 12),
-                              Text(
-                                category,
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 15,
-                                  color: AppColor.textPrimary,
+                              Shimmer.fromColors(
+                                baseColor: AppColor.textPrimary ,
+                                highlightColor: AppColor.accent,
+                                child: Text(
+                                  category,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 15,
+                                    color: AppColor.textPrimary,
+                                  ),
                                 ),
                               ),
                               const SizedBox(height: 4),

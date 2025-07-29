@@ -4,6 +4,7 @@ import 'package:animate_do/animate_do.dart';
 import 'package:pocketpos/Helper/Classes_Methods/AppColor.dart';
 import 'package:pocketpos/Helper/Database/SecureStorageServices.dart';
 import 'package:pocketpos/View/Components/Widgets/ResponsiveText.dart';
+import 'package:shimmer/shimmer.dart';
 
 class GreetingCard extends StatelessWidget {
   final SecureStorageService secureStorageService = SecureStorageService();
@@ -123,14 +124,20 @@ class GreetingCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    ownerName,
-                    style: TextStyle(
-                      fontSize: context.rf(16),
-                      color: Colors.white.withOpacity(0.95),
-                      fontWeight: FontWeight.w500,
+                  Shimmer.fromColors(
+                    baseColor: AppColor.surface,
+                    highlightColor: AppColor.accent.withOpacity(0.6),
+                    period: Duration(seconds: 3), // ✅ removed extra parenthesis
+                    child: Text(
+                      ownerName,
+                      style: TextStyle(
+                        fontSize: context.rf(16),
+                        color: Colors.white.withOpacity(0.95),
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
+
                   const SizedBox(height: 2),
                   Text(
                     "Keep growing your business.",

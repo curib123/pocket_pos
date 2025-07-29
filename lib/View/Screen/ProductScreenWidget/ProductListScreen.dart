@@ -17,6 +17,7 @@ import 'package:pocketpos/View/Components/Modal/ProductDetailScreenModal.dart';
 import 'package:pocketpos/View/Components/Modal/UpsertProductModal.dart';
 import 'package:provider/provider.dart';
 import 'package:animate_do/animate_do.dart';
+import 'package:shimmer/shimmer.dart';
 
 class ProductListScreen extends StatefulWidget {
   final String category;
@@ -445,16 +446,21 @@ class _ProductListScreenState extends State<ProductListScreen> {
 
                       SizedBox(height: 5,),
                       // 🧾 Product Name
-                      Text(
-                        product.name,
-                        style: TextStyle(
-                          fontSize: fontSize,
-                          fontWeight: FontWeight.w900,
-                          color: AppColor.textPrimary,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+                      Shimmer.fromColors(
+                          baseColor: AppColor.textPrimary ,
+                          highlightColor: AppColor.accent,
+                          period: Duration(seconds: 3),
+                        child: Text(
+                          product.name,
+                          style: TextStyle(
+                            fontSize: fontSize,
+                            fontWeight: FontWeight.w900,
+                            color: AppColor.textPrimary,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
 
+                        ),
                       ),
                       SizedBox(height: 5,),
 
@@ -623,15 +629,20 @@ class _ProductListScreenState extends State<ProductListScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 // 🧾 Name
-                                Text(
-                                  product.name,
-                                  style: TextStyle(
-                                    fontSize: fontSize,
-                                    fontWeight: FontWeight.w900,
-                                    color: AppColor.textPrimary,
+                                Shimmer.fromColors(
+                                  baseColor: AppColor.textPrimary ,
+                                  highlightColor: AppColor.accent,
+                                  period: Duration(seconds: 3),
+                                  child: Text(
+                                    product.name,
+                                    style: TextStyle(
+                                      fontSize: fontSize,
+                                      fontWeight: FontWeight.w900,
+                                      color: AppColor.textPrimary,
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
                                 ),
                                 const SizedBox(height: 4),
 

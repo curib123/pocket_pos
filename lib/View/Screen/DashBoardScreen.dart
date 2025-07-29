@@ -572,14 +572,20 @@ class _StatTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.w600,
-                    color: AppColor.textPrimary,
+                Shimmer.fromColors(
+                  baseColor: Colors.black87,
+                  highlightColor: Colors.deepPurpleAccent.shade100,
+                  period: const Duration(seconds: 3),
+                  child: Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColor.textPrimary,
+                    ),
                   ),
                 ),
+
                 if (guide != null)
                   Padding(
                     padding: const EdgeInsets.only(top: 2),

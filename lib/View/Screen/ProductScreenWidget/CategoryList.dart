@@ -9,6 +9,7 @@ import 'package:pocketpos/Helper/Classes_Methods/AppColor.dart';
 import 'package:pocketpos/Helper/Classes_Methods/AppCategory.dart';
 import 'package:pocketpos/View/Screen/ProductScreenWidget/ProductListScreen.dart';
 import 'package:pocketpos/Provider/ProductProvider.dart';
+import 'package:shimmer/shimmer.dart';
 
 class CategoryList extends StatefulWidget {
   final List<String> categories;
@@ -102,12 +103,16 @@ class _CategoryListState extends State<CategoryList> {
                     ),
                     child: Icon(icon, color: color, size: 20),
                   ),
-                  title: Text(
-                    category,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 15,
-                      color: AppColor.textPrimary,
+                  title: Shimmer.fromColors(
+                    baseColor: AppColor.textPrimary ,
+                    highlightColor: AppColor.accent,
+                    child: Text(
+                      category,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 15,
+                        color: AppColor.textPrimary,
+                      ),
                     ),
                   ),
                   subtitle: Text(
