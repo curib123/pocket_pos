@@ -16,7 +16,7 @@ class AIRequestOptions {
     this.data,
     this.systemRole = 'You are a helpful assistant.',
     this.temperature = 0.7,
-    this.model = 'mistral-medium',
+    this.model = 'mistral-small',
     this.chunkSize = 50,
     this.customUserPrompt,
   });

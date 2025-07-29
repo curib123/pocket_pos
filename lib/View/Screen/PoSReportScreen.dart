@@ -44,6 +44,7 @@ class _POSReportScreenState extends State<POSReportScreen> {
       final responses = await Future.wait([
         ai.ask(
           options: AIRequestOptions(
+            model: "mistral-small",
             data: jsonData,
             prompt: 'Generate a short POS report summarizing recent product sales, top movers, and stock usage patterns. Keep it within 2-3 lines.',
             systemRole: 'You are a POS analytics assistant.',
@@ -51,32 +52,45 @@ class _POSReportScreenState extends State<POSReportScreen> {
         ),
         ai.ask(
           options: AIRequestOptions(
+            model: "mistral-small",
             data: jsonData,
             prompt: 'List 5 smart product-related business suggestions based on this POS data. No explanations, just brief points.',
             systemRole: 'You are a POS retail strategist.',
           ),
         ),
-      ]);
+      ]).timeout(const Duration(seconds: 10));
+
+
+      final summary = _cleanText(responses[0]);
+      final suggestions = _parseLines(responses[1], 5);
+
+      final isEmpty = summary.isEmpty && suggestions.isEmpty;
+
+      if (isEmpty && !retrying) {
+        // Retry once after 1 second if response is empty
+        await Future.delayed(const Duration(seconds: 1));
+        return _fetchAIReport(retrying: true);
+      }
 
       setState(() {
-        reportSummary = _cleanText(responses[0]);
-        aiSuggestions = _parseLines(responses[1], 5);
+        reportSummary = summary;
+        aiSuggestions = suggestions;
         isLoading = false;
         timestamp = DateFormat('MMM d, y – hh:mm a').format(DateTime.now());
       });
-
-      if (reportSummary.isEmpty && aiSuggestions.isEmpty && !retrying) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No AI report generated. Retrying...')),
-        );
-        await Future.delayed(const Duration(seconds: 2));
-        _fetchAIReport(retrying: true);
-      }
     } catch (e) {
       debugPrint('⚠️ AI Report Error: $e');
+      if (!retrying) {
+        await Future.delayed(const Duration(seconds: 1));
+        return _fetchAIReport(retrying: true);
+      }
       setState(() => isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to generate AI report.')),
+      );
     }
   }
+
 
   String _cleanText(String input) =>
       input.replaceAll(RegExp(r'[*_\-#`~>]'), '').trim();

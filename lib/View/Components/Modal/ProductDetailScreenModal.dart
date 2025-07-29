@@ -651,7 +651,8 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                                   Text('${product.barcode}',style: TextStyle(fontSize: 14,color: AppColor.textSecondary),)
                                 ],
                               ),
-                              _buildStockLabel('Available Piece: ${formatNumber(qty)}')
+                            !isUsePackSwitch ?  _buildStockLabel('Available Piece: ${formatNumber(qty)}') :  _buildStockLabel('Available Pack: ${formatNumber(qty)}')
+
                           ],
                         ),
 

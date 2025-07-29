@@ -47,7 +47,7 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
   String? _selectedUnit;
   String? _selectedCategory;
   bool _isSoldByPack = false;
-  bool _isSoldByPiece = true;
+  bool _isSoldByPiece = false;
   bool _hasVariant = false;
   File? _selectedImage;
   bool _isSubmitting = false;
@@ -803,7 +803,10 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
                                                     existingStock: stock,
                                                     isSoldByPack: _isSoldByPack,
                                                     isSoldByPiece: _isSoldByPiece,
-                                                  ),
+                                                    packSize:  int.tryParse(_piecesPerPackController.text) ?? 0,
+
+
+                                                ),
                                                 );
 
                                                 if (edited != null) {
@@ -863,6 +866,7 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
                                       productId: productId,
                                       isSoldByPack: _isSoldByPack,
                                       isSoldByPiece: _isSoldByPiece,
+                                      packSize:  int.tryParse(_piecesPerPackController.text) ?? 0,
                                     ),
                                   );
 
