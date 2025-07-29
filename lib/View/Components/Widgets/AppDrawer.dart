@@ -8,6 +8,8 @@ import 'package:pocketpos/Provider/AuthProvider.dart';
 import 'package:pocketpos/Provider/ProductProvider.dart';
 import 'package:pocketpos/Provider/TabProvider.dart';
 import 'package:pocketpos/View/Components/Alert/CustomConfimDialog.dart';
+import 'package:pocketpos/View/Screen/PoSReportScreen.dart';
+import 'package:pocketpos/View/Screen/PosChatScreen.dart';
 import 'package:pocketpos/View/Screen/ReceiptScreen.dart';
 import 'package:pocketpos/View/Screen/RestoreProductScreen.dart';
 import 'package:pocketpos/View/Screen/SetupCategoryScreen.dart';
@@ -34,7 +36,7 @@ class AppDrawer extends StatelessWidget {
                 child: FutureBuilder<PackageInfo>(
                   future: PackageInfo.fromPlatform(),
                   builder: (context, snapshot) {
-                    final appName = snapshot.data?.appName ?? '...';
+                    final appName = snapshot.data?.appName ?? 'PocketPOS';
                     final version = snapshot.data?.version ?? '1.0.0';
                     final buildNumber = snapshot.data?.buildNumber ?? '1';
 
@@ -44,87 +46,130 @@ class AppDrawer extends StatelessWidget {
                     return Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          // 🧢 Header always on top
                           const SizedBox(height: 20),
                           _buildHeader(storeName, ownerName),
-                          const SizedBox(height: 24),
-
-                          // Drawer Menu Items
-                          _DrawerItem(
-                            icon: LucideIcons.history,
-                            label: 'Activity Logs',
-                            onTap: () => _push(context, const StockLogsHistoryScreen()),
-                          ),
-                          _DrawerItem(
-                            icon: LucideIcons.receipt,
-                            label: 'View Receipts',
-                            onTap: () => _push(context, const ReceiptScreen()),
-                          ),
-                          _DrawerItem(
-                            icon: LucideIcons.rotateCcw,
-                            label: 'Restore Products',
-                            onTap: () => _push(context, const RestoreProductScreen()),
-                          ),
-                          _DrawerItem(
-                            icon: LucideIcons.tags, // 🔥 or try LucideIcons.folderCog / grid / layers
-                            label: 'Setup Category',
-                            onTap: () => _push(context, const SetupCategoryScreen()),
-                          ),
-
-                          _DrawerItem(
-                            icon: LucideIcons.info,
-                            label: 'About',
-                            onTap: () {
-                              showAboutDialog(
-                                context: context,
-                                applicationName: appName,
-                                applicationVersion: 'v$version ($buildNumber)',
-                                applicationLegalese: '© ${DateTime.now().year} NextTech\nAll rights reserved.',
-                                children: const [
-                                  SizedBox(height: 16),
-                                  Text(
-                                    "PocketPOS is your sleek, offline-first solution for inventory and sales management. Built with love for small teams.",
-                                    style: TextStyle(height: 1.5),
-                                  ),
-                                  SizedBox(height: 16),
-                                ],
-                              );
-                            },
-                          ),
-
-                          const Spacer(),
-                          const Divider(thickness: 1, color: AppColor.textSecondary),
-                          const SizedBox(height: 12),
-
-                          _DrawerItem(
-                            icon: LucideIcons.settings,
-                            label: 'Settings',
-                            onTap: () {
-                              showAboutDialog(context: context);
-                            },
-                          ),
-                          const SizedBox(height: 8),
-                          _DrawerItem(
-                            icon: LucideIcons.logOut,
-                            label: 'Logout',
-                            onTap: () {
-                              showDialog(
-                                context: context,
-                                builder: (context) => CustomConfirmDialog(
-                                  icon: Icons.logout_rounded,
-                                  isPop: false,
-                                  title: 'Sign Out',
-                                  content: 'Are you sure you want to sign out? Your local data will be cleared.',
-                                  onConfirm: () async {
-                                    await authProvider.signOut(tabProvider, productProvider, context);
-                                    Phoenix.rebirth(context);
-                                  },
-                                ),
-                              );
-                            },
-                          ),
                           const SizedBox(height: 16),
+
+                          // 📜 Scrollable middle section
+                          Expanded(
+                            child: SingleChildScrollView(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _SectionTitle(title: 'Inventory & Sales'),
+                                  _DrawerItem(
+                                    icon: LucideIcons.history,
+                                    label: 'Stock Activity History',
+                                    onTap: () => _push(context, const StockLogsHistoryScreen()),
+                                  ),
+                                  _DrawerItem(
+                                    icon: LucideIcons.receipt,
+                                    label: 'Sales Receipts',
+                                    onTap: () => _push(context, const ReceiptScreen()),
+                                  ),
+                                  _DrawerItem(
+                                    icon: LucideIcons.rotateCcw,
+                                    label: 'Restore Deleted Items',
+                                    onTap: () => _push(context, const RestoreProductScreen()),
+                                  ),
+                                  const SizedBox(height: 16),
+
+                                  _SectionTitle(title: 'POS AI Features'),
+                                  _DrawerItem(
+                                    icon: LucideIcons.bot,
+                                    label: 'POS AI Chat',
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => POSChatScreen(),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                  _DrawerItem(
+                                    icon: LucideIcons.barChart3,
+                                    label: 'AI Report Summary',
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => POSReportScreen(),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                  const SizedBox(height: 16),
+
+                                  _SectionTitle(title: 'Customization'),
+                                  _DrawerItem(
+                                    icon: LucideIcons.tags,
+                                    label: 'Manage Categories',
+                                    onTap: () => _push(context, const SetupCategoryScreen()),
+                                  ),
+                                  _DrawerItem(
+                                    icon: LucideIcons.info,
+                                    label: 'About PocketPOS',
+                                    onTap: () {
+                                      showAboutDialog(
+                                        context: context,
+                                        applicationName: appName,
+                                        applicationVersion: 'v$version ($buildNumber)',
+                                        applicationLegalese: '© ${DateTime.now().year} NextTech\nAll rights reserved.',
+                                        children: const [
+                                          SizedBox(height: 16),
+                                          Text(
+                                            "PocketPOS helps you manage inventory and sales, even offline. Made for small teams doing big things.",
+                                            style: TextStyle(height: 1.5),
+                                          ),
+                                          SizedBox(height: 16),
+                                        ],
+                                      );
+                                    },
+                                  ),
+                                  const SizedBox(height: 16),
+                                ],
+                              ),
+                            ),
+                          ),
+
+                          // 🧱 Footer always on bottom
+                          Column(
+                            children: [
+                              const Divider(thickness: 1, color: AppColor.textSecondary),
+                              const SizedBox(height: 12),
+                              _DrawerItem(
+                                icon: LucideIcons.settings,
+                                label: 'App Settings',
+                                onTap: () {
+                                  showAboutDialog(context: context);
+                                },
+                              ),
+                              const SizedBox(height: 8),
+                              _DrawerItem(
+                                icon: LucideIcons.logOut,
+                                label: 'Sign Out',
+                                onTap: () {
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) => CustomConfirmDialog(
+                                      icon: Icons.logout_rounded,
+                                      isPop: false,
+                                      title: 'Sign Out',
+                                      content: 'Heads up! Signing out will clear your local data. Continue?',
+                                      onConfirm: () async {
+                                        await authProvider.signOut(tabProvider, productProvider, context);
+                                        Phoenix.rebirth(context);
+                                      },
+                                    ),
+                                  );
+                                },
+                              ),
+                              const SizedBox(height: 12),
+                            ],
+                          ),
                         ],
                       ),
                     );
@@ -224,6 +269,27 @@ class _DrawerItem extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  final String title;
+
+  const _SectionTitle({required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Text(
+        title.toUpperCase(),
+        style: const TextStyle(
+          fontSize: 12,
+          color: AppColor.textSecondary,
+          fontWeight: FontWeight.w500,
         ),
       ),
     );

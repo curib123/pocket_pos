@@ -126,7 +126,7 @@ class GreetingCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Shimmer.fromColors(
                     baseColor: AppColor.surface,
-                    highlightColor: AppColor.accent.withOpacity(0.6),
+                    highlightColor: AppColor.accent,
                     period: Duration(seconds: 3), // ✅ removed extra parenthesis
                     child: Text(
                       ownerName,

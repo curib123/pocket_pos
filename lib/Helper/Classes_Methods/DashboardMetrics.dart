@@ -91,11 +91,10 @@ DashboardMetrics generateDashboardMetrics({
       break;
   }
 
-  final List<Product> all = [];
-
+  final all = <Product>[];
   for (final product in allProducts) {
     all.add(product);
-    if (product.hasVariant && product.variants.isNotEmpty) {
+    if (product.hasVariant && !product.isVariant) {
       all.addAll(product.variants);
     }
   }
@@ -129,7 +128,7 @@ DashboardMetrics generateDashboardMetrics({
     final qty = product.totalQuantity;
     totalStocks += qty;
 
-    // Stock level categorization
+    // Stock level breakdown
     if (qty <= 10) {
       lowStockCount++;
     } else if (qty <= 50) {
@@ -138,36 +137,38 @@ DashboardMetrics generateDashboardMetrics({
       highStockCount++;
     }
 
+    // Stock value breakdown
     for (final stock in product.stocks) {
       final retail = stock.retailPrice;
       final cost = stock.costPrice;
-      final qty = stock.quantity;
+      final quantity = stock.quantity;
 
-      unrealizedProfit += (retail - cost) * qty;
-      possibleRevenue += retail * qty;
-      totalCost += cost * qty;
+      unrealizedProfit += (retail - cost) * quantity;
+      possibleRevenue += retail * quantity;
+      totalCost += cost * quantity;
     }
 
+    // Log analysis
     for (final log in product.logs) {
-      final inRange = !log.dateLogged.isBefore(startDate) && !log.dateLogged.isAfter(endDate);
+      if (log.dateLogged.isBefore(startDate) || log.dateLogged.isAfter(endDate)) continue;
+
       final piecesPerPack = product.piecesPerPack?.toDouble() ?? 0;
 
-      final ProductStock? stock = (log.productId.isNotEmpty && product.stocks.any((s) => s.id == log.productId))
-          ? product.stocks.firstWhere((s) => s.id == log.productId)
-          : (product.stocks.isNotEmpty ? product.stocks.first : null);
-
+      // Manual stock matching
+      ProductStock? stock;
+      for (final s in product.stocks) {
+        if (s.id == log.productId) {
+          stock = s;
+          break;
+        }
+      }
+      stock ??= product.stocks.isNotEmpty ? product.stocks.first : null;
       if (stock == null) continue;
 
-      // Skip piece-based logs if piecesPerPack is zero or invalid
       if (log.isPiece && piecesPerPack == 0) continue;
 
-      final unitCost = log.isPiece
-          ? stock.costPrice / piecesPerPack
-          : stock.costPrice;
-
-      final unitRetail = log.isPiece
-          ? stock.retailPrice / piecesPerPack
-          : stock.retailPrice;
+      final unitCost = log.isPiece ? stock.costPrice / piecesPerPack : stock.costPrice;
+      final unitRetail = log.isPiece ? stock.retailPrice / piecesPerPack : stock.retailPrice;
 
       final qty = log.quantity;
       final cost = unitCost * qty;
@@ -177,46 +178,31 @@ DashboardMetrics generateDashboardMetrics({
       switch (log.reason) {
         case StockLogReason.sold:
           totalSold += qty;
-          if (log.isPiece) {
-            totalSoldPerPiece += qty;
-          } else {
-            totalSoldPerPack += qty;
-          }
-
+          log.isPiece ? totalSoldPerPiece += qty : totalSoldPerPack += qty;
           totalRevenue += revenue;
           realizedProfit += profit;
-
-          if (inRange) {
-            currentRevenue += revenue;
-            currentProfit += profit;
-            currentCost += cost;
-          }
+          currentRevenue += revenue;
+          currentProfit += profit;
+          currentCost += cost;
           break;
-
         case StockLogReason.expired:
           totalExpired += qty;
           break;
-
         case StockLogReason.borrowed:
           totalLoan += qty;
           break;
-
         case StockLogReason.consumed:
           totalConsumed += qty;
           break;
-
         case StockLogReason.added:
           totalAdded += qty;
           break;
-
         case StockLogReason.donated:
           totalDonated += qty;
           break;
-
         case StockLogReason.damaged:
           totalDamaged += qty;
           break;
-
         default:
           break;
       }

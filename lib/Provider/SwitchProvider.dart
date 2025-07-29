@@ -7,10 +7,12 @@ class SwitchProvider with ChangeNotifier {
   bool _isCategoryGridView = false;
   bool _isProductGridView = true;
   bool _isArchiveView = true;
+  bool _isDashboardGridView = true; // ✅ Fixed typo
 
   bool get isCategoryGridView => _isCategoryGridView;
   bool get isProductGridView => _isProductGridView;
   bool get isArchiveView => _isArchiveView;
+  bool get isDashboardGridView => _isDashboardGridView; // ✅ Fixed typo
 
   SwitchProvider() {
     _initialize();
@@ -26,6 +28,7 @@ class SwitchProvider with ChangeNotifier {
     _isCategoryGridView = await _loadBool('categoryGridView', defaultValue: false);
     _isProductGridView = await _loadBool('productGridView', defaultValue: true);
     _isArchiveView = await _loadBool('archiveCategory', defaultValue: false);
+    _isDashboardGridView = await _loadBool('dashboardGridView', defaultValue: true); // ✅ New line
     notifyListeners();
   }
 
@@ -36,7 +39,6 @@ class SwitchProvider with ChangeNotifier {
         ? defaultValue
         : value == 'true';
 
-    // Save default if missing or empty
     if (value == null || value.trim().isEmpty) {
       await _storage.write(key: key, value: defaultValue.toString());
     }
@@ -63,6 +65,12 @@ class SwitchProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> toggleDashboardGridView() async { // ✅ NEW toggle method
+    _isDashboardGridView = !_isDashboardGridView;
+    await _storage.write(key: 'dashboardGridView', value: _isDashboardGridView.toString());
+    notifyListeners();
+  }
+
   /// Optional setters:
   Future<void> setCategoryGridView(bool value) async {
     _isCategoryGridView = value;
@@ -79,6 +87,12 @@ class SwitchProvider with ChangeNotifier {
   Future<void> setArchiveView(bool value) async {
     _isArchiveView = value;
     await _storage.write(key: 'archiveCategory', value: value.toString());
+    notifyListeners();
+  }
+
+  Future<void> setDashboardGridView(bool value) async { // ✅ NEW setter method
+    _isDashboardGridView = value;
+    await _storage.write(key: 'dashboardGridView', value: value.toString());
     notifyListeners();
   }
 }
