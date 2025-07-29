@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:pocketpos/Helper/Classes_Methods/AppColor.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:pocketpos/Helper/Classes_Methods/AppColor.dart';
 
 class StatGrid extends StatelessWidget {
   final IconData icon;
@@ -25,67 +25,72 @@ class StatGrid extends StatelessWidget {
         final isWide = constraints.maxWidth > 300;
 
         return Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.grey.shade100),
+            borderRadius: BorderRadius.circular(18),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.03),
-                blurRadius: 6,
-                offset: const Offset(0, 2),
+                color: Colors.black12.withOpacity(0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
               ),
             ],
+            border: Border.all(color: Colors.grey.shade100),
           ),
           child: Column(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween, // centers all vertically
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              CircleAvatar(
-                radius: 26,
-                backgroundColor: color.withOpacity(0.12),
-                child: Icon(icon, color: color, size: 22),
-              ),
-              const SizedBox(height: 12),
-              Shimmer.fromColors(
-                baseColor: Colors.black87,
-                highlightColor: Colors.deepPurpleAccent.shade100,
-                period: const Duration(seconds: 3),
-                child: Text(
-                  label,
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: isWide ? 15 : 13,
-                    fontWeight: FontWeight.w600,
-                    color: AppColor.textPrimary,
-                  ),
-                ),
-              ),
-              if (guide != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Text(
-                    guide!,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: isWide ? 13 : 11.5,
-                      fontStyle: FontStyle.italic,
-                      color: Colors.grey,
-                    ),
-                  ),
-                ),
-              const SizedBox(height: 10),
+             Column(
+               children: [
+                 CircleAvatar(
+                   radius: 30,
+                   backgroundColor: color.withOpacity(0.1),
+                   child: Icon(icon, color: color, size: 30),
+                 ),
+                 const SizedBox(height: 8),
+                 Shimmer.fromColors(
+                   baseColor: Colors.black87,
+                   highlightColor: Colors.deepPurpleAccent.shade100,
+                   period: const Duration(seconds: 3),
+                   child: Text(
+                     label,
+                     textAlign: TextAlign.center,
+                     maxLines: 2,
+                     overflow: TextOverflow.ellipsis,
+                     style: TextStyle(
+                       fontSize: isWide ? 14 : 12,
+                       fontWeight: FontWeight.w600,
+                       color: AppColor.textPrimary,
+                     ),
+                   ),
+                 ),
+                 if (guide != null)
+                   Padding(
+                     padding: const EdgeInsets.only(top: 4),
+                     child: Text(
+                       guide!,
+                       textAlign: TextAlign.center,
+                       style: TextStyle(
+                         fontSize: isWide ? 13 : 12,
+                         color: Colors.grey[600],
+                         fontStyle: FontStyle.italic,
+                       ),
+                     ),
+                   ),
+               ],
+             ),
               FittedBox(
                 fit: BoxFit.scaleDown,
                 child: Text(
                   value,
+                  textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: isWide ? 20 : 16,
-                    fontWeight: FontWeight.bold,
+                    fontSize: isWide ? 18 : 15,
+                    fontWeight: FontWeight.w700,
                     color: color,
+                    letterSpacing: 0.3,
                   ),
                 ),
               ),

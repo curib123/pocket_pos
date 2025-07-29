@@ -67,7 +67,6 @@ class ProductDashboardStats extends StatelessWidget {
       ) {
     return [
       GroupHeader(icon: icon, title: title),
-      const SizedBox(height: 10),
       LayoutBuilder(
         builder: (context, constraints) {
           final double fullWidth = constraints.maxWidth;
@@ -85,9 +84,9 @@ class ProductDashboardStats extends StatelessWidget {
             physics: const NeverScrollableScrollPhysics(),
             shrinkWrap: true,
             crossAxisCount: crossAxisCount,
-            crossAxisSpacing: 10,
-            mainAxisSpacing: 10,
-            childAspectRatio: 0.65,
+            crossAxisSpacing: 5,
+            mainAxisSpacing: 5,
+            childAspectRatio: 0.70,
             children: stats,
           );
         },
@@ -121,6 +120,15 @@ class ProductDashboardStats extends StatelessWidget {
         value: formatNumber(metrics.totalStocks),
         color: AppColor.accent,
       ),
+      _buildStat(
+        icon: LucideIcons.trash2,
+        label: "Deleted Products",
+        guide: "Number of products currently marked as deleted",
+        value: formatNumber(metrics.totalStocksDeleted),
+        color: AppColor.error,
+      ),
+
+
     ];
 
     final salesStats = [
@@ -172,62 +180,100 @@ class ProductDashboardStats extends StatelessWidget {
     ];
 
     final stockLevelStats = <Widget>[
-      Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _buildStat(
-            icon: LucideIcons.arrowDownCircle,
-            label: "Low Stock",
-            guide: "≤ 10 in quantity",
-            value: formatNumber(metrics.lowStockCount),
-            color: Colors.redAccent,
-          ),
-          const SizedBox(height: 2),
-          const ProductRangePreviewDropdown(
-            minQty: 0,
-            maxQty: 10,
-            hint: "View low stock products",
-            prefixIcon: LucideIcons.box,
-          ),
-        ],
+      // ⚫ Zero Stock
+      Padding(
+        padding: const EdgeInsets.symmetric(vertical: 3), // add spacing between cards
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _buildStat(
+              icon: LucideIcons.xCircle,
+              label: "Out of Stock",
+              guide: "No Left",
+              value: formatNumber(metrics.zeroStockCount),
+              color: Colors.grey,
+            ),
+            const SizedBox(height: 8), // spacing between stat and dropdown
+            const ProductRangePreviewDropdown(
+              minQty: 0,
+              maxQty: 0,
+              hint: "View products",
+              prefixIcon: LucideIcons.box,
+            ),
+          ],
+        ),
       ),
-      Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _buildStat(
-            icon: LucideIcons.equal,
-            label: "Medium Stock",
-            guide: "11 to 50 in quantity",
-            value: formatNumber(metrics.mediumStockCount),
-            color: Colors.amber,
-          ),
-          const SizedBox(height: 2),
-          const ProductRangePreviewDropdown(
-            minQty: 11,
-            maxQty: 50,
-            hint: "View medium stock products",
-            prefixIcon: LucideIcons.box,
-          ),
-        ],
+
+      // 🔴 Low Stock
+      Padding(
+        padding: const EdgeInsets.symmetric(vertical: 3),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _buildStat(
+              icon: LucideIcons.arrowDownCircle,
+              label: "Low Stock",
+              guide: "≤ 10 items in stock",
+              value: formatNumber(metrics.lowStockCount),
+              color: Colors.redAccent,
+            ),
+            const SizedBox(height: 8),
+            const ProductRangePreviewDropdown(
+              minQty: 1,
+              maxQty: 10,
+              hint: "Browse low stock products",
+              prefixIcon: LucideIcons.box,
+            ),
+          ],
+        ),
       ),
-      Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _buildStat(
-            icon: LucideIcons.arrowUpCircle,
-            label: "High Stock",
-            guide: "More than 50 in quantity",
-            value: formatNumber(metrics.highStockCount),
-            color: Colors.green,
-          ),
-          const SizedBox(height: 2),
-          const ProductRangePreviewDropdown(
-            minQty: 51,
-            maxQty: 999999,
-            hint: "View high stock products",
-            prefixIcon: LucideIcons.box,
-          ),
-        ],
+
+      // 🟡 Medium Stock
+      Padding(
+        padding: const EdgeInsets.symmetric(vertical: 3),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _buildStat(
+              icon: LucideIcons.equal,
+              label: "Medium Stock",
+              guide: "11–50 items in stock",
+              value: formatNumber(metrics.mediumStockCount),
+              color: Colors.amber,
+            ),
+            const SizedBox(height: 8),
+            const ProductRangePreviewDropdown(
+              minQty: 11,
+              maxQty: 50,
+              hint: "Browse medium stock products",
+              prefixIcon: LucideIcons.box,
+            ),
+          ],
+        ),
+      ),
+
+      // 🟢 High Stock
+      Padding(
+        padding: const EdgeInsets.symmetric(vertical: 3),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _buildStat(
+              icon: LucideIcons.arrowUpCircle,
+              label: "High Stock",
+              guide: "High Stocks",
+              value: formatNumber(metrics.highStockCount),
+              color: Colors.green,
+            ),
+            const SizedBox(height: 8),
+            const ProductRangePreviewDropdown(
+              minQty: 51,
+              maxQty: 999999,
+              hint: "Browse products",
+              prefixIcon: LucideIcons.box,
+            ),
+          ],
+        ),
       ),
     ];
 

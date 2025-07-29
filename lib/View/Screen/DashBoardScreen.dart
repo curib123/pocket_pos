@@ -171,9 +171,9 @@ class _DashBoardScreenState extends State<DashBoardScreen> {
         ),
         const SizedBox(height: 10),
         _floatingAction(
-          icon: LucideIcons.layoutDashboard,
+          icon: !switchProvider.isDashboardGridView ? LucideIcons.layoutDashboard : LucideIcons.layers,
           tooltip: "Toggle Grid View",
-          color: AppColor.accent, // 🧩 layout
+          color: AppColor.textSecondary, // 🧩 layout
           onPressed: () => switchProvider.toggleDashboardGridView(),
         ),
       ],

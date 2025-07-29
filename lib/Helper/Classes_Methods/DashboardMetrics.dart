@@ -8,6 +8,7 @@ class DashboardMetrics {
   final int totalProducts;
   final int totalVariants;
   final int totalStocks;
+  final int totalStocksDeleted;
 
   final int totalSoldItems;
   final int totalSoldPerPack;
@@ -36,68 +37,73 @@ class DashboardMetrics {
   final int mediumStockCount;
   final int highStockCount;
 
-  DashboardMetrics({
-    required this.totalProducts,
-    required this.totalVariants,
-    required this.totalStocks,
-    required this.totalSoldItems,
-    required this.totalSoldPerPack,
-    required this.totalSoldPerPiece,
-    required this.totalExpiredItems,
-    required this.totalLoanItems,
-    required this.totalConsumedItems,
-    required this.totalAddedItems,
-    required this.totalDonatedItems,
-    required this.totalDamageItems,
-    required this.totalRevenue,
-    required this.currentRevenue,
-    required this.realizedProfit,
-    required this.currentProfit,
-    required this.unrealizedProfit,
-    required this.possibleRevenue,
-    required this.totalCost,
-    required this.currentCost,
-    required this.lowStockCount,
-    required this.mediumStockCount,
-    required this.highStockCount,
-  });
+  final int zeroStockCount;
+
+  DashboardMetrics(
+      this.totalStocksDeleted, {
+        required this.totalProducts,
+        required this.totalVariants,
+        required this.totalStocks,
+        required this.totalSoldItems,
+        required this.totalSoldPerPack,
+        required this.totalSoldPerPiece,
+        required this.totalExpiredItems,
+        required this.totalLoanItems,
+        required this.totalConsumedItems,
+        required this.totalAddedItems,
+        required this.totalDonatedItems,
+        required this.totalDamageItems,
+        required this.totalRevenue,
+        required this.currentRevenue,
+        required this.realizedProfit,
+        required this.currentProfit,
+        required this.unrealizedProfit,
+        required this.possibleRevenue,
+        required this.totalCost,
+        required this.currentCost,
+        required this.lowStockCount,
+        required this.mediumStockCount,
+        required this.highStockCount,
+        required this.zeroStockCount,
+      });
 }
+
 DashboardMetrics generateDashboardMetrics({
-  required List<Product> allProducts,
-  required DateFilterType filterType,
-  DateTime? customStart,
-  DateTime? customEnd,
-}) {
-  final now = DateTime.now();
-  DateTime startDate;
-  DateTime endDate = now;
+    required List<Product> allProducts,
+    required DateFilterType filterType,
+    DateTime? customStart,
+    DateTime? customEnd,
+  }) {
+    final now = DateTime.now();
+    DateTime startDate;
+    DateTime endDate = now;
 
-  switch (filterType) {
-    case DateFilterType.day:
-      startDate = DateTime(now.year, now.month, now.day);
-      break;
-    case DateFilterType.week:
-      startDate = now.subtract(Duration(days: now.weekday - 1));
-      break;
-    case DateFilterType.month:
-      startDate = DateTime(now.year, now.month, 1);
-      break;
-    case DateFilterType.year:
-      startDate = DateTime(now.year, 1, 1);
-      break;
-    case DateFilterType.range:
-      startDate = customStart ?? now;
-      endDate = customEnd ?? now;
-      break;
-  }
-
-  final all = <Product>[];
-  for (final product in allProducts) {
-    all.add(product);
-    if (product.hasVariant && !product.isVariant) {
-      all.addAll(product.variants);
+    switch (filterType) {
+      case DateFilterType.day:
+        startDate = DateTime(now.year, now.month, now.day);
+        break;
+      case DateFilterType.week:
+        startDate = now.subtract(Duration(days: now.weekday - 1));
+        break;
+      case DateFilterType.month:
+        startDate = DateTime(now.year, now.month, 1);
+        break;
+      case DateFilterType.year:
+        startDate = DateTime(now.year, 1, 1);
+        break;
+      case DateFilterType.range:
+        startDate = customStart ?? now;
+        endDate = customEnd ?? now;
+        break;
     }
-  }
+
+    final all = <Product>[];
+    for (final product in allProducts) {
+      all.add(product);
+      if (product.hasVariant && !product.isVariant) {
+        all.addAll(product.variants);
+      }
+    }
 
   int totalStocks = 0;
   double unrealizedProfit = 0.0;
@@ -113,6 +119,7 @@ DashboardMetrics generateDashboardMetrics({
   int totalAdded = 0;
   int totalDonated = 0;
   int totalDamaged = 0;
+  int totalDeleted = 0;
 
   double totalRevenue = 0.0;
   double currentRevenue = 0.0;
@@ -120,6 +127,7 @@ DashboardMetrics generateDashboardMetrics({
   double currentProfit = 0.0;
   double currentCost = 0.0;
 
+  int zeroStockCount = 0;
   int lowStockCount = 0;
   int mediumStockCount = 0;
   int highStockCount = 0;
@@ -127,9 +135,11 @@ DashboardMetrics generateDashboardMetrics({
   for (final product in all) {
     final qty = product.totalQuantity;
     totalStocks += qty;
+    totalDeleted += product.isSoftDeleted ? 1 : 0; //
 
-    // Stock level breakdown
-    if (qty <= 10) {
+    if (qty == 0) {
+      zeroStockCount++;
+    } else if (qty <= 10) {
       lowStockCount++;
     } else if (qty <= 50) {
       mediumStockCount++;
@@ -137,7 +147,6 @@ DashboardMetrics generateDashboardMetrics({
       highStockCount++;
     }
 
-    // Stock value breakdown
     for (final stock in product.stocks) {
       final retail = stock.retailPrice;
       final cost = stock.costPrice;
@@ -148,13 +157,11 @@ DashboardMetrics generateDashboardMetrics({
       totalCost += cost * quantity;
     }
 
-    // Log analysis
     for (final log in product.logs) {
       if (log.dateLogged.isBefore(startDate) || log.dateLogged.isAfter(endDate)) continue;
 
       final piecesPerPack = product.piecesPerPack?.toDouble() ?? 0;
 
-      // Manual stock matching
       ProductStock? stock;
       for (final s in product.stocks) {
         if (s.id == log.productId) {
@@ -203,6 +210,7 @@ DashboardMetrics generateDashboardMetrics({
         case StockLogReason.damaged:
           totalDamaged += qty;
           break;
+
         default:
           break;
       }
@@ -210,6 +218,7 @@ DashboardMetrics generateDashboardMetrics({
   }
 
   return DashboardMetrics(
+    totalDeleted,
     totalProducts: allProducts.length,
     totalVariants: all.fold(0, (sum, p) => sum + p.variants.length),
     totalStocks: totalStocks,
@@ -233,5 +242,6 @@ DashboardMetrics generateDashboardMetrics({
     lowStockCount: lowStockCount,
     mediumStockCount: mediumStockCount,
     highStockCount: highStockCount,
+    zeroStockCount: zeroStockCount,
   );
 }

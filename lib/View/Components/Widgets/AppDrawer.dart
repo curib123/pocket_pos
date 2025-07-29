@@ -71,7 +71,7 @@ class AppDrawer extends StatelessWidget {
                                   ),
                                   _DrawerItem(
                                     icon: LucideIcons.rotateCcw,
-                                    label: 'Restore Deleted Items',
+                                    label: 'Restore Deleted Products',
                                     onTap: () => _push(context, const RestoreProductScreen()),
                                   ),
                                   const SizedBox(height: 16),
