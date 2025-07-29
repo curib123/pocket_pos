@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
@@ -6,18 +7,36 @@ import 'package:pocketpos/View/Components/Modal/ProductDetailScreenModal.dart';
 
 class ProductSearchDelegate extends SearchDelegate<Product?> {
   final List<Product> products;
+  final Duration debounceDuration;
 
-  ProductSearchDelegate({required this.products})
-      : super(
+  Timer? _debounce;
+  List<Product> _filtered = [];
+
+  ProductSearchDelegate({
+    required this.products,
+    this.debounceDuration = const Duration(milliseconds: 300),
+  }) : super(
     searchFieldLabel: 'Search products...',
     keyboardType: TextInputType.text,
     textInputAction: TextInputAction.search,
   );
 
+  void _debounceSearch(String query, VoidCallback refresh) {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    _debounce = Timer(debounceDuration, () {
+      _filtered = products
+          .where((p) =>
+          p.name.toLowerCase().contains(query.toLowerCase()))
+          .take(50)
+          .toList();
+      refresh();
+    });
+  }
+
   @override
   ThemeData appBarTheme(BuildContext context) {
-    final baseTheme = Theme.of(context);
-    return baseTheme.copyWith(
+    final base = Theme.of(context);
+    return base.copyWith(
       appBarTheme: const AppBarTheme(
         backgroundColor: Colors.white,
         iconTheme: IconThemeData(color: Colors.black),
@@ -32,16 +51,18 @@ class ProductSearchDelegate extends SearchDelegate<Product?> {
 
   @override
   List<Widget>? buildActions(BuildContext context) {
-    return [
-      if (query.isNotEmpty)
-        IconButton(
-          icon: const Icon(LucideIcons.x),
-          onPressed: () {
-            query = '';
-            showSuggestions(context);
-          },
-        ),
-    ];
+    return query.isNotEmpty
+        ? [
+      IconButton(
+        icon: const Icon(LucideIcons.x),
+        onPressed: () {
+          query = '';
+          _filtered.clear();
+          showSuggestions(context);
+        },
+      )
+    ]
+        : null;
   }
 
   @override
@@ -54,66 +75,93 @@ class ProductSearchDelegate extends SearchDelegate<Product?> {
 
   @override
   Widget buildResults(BuildContext context) {
-    final filtered = products
-        .where((product) => product.name.toLowerCase().contains(query.toLowerCase()))
-        .toList();
+    if (query.length < 2) {
+      return const Center(child: Text('Type at least 2 characters to search.'));
+    }
 
-    if (filtered.isEmpty) {
-      return Center(
-        child: Text(
-          'No results found.',
-          style: TextStyle(color: Colors.grey[600]),
-        ),
-      );
+    _debounceSearch(query, () {
+      showResults(context);
+    });
+
+    if (_filtered.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
     }
 
     return ListView.separated(
-      itemCount: filtered.length,
-      separatorBuilder: (_, __) => const Divider(height: 1),
+      itemCount: _filtered.length,
+      separatorBuilder: (_, __) => const Divider(height: 0.5),
       itemBuilder: (context, index) {
-        final product = filtered[index];
-        return ListTile(
-          leading: ClipRRect(
-            borderRadius: BorderRadius.circular(6),
-            child: (product.imagePath != null &&
-                product.imagePath!.isNotEmpty &&
-                File(product.imagePath!).existsSync())
-                ? Image.file(
-              File(product.imagePath!),
-              width: 50,
-              height: 50,
-              fit: BoxFit.cover,
-            )
-                : const Icon(LucideIcons.box, size: 30, color: Colors.grey),
-          ),
-          title: Text(product.name),
-          subtitle: Text("Stock: ${product.totalQuantity}"),
-          trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-          onTap: () {
-            ProductDetailModal.show(context, product.id, product.isVariant);
-          },
-        );
+        return _buildProductTile(context, _filtered[index]);
       },
     );
   }
 
   @override
   Widget buildSuggestions(BuildContext context) {
-    final suggestions = products
-        .where((product) => product.name.toLowerCase().contains(query.toLowerCase()))
+    final List<Product> displayList = query.isEmpty
+        ? products.take(10).toList()
+        : products
+        .where((p) =>
+        p.name.toLowerCase().contains(query.toLowerCase()))
+        .take(5)
         .toList();
 
+    if (displayList.isEmpty) {
+      return const Center(child: Text('No suggestions found.'));
+    }
+
     return ListView.builder(
-      itemCount: suggestions.length,
-      itemBuilder: (context, index) {
-        final product = suggestions[index];
-        return ListTile(
-          title: Text(product.name),
-          onTap: () {
-            ProductDetailModal.show(context, product.id, product.isVariant);
-          },
-        );
+      itemCount: displayList.length,
+      itemBuilder: (context, index) =>
+          _buildProductTile(context, displayList[index]),
+    );
+  }
+
+  Widget _buildProductTile(BuildContext context, Product product) {
+    return ListTile(
+      key: ValueKey(product.id),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      leading: ClipRRect(
+        borderRadius: BorderRadius.circular(6),
+        child: (product.imagePath != null &&
+            product.imagePath!.isNotEmpty &&
+            File(product.imagePath!).existsSync())
+            ? Image.file(
+          File(product.imagePath!),
+          width: 44,
+          height: 44,
+          fit: BoxFit.cover,
+        )
+            : Container(
+          width: 44,
+          height: 44,
+          color: Colors.grey[100],
+          child: const Icon(LucideIcons.box, size: 20, color: Colors.grey),
+        ),
+      ),
+      title: Text(
+        product.name,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(
+          fontSize: 14.5,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      subtitle: Text(
+        "Qty: ${product.totalQuantity}",
+        style: const TextStyle(fontSize: 12.5, color: Colors.grey),
+      ),
+      trailing: const Icon(Icons.chevron_right, size: 18, color: Colors.grey),
+      onTap: () {
+        ProductDetailModal.show(context, product.id, product.isVariant);
       },
     );
+  }
+
+  @override
+  void close(BuildContext context, Product? result) {
+    _debounce?.cancel();
+    super.close(context, result);
   }
 }

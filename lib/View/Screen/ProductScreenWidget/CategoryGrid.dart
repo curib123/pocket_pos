@@ -39,7 +39,7 @@ class CategoryGrid extends StatelessWidget {
             builder: (context, constraints) {
               final screenWidth = constraints.maxWidth;
               final crossAxisCount = (screenWidth ~/ 180).clamp(2, 6);
-              final aspectRatio = screenWidth > 600 ? 1.1 : 0.9;
+              final aspectRatio = screenWidth > 600 ? 1.1 : 0.85;
 
               return GridView.builder(
                 shrinkWrap: true,
