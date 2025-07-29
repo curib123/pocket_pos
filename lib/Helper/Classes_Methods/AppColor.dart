@@ -4,11 +4,11 @@ class AppColor {
   // 🟦 Primary – Deep Teal (Teal-700)
   static const Color primary = Color(0xFF0F766E); // Strong, calming, confident
 
-  // 🟣 Accent – Soft Lilac
-  static const Color accent = Color(0xFFD8B4FE); // Light Violet — pops against teal
+// 🟣 Accent – Velvet Purple
+  static const Color accent = Color(0xFF7C3AED); // Like royalty but tech-forward
 
-  // 🪵 Secondary – Cool Gray
-  static const Color secondary = Color(0xFF94A3B8); // Balanced, neutral fallback
+// 🪵 Secondary – Slate
+  static const Color secondary = Color(0xFF475569); // Almost stormy, ultra-modern
 
   // ☁️ Background – Ultra Soft
   static const Color background = Color(0xFFFAFAFA); // Gentle on eyes

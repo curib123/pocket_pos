@@ -47,18 +47,16 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
   String? _selectedUnit;
   String? _selectedCategory;
   bool _isSoldByPack = false;
-  bool _isSoldByPiece = false;
+  bool _isSoldByPiece = true;
   bool _hasVariant = false;
   File? _selectedImage;
   bool _isSubmitting = false;
   bool _hasStock = false;
    bool isAddingStock = false ;
 
-   final List<String> _units = ProductUnits.units;
   final List<Product> _variants = [];
    final List<ProductStock> _stock = [];
 
-  @override
   @override
   void initState() {
     super.initState();

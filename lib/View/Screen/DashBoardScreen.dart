@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:pocketpos/Provider/CurrencyProvider.dart';
+import 'package:pocketpos/View/Components/Widgets/AISnackbarManager.dart';
 import 'package:pocketpos/View/Components/Widgets/ProductRangePreviewDropdown.dart';
+import 'package:pocketpos/View/Screen/PoSReportScreen.dart';
 import 'package:pocketpos/View/Screen/PosChatScreen.dart';
 import 'package:provider/provider.dart';
 
@@ -39,6 +41,7 @@ class _DashBoardScreenState extends State<DashBoardScreen> {
     autoSync(context);
     refreshProduct(context);
     _refreshMetrics();
+    AISnackbarManager.showAIAlert(context, screenName: 'Dashboard Screen');
   }
 
   Future<void> _refreshMetrics() async {
@@ -162,14 +165,14 @@ class _DashBoardScreenState extends State<DashBoardScreen> {
                           const _GroupHeader(icon: LucideIcons.boxes, title: "Product Summary"),
                           _StatTile(
                             icon: LucideIcons.box,
-                            label: "Total Items",
+                            label: "Total Products",
                             guide: "Number of main products",
                             value: formatNumber(metrics.totalProducts),
                             color: AppColor.primary,
                           ),
                           _StatTile(
                             icon: LucideIcons.layers,
-                            label: "Item Variants",
+                            label: "Products Variants",
                             guide: "Different versions like size or type",
                             value: formatNumber(metrics.totalVariants),
                             color: AppColor.secondary,
@@ -226,7 +229,7 @@ class _DashBoardScreenState extends State<DashBoardScreen> {
                           _StatTile(
                             icon: LucideIcons.wallet2,
                             label: "Cost of Sales",
-                            guide: "Cost of sold items",
+                            guide: "Cost of goods sold",
                             value: currencyProvider.formatAmount(metrics.currentCost),
                             color: Colors.deepOrange,
                           ),
@@ -357,7 +360,7 @@ class _DashBoardScreenState extends State<DashBoardScreen> {
                             ),
 
                   Positioned(
-                    bottom: 16,
+                    bottom: 30,
                     right: 16,
                     child: Material(
                       shape: const CircleBorder(),
@@ -376,8 +379,35 @@ class _DashBoardScreenState extends State<DashBoardScreen> {
                               ),
                             );
                           },
-                          icon: const Icon(LucideIcons.bot,color: AppColor.surface,size: 30,),
+                          icon: const Icon(LucideIcons.bot,color: AppColor.surface,size: 25,),
                           tooltip: "Open Assistant",
+                          color: Colors.deepPurple,
+                        ),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    bottom: 90,
+                    right: 16,
+                    child: Material(
+                      shape: const CircleBorder(),
+                      elevation: 6,
+                      child: Ink(
+                        decoration: BoxDecoration(
+                          color: AppColor.primary,
+                          shape: BoxShape.circle,
+                        ),
+                        child: IconButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => POSReportScreen(),
+                              ),
+                            );
+                          },
+                          icon: const Icon(LucideIcons.pieChart,color: AppColor.surface,size: 25,),
+                          tooltip: "Ai Reports",
                           color: Colors.deepPurple,
                         ),
                       ),
@@ -490,7 +520,6 @@ class _GroupHeader extends StatelessWidget {
     );
   }
 }
-
 class _StatTile extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -509,30 +538,29 @@ class _StatTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
         boxShadow: [
           BoxShadow(
-            color: color.withOpacity(0.08),
-            blurRadius: 4,
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 6,
             offset: const Offset(0, 2),
           )
         ],
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.15),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: color, size: 20),
+          CircleAvatar(
+            radius: 20,
+            backgroundColor: color.withOpacity(0.12),
+            child: Icon(icon, color: color, size: 18),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -540,18 +568,21 @@ class _StatTile extends StatelessWidget {
                 Text(
                   label,
                   style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w600,
                     color: AppColor.textPrimary,
                   ),
                 ),
                 if (guide != null)
-                  Text(
-                    guide!,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      fontStyle: FontStyle.italic,
-                      color: Colors.grey,
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Text(
+                      guide!,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontStyle: FontStyle.italic,
+                        color: Colors.grey,
+                      ),
                     ),
                   ),
               ],
@@ -560,8 +591,8 @@ class _StatTile extends StatelessWidget {
           Text(
             value,
             style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
               color: color,
             ),
           ),
@@ -570,6 +601,7 @@ class _StatTile extends StatelessWidget {
     );
   }
 }
+
 
 class _StockDropdown extends StatefulWidget {
   final String stockType;

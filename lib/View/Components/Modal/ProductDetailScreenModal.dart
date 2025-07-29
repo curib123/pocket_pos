@@ -396,15 +396,17 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                                     product.id,
                                     quantityChosen.toInt(),
                                     reason,
+                                    true
                                   );
                                 } else if (isPackOnly || (isBoth && isUsePackSwitch)) {
                                   success = await productStockProvider.sellPack(
                                     product.id,
                                     quantityChosen.toInt(),
                                     reason,
+                                    false
                                   );
                                 } else {
-                                  success = await productStockProvider.sellPiece(
+                                  success = await productStockProvider.sellItemsPerPack(
                                     product.id,
                                     quantityChosen.toInt(),
                                     reason,

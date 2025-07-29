@@ -5,7 +5,6 @@ import 'package:pocketpos/View/Components/Widgets/SearchAndCartRow.dart';
 import 'package:provider/provider.dart';
 import 'package:pocketpos/Helper/Enums/Enum.dart';
 import 'package:pocketpos/Provider/CurrencyProvider.dart';
-import 'package:pocketpos/Helper/Classes_Methods/AppColor.dart';
 import 'package:pocketpos/View/Components/Alert/showEditLoanDialog.dart';
 import 'package:pocketpos/View/Components/Alert/showPayAllDialog.dart';
 import 'package:pocketpos/View/Components/Alert/showPayLoanDialog.dart';
@@ -23,6 +22,12 @@ class LoanScreen extends StatefulWidget {
 class _LoanScreenState extends State<LoanScreen> {
   String? selectedBorrower ;
   LoanFilterType selectedFilter = LoanFilterType.day;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {

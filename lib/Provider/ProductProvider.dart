@@ -283,7 +283,7 @@ class ProductProvider extends ChangeNotifier {
         final restored = product.copyWith(
           isSoftDeleted: false,
           lastModified: now,
-          logs: [...(product.logs ?? []), log], // safe spread
+          logs: [...(product.logs), log], // safe spread
         );
 
         await _productBox.put(id, restored);

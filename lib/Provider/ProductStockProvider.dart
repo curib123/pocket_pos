@@ -44,6 +44,7 @@ class ProductStockProvider extends ChangeNotifier {
       String productIdOrName,
       int quantity,
       StockLogReason reason, // <- added here
+      bool isSellingINPiece,
           {
         bool isLoan = false,
         String borrowName = 'Unknown',
@@ -111,7 +112,7 @@ class ProductStockProvider extends ChangeNotifier {
           productId: product.id,
           profit: totalProfit,
           quantity: quantity,
-          isPiece: false,
+          isPiece: isSellingINPiece,
           reason: isLoan ? StockLogReason.borrowed : reason, // ✅ use passed reason
           remarks: isLoan
               ? 'Loaned out $quantity pack(s) • $totalPiecesDeducted pcs deducted from inventory'
@@ -189,7 +190,7 @@ class ProductStockProvider extends ChangeNotifier {
     return true;
   }
 
-  Future<bool> sellPiece(
+  Future<bool> sellItemsPerPack(
       String productIdOrName,
       int quantity,
       StockLogReason reason,

@@ -7,9 +7,20 @@ import 'package:pocketpos/View/Components/Custom/CustomButton.dart';
 import 'package:pocketpos/Model/product_model.dart';
 import 'package:pocketpos/Provider/ProductProvider.dart';
 
-class RestoreProductScreen extends StatelessWidget {
+class RestoreProductScreen extends StatefulWidget {
   const RestoreProductScreen({super.key});
 
+  @override
+  State<RestoreProductScreen> createState() => _RestoreProductScreenState();
+}
+
+class _RestoreProductScreenState extends State<RestoreProductScreen> {
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(

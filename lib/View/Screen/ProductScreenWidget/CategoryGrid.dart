@@ -35,109 +35,117 @@ class CategoryGrid extends StatelessWidget {
 
         return SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-          child: GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: sortedCategories.length,
-            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: 180,
-              mainAxisSpacing: 16,
-              crossAxisSpacing: 16,
-              childAspectRatio: 0.80,
-            ),
-            itemBuilder: (context, index) {
-              final category = sortedCategories[index];
-              final icon = StoreCategory.icons[category] ?? LucideIcons.tag;
-              final color = StoreCategory.colors[category] ?? Colors.grey;
-              final count = productProvider.getAllProductsWithVariantsByCategory(category).length;
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final screenWidth = constraints.maxWidth;
+              final crossAxisCount = (screenWidth ~/ 180).clamp(2, 6);
+              final aspectRatio = screenWidth > 600 ? 1.1 : 0.9;
 
-              return FadeInUp(
-                duration: const Duration(milliseconds: 300),
-                child: Slidable(
-                  key: ValueKey(category),
-                  endActionPane: ActionPane(
-                    motion: const DrawerMotion(),
-                    children: [
-                      SlidableAction(
-                        onPressed: (_) {
-                          storeCategoryProvider.setHidden(category, !isArchiveView);
-                          final action = isArchiveView ? 'Unhidden' : 'Hidden';
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('$category has been $action')),
+              return GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: sortedCategories.length,
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: crossAxisCount,
+                  mainAxisSpacing: 16,
+                  crossAxisSpacing: 16,
+                  childAspectRatio: aspectRatio,
+                ),
+                itemBuilder: (context, index) {
+                  final category = sortedCategories[index];
+                  final icon = StoreCategory.icons[category] ?? LucideIcons.tag;
+                  final color = StoreCategory.colors[category] ?? Colors.grey;
+                  final count = productProvider.getAllProductsWithVariantsByCategory(category).length;
+
+                  return FadeInUp(
+                    duration: const Duration(milliseconds: 300),
+                    child: Slidable(
+                      key: ValueKey(category),
+                      endActionPane: ActionPane(
+                        motion: const DrawerMotion(),
+                        children: [
+                          SlidableAction(
+                            onPressed: (_) {
+                              storeCategoryProvider.setHidden(category, !isArchiveView);
+                              final action = isArchiveView ? 'Unhidden' : 'Hidden';
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('$category has been $action')),
+                              );
+                            },
+                            backgroundColor: isArchiveView ? Colors.green : Colors.redAccent,
+                            foregroundColor: Colors.white,
+                            icon: isArchiveView ? LucideIcons.eye : LucideIcons.eyeOff,
+                            label: isArchiveView ? 'Unhide' : 'Hide',
+                            flex: 2,
+                            spacing: 30,
+                            autoClose: true,
+                          ),
+                        ],
+                      ),
+                      child: GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => ProductListScreen(category: category),
+                            ),
                           );
                         },
-                        backgroundColor: isArchiveView ? Colors.green : Colors.redAccent,
-                        foregroundColor: Colors.white,
-                        icon: isArchiveView ? LucideIcons.eye : LucideIcons.eyeOff,
-                        label: isArchiveView ? 'Unhide' : 'Hide',
-                        flex: 2,
-                        spacing: 30,
-                        autoClose: true,
-                      ),
-                    ],
-                  ),
-                  child: GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => ProductListScreen(category: category),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: AppColor.surface,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: AppColor.secondarySurface,
+                              width: 1,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.03),
+                                blurRadius: 6,
+                                offset: const Offset(0, 1),
+                              ),
+                            ],
+                          ),
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                width: 50,
+                                height: 50,
+                                decoration: BoxDecoration(
+                                  color: color.withOpacity(0.15),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(icon, color: color, size: 24),
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                category,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 15,
+                                  color: AppColor.textPrimary,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Available Product: $count',
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: AppColor.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      );
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: AppColor.surface,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: AppColor.secondarySurface,
-                          width: 1,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.03),
-                            blurRadius: 6,
-                            offset: const Offset(0, 1),
-                          ),
-                        ],
-                      ),
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            width: 50,
-                            height: 50,
-                            decoration: BoxDecoration(
-                              color: color.withOpacity(0.15),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(icon, color: color, size: 24),
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            category,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 15,
-                              color: AppColor.textPrimary,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Available Product: $count',
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: AppColor.textSecondary,
-                            ),
-                          ),
-                        ],
                       ),
                     ),
-                  ),
-                ),
+                  );
+                },
               );
             },
           ),

@@ -15,26 +15,32 @@ class POSChatScreen extends StatefulWidget {
 class _POSChatScreenState extends State<POSChatScreen>
     with WidgetsBindingObserver, SingleTickerProviderStateMixin {
   final List<Map<String, dynamic>> messages = [];
-  final TextEditingController _controller = TextEditingController();
-  final ScrollController _scrollController = ScrollController();
+  final _controller = TextEditingController();
+  final _scrollController = ScrollController();
+
   bool waitingForResponse = false;
   bool loadingSuggestions = true;
 
   late final AnimationController _dotsController;
   late final Animation<int> _dotCount;
+  late final MistralAI ai;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _loadAISuggestions(context.read<ProductProvider>());
-
+    ai = MistralAI();
     _dotsController = AnimationController(
       duration: const Duration(seconds: 1),
       vsync: this,
     )..repeat();
 
     _dotCount = StepTween(begin: 1, end: 3).animate(_dotsController);
+
+    Future.microtask(() {
+      final productProvider = context.read<ProductProvider>();
+      _loadAISuggestions(productProvider);
+    });
   }
 
   @override
@@ -48,19 +54,23 @@ class _POSChatScreenState extends State<POSChatScreen>
 
   @override
   void didChangeMetrics() {
-    Future.delayed(const Duration(milliseconds: 300), _scrollToBottom);
+    Future.delayed(const Duration(milliseconds: 200), _scrollToBottom);
   }
 
   void _scrollToBottom() {
-    if (!_scrollController.hasClients) return;
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOut,
-      );
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 350),
+          curve: Curves.easeInOut,
+        );
+      }
     });
+  }
+
+  Future<List<Map<String, dynamic>>> _getProductJson(ProductProvider provider) async {
+    return provider.getAllProductsWithVariants().map((p) => p.toMap()).toList();
   }
 
   Future<void> _loadAISuggestions(ProductProvider productProvider) async {
@@ -70,31 +80,25 @@ class _POSChatScreenState extends State<POSChatScreen>
     });
 
     try {
-      final allProducts = productProvider.getAllProductsWithVariants();
-      final jsonData = allProducts.map((p) => p.toMap()).toList();
-      final ai = MistralAI();
-      final result = await ai.ask(
+      final jsonData = await _getProductJson(productProvider);
+      final response = await ai.ask(
         options: AIRequestOptions(
           data: jsonData,
           prompt: '''
-You are a POS analytics assistant.
-
-Based on the provided product data (including name, stock, sold quantity, price, and recent sales), do the following:
-- Analyze overall stock health and performance trends.
-- Suggest metrics like top sellers, low stock alerts, or unsold products.
-- Predict which products may run out soon or are trending.
-- Recommend what insights the user should ask next.
-
-Return only a clean bullet list of 5 smart suggestions (like questions the user can ask), no titles or explanations.
+You are a professional sales strategist analyzing POS data.
+Based on the provided product data, generate 3 actionable sales suggestions or strategic questions.
+Focus on stock movement, pricing, bundling, and sales opportunities.
+Keep it concise. No explanations.
 ''',
-          systemRole: 'You are a fintech AI assistant specialized in POS analytics and forecasting.',
+          systemRole: 'You are a fintech AI assistant specialized in POS optimization, sales strategy, and forecasting.',
+
         ),
       );
 
-      final extracted = result
-          .split(RegExp(r'[\n•-]'))
-          .map((e) => e.trim())
-          .where((e) => e.isNotEmpty)
+      final suggestions = response
+          .split(RegExp(r'[\n•\-]'))
+          .map((s) => s.replaceAll(RegExp(r'[^\w\s,.!?]'), '').trim())
+          .where((s) => s.isNotEmpty)
           .take(5)
           .toList();
 
@@ -102,53 +106,49 @@ Return only a clean bullet list of 5 smart suggestions (like questions the user 
         messages.add({
           "role": "ai",
           "content": "suggestions",
-          "suggestions": extracted,
+          "suggestions": suggestions,
         });
         loadingSuggestions = false;
       });
-
-      _scrollToBottom();
     } catch (e) {
-      debugPrint("Suggestion error: $e");
-      setState(() {
-        loadingSuggestions = false;
-      });
+      debugPrint("Suggestions error: $e");
+      setState(() => loadingSuggestions = false);
     }
+
+    _scrollToBottom();
   }
 
-  Future<void> _sendMessage(String content, ProductProvider productProvider) async {
-    if (content.trim().isEmpty) return;
+  Future<void> _sendMessage(String text, ProductProvider productProvider) async {
+    if (text.trim().isEmpty) return;
 
     setState(() {
-      messages.add({"role": "user", "content": content});
+      messages.add({"role": "user", "content": text});
       waitingForResponse = true;
     });
+
     _controller.clear();
     _scrollToBottom();
 
     try {
-      final allProducts = productProvider.getAllProductsWithVariants();
-      final jsonData = allProducts.map((p) => p.toMap()).toList();
-      final ai = MistralAI();
-      final response = await ai.ask(
+      final jsonData = await _getProductJson(productProvider);
+      final reply = await ai.ask(
         options: AIRequestOptions(
           data: jsonData,
-          prompt: content,
+          prompt: text,
           systemRole: 'You are a helpful POS assistant. Respond clearly and briefly.',
         ),
       );
 
+      final cleanedReply = reply.replaceAll(RegExp(r'[^\w\s,.!?]'), '').trim();
+
       setState(() {
-        messages.add({"role": "ai", "content": response});
+        messages.add({"role": "ai", "content": cleanedReply});
         waitingForResponse = false;
       });
     } catch (e) {
-      debugPrint("AI response error: $e");
+      debugPrint("AI error: $e");
       setState(() {
-        messages.add({
-          "role": "ai",
-          "content": "⚠️ Something went wrong. Please try again!",
-        });
+        messages.add({"role": "ai", "content": "⚠️ Oops, something went wrong!"});
         waitingForResponse = false;
       });
     }
@@ -159,10 +159,8 @@ Return only a clean bullet list of 5 smart suggestions (like questions the user 
   Widget _buildDotLoader() {
     return AnimatedBuilder(
       animation: _dotCount,
-      builder: (context, child) {
-        String dots = '.' * _dotCount.value;
-        return Text("Thinking$dots", style: const TextStyle(fontSize: 14, fontStyle: FontStyle.italic));
-      },
+      builder: (context, child) =>
+          Text("..." * _dotCount.value, style: const TextStyle(fontSize: 14)),
     );
   }
 
@@ -171,25 +169,31 @@ Return only a clean bullet list of 5 smart suggestions (like questions the user 
 
     if (msg["content"] == "suggestions" && msg["suggestions"] is List) {
       final suggestions = msg["suggestions"] as List<String>;
-      return Align(
-        alignment: Alignment.centerLeft,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text("💡 Suggested questions:", style: TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: suggestions.map((s) {
-                return ActionChip(
-                  label: Text(s, style: const TextStyle(fontSize: 13)),
-                  backgroundColor: Colors.grey.shade200,
-                  onPressed: () => _sendMessage(s, productProvider),
-                );
-              }).toList(),
-            ),
-          ],
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 12.0),
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text("💡 Suggestions:", style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: suggestions.map((s) {
+                  return ActionChip(
+                    avatar: const Icon(LucideIcons.sparkles, size: 14),
+                    label: Text(s, style: const TextStyle(fontSize: 13)),
+                    backgroundColor: AppColor.secondarySurface,
+                    side: const BorderSide(color: AppColor.accent, width: 0.5),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    onPressed: () => _sendMessage(s, productProvider),
+                  );
+                }).toList(),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -200,10 +204,56 @@ Return only a clean bullet list of 5 smart suggestions (like questions the user 
         margin: const EdgeInsets.symmetric(vertical: 6),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: isUser ? AppColor.primary.withOpacity(0.2) :  AppColor.secondarySurface,
-          borderRadius: BorderRadius.circular(12),
+          color: isUser ? AppColor.primary.withOpacity(0.15) : AppColor.secondarySurface,
+          borderRadius: BorderRadius.only(
+            topLeft: const Radius.circular(16),
+            topRight: const Radius.circular(16),
+            bottomLeft: Radius.circular(isUser ? 12 : 0),
+            bottomRight: Radius.circular(isUser ? 0 : 12),
+          ),
         ),
         child: Text(msg["content"], style: const TextStyle(fontSize: 14)),
+      ),
+    );
+  }
+
+  Widget _buildBottomInput(ProductProvider productProvider) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 16),
+      color: Colors.white,
+      child: Row(
+        children: [
+          IconButton(
+            icon: const Icon(LucideIcons.refreshCcw),
+            onPressed: () {
+              FocusScope.of(context).unfocus();
+              _loadAISuggestions(productProvider);
+            },
+          ),
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(30),
+                border: Border.all(color: Colors.grey.shade300),
+              ),
+              child: TextField(
+                controller: _controller,
+                decoration: const InputDecoration(
+                  hintText: "Type your question...",
+                  border: InputBorder.none,
+                ),
+                onSubmitted: (text) => _sendMessage(text, productProvider),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          IconButton(
+            icon: const Icon(LucideIcons.send),
+            onPressed: () => _sendMessage(_controller.text, productProvider),
+          ),
+        ],
       ),
     );
   }
@@ -211,15 +261,15 @@ Return only a clean bullet list of 5 smart suggestions (like questions the user 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text("POS Chat Assistant"),
-        leading: GestureDetector(
-          onTap: () => Navigator.pop(context),
-          child: const Icon(Icons.arrow_back_ios_new),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new),
+          onPressed: () => Navigator.pop(context),
         ),
         elevation: 0,
       ),
+      backgroundColor: Colors.white,
       body: Consumer<ProductProvider>(
         builder: (context, productProvider, _) {
           return Column(
@@ -234,40 +284,31 @@ Return only a clean bullet list of 5 smart suggestions (like questions the user 
                       (waitingForResponse ? 1 : 0),
                   itemBuilder: (context, index) {
                     if (index >= messages.length) {
-                      if (loadingSuggestions) {
-                        return Align(
-                          alignment: Alignment.centerLeft,
-                          child: Container(
-                            margin: const EdgeInsets.symmetric(vertical: 6),
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                            decoration: BoxDecoration(
-                              color: AppColor.secondarySurface,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Text("Loading suggestions", style: TextStyle(fontSize: 14,color: AppColor.textSecondary)),
-                                const SizedBox(width: 6),
-                                _buildDotLoader(),
-                              ],
-                            ),
+                      return Align(
+                        alignment: Alignment.centerLeft,
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(vertical: 6),
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: AppColor.secondarySurface,
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                        );
-                      } else {
-                        return Align(
-                          alignment: Alignment.centerLeft,
-                          child: Container(
-                            margin: const EdgeInsets.symmetric(vertical: 6),
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                            decoration: BoxDecoration(
-                              color: AppColor.secondarySurface,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: _buildDotLoader(),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                loadingSuggestions ? "Loading suggestions" : "Thinking",
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: AppColor.textSecondary,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              _buildDotLoader(),
+                            ],
                           ),
-                        );
-                      }
+                        ),
+                      );
                     }
 
                     return _buildMessage(messages[index], productProvider);
@@ -275,35 +316,7 @@ Return only a clean bullet list of 5 smart suggestions (like questions the user 
                 ),
               ),
               const Divider(height: 1),
-              Container(
-                color: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                child: Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(LucideIcons.refreshCcw),
-                      onPressed: () {
-                        FocusScope.of(context).unfocus();
-                        _loadAISuggestions(productProvider);
-                      },
-                    ),
-                    Expanded(
-                      child: TextField(
-                        controller: _controller,
-                        decoration: const InputDecoration(
-                          hintText: "Ask anything...",
-                          border: InputBorder.none,
-                        ),
-                        onSubmitted: (text) => _sendMessage(text, productProvider),
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(LucideIcons.send),
-                      onPressed: () => _sendMessage(_controller.text, productProvider),
-                    ),
-                  ],
-                ),
-              )
+              _buildBottomInput(productProvider),
             ],
           );
         },

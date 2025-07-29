@@ -73,16 +73,16 @@ class _PaymentDialogState extends State<PaymentDialog> {
 
         bool success = false;
         if (item.isSoldPerPiece && !item.isSoldPerPack) {
-          success = await productStockProvider.sellPack(productId, qty, StockLogReason.sold,
+          success = await productStockProvider.sellPack(productId, qty, StockLogReason.sold,true,
               isLoan: isLoan, borrowName: loanerName);
         } else if (item.isSoldPerPack && !item.isSoldPerPiece) {
-          success = await productStockProvider.sellPack(productId, qty, StockLogReason.sold,
+          success = await productStockProvider.sellPack(productId, qty, StockLogReason.sold,false,
               isLoan: isLoan, borrowName: loanerName);
         } else {
           success = sellingType == SellingType.pack
-              ? await productStockProvider.sellPack(productId, qty, StockLogReason.sold,
+              ? await productStockProvider.sellPack(productId, qty, StockLogReason.sold,false,
               isLoan: isLoan, borrowName: loanerName)
-              : await productStockProvider.sellPiece(productId, qty, StockLogReason.sold, context,
+              : await productStockProvider.sellItemsPerPack(productId, qty, StockLogReason.sold, context,
               isLoan: isLoan, borrowName: loanerName);
         }
 
@@ -291,7 +291,7 @@ class _PaymentDialogState extends State<PaymentDialog> {
                               productProvider: productProvider,
                             ));
                           },
-                          isDisabled: selectedPaymentType == 'Cash' && change <= 0.toDouble(),
+                          isDisabled: false,
                           isFilled: true,
                           isSlimmer: false,
                         ),
