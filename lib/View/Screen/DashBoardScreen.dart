@@ -19,6 +19,7 @@ import 'package:pocketpos/Helper/Classes_Methods/DashboardMetrics.dart';
 import 'package:pocketpos/Helper/Classes_Methods/helper_methods.dart';
 
 import 'package:pocketpos/Provider/ProductProvider.dart';
+import 'package:shimmer/shimmer.dart';
 
 class DashBoardScreen extends StatefulWidget {
   const DashBoardScreen({super.key});
@@ -472,7 +473,7 @@ class _GroupHeader extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          /// Icon + Title
+          /// Icon + Gradient Shimmer Title
           Row(
             children: [
               Container(
@@ -484,12 +485,17 @@ class _GroupHeader extends StatelessWidget {
                 child: Icon(icon, size: 18, color: AppColor.primary),
               ),
               const SizedBox(width: 10),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black87,
+              Shimmer.fromColors(
+                baseColor: Colors.black87,
+                highlightColor: Colors.deepPurpleAccent.shade100,
+                period: const Duration(seconds: 3),
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87, // actual text color overridden by shimmer
+                  ),
                 ),
               ),
             ],
@@ -520,6 +526,7 @@ class _GroupHeader extends StatelessWidget {
     );
   }
 }
+
 class _StatTile extends StatelessWidget {
   final IconData icon;
   final String label;

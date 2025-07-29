@@ -1,8 +1,12 @@
+// ✨ UPGRADED POSReportScreen
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:pocketpos/View/Components/Custom/CustomFlatDropdown.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:intl/intl.dart';
 import 'package:pocketpos/Helper/Classes_Methods/mistral_ai_helper.dart';
 import 'package:pocketpos/Provider/ProductProvider.dart';
 
@@ -15,9 +19,11 @@ class POSReportScreen extends StatefulWidget {
 
 class _POSReportScreenState extends State<POSReportScreen> {
   final ai = MistralAI();
-  String forecastText = '';
+  String reportSummary = '';
   List<String> aiSuggestions = [];
+  String timestamp = '';
   bool isLoading = true;
+  String _selectedRange = "Today";
 
   @override
   void initState() {
@@ -26,7 +32,11 @@ class _POSReportScreenState extends State<POSReportScreen> {
   }
 
   Future<void> _fetchAIReport({bool retrying = false}) async {
-    setState(() => isLoading = true);
+    setState(() {
+      isLoading = true;
+      timestamp = '';
+    });
+
     try {
       final products = context.read<ProductProvider>().getAllProductsWithVariants();
       final jsonData = products.map((e) => e.toMap()).toList();
@@ -35,31 +45,29 @@ class _POSReportScreenState extends State<POSReportScreen> {
         ai.ask(
           options: AIRequestOptions(
             data: jsonData,
-            prompt: 'Forecast next week’s sales and stock needs based on this POS data. Be concise, 2-3 lines max.',
-            systemRole: 'You are a forecasting AI.',
+            prompt: 'Generate a short POS report summarizing recent product sales, top movers, and stock usage patterns. Keep it within 2-3 lines.',
+            systemRole: 'You are a POS analytics assistant.',
           ),
         ),
         ai.ask(
           options: AIRequestOptions(
             data: jsonData,
-            prompt: 'Give 5 smart POS business suggestions. Be brief, no explanations.',
-            systemRole: 'You are a smart assistant for retail stores.',
+            prompt: 'List 5 smart product-related business suggestions based on this POS data. No explanations, just brief points.',
+            systemRole: 'You are a POS retail strategist.',
           ),
         ),
       ]);
 
-      final forecast = _cleanText(responses[0]);
-      final suggestions = _parseLines(responses[1], 5);
-
       setState(() {
-        forecastText = forecast;
-        aiSuggestions = suggestions;
+        reportSummary = _cleanText(responses[0]);
+        aiSuggestions = _parseLines(responses[1], 5);
         isLoading = false;
+        timestamp = DateFormat('MMM d, y – hh:mm a').format(DateTime.now());
       });
 
-      if (forecast.isEmpty && suggestions.isEmpty && !retrying) {
+      if (reportSummary.isEmpty && aiSuggestions.isEmpty && !retrying) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No AI response. Retrying...')),
+          const SnackBar(content: Text('No AI report generated. Retrying...')),
         );
         await Future.delayed(const Duration(seconds: 2));
         _fetchAIReport(retrying: true);
@@ -70,9 +78,8 @@ class _POSReportScreenState extends State<POSReportScreen> {
     }
   }
 
-  String _cleanText(String input) {
-    return input.replaceAll(RegExp(r'[*_\-#`~>]'), '').trim();
-  }
+  String _cleanText(String input) =>
+      input.replaceAll(RegExp(r'[*_\-#`~>]'), '').trim();
 
   List<String> _parseLines(String raw, int limit) {
     return raw
@@ -87,14 +94,14 @@ class _POSReportScreenState extends State<POSReportScreen> {
   void _copyToClipboard(String text, {String label = 'Copied!'}) {
     Clipboard.setData(ClipboardData(text: text));
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(label), duration: const Duration(milliseconds: 1000)),
+      SnackBar(content: Text(label), duration: const Duration(milliseconds: 800)),
     );
   }
 
   Widget _shimmerBox({double height = 60}) {
     return Shimmer.fromColors(
-      baseColor: Colors.grey[300]!,
-      highlightColor: Colors.grey[100]!,
+      baseColor: Colors.grey.shade300,
+      highlightColor: Colors.white,
       child: Container(
         height: height,
         width: double.infinity,
@@ -107,50 +114,75 @@ class _POSReportScreenState extends State<POSReportScreen> {
   }
 
   Widget _sectionTitle(IconData icon, String title) {
-    return Row(
-      children: [
-        Icon(icon, size: 20, color: Colors.black87),
-        const SizedBox(width: 8),
-        Text(
-          title,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-        ),
-      ],
+    return Shimmer.fromColors(
+      baseColor: Colors.black87,
+      highlightColor: Colors.deepPurple.shade100,
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: Colors.deepPurple),
+          const SizedBox(width: 8),
+          Text(
+            title,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildForecastBox() {
+  Widget _frostedGlass({required Widget child}) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+        child: Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.75),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              )
+            ],
+          ),
+          child: child,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReportBox() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _sectionTitle(LucideIcons.lineChart, "AI Forecast"),
+          _sectionTitle(LucideIcons.fileText, "AI Report Summary"),
           const SizedBox(height: 10),
-          isLoading
-              ? _shimmerBox(height: 80)
-              : GestureDetector(
-            onLongPress: () {
-              if (forecastText.isNotEmpty) {
-                _copyToClipboard(forecastText, label: 'Forecast copied!');
-              }
-            },
-            child: Container(
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.03),
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
-                  )
-                ],
-              ),
-              child: Text(
-                forecastText.isNotEmpty ? forecastText : "No forecast available.",
-                style: const TextStyle(fontSize: 14, height: 1.5),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            child: isLoading
+                ? _shimmerBox(height: 80)
+                : GestureDetector(
+              onLongPress: () => _copyToClipboard(reportSummary, label: 'Summary copied!'),
+              child: _frostedGlass(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      reportSummary.isNotEmpty ? reportSummary : "No report summary available.",
+                      style: const TextStyle(fontSize: 14, height: 1.5),
+                    ),
+                    if (timestamp.isNotEmpty) ...[
+                      const SizedBox(height: 10),
+                      Text("Generated on $timestamp",
+                          style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                    ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -169,45 +201,70 @@ class _POSReportScreenState extends State<POSReportScreen> {
           const SizedBox(height: 10),
           isLoading
               ? Column(
-            children: List.generate(
-              5,
-                  (_) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: _shimmerBox(height: 16),
-              ),
-            ),
+            children: List.generate(5, (_) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: _shimmerBox(height: 16),
+            )),
           )
-              : Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: aiSuggestions.isNotEmpty
-                ? aiSuggestions.map((s) {
-              return GestureDetector(
-                onLongPress: () => _copyToClipboard(s, label: 'Suggestion copied!'),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.circle, size: 6, color: Colors.black54),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          s,
-                          style: const TextStyle(fontSize: 14, color: Colors.black87),
-                        ),
+              : aiSuggestions.isNotEmpty
+              ? _frostedGlass(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ...aiSuggestions.map(
+                      (s) => GestureDetector(
+                    onLongPress: () => _copyToClipboard(s, label: 'Suggestion copied!'),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Padding(
+                            padding: EdgeInsets.only(top: 4),
+                            child: Icon(Icons.circle, size: 6, color: Colors.black54),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(child: Text(s, style: const TextStyle(fontSize: 14))),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
-              );
-            }).toList()
-                : [
-              Text(
-                "No suggestions available.",
-                style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
-              ),
-            ],
-          ),
+                const SizedBox(height: 10),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton.icon(
+                    onPressed: () => _copyToClipboard(aiSuggestions.join('\n'), label: "All suggestions copied!"),
+                    icon: const Icon(Icons.copy, size: 16),
+                    label: const Text("Copy All"),
+                  ),
+                ),
+              ],
+            ),
+          )
+              : const SizedBox.shrink(),
         ],
+      ),
+    );
+  }
+
+  Widget _buildRangeSelectorDropdown() {
+    final options = ['Today', 'This Week', 'This Month', 'All Time'];
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: CustomFlatDropdown<String>(
+        hint: 'Select range',
+        prefixIcon: Icons.calendar_today,
+        value: _selectedRange,
+        items: options,
+        onChanged: (val) {
+          if (val != null) {
+            setState(() => _selectedRange = val);
+            _fetchAIReport(); // still refetches on change
+          }
+        },
+        itemBuilder: (val) => Text(val),
       ),
     );
   }
@@ -220,7 +277,7 @@ class _POSReportScreenState extends State<POSReportScreen> {
         title: const Text("AI POS Report", style: TextStyle(fontWeight: FontWeight.w600)),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black87,
-        elevation: 0.5,
+        elevation: 1,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new),
           onPressed: () => Navigator.pop(context),
@@ -235,7 +292,8 @@ class _POSReportScreenState extends State<POSReportScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 10),
-              _buildForecastBox(),
+              _buildRangeSelectorDropdown(),
+              _buildReportBox(),
               _buildSuggestionBox(),
             ],
           ),

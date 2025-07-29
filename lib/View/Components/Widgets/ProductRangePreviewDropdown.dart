@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:pocketpos/Helper/Classes_Methods/AppColor.dart';
 import 'package:pocketpos/View/Components/Modal/ProductDetailScreenModal.dart';
@@ -88,13 +90,35 @@ class ProductRangePreviewDropdown extends StatelessWidget {
                       itemBuilder: (_, i) {
                         final product = products[i];
                         final totalQty = product.stocks.fold(0, (sum, s) => sum + s.quantity);
-                        return ListTile(
-                          onTap: () => ProductDetailModal.show(context, product.id, false),
+
+                        return Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: ListTile(
+                            onTap: () => ProductDetailModal.show(context, product.id, false),
                             tileColor: AppColor.secondarySurface,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+
+                            // ✅ File-based image preview
+                            leading: ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: product.imagePath != null && File(product.imagePath!).existsSync()
+                                  ? Image.file(
+                                File(product.imagePath!),
+                                width: 48,
+                                height: 48,
+                                fit: BoxFit.cover,
+                              )
+                                  : Container(
+                                width: 48,
+                                height: 48,
+                                color: Colors.grey.shade300,
+                                child: const Icon(Icons.image_not_supported, color: Colors.grey),
+                              ),
+                            ),
+
                             title: Text(
                               product.name,
                               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -107,10 +131,10 @@ class ProductRangePreviewDropdown extends StatelessWidget {
                                 color: AppColor.textSecondary,
                               ),
                             ),
+                          ),
                         );
                       },
-                    ),
-                  ),
+                    ),                  ),
               ],
             ),
           ),

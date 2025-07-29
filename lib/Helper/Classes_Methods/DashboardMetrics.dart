@@ -62,7 +62,6 @@ class DashboardMetrics {
     required this.highStockCount,
   });
 }
-
 DashboardMetrics generateDashboardMetrics({
   required List<Product> allProducts,
   required DateFilterType filterType,
@@ -151,7 +150,7 @@ DashboardMetrics generateDashboardMetrics({
 
     for (final log in product.logs) {
       final inRange = !log.dateLogged.isBefore(startDate) && !log.dateLogged.isAfter(endDate);
-      final piecesPerPack = product.piecesPerPack?.toDouble() ?? 1.0;
+      final piecesPerPack = product.piecesPerPack?.toDouble() ?? 0;
 
       final ProductStock? stock = (log.productId.isNotEmpty && product.stocks.any((s) => s.id == log.productId))
           ? product.stocks.firstWhere((s) => s.id == log.productId)
@@ -159,16 +158,24 @@ DashboardMetrics generateDashboardMetrics({
 
       if (stock == null) continue;
 
-      final unitCost = log.isPiece ? stock.costPrice / piecesPerPack : stock.costPrice;
-      final unitRetail = log.isPiece ? stock.retailPrice / piecesPerPack : stock.retailPrice;
+      // Skip piece-based logs if piecesPerPack is zero or invalid
+      if (log.isPiece && piecesPerPack == 0) continue;
+
+      final unitCost = log.isPiece
+          ? stock.costPrice / piecesPerPack
+          : stock.costPrice;
+
+      final unitRetail = log.isPiece
+          ? stock.retailPrice / piecesPerPack
+          : stock.retailPrice;
+
       final qty = log.quantity;
+      final cost = unitCost * qty;
+      final revenue = unitRetail * qty;
+      final profit = log.profit?.toDouble() ?? 0.0;
 
       switch (log.reason) {
         case StockLogReason.sold:
-          final profit = log.profit?.toDouble() ?? 0.0;
-          final revenue = unitRetail * qty;
-          final cost = unitCost * qty;
-
           totalSold += qty;
           if (log.isPiece) {
             totalSoldPerPiece += qty;
