@@ -4,8 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import 'package:pocketpos/Helper/Classes_Methods/ProductUnits.dart';
-import 'package:pocketpos/Model/loose_stock.dart';
 import 'package:pocketpos/Model/product_model.dart';
 import 'package:pocketpos/Model/product_stock.dart';
 import 'package:pocketpos/Provider/CurrencyProvider.dart';
@@ -17,11 +15,16 @@ import 'package:pocketpos/Provider/VariantProductProvider.dart';
 import 'package:pocketpos/View/Components/Alert/AddOrEditStockDialog.dart';
 import 'package:pocketpos/View/Components/Alert/CustomConfimDialog.dart';
 import 'package:pocketpos/View/Components/Alert/CustomNotificationDialog.dart';
+import 'package:pocketpos/View/Components/Modal/UpsertWidgets/ProductInitData.dart';
+import 'package:pocketpos/View/Components/Modal/UpsertWidgets/openAddVariantDialog.dart';
+import 'package:pocketpos/View/Components/Modal/UpsertWidgets/showImagePickerOptions.dart';
 import 'package:pocketpos/View/Components/Custom/CustomButton.dart';
 import 'package:pocketpos/View/Components/Custom/CustomFlatDropdown.dart';
 import 'package:pocketpos/View/Components/Custom/CustomPillToggle.dart';
 import 'package:pocketpos/View/Components/Custom/CustomTextField.dart';
 import 'package:pocketpos/Helper/Classes_Methods/AppColor.dart';
+import 'package:pocketpos/View/Components/Modal/UpsertWidgets/ProductSubmitHelper.dart';
+import 'package:pocketpos/View/Components/Modal/UpsertWidgets/helperWidgets.dart';
 import 'package:pocketpos/View/Screen/BarcodeScannerScreen.dart';
 import 'package:provider/provider.dart';
 
@@ -39,12 +42,12 @@ class UpsertProductModal extends StatefulWidget {
 }
 
 class _UpsertProductModalState extends State<UpsertProductModal> {
-  final _nameController = TextEditingController();
-  final _piecesPerPackController = TextEditingController();
-  final _looseStockController = TextEditingController();
-  final _barcodeController = TextEditingController();
+  late var _nameController = TextEditingController();
+  late var _piecesPerPackController = TextEditingController();
+  late var _looseStockController = TextEditingController();
+  late var _barcodeController = TextEditingController();
 
-  String? _selectedUnit;
+  String _selectedUnit = '';
   String? _selectedCategory;
   bool _isSoldByPack = false;
   bool _isSoldByPiece = false;
@@ -54,66 +57,42 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
   bool _hasStock = false;
    bool isAddingStock = false ;
 
-  final List<Product> _variants = [];
-   final List<ProductStock> _stock = [];
+  late List<Product> _variants = [];
+   late List<ProductStock> _stock = [];
 
   @override
   void initState() {
     super.initState();
 
-    // 👀 Set initial category if passed from parent screen
-    if (widget.Category.isNotEmpty) {
-      _selectedCategory = widget.Category;
-    }
+    final initData = initProductState(
+      existingProduct: widget.existingProduct,
+      parentProduct: widget.parentProduct,
+      isVariant: widget.isVariant,
+      passedCategory: widget.Category,
+      updateLooseStock: _updateLooseStock,
+    );
 
-    final p = widget.existingProduct;
-    final parent = widget.parentProduct;
+    _nameController = initData.nameController;
+    _barcodeController = initData.barcodeController;
+    _looseStockController = initData.looseStockController;
+    _piecesPerPackController = initData.piecesPerPackController;
+    _stock = initData.stock;
+    _variants = initData.variants;
 
-    if (p != null) {
-      // 🛠️ Editing an existing product
-      _nameController.text = p.name;
-      _selectedCategory = p.category;
-      _selectedUnit = p.unit;
-      _isSoldByPack = p.isSoldByPack;
-      _isSoldByPiece = p.isSoldByPiece;
-      _barcodeController.text = p.barcode!;
-      _hasVariant = p.hasVariant;
-      _selectedImage = (p.imagePath?.isNotEmpty == true) ? File(p.imagePath!) : null;
-      _variants.addAll(p.variants);
+    _selectedCategory = initData.selectedCategory.isNotEmpty
+        ? initData.selectedCategory
+        : null;
 
-      // ✅ Populate pieces per pack
-      _piecesPerPackController.text = p.piecesPerPack.toString();
+    print(_selectedCategory);
 
-      // ✅ Populate loose stock only if it exists
-      _looseStockController.text = p.looseStock?.remainingPieces.toString() ?? '';
-
-      // ✅ Load stock batches
-      _stock.addAll(p.stocks);
-      _hasStock = _stock.isNotEmpty;
-
-    } else if (widget.isVariant && parent != null) {
-      // 🧬 Adding a new variant (inherits from parent)
-      _selectedCategory = parent.category;
-      _selectedUnit = parent.unit;
-      _isSoldByPack = parent.isSoldByPack;
-      _isSoldByPiece = parent.isSoldByPiece;
-
-      // ✅ Inherit piecesPerPack from parent product
-      _piecesPerPackController.text = parent.piecesPerPack.toString();
-
-      // ⚠️ Loose stock should be handled separately for new variants
-      _piecesPerPackController.addListener(_updateLooseStock);
-      _updateLooseStock();
-
-    } else {
-      // 🆕 Creating brand new product
-      _piecesPerPackController.text = '0'; // Default value
-
-      // ✅ Enable live loose stock updates
-      _piecesPerPackController.addListener(_updateLooseStock);
-      _updateLooseStock();
-    }
+    _selectedUnit = initData.selectedUnit;
+    _isSoldByPack = initData.isSoldByPack;
+    _isSoldByPiece = initData.isSoldByPiece;
+    _hasVariant = initData.hasVariant;
+    _selectedImage = initData.selectedImage;
+    _hasStock = initData.hasStock;
   }
+
 
 
 
@@ -127,7 +106,6 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
       _looseStockController.text = ''; // Clear if invalid or empty
     }
   }
-
 
   Future<void> _pickImage(ImageSource source) async {
     final picker = ImagePicker();
@@ -144,300 +122,6 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
       return AppColor.textSecondary;
     }
     return isEditing ? AppColor.secondary : AppColor.primary;
-  }
-
-  void _showImagePickerOptions() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      backgroundColor: Colors.white,
-      builder: (_) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // 🔹 Drag indicator for vibes
-            Container(
-              width: 40,
-              height: 5,
-              margin: const EdgeInsets.symmetric(vertical: 10),
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 8.0),
-              child: Text(
-                'Choose an option',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            const Divider(height: 1),
-
-            // 📸 Gallery option
-            ListTile(
-              leading: const Icon(Icons.photo_library_rounded, color: Colors.teal),
-              title: const Text('Pick from Gallery'),
-              onTap: () {
-                Navigator.pop(context);
-                _pickImage(ImageSource.gallery);
-              },
-            ),
-
-            const Divider(height: 1),
-
-            // 📷 Camera option
-            ListTile(
-              leading: const Icon(Icons.camera_alt_rounded, color: Colors.deepOrange),
-              title: const Text('Capture from Camera'),
-              onTap: () {
-                Navigator.pop(context);
-                _pickImage(ImageSource.camera);
-              },
-            ),
-
-            const SizedBox(height: 10),
-          ],
-        ),
-      ),
-    );
-  }
-
-
-  String getSellingTypeGuide() {
-    if (_isSoldByPack && _isSoldByPiece) {
-      return 'Customers can buy either full packs or individual pieces. e.g. a box of canned soda or a single can.';
-    } else if (_isSoldByPack) {
-      return 'This product is only sold in full packs. e.g. a 6-pack of bottled water.';
-    } else if (_isSoldByPiece) {
-      return 'This product is only sold per piece. e.g. a single candy bar or bottled drink.';
-    } else {
-      return 'Choose at least one selling method: pack, piece, or both. e.g. You might sell bottled water by the case (pack) or by the bottle (piece).';
-
-    }
-  }
-
-  String get unitType {
-    if (_isSoldByPack) return 'pack';
-    if (_isSoldByPiece) return 'piece';
-    return 'unit';
-  }
-
-  Future<void> openAddVariantDialog(ProductProvider productProvider) async {
-    final parent = Product(
-      id: widget.existingProduct?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
-      name: _nameController.text.trim(),
-      unit: _selectedUnit ?? 'pcs',
-      isSoldByPack: _isSoldByPack,
-      isSoldByPiece: _isSoldByPiece,
-      category: _selectedCategory ?? "Uncategorized",
-      piecesPerPack: int.tryParse(_piecesPerPackController.text.trim()) ?? 1,
-      createdAt: DateTime.now(),
-      lastModified: DateTime.now(),
-      imagePath: _selectedImage?.path ?? '',
-      hasVariant: true,
-      variants: [],
-      stocks: [],
-      logs: [],
-      barcode: '',
-      looseStock: null,
-    );
-
-    final Product? newVariant = await showModalBottomSheet<Product>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
-      ),
-      builder: (context) {
-        return DraggableScrollableSheet(
-          expand: false,
-          maxChildSize: 0.80,
-          initialChildSize: 0.75,
-          minChildSize: 0.6,
-          builder: (_, controller) => Padding(
-            padding: EdgeInsets.only(
-              bottom: MediaQuery.of(context).viewInsets.bottom,
-            ),
-            child: Material(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
-              color: Colors.white,
-              child: SafeArea(
-                top: false,
-                child: SingleChildScrollView(
-                  controller: controller,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-                  child: UpsertProductModal(
-                    Category: widget.Category,
-                    isVariant: true,
-                    existingProduct: null, // optional if you want fresh variant
-                    parentProduct: parent,  // ✅ this will be the new param
-                  ),
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-
-    final name = _nameController.text.trim();
-
-    if (productProvider.productExistsByName(name)) {
-      showDialog(
-        context: context,
-        builder: (context) => CustomNotificationDialog(
-          type: 'warning',
-          title: "Product Already Exists",
-          content: "A product or variant with the name \"$name\" already exists. Please use a different name.",
-        ),
-      );
-      return;
-    }
-
-    if (newVariant != null) {
-      setState(() {
-        _variants.add(newVariant);
-      });
-    }
-  }
-
-  void _submitProduct(
-      ProductProvider productProvider,
-      VariantProductProvider variantProductProvider,
-      LooseStockProvider looseStockProvider,
-      ProductStockProvider productStockProvider,
-      ) async {
-    // Prevent saving if no selling method selected
-    if (!_isSoldByPack && !_isSoldByPiece) {
-      showDialog(
-        context: context,
-        builder: (context) =>
-            CustomNotificationDialog(
-              title: "Missing Selling Method",
-              content: "Please select at least one selling method: Pack, Piece, or both.",
-              type: 'warning',
-              onConfirm: () {
-                Navigator.pop(context);
-                setState(() => _isSubmitting = false);
-              },
-            ),
-      );
-      return;
-    }
-    final name = _nameController.text.trim();
-    final isEditing = widget.existingProduct != null;
-
-    if (productProvider.productExistsByName(name) && !isEditing) {
-      showDialog(
-        context: context,
-        builder: (context) => CustomNotificationDialog(
-          type: 'warning',
-          title: "Product Already Exists",
-          content: "A product or variant with the name \"$name\" already exists. Please use a different name.",
-        ),
-      );
-      return;
-    }
-
-    final productId = isEditing
-        ? widget.existingProduct!.id
-        : DateTime
-        .now()
-        .millisecondsSinceEpoch
-        .toString();
-
-
-    final updatedStocks = _stock.map((stock) =>
-        stock.copyWith(productId: productId)).toList();
-    final updatedVariants = _variants.map((variant) =>
-        variant.copyWith(isVariant: true,looseStock: LooseStock(productId: variant.id, remainingPieces:variant.totalQuantityByPieces ))).toList();
-
-
-
-    final product = Product(
-      id: productId,
-      name: _nameController.text.trim(),
-      category: _selectedCategory ?? "Uncategorized",
-      unit: _selectedUnit ?? 'pcs',
-      piecesPerPack: _isSoldByPiece
-          ? int.tryParse(_piecesPerPackController.text.trim()) ?? 0
-          : 0,
-      isSoldByPack: _isSoldByPack,
-      isSoldByPiece: _isSoldByPiece,
-      imagePath: _selectedImage?.path ?? '',
-      barcode: _barcodeController.text.trim() , // 👈 add this line
-      createdAt: isEditing ? widget.existingProduct!.createdAt : DateTime.now(),
-      lastModified: DateTime.now(),
-      isSoftDeleted: false,
-      stocks: updatedStocks,
-      logs: widget.existingProduct?.logs ?? [],
-      hasVariant: _hasVariant,
-      variants: _hasVariant ? updatedVariants : [],
-      looseStock: null, // Will be handled separately
-    );
-
-
-    try {
-      if (widget.isVariant) {
-        // Case 1: New variant, no existing product necessarily
-        final parentId = widget.parentProduct != null ? widget.parentProduct!.id : productId ;
-        await variantProductProvider.upsertVariant(parentId, product);
-
-        Navigator.pop(context, product);
-      } else
-      if (widget.existingProduct != null && widget.existingProduct!.isVariant) {
-        // Case 2: Editing an existing variant product
-        final rawParentId = variantProductProvider
-            .getParentProductIdFromVariantId(productId);
-        final parentId = (rawParentId ?? 'unknown').toString();
-        await variantProductProvider.upsertVariant(parentId, product);
-        Navigator.pop(context, product);
-      } else {
-        // Case 3: Regular product (not variant)
-        await productProvider.upsertProduct(product);
-
-        if (_isSoldByPiece) {
-          final looseQty = int.tryParse(_looseStockController.text.trim()) ?? 0;
-          await looseStockProvider.upsertLooseStock(productId, looseQty);
-        } else {
-          await looseStockProvider.deleteLooseStock(productId);
-        }
-
-        Navigator.pop(context);
-
-        showDialog(
-          context: context,
-          builder: (context) =>
-              CustomNotificationDialog(
-                onConfirm: () => Navigator.pop(context),
-                type: 'success',
-                title: isEditing ? "Product Updated" : "Product Added",
-                content: isEditing
-                    ? "The product was successfully updated!"
-                    : "The product was successfully added!",
-              ),
-        );
-      }
-    } catch (e) {
-      debugPrint("❌ Error saving product: $e");
-      showDialog(
-        context: context,
-        builder: (context) =>
-            CustomNotificationDialog(
-              onConfirm: () => Navigator.pop(context),
-              type: 'error',
-              title: "Failed to Save",
-              content: "Something went wrong while saving the product.\nError: $e",
-            ),
-      );
-    }
   }
 
 
@@ -478,7 +162,10 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
 
                                 const SizedBox(height: 16),
                                 GestureDetector(
-                                  onTap: _showImagePickerOptions,
+                                  onTap: () => showImagePickerOptions(
+                                    context: context,
+                                    onImagePicked: _pickImage, // this is your existing method
+                                  ),
                                   child: Container(
                                     height: 100,
                                     width: double.infinity,
@@ -616,12 +303,13 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
                                 const SizedBox(height: 5),
                                 CustomFlatDropdown<String>(
                                   hint: 'Choose category',
-                                  value: _selectedCategory,
+                                  value: _selectedCategory ,
                                   items: storeCategoryProvider.visibleCategories,
                                   onChanged: (val) => setState(() => _selectedCategory = val),
                                   itemBuilder: (category) => Text(category),
                                   prefixIcon: Icons.category,
                                 ),
+
                                 const SizedBox(height: 20),
 
                                 Row(
@@ -653,7 +341,7 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
                                 ),
                                 const SizedBox(height: 20),
                                 Text(
-                                  getSellingTypeGuide(),
+                                  getSellingTypeGuide(isSoldByPack: _isSoldByPack, isSoldByPiece: _isSoldByPiece),
                                   style: const TextStyle(
                                     fontSize: 11,
                                     fontStyle: FontStyle.italic,
@@ -766,13 +454,16 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
                                               ),
                                               const SizedBox(height: 4),
                                               Text(
-                                                "Cost: ${currencyProvider.currencyFormat.format(stock.costPrice)} | $unitType \n "
-                                                    "Retail: ${currencyProvider.currencyFormat.format(stock.retailPrice)} | $unitType",
+                                                "Cost: ${currencyProvider.currencyFormat.format(stock.costPrice)}"
+                                                    " | ${getUnitType(isSoldByPack: _isSoldByPack, isSoldByPiece: _isSoldByPiece)}\n"
+                                                    "Retail: ${currencyProvider.currencyFormat.format(stock.retailPrice)}"
+                                                    " | ${getUnitType(isSoldByPack: _isSoldByPack, isSoldByPiece: _isSoldByPiece)}",
                                                 style: TextStyle(
                                                   fontSize: 12,
                                                   color: Colors.grey.shade600,
                                                 ),
                                               ),
+
                                               const SizedBox(height: 4),
                                               Text(
                                                 "Date Added: ${DateFormat('MMM dd, yyyy').format(stock.lastModified)}",
@@ -914,8 +605,6 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
                                          return;
                                        }
 
-
-
                                        // Safe to toggle
                                          setState(() => _hasVariant = val);
                                        },
@@ -1002,20 +691,6 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
                                                  tooltip: "Edit Variant",
                                                  onPressed: () async {
 
-                                                   final name = _nameController.text.trim();
-
-                                                   if (productProvider.productExistsByName(name)) {
-                                                     showDialog(
-                                                       context: context,
-                                                       builder: (context) => CustomNotificationDialog(
-                                                         type: 'warning',
-                                                         title: "Product Already Exists",
-                                                         content: "A product or variant with the name \"$name\" already exists. Please use a different name.",
-                                                       ),
-                                                     );
-                                                     return;
-                                                   }
-
                                                    final editedVariant = await showModalBottomSheet<Product>(
                                                      context: context,
                                                      isScrollControlled: true,
@@ -1087,7 +762,6 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
                                      ),
                                    ),
 
-
                                    const SizedBox(height: 5),
                                  ],
 
@@ -1096,10 +770,27 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
                                    borderColor: themeAccent,
                                    icon: Icons.add_circle_outline,
                                    text: "Add Variant",
-                                   onPressed: () => openAddVariantDialog(productProvider),
+                                   onPressed: () async {
+                                     await openAddVariantDialog(
+                                     context: context,
+                                     productProvider: productProvider,
+                                     existingProduct: widget.existingProduct,
+                                     selectedUnit: _selectedUnit,
+                                     isSoldByPack: _isSoldByPack,
+                                     isSoldByPiece: _isSoldByPiece,
+                                     selectedCategory: _selectedCategory,
+                                     piecesPerPackText: _piecesPerPackController.text,
+                                     selectedImage: _selectedImage,
+                                     nameController: _nameController,
+                                     categoryFromParent: widget.Category,
+                                     onVariantAdded: (newVariant) {
+                                       setState(() => _variants.add(newVariant));
+                                     },
+                                     );
+
+                                   },
                                  ),
                                  const SizedBox(height: 16),
-
 
                                ],
                              ],
@@ -1147,15 +838,35 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
                                         return;
                                       }
 
-
                                       setState(() => _isSubmitting = true);
                                       await Future.delayed(const Duration(milliseconds: 300));
-                                      _submitProduct(
-                                        productProvider,
-                                        variantProductProvider,
-                                        looseStockProvider,
-                                        productStockProvider,
+                                      submitProductHelper(
+                                        context: context,
+                                        productProvider: productProvider,
+                                        variantProductProvider: variantProductProvider,
+                                        looseStockProvider: looseStockProvider,
+                                        isSoldByPack: _isSoldByPack,
+                                        isSoldByPiece: _isSoldByPiece,
+                                        name: _nameController.text.trim(),
+                                        barcode: _barcodeController.text.trim(),
+                                        isEditing: widget.existingProduct != null,
+                                        isVariant: widget.isVariant,
+                                        hasVariant: _hasVariant,
+                                        selectedUnit: _selectedUnit,
+                                        selectedCategory: _selectedCategory,
+                                        imagePath: _selectedImage?.path,
+                                        piecesPerPackText: _piecesPerPackController.text,
+                                        stock: _stock,
+                                        variants: _variants,
+                                        existingProduct: widget.existingProduct,
+                                        parentProduct: widget.parentProduct,
+                                        looseStockText: _looseStockController.text,
+                                        nameController: _nameController,
+                                        barcodeController: _barcodeController,
+                                        piecesPerPackController: _piecesPerPackController,
+                                        looseStockController: _looseStockController,
                                       );
+
                                     },
                                   ),
                                 ),
@@ -1182,7 +893,6 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
             ),
          ),
         );
-
 
   }
 }

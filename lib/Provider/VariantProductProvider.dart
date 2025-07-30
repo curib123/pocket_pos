@@ -17,17 +17,19 @@ class VariantProductProvider extends ChangeNotifier {
   ProductProvider get productProvider => _productProvider;
 
   Product? _getParent(String idOrName) {
+    final query = idOrName.trim().toLowerCase();
+
     try {
       return _productBox.values.firstWhere(
             (p) =>
-        p.isSoftDeleted &&
-            (p.id == idOrName ||
-                p.name.trim().toLowerCase() == idOrName.trim().toLowerCase()),
+        !p.isSoftDeleted &&
+            (p.id == idOrName || p.name.trim().toLowerCase() == query),
       );
     } catch (_) {
       return null;
     }
   }
+
 
   List<Product> getVariants(String idOrName) {
     final parent = _getParent(idOrName);
@@ -38,7 +40,7 @@ class VariantProductProvider extends ChangeNotifier {
     try {
       final parent = _productBox.values.firstWhere(
             (product) =>
-        product.isSoftDeleted  &&
+        !product.isSoftDeleted  &&
             product.hasVariant &&
             product.variants.any((v) => v.id == variantId),
       );
