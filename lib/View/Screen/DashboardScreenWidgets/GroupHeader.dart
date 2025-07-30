@@ -1,6 +1,6 @@
-
 import 'package:flutter/material.dart';
 import 'package:pocketpos/Helper/Classes_Methods/AppColor.dart';
+import 'package:pocketpos/View/Components/Widgets/ResponsiveText.dart';
 import 'package:shimmer/shimmer.dart';
 
 class GroupHeader extends StatelessWidget {
@@ -10,6 +10,7 @@ class GroupHeader extends StatelessWidget {
   final VoidCallback? onSeeMore;
 
   const GroupHeader({
+    super.key,
     required this.icon,
     required this.title,
     this.seeMore = false,
@@ -19,7 +20,7 @@ class GroupHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 20),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -41,33 +42,33 @@ class GroupHeader extends StatelessWidget {
                 period: const Duration(seconds: 3),
                 child: Text(
                   title,
-                  style: const TextStyle(
-                    fontSize: 16,
+                  style: TextStyle(
+                    fontSize: context.rf(16), // Responsive font size
                     fontWeight: FontWeight.w600,
-                    color: Colors.black87, // actual text color overridden by shimmer
+                    color: Colors.black87,
                   ),
                 ),
               ),
             ],
           ),
 
-          /// See More (if enabled)
+          /// See More (optional)
           if (seeMore && onSeeMore != null)
             GestureDetector(
               onTap: onSeeMore,
               behavior: HitTestBehavior.opaque,
               child: Row(
-                children: const [
+                children: [
                   Text(
                     "See more",
                     style: TextStyle(
-                      fontSize: 13,
+                      fontSize: context.rf(13), // Responsive font size
                       fontWeight: FontWeight.w500,
                       color: AppColor.primary,
                     ),
                   ),
-                  SizedBox(width: 2),
-                  Icon(Icons.chevron_right, size: 16, color: AppColor.primary),
+                  const SizedBox(width: 2),
+                  const Icon(Icons.chevron_right, size: 16, color: AppColor.primary),
                 ],
               ),
             ),
@@ -76,4 +77,3 @@ class GroupHeader extends StatelessWidget {
     );
   }
 }
-

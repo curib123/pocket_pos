@@ -15,6 +15,7 @@ import 'package:pocketpos/View/Components/Custom/CustomButton.dart';
 import 'package:pocketpos/View/Components/Custom/CustomFlatDropdown.dart';
 import 'package:pocketpos/View/Components/Modal/ProductDetailScreenModal.dart';
 import 'package:pocketpos/View/Components/Modal/UpsertProductModal.dart';
+import 'package:pocketpos/View/Components/Widgets/ResponsiveText.dart';
 import 'package:provider/provider.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:shimmer/shimmer.dart';
@@ -432,9 +433,9 @@ class _ProductListScreenState extends State<ProductListScreen> {
                               ),
                               child: Text(
                                 product.isVariant ? 'Variant' : 'Main',
-                                style: const TextStyle(
+                                style:  TextStyle(
                                   color: Colors.white,
-                                  fontSize: 12,
+                                  fontSize: context.rf(12),
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -470,12 +471,36 @@ class _ProductListScreenState extends State<ProductListScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             if (isPiece && !isPack)
-                              Text('${currencyFormat.format(stock!.retailPrice)} / piece',style: TextStyle(color: Colors.black),),
+                              Text(
+                                '${currencyFormat.format(stock!.retailPrice)} / piece',
+                                style: TextStyle(
+                                  color: Colors.black,
+                                  fontSize: context.rf(10),
+                                ),
+                              ),
                             if (isPack && !isPiece)
-                              Text('${currencyFormat.format(stock!.retailPrice)} / pack',style: TextStyle(color: Colors.black)),
+                              Text(
+                                '${currencyFormat.format(stock!.retailPrice)} / pack',
+                                style: TextStyle(
+                                  color: Colors.black,
+                                  fontSize: context.rf(10),
+                                ),
+                              ),
                             if (isPack && isPiece && (product.piecesPerPack ?? 0) > 0) ...[
-                              Text('${currencyFormat.format(stock!.retailPrice)} / pack',style: TextStyle(color: Colors.black)),
-                              Text('${currencyFormat.format(stock.retailPrice / product.piecesPerPack!)} / piece',style: TextStyle(color: Colors.black)),
+                              Text(
+                                '${currencyFormat.format(stock!.retailPrice)} / pack',
+                                style: TextStyle(
+                                  color: Colors.black,
+                                  fontSize: context.rf(10),
+                                ),
+                              ),
+                              Text(
+                                '${currencyFormat.format(stock.retailPrice / product.piecesPerPack!)} / piece',
+                                style: TextStyle(
+                                  color: Colors.black,
+                                  fontSize: context.rf(10),
+                                ),
+                              ),
                             ],
                           ],
                         ),
@@ -485,16 +510,41 @@ class _ProductListScreenState extends State<ProductListScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             if (isPiece && !isPack)
-                              Text('0.00 / piece', style: TextStyle(color: Colors.grey)),
+                              Text(
+                                '0.00 / piece',
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: context.rf(10),
+                                ),
+                              ),
                             if (isPack && !isPiece)
-                              Text('0.00 / pack', style: TextStyle(color: Colors.grey)),
+                              Text(
+                                '0.00 / pack',
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: context.rf(10),
+                                ),
+                              ),
                             if (isPack && isPiece) ...[
-                              Text('0.00 / pack', style: TextStyle(color: Colors.grey)),
-                              Text('0.00 / piece', style: TextStyle(color: Colors.grey)),
+                              Text(
+                                '0.00 / pack',
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: context.rf(10),
+                                ),
+                              ),
+                              Text(
+                                '0.00 / piece',
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: context.rf(10),
+                                ),
+                              ),
                             ],
                           ],
                         ),
                       ]
+
                       ),
 
                       // 🏷 Selling types
@@ -506,8 +556,8 @@ class _ProductListScreenState extends State<ProductListScreen> {
                             runSpacing: -4,
                             alignment: WrapAlignment.center,
                             children: [
-                              if (isPack) _buildTag('Pack'),
-                              if (isPiece) _buildTag('Piece'),
+                              if (isPack) _buildTag('Pack',context),
+                              if (isPiece) _buildTag('Piece',context),
                             ],
                           ),
                         ),
@@ -517,8 +567,8 @@ class _ProductListScreenState extends State<ProductListScreen> {
                         children: [
                           Text(
                             'Stocks: ${product.totalQuantity}',
-                            style: const TextStyle(
-                              fontSize: 14,
+                            style:  TextStyle(
+                              fontSize: context.rf(14),
                               color: AppColor.textPrimary,
                               fontWeight: FontWeight.w900
                             )
@@ -564,7 +614,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
             final outStock = product.totalQuantity == 0;
             final stock = hasStock ? product.stocks.first : null;
             double baseFont = constraints.maxWidth < 500 ? 18 : 20;
-            double fontSize = (baseFont - (product.name.length * 0.4)).clamp(12, baseFont).toDouble();
+            double fontSize = (baseFont - (product.name.length * 0.4)).clamp(context.rf(12), baseFont).toDouble();
 
             return FadeInUp(
               duration: Duration(milliseconds: 250 + (index * 60)),
@@ -610,9 +660,9 @@ class _ProductListScreenState extends State<ProductListScreen> {
                                   ),
                                   child: Text(
                                     product.isVariant ? 'Variant' : 'Main',
-                                    style: const TextStyle(
+                                    style:  TextStyle(
                                       color: Colors.white,
-                                      fontSize: 10,
+                                      fontSize: context.rf(12),
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
@@ -650,22 +700,22 @@ class _ProductListScreenState extends State<ProductListScreen> {
                                 ...(hasStock
                                     ? [
                                   if (isPiece && !isPack)
-                                    Text('${currencyFormat.format(stock!.retailPrice)} / piece'),
+                                    Text('${currencyFormat.format(stock!.retailPrice)} / piece', style: TextStyle(color: Colors.grey,fontSize: context.rf(10))),
                                   if (isPack && !isPiece)
-                                    Text('${currencyFormat.format(stock!.retailPrice)} / pack'),
+                                    Text('${currencyFormat.format(stock!.retailPrice)} / pack', style: TextStyle(color: Colors.grey,fontSize: context.rf(10))),
                                   if (isPack && isPiece && (product.piecesPerPack ?? 0) > 0) ...[
-                                    Text('${currencyFormat.format(stock!.retailPrice)} / pack'),
-                                    Text('${currencyFormat.format(stock.retailPrice / product.piecesPerPack!)} / piece'),
+                                    Text('${currencyFormat.format(stock!.retailPrice)} / pack', style: TextStyle(color: Colors.grey,fontSize: context.rf(10))),
+                                    Text('${currencyFormat.format(stock.retailPrice / product.piecesPerPack!)} / piece', style: TextStyle(color: Colors.grey,fontSize: context.rf(10))),
                                   ],
                                 ]
                                     : [
                                   if (isPiece && !isPack)
-                                    const Text('₱0.00 / piece', style: TextStyle(color: Colors.grey)),
+                                     Text('₱0.00 / piece', style: TextStyle(color: Colors.grey,fontSize: context.rf(10))),
                                   if (isPack && !isPiece)
-                                    const Text('₱0.00 / pack', style: TextStyle(color: Colors.grey)),
+                                     Text('₱0.00 / pack', style: TextStyle(color: Colors.grey,fontSize: context.rf(10))),
                                   if (isPack && isPiece) ...[
-                                    const Text('₱0.00 / pack', style: TextStyle(color: Colors.grey)),
-                                    const Text('₱0.00 / piece', style: TextStyle(color: Colors.grey)),
+                                     Text('₱0.00 / pack', style: TextStyle(color: Colors.grey,fontSize: context.rf(10))),
+                                     Text('₱0.00 / piece', style: TextStyle(color: Colors.grey,fontSize: context.rf(10))),
                                   ],
                                 ]),
                                 const SizedBox(height: 6),
@@ -676,8 +726,8 @@ class _ProductListScreenState extends State<ProductListScreen> {
                                     spacing: 6,
                                     runSpacing: -4,
                                     children: [
-                                      if (isPack) _buildTag('Pack'),
-                                      if (isPiece) _buildTag('Piece'),
+                                      if (isPack) _buildTag('Pack',context),
+                                      if (isPiece) _buildTag('Piece',context),
                                     ],
                                   ),
 
@@ -693,8 +743,8 @@ class _ProductListScreenState extends State<ProductListScreen> {
                         children: [
                           Text(
                             'Stocks: ${product.totalQuantity}',
-                            style: const TextStyle(
-                              fontSize: 14,
+                            style:  TextStyle(
+                              fontSize: context.rf(14),
                               color: AppColor.textPrimary,
                               fontWeight: FontWeight.w900,
                             ),
@@ -730,7 +780,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
   }
 }
 
-Widget _buildTag(String label) {
+Widget _buildTag(String label,BuildContext context) {
   return Container(
     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
     margin: const EdgeInsets.symmetric( vertical: 3),
@@ -740,8 +790,8 @@ Widget _buildTag(String label) {
     ),
     child: Text(
       label,
-      style: const TextStyle(
-        fontSize: 11,
+      style: TextStyle(
+        fontSize: context.rf(11),
         fontWeight: FontWeight.w500,
         color: AppColor.textSecondary,
       ),

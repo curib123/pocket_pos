@@ -795,9 +795,7 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
                                ],
                              ],
                               const SizedBox(height: 16),
-                          Positioned(
-                            bottom: 0,
-                            child: Row(
+                           Row(
                               children: [
                                 Expanded(
                                   child: CustomButton(
@@ -882,7 +880,6 @@ class _UpsertProductModalState extends State<UpsertProductModal> {
                                 ),
                               ],
                             ),
-                          )
                             ]
 
                       ),

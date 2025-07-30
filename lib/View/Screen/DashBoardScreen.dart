@@ -79,7 +79,7 @@ class _DashBoardScreenState extends State<DashBoardScreen> {
                           child: ProductDashboardStats(
                             metrics: metrics,
                             currencyProvider: currencyProvider,
-                            isTile: !switchProvider.isDashboardGridView,
+                            isTile: switchProvider.isDashboardGridView,
                           ),
                         ),
                       ],

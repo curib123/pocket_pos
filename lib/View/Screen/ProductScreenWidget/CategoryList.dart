@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import 'package:pocketpos/Provider/StoreCategoryProvider.dart';
-import 'package:pocketpos/Provider/SwitchProvider.dart';
+import 'package:pocketpos/View/Components/Widgets/ResponsiveText.dart';
 import 'package:provider/provider.dart';
 import 'package:animate_do/animate_do.dart';
+import 'package:shimmer/shimmer.dart';
+
 import 'package:pocketpos/Helper/Classes_Methods/AppColor.dart';
 import 'package:pocketpos/Helper/Classes_Methods/AppCategory.dart';
 import 'package:pocketpos/View/Screen/ProductScreenWidget/ProductListScreen.dart';
 import 'package:pocketpos/Provider/ProductProvider.dart';
-import 'package:shimmer/shimmer.dart';
+import 'package:pocketpos/Provider/StoreCategoryProvider.dart';
+import 'package:pocketpos/Provider/SwitchProvider.dart';
 
 class CategoryList extends StatefulWidget {
   final List<String> categories;
@@ -45,16 +47,12 @@ class _CategoryListState extends State<CategoryList> {
       builder: (context, productProvider, storeCategoryProvider, switchProvider, _) {
         final isArchiveView = switchProvider.isArchiveView;
 
-        // Sort categories by product count (desc), then alphabetically (asc)
+        // Sort by count descending, then name ascending
         final sortedCategories = List<String>.from(visibleCategories)
           ..sort((a, b) {
             final aCount = productProvider.getAllProductsWithVariantsByCategory(a).length;
             final bCount = productProvider.getAllProductsWithVariantsByCategory(b).length;
-            if (bCount != aCount) {
-              return bCount.compareTo(aCount);
-            } else {
-              return a.compareTo(b);
-            }
+            return bCount != aCount ? bCount.compareTo(aCount) : a.compareTo(b);
           });
 
         return ListView.builder(
@@ -74,8 +72,12 @@ class _CategoryListState extends State<CategoryList> {
                   motion: const ScrollMotion(),
                   children: [
                     SlidableAction(
-                      onPressed: (context) {
+                      onPressed: (_) {
                         storeCategoryProvider.setHidden(category, !isArchiveView);
+                        final msg = isArchiveView ? "Unhidden" : "Hidden";
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('$category has been $msg')),
+                        );
                       },
                       backgroundColor: isArchiveView ? Colors.green : Colors.redAccent,
                       foregroundColor: Colors.white,
@@ -104,21 +106,21 @@ class _CategoryListState extends State<CategoryList> {
                     child: Icon(icon, color: color, size: 20),
                   ),
                   title: Shimmer.fromColors(
-                    baseColor: AppColor.textPrimary ,
+                    baseColor: AppColor.textPrimary,
                     highlightColor: AppColor.accent,
                     child: Text(
                       category,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.w600,
-                        fontSize: 15,
+                        fontSize: context.rf(15),
                         color: AppColor.textPrimary,
                       ),
                     ),
                   ),
                   subtitle: Text(
                     'Available Product: $count',
-                    style: const TextStyle(
-                      fontSize: 13,
+                    style: TextStyle(
+                      fontSize: context.rf(13),
                       color: AppColor.textSecondary,
                     ),
                   ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:pocketpos/View/Components/Widgets/ResponsiveText.dart';
 import 'package:provider/provider.dart';
 import 'package:pocketpos/Helper/Classes_Methods/AppColor.dart';
 import 'package:pocketpos/Helper/Classes_Methods/AppCategory.dart';
@@ -22,7 +23,6 @@ class CategoryGrid extends StatelessWidget {
       builder: (context, productProvider, storeCategoryProvider, switchProvider, _) {
         final isArchiveView = switchProvider.isArchiveView;
 
-        // Sort categories by product count (desc), then name (asc)
         final sortedCategories = List<String>.from(categories)
           ..sort((a, b) {
             final aCount = productProvider.getAllProductsWithVariantsByCategory(a).length;
@@ -123,13 +123,14 @@ class CategoryGrid extends StatelessWidget {
                               ),
                               const SizedBox(height: 12),
                               Shimmer.fromColors(
-                                baseColor: AppColor.textPrimary ,
+                                baseColor: AppColor.textPrimary,
                                 highlightColor: AppColor.accent,
                                 child: Text(
                                   category,
-                                  style: const TextStyle(
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
                                     fontWeight: FontWeight.w600,
-                                    fontSize: 15,
+                                    fontSize: context.rf(15),
                                     color: AppColor.textPrimary,
                                   ),
                                 ),
@@ -138,8 +139,8 @@ class CategoryGrid extends StatelessWidget {
                               Text(
                                 'Available Product: $count',
                                 textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  fontSize: 12,
+                                style: TextStyle(
+                                  fontSize: context.rf(12),
                                   color: AppColor.textSecondary,
                                 ),
                               ),

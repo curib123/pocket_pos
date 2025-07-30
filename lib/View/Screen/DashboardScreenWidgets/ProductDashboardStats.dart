@@ -67,30 +67,17 @@ class ProductDashboardStats extends StatelessWidget {
       ) {
     return [
       GroupHeader(icon: icon, title: title),
-      LayoutBuilder(
-        builder: (context, constraints) {
-          final double fullWidth = constraints.maxWidth;
-          final double itemMinWidth = 180;
-          int crossAxisCount = (fullWidth / itemMinWidth).floor().clamp(2, 6);
-
-          if (stats.length == 1) {
-            return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              child: stats.first,
-            );
-          }
-
-          return GridView.count(
-            physics: const NeverScrollableScrollPhysics(),
-            shrinkWrap: true,
-            crossAxisCount: crossAxisCount,
-            crossAxisSpacing: 5,
-            mainAxisSpacing: 5,
-            childAspectRatio: 0.70,
-            children: stats,
-          );
-        },
+      const SizedBox(height: 10),
+      GridView.count(
+        physics: const NeverScrollableScrollPhysics(),
+        shrinkWrap: true,
+        crossAxisCount: 2, // Fixed to always 2 per row
+        crossAxisSpacing: 8,
+        mainAxisSpacing: 8,
+        childAspectRatio: 0.80,
+        children: stats,
       ),
+      const SizedBox(height: 24),
     ];
   }
 
@@ -127,8 +114,6 @@ class ProductDashboardStats extends StatelessWidget {
         value: formatNumber(metrics.totalStocksDeleted),
         color: AppColor.error,
       ),
-
-
     ];
 
     final salesStats = [
@@ -180,9 +165,8 @@ class ProductDashboardStats extends StatelessWidget {
     ];
 
     final stockLevelStats = <Widget>[
-      // ⚫ Zero Stock
       Padding(
-        padding: const EdgeInsets.symmetric(vertical: 3), // add spacing between cards
+        padding: const EdgeInsets.symmetric(vertical: 2),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -193,7 +177,6 @@ class ProductDashboardStats extends StatelessWidget {
               value: formatNumber(metrics.zeroStockCount),
               color: Colors.grey,
             ),
-            const SizedBox(height: 8), // spacing between stat and dropdown
             const ProductRangePreviewDropdown(
               minQty: 0,
               maxQty: 0,
@@ -203,10 +186,8 @@ class ProductDashboardStats extends StatelessWidget {
           ],
         ),
       ),
-
-      // 🔴 Low Stock
       Padding(
-        padding: const EdgeInsets.symmetric(vertical: 3),
+        padding: const EdgeInsets.symmetric(vertical: 2),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -217,7 +198,6 @@ class ProductDashboardStats extends StatelessWidget {
               value: formatNumber(metrics.lowStockCount),
               color: Colors.redAccent,
             ),
-            const SizedBox(height: 8),
             const ProductRangePreviewDropdown(
               minQty: 1,
               maxQty: 10,
@@ -227,10 +207,8 @@ class ProductDashboardStats extends StatelessWidget {
           ],
         ),
       ),
-
-      // 🟡 Medium Stock
       Padding(
-        padding: const EdgeInsets.symmetric(vertical: 3),
+        padding: const EdgeInsets.symmetric(vertical: 2),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -241,7 +219,6 @@ class ProductDashboardStats extends StatelessWidget {
               value: formatNumber(metrics.mediumStockCount),
               color: Colors.amber,
             ),
-            const SizedBox(height: 8),
             const ProductRangePreviewDropdown(
               minQty: 11,
               maxQty: 50,
@@ -251,10 +228,8 @@ class ProductDashboardStats extends StatelessWidget {
           ],
         ),
       ),
-
-      // 🟢 High Stock
       Padding(
-        padding: const EdgeInsets.symmetric(vertical: 3),
+        padding: const EdgeInsets.symmetric(vertical: 2),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -265,7 +240,6 @@ class ProductDashboardStats extends StatelessWidget {
               value: formatNumber(metrics.highStockCount),
               color: Colors.green,
             ),
-            const SizedBox(height: 8),
             const ProductRangePreviewDropdown(
               minQty: 51,
               maxQty: 999999,
@@ -362,14 +336,12 @@ class ProductDashboardStats extends StatelessWidget {
           : _buildStatGridSection(context, "Stock Activity", LucideIcons.repeat, activityStats),
     );
 
-    return Expanded(
-      child: SingleChildScrollView(
+ return SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: sectionWidgets,
         ),
-      ),
-    );
+      );
   }
 }

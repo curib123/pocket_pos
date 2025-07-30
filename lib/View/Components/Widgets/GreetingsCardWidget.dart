@@ -7,29 +7,41 @@ import 'package:pocketpos/View/Components/Widgets/ResponsiveText.dart';
 import 'package:shimmer/shimmer.dart';
 
 class GreetingCard extends StatelessWidget {
-  final SecureStorageService secureStorageService = SecureStorageService();
-
-  GreetingCard({super.key});
+  const GreetingCard({super.key});
 
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<Map<String, String?>>(
-      future: secureStorageService.readUser(),
+      future: SecureStorageService().readUser(),
       builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done) {
-          return const Center(child: CircularProgressIndicator());
-        }
+        if (!snapshot.hasData) return const SizedBox(); // Less janky than loader
 
-        final data = snapshot.data ?? {};
+        final data = snapshot.data!;
         final ownerName = data['ownerName'] ?? 'Unknown Owner';
         final storeName = data['storeName'] ?? 'Your Store';
 
-        return _buildGreetingCard(context, ownerName, storeName);
+        return _GreetingCardUI(
+          ownerName: ownerName,
+          storeName: storeName,
+        );
       },
     );
   }
+}
 
-  Widget _buildGreetingCard(BuildContext context, String ownerName, String storeName) {
+class _GreetingCardUI extends StatelessWidget {
+  final String ownerName;
+  final String storeName;
+
+  const _GreetingCardUI({
+    required this.ownerName,
+    required this.storeName,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final rf = context.rf;
+
     return FadeInDown(
       duration: const Duration(milliseconds: 500),
       child: Container(
@@ -37,10 +49,7 @@ class GreetingCard extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
           gradient: LinearGradient(
-            colors: [
-              AppColor.primary,
-              AppColor.primary.withOpacity(0.60),
-            ],
+            colors: [AppColor.primary, AppColor.primary.withOpacity(0.60)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -55,44 +64,7 @@ class GreetingCard extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Stack(
-              alignment: Alignment.center,
-              children: [
-                Container(
-                  width: 72,
-                  height: 72,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: RadialGradient(
-                      colors: [
-                        Colors.cyanAccent.withOpacity(0.25),
-                        Colors.transparent,
-                      ],
-                      radius: 0.9,
-                    ),
-                  ),
-                ),
-                CircleAvatar(
-                  radius: 26,
-                  backgroundColor: Colors.white.withOpacity(0.06),
-                  child: Spin(
-                    infinite: true,
-                    duration: const Duration(seconds: 5),
-                    child: Icon(
-                      LucideIcons.store,
-                      color: Colors.white,
-                      size: 24,
-                      shadows: [
-                        Shadow(
-                          color: Colors.cyanAccent.withOpacity(0.5),
-                          blurRadius: 8,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
+            const _StoreIcon(),
             const SizedBox(width: 14),
             Expanded(
               child: Column(
@@ -101,7 +73,7 @@ class GreetingCard extends StatelessWidget {
                   TweenAnimationBuilder<double>(
                     tween: Tween(begin: 0.0, end: 1.0),
                     duration: const Duration(milliseconds: 1100),
-                    builder: (context, value, child) => Opacity(
+                    builder: (_, value, __) => Opacity(
                       opacity: value,
                       child: ShaderMask(
                         shaderCallback: (bounds) => const LinearGradient(
@@ -115,7 +87,7 @@ class GreetingCard extends StatelessWidget {
                         child: Text(
                           "Welcome to ${storeName.isNotEmpty ? storeName : 'Your Store'}",
                           style: TextStyle(
-                            fontSize: context.rf(12),
+                            fontSize: rf(12),
                             fontWeight: FontWeight.w500,
                             letterSpacing: 0.5,
                           ),
@@ -127,22 +99,21 @@ class GreetingCard extends StatelessWidget {
                   Shimmer.fromColors(
                     baseColor: AppColor.surface,
                     highlightColor: AppColor.accent,
-                    period: Duration(seconds: 3), // ✅ removed extra parenthesis
+                    period: const Duration(seconds: 3),
                     child: Text(
                       ownerName,
                       style: TextStyle(
-                        fontSize: context.rf(16),
+                        fontSize: rf(16),
                         color: Colors.white.withOpacity(0.95),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 2),
                   Text(
                     "Keep growing your business.",
                     style: TextStyle(
-                      fontSize: context.rf(12),
+                      fontSize: rf(12),
                       color: Colors.white.withOpacity(0.7),
                       fontWeight: FontWeight.w400,
                     ),
@@ -151,23 +122,78 @@ class GreetingCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 6),
-            FadeInRight(
-              duration: const Duration(milliseconds: 600),
-              child: Spin(
-                infinite: true,
-                duration: const Duration(seconds: 3),
-                child: Icon(
-                  LucideIcons.sparkles,
-                  size: 22,
-                  color: Colors.white70,
-                  shadows: [
-                    Shadow(
-                      color: Colors.cyanAccent.withOpacity(0.4),
-                      blurRadius: 14,
-                    ),
-                  ],
+            const _SparkleIcon(),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _StoreIcon extends StatelessWidget {
+  const _StoreIcon();
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        Container(
+          width: 72,
+          height: 72,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: RadialGradient(
+              colors: [
+                Colors.cyanAccent.withOpacity(0.25),
+                Colors.transparent,
+              ],
+              radius: 0.9,
+            ),
+          ),
+        ),
+        CircleAvatar(
+          radius: 26,
+          backgroundColor: Colors.white.withOpacity(0.06),
+          child: Spin(
+            infinite: true,
+            duration: const Duration(seconds: 5),
+            child: Icon(
+              LucideIcons.store,
+              color: Colors.white,
+              size: 24,
+              shadows: [
+                Shadow(
+                  color: Colors.cyanAccent.withOpacity(0.5),
+                  blurRadius: 8,
                 ),
-              ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SparkleIcon extends StatelessWidget {
+  const _SparkleIcon();
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeInRight(
+      duration: const Duration(milliseconds: 600),
+      child: Spin(
+        infinite: true,
+        duration: const Duration(seconds: 3),
+        child: Icon(
+          LucideIcons.sparkles,
+          size: 22,
+          color: Colors.white70,
+          shadows: [
+            Shadow(
+              color: Colors.cyanAccent.withOpacity(0.4),
+              blurRadius: 14,
             ),
           ],
         ),
