@@ -112,7 +112,6 @@ class _PaymentDialogState extends State<PaymentDialog> {
       ),
     );
 
-    productProvider.refreshProducts();
   }
   double roundTo2Decimals(double value) => double.parse(value.toStringAsFixed(2));
 

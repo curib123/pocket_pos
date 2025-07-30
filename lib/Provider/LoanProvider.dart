@@ -6,22 +6,9 @@ import 'package:pocketpos/Model/product_model.dart';
 import 'package:pocketpos/Model/stock_log.dart';
 
 class LoanProvider with ChangeNotifier {
-  final Box<Product> _productBox;
-  List<Product> _products = [];
+  final Box<Product> _productBox = Hive.box<Product>('products');
 
-  List<Product> get products => _products;
-
-  LoanProvider(this._productBox);
-
-  void refreshProducts({bool silently = false}) {
-    _products = _productBox.values
-        .where((p) =>  !p.isDeletedPermanent)
-        .toList()
-      ..sort((a, b) => b.lastModified.compareTo(a.lastModified));
-
-    if (!silently) notifyListeners();
-  }
-
+  LoanProvider();
 
   Product? getProductById(String id) {
     for (final product in _productBox.values) {
@@ -35,8 +22,7 @@ class LoanProvider with ChangeNotifier {
 
   Map<String, List<LoanItem>> getAllLoansByLoanerName() {
     final result = <String, List<LoanItem>>{};
-
-    for (final product in _productBox.values) {
+    for (final product in _productBox.values.where((p) => !p.isDeletedPermanent)) {
       final allLoans = [...product.loans, for (final v in product.variants) ...v.loans];
       for (final loan in allLoans) {
         if (!loan.isReturned && loan.borrowerName.isNotEmpty) {
@@ -44,7 +30,6 @@ class LoanProvider with ChangeNotifier {
         }
       }
     }
-
     return result;
   }
 
@@ -59,8 +44,8 @@ class LoanProvider with ChangeNotifier {
 
   List<LoanItem> getAllLoans() {
     return [
-      for (final product in _productBox.values) ...product.loans,
-      for (final product in _productBox.values)
+      for (final product in _productBox.values.where((p) => !p.isDeletedPermanent)) ...product.loans,
+      for (final product in _productBox.values.where((p) => !p.isDeletedPermanent))
         for (final variant in product.variants) ...variant.loans,
     ];
   }
@@ -68,8 +53,7 @@ class LoanProvider with ChangeNotifier {
   double getTotalLoanAmountForBorrower(String borrowerName) {
     final name = borrowerName.toLowerCase().trim();
     double total = 0;
-
-    for (final product in _productBox.values) {
+    for (final product in _productBox.values.where((p) => !p.isDeletedPermanent)) {
       final allLoans = [...product.loans, for (final v in product.variants) ...v.loans];
       for (final loan in allLoans) {
         if (loan.borrowerName.toLowerCase().trim() == name) {
@@ -77,21 +61,17 @@ class LoanProvider with ChangeNotifier {
         }
       }
     }
-
     return total;
   }
 
-
   List<String> getAllLoanerNames() {
     final Set<String> names = {};
-
-    for (final product in _productBox.values) {
+    for (final product in _productBox.values.where((p) => !p.isDeletedPermanent)) {
       final allLoans = [...product.loans, for (final v in product.variants) ...v.loans];
       for (final loan in allLoans) {
         if (loan.borrowerName.isNotEmpty) names.add(loan.borrowerName.trim());
       }
     }
-
     return names.toList()..sort();
   }
 
@@ -149,8 +129,7 @@ class LoanProvider with ChangeNotifier {
 
     final key = _productBox.keys.firstWhere((k) => _productBox.get(k)?.id == productId);
     await _productBox.put(key, updatedProduct);
-
-    refreshProducts();
+    notifyListeners();
   }
 
   Future<void> payAllLoansByBorrower(String borrowerName, double amount, {bool track = false}) async {
@@ -160,11 +139,10 @@ class LoanProvider with ChangeNotifier {
       final product = _productBox.get(key);
       if (product == null) continue;
 
-      // 🔍 Filter & FIFO sort only the loans for this borrower
       final loans = [...product.loans]
           .where((loan) => loan.borrowerName.toLowerCase().trim() == borrowerName.toLowerCase().trim())
           .toList()
-        ..sort((a, b) => a.loanDate.compareTo(b.loanDate)); // 👈 FIFO
+        ..sort((a, b) => a.loanDate.compareTo(b.loanDate));
 
       final updatedLoans = <LoanItem>[];
       final logs = <StockLog>[];
@@ -199,8 +177,9 @@ class LoanProvider with ChangeNotifier {
         }
       }
 
-      // 🧃 Re-include other unrelated loans (different borrower)
-      final unrelatedLoans = product.loans.where((l) => l.borrowerName.toLowerCase().trim() != borrowerName.toLowerCase().trim()).toList();
+      final unrelatedLoans = product.loans
+          .where((l) => l.borrowerName.toLowerCase().trim() != borrowerName.toLowerCase().trim())
+          .toList();
       final allLoans = [...unrelatedLoans, ...updatedLoans];
 
       final updatedProduct = product.copyWith(
@@ -213,9 +192,8 @@ class LoanProvider with ChangeNotifier {
       if (remaining <= 0) break;
     }
 
-    refreshProducts();
+    notifyListeners();
   }
-
 
   Map<String, dynamic> generateLoanMetrics({
     LoanFilterType filter = LoanFilterType.all,
@@ -250,7 +228,7 @@ class LoanProvider with ChangeNotifier {
       }
     }
 
-    for (final product in _productBox.values) {
+    for (final product in _productBox.values.where((p) => !p.isDeletedPermanent)) {
       for (final loan in product.loans) {
         if (!isWithinFilter(loan.loanDate)) continue;
 
@@ -317,6 +295,6 @@ class LoanProvider with ChangeNotifier {
     final key = _productBox.keys.firstWhere((k) => _productBox.get(k)?.id == productId);
     await _productBox.put(key, updatedProduct);
 
-    refreshProducts();
+    notifyListeners();
   }
 }

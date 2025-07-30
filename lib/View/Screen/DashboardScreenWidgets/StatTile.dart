@@ -1,6 +1,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:pocketpos/Helper/Classes_Methods/AppColor.dart';
+import 'package:pocketpos/View/Components/Widgets/ResponsiveText.dart';
 import 'package:shimmer/shimmer.dart';
 
 class StatTile extends StatelessWidget {
@@ -39,9 +40,9 @@ class StatTile extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           CircleAvatar(
-            radius: 20,
+            radius: context.rf(20),
             backgroundColor: color.withOpacity(0.12),
-            child: Icon(icon, color: color, size: 18),
+            child: Icon(icon, color: color, size: context.rf(18)),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -54,8 +55,8 @@ class StatTile extends StatelessWidget {
                   period: const Duration(seconds: 3),
                   child: Text(
                     label,
-                    style: const TextStyle(
-                      fontSize: 14,
+                    style:  TextStyle(
+                      fontSize: context.rf(14),
                       fontWeight: FontWeight.w600,
                       color: AppColor.textPrimary,
                     ),
@@ -67,8 +68,8 @@ class StatTile extends StatelessWidget {
                     padding: const EdgeInsets.only(top: 2),
                     child: Text(
                       guide!,
-                      style: const TextStyle(
-                        fontSize: 12,
+                      style:  TextStyle(
+                        fontSize:  context.rf(12),
                         fontStyle: FontStyle.italic,
                         color: Colors.grey,
                       ),
@@ -80,7 +81,7 @@ class StatTile extends StatelessWidget {
           Text(
             value,
             style: TextStyle(
-              fontSize: 15,
+              fontSize: context.rf(18),
               fontWeight: FontWeight.bold,
               color: color,
             ),

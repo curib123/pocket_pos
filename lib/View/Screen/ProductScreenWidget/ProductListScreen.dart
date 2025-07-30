@@ -36,7 +36,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
   final int _loadIncrement = 50;
 
 // Dropdown filter state:
-  String _selectedCategoryFilter =  'All';
+  String _selectedCategoryFilter = 'All';
   String _selectedSort = 'Newest';
   String _selectedStockStatus = 'All';
 
@@ -44,7 +44,9 @@ class _ProductListScreenState extends State<ProductListScreen> {
   void initState() {
     // TODO: implement initState
     super.initState();
-    widget.category.isNotEmpty ? _selectedCategoryFilter = widget.category : _selectedCategoryFilter = 'All';
+    widget.category.isNotEmpty
+        ? _selectedCategoryFilter = widget.category
+        : _selectedCategoryFilter = 'All';
   }
 
 
@@ -56,293 +58,303 @@ class _ProductListScreenState extends State<ProductListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final currencyFormat = context.read<CurrencyProvider>().currencyFormat;
-
-    return Consumer<ProductProvider>(
-      builder: (context, productProvider, _) {
-        return Scaffold(
-          appBar: AppBar(
-            title: Row(
-              children: [
-                Expanded(child: Text(widget.category.isNotEmpty ? widget.category : "All Product List")),
-                BouncingCartIcon()
-              ],
-            ),
-            leading: GestureDetector(
-              onTap: () => Navigator.pop(context),
-              child: const Icon(Icons.arrow_back_ios_new, color: Colors.black),
-            ),
-          ),
-          bottomNavigationBar: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10,horizontal: 15),
-            child: CustomButton(
-              text: "Add Product",
-              icon: LucideIcons.plus,
-              onPressed: () {
-                showModalBottomSheet(
-                  context: context,
-                  isScrollControlled: true,
-                  backgroundColor: Colors.transparent,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
-                  ),
-                  builder: (context) {
-                    return DraggableScrollableSheet(
-                      expand: false,
-                      maxChildSize: 0.8,
-                      initialChildSize: 0.7,
-                      minChildSize: 0.65,
-                      builder: (_, controller) => Padding(
+    return Scaffold(
+      appBar: AppBar(
+        title: Row(
+          children: [
+            Expanded(child: Text(widget.category.isNotEmpty
+                ? widget.category
+                : "All Product List")),
+            BouncingCartIcon()
+          ],
+        ),
+        leading: GestureDetector(
+          onTap: () => Navigator.pop(context),
+          child: const Icon(Icons.arrow_back_ios_new, color: Colors.black),
+        ),
+      ),
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+        child: CustomButton(
+          text: "Add Product",
+          icon: LucideIcons.plus,
+          onPressed: () {
+            showModalBottomSheet(
+              context: context,
+              isScrollControlled: true,
+              backgroundColor: Colors.transparent,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+              ),
+              builder: (context) {
+                return DraggableScrollableSheet(
+                  expand: false,
+                  maxChildSize: 0.8,
+                  initialChildSize: 0.7,
+                  minChildSize: 0.65,
+                  builder: (_, controller) =>
+                      Padding(
                         padding: EdgeInsets.only(
-                          bottom: MediaQuery.of(context).viewInsets.bottom,
+                          bottom: MediaQuery
+                              .of(context)
+                              .viewInsets
+                              .bottom,
                         ),
                         child: Material(
-                          borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
+                          borderRadius: const BorderRadius.vertical(top: Radius
+                              .circular(25)),
                           color: Colors.white,
                           child: SafeArea(
                             top: false,
                             child: SingleChildScrollView(
                               controller: controller,
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-                              child: UpsertProductModal(Category: widget.category,), // put your form here
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 20),
+                              child: UpsertProductModal(Category: widget
+                                  .category,), // put your form here
                             ),
                           ),
                         ),
                       ),
-                    );
-                  },
                 );
-
               },
-            ),
-          ),
-          body: Consumer2<SwitchProvider,StoreCategoryProvider>(
-            builder: (context, switchProvider,storeCategoryProvider, _) {
-              final allProducts = widget.category.isNotEmpty
-                  ? productProvider.getAllProductsWithVariantsByCategory(widget.category)
-                  : productProvider.getAllProductsWithVariants();
+            );
+          },
+        ),
+      ),
+      body: Consumer4<SwitchProvider,
+          StoreCategoryProvider,
+          ProductProvider,
+          CurrencyProvider>(
+        builder: (context, switchProvider, storeCategoryProvider,
+            productProvider, currencyProvider, _) {
+          final allProducts = widget.category.isNotEmpty
+              ? productProvider.getAllProductsWithVariantsByCategory(
+              widget.category)
+              : productProvider.getAllProductsWithVariants();
 
-              // Start with all products
-              List<Product> filteredProducts = allProducts;
+          List<Product> filtered = _applyFilters(allProducts);
 
-                    // Apply search query filter
-              if (_searchQuery.isNotEmpty) {
-                filteredProducts = filteredProducts.where((p) {
-                  return p.name.toLowerCase().contains(_searchQuery.toLowerCase());
-                }).toList();
-              }
+          final visibleProducts = filtered.take(_loadedCount).toList();
 
-                // Apply category filter
-              if (_selectedCategoryFilter != 'All') {
-                filteredProducts = filteredProducts.where((p) => p.category == _selectedCategoryFilter).toList();
-              }
-
-                 // Apply stock status filter
-              if (_selectedStockStatus == 'In Stock') {
-                filteredProducts = filteredProducts.where((p) => p.totalQuantity > 0).toList();
-              } else if (_selectedStockStatus == 'Out of Stock') {
-                filteredProducts = filteredProducts.where((p) => p.totalQuantity == 0).toList();
-              } else if (_selectedStockStatus == 'Low Stock') {
-                filteredProducts = filteredProducts.where((p) => p.totalQuantity > 0 && p.totalQuantity <= 10).toList();
-              } // Apply product type filter (MAIN or VARIANT only)
-              if (_selectedStockStatus == 'Main Stock') {
-                filteredProducts = filteredProducts.where((p) => !p.isVariant).toList();
-              } else if (_selectedStockStatus == 'Variant Stock') {
-                filteredProducts = filteredProducts.where((p) => p.isVariant).toList();
-              }
-
-              // Sort logic
-              if (_selectedSort == 'Newest') {
-                filteredProducts.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-              } else if (_selectedSort == 'Oldest') {
-                filteredProducts.sort((a, b) => a.createdAt.compareTo(b.createdAt));
-              } else if (_selectedSort == 'Price ↑') {
-                filteredProducts.sort((a, b) {
-                  final aLowestPrice = a.stocks.isNotEmpty
-                      ? a.stocks.map((s) => s.retailPrice).reduce((x, y) => x < y ? x : y)
-                      : 0;
-                  final bLowestPrice = b.stocks.isNotEmpty
-                      ? b.stocks.map((s) => s.retailPrice).reduce((x, y) => x < y ? x : y)
-                      : 0;
-                  return aLowestPrice.compareTo(bLowestPrice);
-                });
-              } else if (_selectedSort == 'Price ↓') {
-                filteredProducts.sort((a, b) {
-                  final aLowestPrice = a.stocks.isNotEmpty
-                      ? a.stocks.map((s) => s.retailPrice).reduce((x, y) => x < y ? x : y)
-                      : 0;
-                  final bLowestPrice = b.stocks.isNotEmpty
-                      ? b.stocks.map((s) => s.retailPrice).reduce((x, y) => x < y ? x : y)
-                      : 0;
-                  return bLowestPrice.compareTo(aLowestPrice);
-                });
-              } else if (_selectedSort == 'Alphabetical') {
-                filteredProducts.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
-              }
-
-
-
-              final visibleProducts = filteredProducts.take(_loadedCount).toList();
-
-              return RefreshIndicator(
-                onRefresh: () async {
-                  await showLoadingAndNotify(context: context, task: () async => await autoSync(context));
-                },
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8,horizontal: 10),
-                  child: Column(
-                    children: [
-                      // Search Bar
-                      FadeInDown(
-                        duration: const Duration(milliseconds: 600),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 10),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: TextField(
-                                  decoration: InputDecoration(
-                                    hintText: 'Search product...',
-                                    prefixIcon: const Icon(Icons.search),
-                                    filled: true,
-                                    fillColor: Colors.grey[100],
-                                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                      borderSide: BorderSide.none,
-                                    ),
-                                  ),
-                                  onChanged: (value) {
-                                    if (_debounce?.isActive ?? false) _debounce!.cancel();
-                                    _debounce = Timer(const Duration(milliseconds: 300), () {
-                                      setState(() {
-                                        _searchQuery = value;
-                                        _loadedCount = 50;
-                                      });
-                                    });
-                                  },
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              IconButton(
-                                onPressed: () {
-                                  switchProvider.toggleProductGridView();
-                                },
-                                icon: Icon(
-                                  switchProvider.isProductGridView
-                                      ? Icons.layers_rounded
-                                      : Icons.dashboard_rounded,
-                                  size: 30,
-                                  color: AppColor.primary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      // Filter Dropdowns
-                      FadeInDown(
-                        duration: const Duration(milliseconds: 400),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 5),
-                          child: LayoutBuilder(
-                            builder: (context, constraints) {
-                              double spacing = 12;
-                              int columnCount = widget.category.isNotEmpty ? 2 : 3;
-                              double itemWidth = (constraints.maxWidth - (spacing * (columnCount - 1))) / columnCount;
-
-                              return Wrap(
-                                spacing: spacing,
-                                runSpacing: 10,
-                                children: [
-
-                                  if (widget.category.isEmpty)
-                                    SizedBox(
-                                      width: itemWidth,
-                                      child: CustomFlatDropdown<String>(
-                                        hint: 'Select Category',
-                                        value: _selectedCategoryFilter,
-                                        items: ['All', ...storeCategoryProvider.visibleCategories.toList()],
-                                        onChanged: (value) {
-                                          setState(() {
-                                            _selectedCategoryFilter = value!;
-                                            _loadedCount = 50;
-                                          });
-                                        },
-                                        itemBuilder: (val) => Text(val),
-                                      ),
-                                    ),
-
-                                  // Sort Filter
-                                  SizedBox(
-                                    width: itemWidth,
-                                    child: CustomFlatDropdown<String>(
-                                      hint: 'Select Sort',
-                                      value: _selectedSort,
-                                      items: ['Newest', 'Oldest', 'Price ↑', 'Price ↓', 'Quantity ↑', 'Quantity ↓','Alphabetical'],
-                                      onChanged: (value) {
-                                        setState(() {
-                                          _selectedSort = value!;
-                                        });
-                                      },
-                                      itemBuilder: (val) => Text(val),
-                                    ),
-                                  ),
-
-                                  // Stock Filter
-                                  SizedBox(
-                                    width: itemWidth,
-                                    child: CustomFlatDropdown<String>(
-                                      hint: 'Select Stock Status',
-                                      value: _selectedStockStatus,
-                                      items: ['All', 'In Stock', 'Out of Stock', 'Low Stock','Main Stock','Variant Stock'],
-                                      onChanged: (value) {
-                                        setState(() {
-                                          _selectedStockStatus = value!;
-                                        });
-                                      },
-                                      itemBuilder: (val) => Text(val),
-                                    ),
-                                  ),
-                                ],
-                              );
-                            },
-                          ),
-                        ),
-                      ),
-
-
-                      // Product List/Grid
-                      Expanded(
-                        child: NotificationListener<ScrollNotification>(
-                          onNotification: (scrollInfo) {
-                            if (scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent &&
-                                _loadedCount < filteredProducts.length) {
-                              setState(() {
-                                _loadedCount += _loadIncrement;
-                              });
-                            }
-                            return false;
-                          },
-                          child: visibleProducts.isEmpty
-                              ? _buildEmptyState()
-                              : switchProvider.isProductGridView
-                              ? _buildGridView(visibleProducts, currencyFormat, switchProvider)
-                              : _buildListView(visibleProducts, currencyFormat, switchProvider),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
+          return RefreshIndicator(
+            onRefresh: () async {
+              await showLoadingAndNotify(
+                  context: context, task: () => autoSync(context));
             },
-          ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+              child: Column(
+                children: [
+                  _buildSearchAndToggleBar(switchProvider),
+                  _buildFilterDropdowns(storeCategoryProvider),
+                  Expanded(
+                    child: NotificationListener<ScrollNotification>(
+                      onNotification: (scrollInfo) {
+                        if (scrollInfo.metrics.pixels == scrollInfo.metrics
+                            .maxScrollExtent &&
+                            _loadedCount < filtered.length) {
+                          setState(() => _loadedCount += _loadIncrement);
+                        }
+                        return false;
+                      },
+                      child: visibleProducts.isEmpty
+                          ? _buildEmptyState()
+                          : switchProvider.isProductGridView
+                          ? _buildGridView(
+                          visibleProducts, currencyProvider, switchProvider)
+                          : _buildListView(
+                          visibleProducts, currencyProvider, switchProvider),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
 
-        );
-      },
     );
   }
+
+  Widget _buildSearchAndToggleBar(SwitchProvider switchProvider) {
+    return FadeInDown(
+      duration: const Duration(milliseconds: 600),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        child: Row(
+          children: [
+            Expanded(
+              child: TextField(
+                decoration: InputDecoration(
+                  hintText: 'Search product...',
+                  prefixIcon: const Icon(Icons.search),
+                  filled: true,
+                  fillColor: Colors.grey[100],
+                  contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 14),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(30),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+                onChanged: (value) {
+                  if (_debounce?.isActive ?? false) _debounce!.cancel();
+                  _debounce = Timer(const Duration(milliseconds: 300), () {
+                    setState(() {
+                      _searchQuery = value;
+                      _loadedCount = 50;
+                    });
+                  });
+                },
+              ),
+            ),
+            const SizedBox(width: 10),
+            IconButton(
+              onPressed: () => switchProvider.toggleProductGridView(),
+              icon: Icon(
+                switchProvider.isProductGridView
+                    ? Icons.layers_rounded
+                    : Icons.dashboard_rounded,
+                size: 30,
+                color: AppColor.primary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilterDropdowns(StoreCategoryProvider storeCategoryProvider) {
+    return FadeInDown(
+      duration: const Duration(milliseconds: 400),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 5),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            double spacing = 12;
+            int columnCount = widget.category.isNotEmpty ? 2 : 3;
+            double itemWidth = (constraints.maxWidth -
+                (spacing * (columnCount - 1))) / columnCount;
+
+            return Wrap(
+              spacing: spacing,
+              runSpacing: 10,
+              children: [
+
+                if (widget.category.isEmpty)
+                  SizedBox(
+                    width: itemWidth,
+                    child: CustomFlatDropdown<String>(
+                      hint: 'Select Category',
+                      value: _selectedCategoryFilter,
+                      items: [
+                        'All',
+                        ...storeCategoryProvider.visibleCategories.toList()
+                      ],
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedCategoryFilter = value!;
+                          _loadedCount = 50;
+                        });
+                      },
+                      itemBuilder: (val) => Text(val),
+                    ),
+                  ),
+
+                SizedBox(
+                  width: itemWidth,
+                  child: CustomFlatDropdown<String>(
+                    hint: 'Select Sort',
+                    value: _selectedSort,
+                    items: [
+                      'Newest',
+                      'Oldest',
+                      'Price ↑',
+                      'Price ↓',
+                      'Quantity ↑',
+                      'Quantity ↓',
+                      'Alphabetical'
+                    ],
+                    onChanged: (value) =>
+                        setState(() => _selectedSort = value!),
+                    itemBuilder: (val) => Text(val),
+                  ),
+                ),
+
+                SizedBox(
+                  width: itemWidth,
+                  child: CustomFlatDropdown<String>(
+                    hint: 'Select Stock Status',
+                    value: _selectedStockStatus,
+                    items: [
+                      'All',
+                      'In Stock',
+                      'Out of Stock',
+                      'Low Stock',
+                      'Main Stock',
+                      'Variant Stock'
+                    ],
+                    onChanged: (value) =>
+                        setState(() => _selectedStockStatus = value!),
+                    itemBuilder: (val) => Text(val),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  List<Product> _applyFilters(List<Product> products) {
+    return products
+        .where((p) =>
+    _searchQuery.isEmpty ||
+        p.name.toLowerCase().contains(_searchQuery.toLowerCase()))
+        .where((p) =>
+    _selectedCategoryFilter == 'All' || p.category == _selectedCategoryFilter)
+        .where((p) {
+      switch (_selectedStockStatus) {
+        case 'In Stock':
+          return p.totalQuantity > 0;
+        case 'Out of Stock':
+          return p.totalQuantity == 0;
+        case 'Low Stock':
+          return p.totalQuantity > 0 && p.totalQuantity <= 10;
+        case 'Main Stock':
+          return !p.isVariant;
+        case 'Variant Stock':
+          return p.isVariant;
+        default:
+          return true;
+      }
+    })
+        .toList()
+      ..sort((a, b) {
+        switch (_selectedSort) {
+          case 'Newest':
+            return b.createdAt.compareTo(a.createdAt);
+          case 'Oldest':
+            return a.createdAt.compareTo(b.createdAt);
+          case 'Price ↑':
+            return _getLowestPrice(a).compareTo(_getLowestPrice(b));
+          case 'Price ↓':
+            return _getLowestPrice(b).compareTo(_getLowestPrice(a));
+          case 'Alphabetical':
+            return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+          default:
+            return 0;
+        }
+      });
+  }
+
+  double _getLowestPrice(Product p) =>
+      p.stocks.isNotEmpty
+          ? p.stocks.map((s) => s.retailPrice).reduce((a, b) => a < b ? a : b)
+          : 0;
 
   Widget _buildEmptyState() {
     return Center(
@@ -351,18 +363,23 @@ class _ProductListScreenState extends State<ProductListScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(LucideIcons.packageSearch, size: 64, color: Colors.grey.shade400),
+            Icon(LucideIcons.packageSearch, size: 64,
+                color: Colors.grey.shade400),
             const SizedBox(height: 16),
-            Text('No products found', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: Colors.grey.shade600)),
+            Text('No products found', style: TextStyle(fontSize: 18,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey.shade600)),
             const SizedBox(height: 8),
-            Text('Try a different name or category', style: TextStyle(fontSize: 14, color: Colors.grey.shade500)),
+            Text('Try a different name or category',
+                style: TextStyle(fontSize: 14, color: Colors.grey.shade500)),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildGridView(List<Product> products, currencyFormat, SwitchProvider switchProvider) {
+  Widget _buildGridView(List<Product> products, currencyFormat,
+      SwitchProvider switchProvider) {
     return LayoutBuilder(
       builder: (context, constraints) {
         int crossAxisCount = (constraints.maxWidth ~/ 160).clamp(2, 6);
@@ -382,16 +399,18 @@ class _ProductListScreenState extends State<ProductListScreen> {
             final isPack = product.isSoldByPack;
             final isPiece = product.isSoldByPiece;
             final hasStock = product.stocks.isNotEmpty;
-            final lowStock =  product.totalQuantity <= 10;
-            final outStock =  product.totalQuantity == 0;
+            final lowStock = product.totalQuantity <= 10;
+            final outStock = product.totalQuantity == 0;
             final stock = hasStock ? product.stocks.first : null;
             double baseFont = constraints.maxWidth < 500 ? 18 : 20;
-            double fontSize = (baseFont - (product.name.length * 0.4)).clamp(12, baseFont).toDouble();
+            double fontSize = (baseFont - (product.name.length * 0.4)).clamp(
+                12, baseFont).toDouble();
 
             return FadeInUp(
               duration: Duration(milliseconds: 250 + (index * 60)),
               child: GestureDetector(
-                onTap: () => ProductDetailModal.show(context, product.id, false),
+                onTap: () =>
+                    ProductDetailModal.show(context, product.id, false),
                 child: Container(
                   decoration: BoxDecoration(
                     color: AppColor.surface,
@@ -416,7 +435,8 @@ class _ProductListScreenState extends State<ProductListScreen> {
                               height: imageHeight,
                               fit: BoxFit.cover,
                             )
-                                : _placeholderIcon(AppColor.primary, switchProvider),
+                                : _placeholderIcon(
+                                AppColor.primary, switchProvider),
                           ),
 
                           // 🟧 Variant / Main Badge
@@ -424,7 +444,8 @@ class _ProductListScreenState extends State<ProductListScreen> {
                             top: 0,
                             right: 8,
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 7, vertical: 2),
                               decoration: BoxDecoration(
                                 color: product.isVariant
                                     ? AppColor.warning
@@ -433,7 +454,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                               ),
                               child: Text(
                                 product.isVariant ? 'Variant' : 'Main',
-                                style:  TextStyle(
+                                style: TextStyle(
                                   color: Colors.white,
                                   fontSize: context.rf(12),
                                   fontWeight: FontWeight.bold,
@@ -448,9 +469,9 @@ class _ProductListScreenState extends State<ProductListScreen> {
                       SizedBox(height: 5,),
                       // 🧾 Product Name
                       Shimmer.fromColors(
-                          baseColor: AppColor.textPrimary ,
-                          highlightColor: AppColor.accent,
-                          period: Duration(seconds: 3),
+                        baseColor: AppColor.textPrimary,
+                        highlightColor: AppColor.accent,
+                        period: Duration(seconds: 3),
                         child: Text(
                           product.name,
                           style: TextStyle(
@@ -472,7 +493,8 @@ class _ProductListScreenState extends State<ProductListScreen> {
                           children: [
                             if (isPiece && !isPack)
                               Text(
-                                '${currencyFormat.format(stock!.retailPrice)} / piece',
+                                '${currencyFormat.format(
+                                    stock!.retailPrice)} / piece',
                                 style: TextStyle(
                                   color: Colors.black,
                                   fontSize: context.rf(10),
@@ -480,22 +502,26 @@ class _ProductListScreenState extends State<ProductListScreen> {
                               ),
                             if (isPack && !isPiece)
                               Text(
-                                '${currencyFormat.format(stock!.retailPrice)} / pack',
+                                '${currencyFormat.format(
+                                    stock!.retailPrice)} / pack',
                                 style: TextStyle(
                                   color: Colors.black,
                                   fontSize: context.rf(10),
                                 ),
                               ),
-                            if (isPack && isPiece && (product.piecesPerPack ?? 0) > 0) ...[
+                            if (isPack && isPiece &&
+                                (product.piecesPerPack ?? 0) > 0) ...[
                               Text(
-                                '${currencyFormat.format(stock!.retailPrice)} / pack',
+                                '${currencyFormat.format(
+                                    stock!.retailPrice)} / pack',
                                 style: TextStyle(
                                   color: Colors.black,
                                   fontSize: context.rf(10),
                                 ),
                               ),
                               Text(
-                                '${currencyFormat.format(stock.retailPrice / product.piecesPerPack!)} / piece',
+                                '${currencyFormat.format(stock.retailPrice /
+                                    product.piecesPerPack!)} / piece',
                                 style: TextStyle(
                                   color: Colors.black,
                                   fontSize: context.rf(10),
@@ -556,8 +582,8 @@ class _ProductListScreenState extends State<ProductListScreen> {
                             runSpacing: -4,
                             alignment: WrapAlignment.center,
                             children: [
-                              if (isPack) _buildTag('Pack',context),
-                              if (isPiece) _buildTag('Piece',context),
+                              if (isPack) _buildTag('Pack', context),
+                              if (isPiece) _buildTag('Piece', context),
                             ],
                           ),
                         ),
@@ -566,18 +592,21 @@ class _ProductListScreenState extends State<ProductListScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            'Stocks: ${product.totalQuantity}',
-                            style:  TextStyle(
-                              fontSize: context.rf(14),
-                              color: AppColor.textPrimary,
-                              fontWeight: FontWeight.w900
-                            )
+                              'Stocks: ${product.totalQuantity}',
+                              style: TextStyle(
+                                  fontSize: context.rf(14),
+                                  color: AppColor.textPrimary,
+                                  fontWeight: FontWeight.w900
+                              )
 
                           ),
                           if (outStock)
-                            Icon(LucideIcons.alertTriangle,color: AppColor.errorText,size: 20,)
-                          else if (lowStock)
-                            Icon(LucideIcons.alertTriangle,color: AppColor.warning,size: 20,)
+                            Icon(LucideIcons.alertTriangle,
+                              color: AppColor.errorText, size: 20,)
+                          else
+                            if (lowStock)
+                              Icon(LucideIcons.alertTriangle,
+                                color: AppColor.warning, size: 20,)
                         ],
                       ),
                     ],
@@ -591,7 +620,8 @@ class _ProductListScreenState extends State<ProductListScreen> {
     );
   }
 
-  Widget _buildListView(List<Product> products, currencyFormat, SwitchProvider switchProvider) {
+  Widget _buildListView(List<Product> products, currencyFormat,
+      SwitchProvider switchProvider) {
     return LayoutBuilder(
       builder: (context, constraints) {
         int crossAxisCount = (constraints.maxWidth ~/ 350).clamp(1, 3);
@@ -614,12 +644,14 @@ class _ProductListScreenState extends State<ProductListScreen> {
             final outStock = product.totalQuantity == 0;
             final stock = hasStock ? product.stocks.first : null;
             double baseFont = constraints.maxWidth < 500 ? 18 : 20;
-            double fontSize = (baseFont - (product.name.length * 0.4)).clamp(context.rf(12), baseFont).toDouble();
+            double fontSize = (baseFont - (product.name.length * 0.4)).clamp(
+                context.rf(12), baseFont).toDouble();
 
             return FadeInUp(
               duration: Duration(milliseconds: 250 + (index * 60)),
               child: GestureDetector(
-                onTap: () => ProductDetailModal.show(context, product.id, false),
+                onTap: () =>
+                    ProductDetailModal.show(context, product.id, false),
                 child: Container(
                   decoration: BoxDecoration(
                     color: AppColor.surface,
@@ -647,20 +679,24 @@ class _ProductListScreenState extends State<ProductListScreen> {
                                   height: 100,
                                   fit: BoxFit.cover,
                                 )
-                                    : _placeholderIcon(AppColor.primary, switchProvider),
+                                    : _placeholderIcon(
+                                    AppColor.primary, switchProvider),
                               ),
                               Positioned(
                                 top: 0,
                                 right: 4,
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 6, vertical: 2),
                                   decoration: BoxDecoration(
-                                    color: product.isVariant ? AppColor.warning : AppColor.primary,
+                                    color: product.isVariant
+                                        ? AppColor.warning
+                                        : AppColor.primary,
                                     borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: Text(
                                     product.isVariant ? 'Variant' : 'Main',
-                                    style:  TextStyle(
+                                    style: TextStyle(
                                       color: Colors.white,
                                       fontSize: context.rf(12),
                                       fontWeight: FontWeight.bold,
@@ -680,7 +716,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                               children: [
                                 // 🧾 Name
                                 Shimmer.fromColors(
-                                  baseColor: AppColor.textPrimary ,
+                                  baseColor: AppColor.textPrimary,
                                   highlightColor: AppColor.accent,
                                   period: Duration(seconds: 3),
                                   child: Text(
@@ -700,22 +736,44 @@ class _ProductListScreenState extends State<ProductListScreen> {
                                 ...(hasStock
                                     ? [
                                   if (isPiece && !isPack)
-                                    Text('${currencyFormat.format(stock!.retailPrice)} / piece', style: TextStyle(color: Colors.grey,fontSize: context.rf(10))),
+                                    Text('${currencyFormat.format(
+                                        stock!.retailPrice)} / piece',
+                                        style: TextStyle(color: Colors.grey,
+                                            fontSize: context.rf(10))),
                                   if (isPack && !isPiece)
-                                    Text('${currencyFormat.format(stock!.retailPrice)} / pack', style: TextStyle(color: Colors.grey,fontSize: context.rf(10))),
-                                  if (isPack && isPiece && (product.piecesPerPack ?? 0) > 0) ...[
-                                    Text('${currencyFormat.format(stock!.retailPrice)} / pack', style: TextStyle(color: Colors.grey,fontSize: context.rf(10))),
-                                    Text('${currencyFormat.format(stock.retailPrice / product.piecesPerPack!)} / piece', style: TextStyle(color: Colors.grey,fontSize: context.rf(10))),
+                                    Text('${currencyFormat.format(
+                                        stock!.retailPrice)} / pack',
+                                        style: TextStyle(color: Colors.grey,
+                                            fontSize: context.rf(10))),
+                                  if (isPack && isPiece &&
+                                      (product.piecesPerPack ?? 0) > 0) ...[
+                                    Text('${currencyFormat.format(
+                                        stock!.retailPrice)} / pack',
+                                        style: TextStyle(color: Colors.grey,
+                                            fontSize: context.rf(10))),
+                                    Text('${currencyFormat.format(
+                                        stock.retailPrice /
+                                            product.piecesPerPack!)} / piece',
+                                        style: TextStyle(color: Colors.grey,
+                                            fontSize: context.rf(10))),
                                   ],
                                 ]
                                     : [
                                   if (isPiece && !isPack)
-                                     Text('₱0.00 / piece', style: TextStyle(color: Colors.grey,fontSize: context.rf(10))),
+                                    Text('₱0.00 / piece', style: TextStyle(
+                                        color: Colors.grey,
+                                        fontSize: context.rf(10))),
                                   if (isPack && !isPiece)
-                                     Text('₱0.00 / pack', style: TextStyle(color: Colors.grey,fontSize: context.rf(10))),
+                                    Text('₱0.00 / pack', style: TextStyle(
+                                        color: Colors.grey,
+                                        fontSize: context.rf(10))),
                                   if (isPack && isPiece) ...[
-                                     Text('₱0.00 / pack', style: TextStyle(color: Colors.grey,fontSize: context.rf(10))),
-                                     Text('₱0.00 / piece', style: TextStyle(color: Colors.grey,fontSize: context.rf(10))),
+                                    Text('₱0.00 / pack', style: TextStyle(
+                                        color: Colors.grey,
+                                        fontSize: context.rf(10))),
+                                    Text('₱0.00 / piece', style: TextStyle(
+                                        color: Colors.grey,
+                                        fontSize: context.rf(10))),
                                   ],
                                 ]),
                                 const SizedBox(height: 6),
@@ -726,8 +784,8 @@ class _ProductListScreenState extends State<ProductListScreen> {
                                     spacing: 6,
                                     runSpacing: -4,
                                     children: [
-                                      if (isPack) _buildTag('Pack',context),
-                                      if (isPiece) _buildTag('Piece',context),
+                                      if (isPack) _buildTag('Pack', context),
+                                      if (isPiece) _buildTag('Piece', context),
                                     ],
                                   ),
 
@@ -743,7 +801,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                         children: [
                           Text(
                             'Stocks: ${product.totalQuantity}',
-                            style:  TextStyle(
+                            style: TextStyle(
                               fontSize: context.rf(14),
                               color: AppColor.textPrimary,
                               fontWeight: FontWeight.w900,
@@ -751,9 +809,12 @@ class _ProductListScreenState extends State<ProductListScreen> {
                           ),
                           const SizedBox(width: 6),
                           if (outStock)
-                            const Icon(LucideIcons.alertTriangle, color: AppColor.errorText, size: 20)
-                          else if (lowStock)
-                            const Icon(LucideIcons.alertTriangle, color: AppColor.warning, size: 20),
+                            const Icon(LucideIcons.alertTriangle,
+                                color: AppColor.errorText, size: 20)
+                          else
+                            if (lowStock)
+                              const Icon(LucideIcons.alertTriangle,
+                                  color: AppColor.warning, size: 20),
                         ],
                       ),
                     ],
@@ -766,16 +827,25 @@ class _ProductListScreenState extends State<ProductListScreen> {
       },
     );
   }
-
   Widget _placeholderIcon(Color color, SwitchProvider switchProvider) {
-    return Container(
-      width: switchProvider.isProductGridView ? double.infinity : 90,
-      height: 90,
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.06),
-        borderRadius: BorderRadius.circular(8),
+    return Shimmer.fromColors(
+      baseColor: color.withOpacity(0.6),
+      highlightColor: Colors.white.withOpacity(0.9),
+      period: const Duration(milliseconds: 900), // faster wave
+      direction: ShimmerDirection.ltr, // wave left to right
+      child: Container(
+        width: switchProvider.isProductGridView ? double.infinity : 90,
+        height: 90,
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.15),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Icon(
+          Icons.image_not_supported,
+          color: color.withOpacity(0.5),
+          size: 36,
+        ),
       ),
-      child: Icon(Icons.image_not_supported, color: color),
     );
   }
 }

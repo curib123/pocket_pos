@@ -6,9 +6,9 @@ import 'package:pocketpos/Model/product_model.dart';
 import 'package:pocketpos/Model/stock_log.dart';
 
 class LooseStockProvider extends ChangeNotifier {
-  final Box<Product> _productBox;
+  final Box<Product> _productBox = Hive.box<Product>('products');
 
-  LooseStockProvider(this._productBox);
+  LooseStockProvider();
 
   final uuid = const Uuid();
 

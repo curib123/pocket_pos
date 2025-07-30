@@ -20,7 +20,9 @@ import 'package:pocketpos/View/Components/Custom/CustomStepper.dart';
 import 'package:pocketpos/View/Components/Custom/CustomSwitchPill.dart';
 import 'package:pocketpos/View/Components/Modal/CartListModal.dart';
 import 'package:pocketpos/View/Components/Modal/UpsertProductModal.dart';
+import 'package:pocketpos/View/Components/Widgets/ResponsiveText.dart';
 import 'package:provider/provider.dart';
+import 'package:shimmer/shimmer.dart' show Shimmer, ShimmerDirection;
 
 class ProductDetailModal {
   static void show(BuildContext context, String productId,ModalAsVariant) {
@@ -421,7 +423,6 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                                       onConfirm: () {
                                         Navigator.pop(context);
                                         quantityChosen = 0;
-                                        productProvider.refreshProducts();
                                       },
                                       type: 'success',
                                       title: "Stock Deducted ✅",
@@ -541,16 +542,37 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                                   key: UniqueKey(),
                                   fit: BoxFit.contain,
                                 )
-                                    : Container(
-                                  color: AppColor.secondarySurface.withOpacity(0.3),
-                                  child: const Center(
-                                    child: Icon(
-                                      Icons.image_not_supported,
-                                      size: 32,
-                                      color: AppColor.primary,
+                                    : Shimmer.fromColors(
+                                  baseColor: AppColor.primary.withOpacity(0.12),
+                                  highlightColor: Colors.white.withOpacity(0.8),
+                                  direction: ShimmerDirection.rtl,
+                                  period: const Duration(milliseconds: 1500),
+                                  child: Container(
+                                    height: 90,
+                                    width: 90,
+                                    decoration: BoxDecoration(
+                                      color: AppColor.secondarySurface.withOpacity(0.4),
+                                      borderRadius: BorderRadius.circular(16),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: AppColor.primary.withOpacity(0.1),
+                                          blurRadius: 6,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                    padding: const EdgeInsets.all(14),
+                                    child:  Center(
+                                      child: Icon(
+                                        Icons.image_not_supported,
+                                        size: context.rf(30),
+                                        color: AppColor.primary,
+                                      ),
                                     ),
                                   ),
-                                ),
+                                )
+
+
                               ),
                             ),
 
@@ -581,12 +603,12 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        const Icon(Icons.sell, size: 13, color: Colors.white),
+                                         Icon(Icons.sell, size:  context.rf(13), color: Colors.white),
                                         const SizedBox(width: 4),
                                         Text(
                                           currency.format(price),
-                                          style: const TextStyle(
-                                            fontSize: 16,
+                                          style:  TextStyle(
+                                            fontSize:  context.rf(16),
                                             fontWeight: FontWeight.w600,
                                             color: Colors.white,
                                           ),
@@ -646,9 +668,9 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
-                                  Icon(Icons.qr_code_2,color: AppColor.textSecondary,size: 15,),
+                                  Icon(Icons.qr_code_2,color: AppColor.textSecondary,size:  context.rf(15),),
                                   SizedBox(width: 10,),
-                                  Text('${product.barcode}',style: TextStyle(fontSize: 14,color: AppColor.textSecondary),)
+                                  Text('${product.barcode}',style: TextStyle(fontSize:  context.rf(15),color: AppColor.textSecondary),)
                                 ],
                               ),
                             !isUsePackSwitch ?  _buildStockLabel('Available Piece: ${formatNumber(qty)}') :  _buildStockLabel('Available Pack: ${formatNumber(qty)}')
@@ -756,7 +778,7 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
                               Text(
                                 'View Variant Now?',
                                 style: TextStyle(
-                                  fontSize: 14,
+                                  fontSize:  context.rf(14),
                                   fontWeight: FontWeight.w600,
                                   color: AppColor.primary,
                                 ),
@@ -836,8 +858,8 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
       ),
       child: Text(
         label,
-        style: const TextStyle(
-          fontSize: 11,
+        style:  TextStyle(
+          fontSize:  context.rf(11),
           fontWeight: FontWeight.w500,
           color: AppColor.textSecondary,
         ),
@@ -848,7 +870,7 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
   Widget _buildStockLabel(String label) {
     // Adjust font size based on label length
     double fontSize;
-    if (label.length <= 20) {
+    if (label.length <=  context.rf(20)) {
       fontSize = 16;
     } else if (label.length <= 35) {
       fontSize = 14;
@@ -870,7 +892,7 @@ class _ProductDetailContentState extends State<_ProductDetailContent> {
   }
 
   double _getFontSizeForName(String name) {
-    return (22 - (name.length * 0.3)).clamp(10.0, 16.0);
+    return ( context.rf(22) - (name.length * 0.3)).clamp(10.0, 16.0);
   }
 
 

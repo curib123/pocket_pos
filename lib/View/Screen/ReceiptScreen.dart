@@ -163,7 +163,7 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
   Widget build(BuildContext context) {
     return Consumer3<ProductProvider, LogProvider, CurrencyProvider>(
       builder: (context, productProvider, logProvider, currencyProvider, _) {
-        final products = productProvider.products;
+        final products = productProvider.getAllProductsWithVariants();
 
         if (paginatedLogs.isEmpty && !isLoadingMore) {
           WidgetsBinding.instance.addPostFrameCallback((_) {

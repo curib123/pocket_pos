@@ -4,9 +4,9 @@ import 'package:pocketpos/Model/product_model.dart';
 import 'package:pocketpos/Model/stock_log.dart';
 
 class LogProvider with ChangeNotifier {
-  final Box<Product> _productBox;
+  final Box<Product> _productBox = Hive.box<Product>('products');
 
-  LogProvider(this._productBox);
+  LogProvider();
 
   List<StockLog> getLogs({
     String? productIdOrName,

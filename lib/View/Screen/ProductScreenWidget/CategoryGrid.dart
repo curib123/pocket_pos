@@ -39,20 +39,34 @@ class CategoryGrid extends StatelessWidget {
           child: LayoutBuilder(
             builder: (context, constraints) {
               final screenWidth = constraints.maxWidth;
-              final crossAxisCount = (screenWidth ~/ 180).clamp(2, 6);
-              final aspectRatio = screenWidth > 600 ? 1.1 : 0.85;
+              final isTablet = screenWidth > 600;
+
+              // Set items per row based on device size
+              final crossAxisCount = isTablet ? 3 : 2;
+
+              // Padding + spacing setup
+              const spacing = 16.0;
+              const outerPadding = 16.0;
+              final totalSpacing = spacing * (crossAxisCount - 1) + outerPadding * 2;
+
+              final usableWidth = screenWidth - totalSpacing;
+              final tileWidth = usableWidth / crossAxisCount;
+              final tileHeight = tileWidth * 1.4; // make it a bit taller
+              final aspectRatio = tileWidth / tileHeight;
 
               return GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
+                padding: const EdgeInsets.symmetric(horizontal: outerPadding, vertical: 12),
                 itemCount: sortedCategories.length,
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: crossAxisCount,
-                  mainAxisSpacing: 16,
-                  crossAxisSpacing: 16,
+                  mainAxisSpacing: spacing,
+                  crossAxisSpacing: spacing,
                   childAspectRatio: aspectRatio,
                 ),
-                itemBuilder: (context, index) {
+
+          itemBuilder: (context, index) {
                   final category = sortedCategories[index];
                   final icon = StoreCategory.icons[category] ?? LucideIcons.tag;
                   final color = StoreCategory.colors[category] ?? Colors.grey;
@@ -130,7 +144,7 @@ class CategoryGrid extends StatelessWidget {
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
                                     fontWeight: FontWeight.w600,
-                                    fontSize: context.rf(15),
+                                    fontSize: context.rf(13),
                                     color: AppColor.textPrimary,
                                   ),
                                 ),

@@ -112,7 +112,6 @@ class _AuthScreenState extends State<AuthScreen> {
                                         }
                                       }, task: () async {
                                         await autoSync(context);
-                                       await refreshProduct(context);
                                         await tabProvider.setFirstTimeFlag(false);
                                       });
 

@@ -37,7 +37,6 @@ class _DashBoardScreenState extends State<DashBoardScreen> {
   void initState() {
     super.initState();
     autoSync(context);
-    refreshProduct(context);
     _refreshMetrics();
     AISnackbarManager.showAIAlert(context, screenName: 'Dashboard Screen');
   }

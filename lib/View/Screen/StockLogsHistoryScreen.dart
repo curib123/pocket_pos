@@ -80,7 +80,7 @@ class _StockLogsHistoryScreenState extends State<StockLogsHistoryScreen> {
   Widget build(BuildContext context) {
     return Consumer2<ProductProvider, LogProvider>(
       builder: (context, productProvider, logProvider, _) {
-        final products = productProvider.products;
+        final products = productProvider.getAllProductsWithVariants();
 
         if (paginatedLogs.isEmpty && !isLoadingMore) {
           WidgetsBinding.instance.addPostFrameCallback((_) {

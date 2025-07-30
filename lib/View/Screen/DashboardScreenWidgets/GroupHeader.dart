@@ -20,7 +20,7 @@ class GroupHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 12),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -33,7 +33,7 @@ class GroupHeader extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 padding: const EdgeInsets.all(6),
-                child: Icon(icon, size: 18, color: AppColor.primary),
+                child: Icon(icon, size: context.rf(18), color: AppColor.primary),
               ),
               const SizedBox(width: 10),
               Shimmer.fromColors(

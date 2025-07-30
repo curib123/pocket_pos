@@ -5,10 +5,10 @@ import 'package:pocketpos/Model/stock_log.dart';
 import 'package:pocketpos/Provider/ProductProvider.dart';
 
 class VariantProductProvider extends ChangeNotifier {
-  final Box<Product> _productBox;
+  final Box<Product> _productBox = Hive.box<Product>('products');
   late ProductProvider _productProvider;
 
-  VariantProductProvider(this._productBox);
+  VariantProductProvider();
 
   void attachProductProvider(ProductProvider provider) {
     _productProvider = provider;
@@ -120,7 +120,6 @@ class VariantProductProvider extends ChangeNotifier {
         await _productBox.put(updatedParent.id, updatedParent);
         debugPrint("📦 New variant saved under parent: ${parent.name} (${parent.id})");
 
-        _productProvider.refreshProducts();
         notifyListeners();
         debugPrint("✅ New variant upsert completed and listeners notified.");
       } else {
@@ -185,7 +184,6 @@ class VariantProductProvider extends ChangeNotifier {
         await _productBox.put(updatedParent.id, updatedParent);
         debugPrint("💾 Existing variant updated under parent: ${parent.name}");
 
-        _productProvider.refreshProducts();
         notifyListeners();
         debugPrint("✅ Existing variant update completed and listeners notified.");
 
@@ -255,7 +253,6 @@ class VariantProductProvider extends ChangeNotifier {
       );
 
       await _productBox.put(updatedParent.id, updatedParent);
-      _productProvider.refreshProducts();
       notifyListeners();
 
 

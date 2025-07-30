@@ -16,100 +16,88 @@ import 'package:pocketpos/View/Screen/ProductScreenWidget/CategoryList.dart';
 import 'package:provider/provider.dart';
 import 'package:animate_do/animate_do.dart';
 
-class ProductScreen extends StatefulWidget {
+class ProductScreen extends StatelessWidget {
   const ProductScreen({super.key});
 
   @override
-  State<ProductScreen> createState() => _ProductScreenState();
-}
-
-class _ProductScreenState extends State<ProductScreen> {
-
-  @override
-  void initState() {
-    // TODO: implement initState
-    super.initState();
-   Future.delayed(Duration.zero,() async =>  await refreshProduct(context));
-  }
-  @override
   Widget build(BuildContext context) {
-    return Consumer3<ProductProvider, SwitchProvider, StoreCategoryProvider>(
-      builder: (context, productProvider, switchProvider, storeCategoryProvider, _) {
-        final categories = switchProvider.isArchiveView
-            ? storeCategoryProvider.hiddenCategories
-            : storeCategoryProvider.visibleCategories;
-
-        return SafeArea(
-          child: Scaffold(
-            appBar: SearchAndCartAppBar(),
-            drawer: AppDrawer(),
-            bottomNavigationBar: SlideInUp(
-              duration: const Duration(milliseconds: 500),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    CustomButton(
-                      text: "View All Products",
-                      isFilled: false,
-                      icon: LucideIcons.box,
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => ProductListScreen(category: ''),
-                          ),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 10),
-                    CustomButton(
-                      text: "Add Products",
-                      icon: LucideIcons.plusCircle,
-                      onPressed: () {
-                        Future.delayed(const Duration(milliseconds: 100), () {
-                          showModalBottomSheet(
-                            context: context,
-                            isScrollControlled: true,
-                            backgroundColor: Colors.transparent,
-                            shape: const RoundedRectangleBorder(
-                              borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
-                            ),
-                            builder: (context) {
-                              return DraggableScrollableSheet(
-                                expand: false,
-                                maxChildSize: 0.95,
-                                initialChildSize: 0.8,
-                                minChildSize: 0.75,
-                                builder: (_, controller) => Padding(
-                                  padding: EdgeInsets.only(
-                                    bottom: MediaQuery.of(context).viewInsets.bottom,
-                                  ),
-                                  child: Material(
-                                    borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
-                                    color: Colors.white,
-                                    child: SafeArea(
-                                      top: false,
-                                      child: SingleChildScrollView(
-                                        controller: controller,
-                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-                                        child: UpsertProductModal(Category: ''),
-                                      ),
-                                    ),
+    return SafeArea(
+      child: Scaffold(
+        appBar: SearchAndCartAppBar(),
+        drawer: AppDrawer(),
+        bottomNavigationBar: SlideInUp(
+          duration: const Duration(milliseconds: 500),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CustomButton(
+                  text: "View All Products",
+                  isFilled: false,
+                  icon: LucideIcons.box,
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => ProductListScreen(category: ''),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 10),
+                CustomButton(
+                  text: "Add Products",
+                  icon: LucideIcons.plusCircle,
+                  onPressed: () {
+                    Future.delayed(const Duration(milliseconds: 100), () {
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        shape: const RoundedRectangleBorder(
+                          borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+                        ),
+                        builder: (context) {
+                          return DraggableScrollableSheet(
+                            expand: false,
+                            maxChildSize: 0.95,
+                            initialChildSize: 0.8,
+                            minChildSize: 0.75,
+                            builder: (_, controller) => Padding(
+                              padding: EdgeInsets.only(
+                                bottom: MediaQuery.of(context).viewInsets.bottom,
+                              ),
+                              child: Material(
+                                borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
+                                color: Colors.white,
+                                child: SafeArea(
+                                  top: false,
+                                  child: SingleChildScrollView(
+                                    controller: controller,
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                                    child: UpsertProductModal(Category: ''),
                                   ),
                                 ),
-                              );
-                            },
+                              ),
+                            ),
                           );
-                        });
-                      },
-                    ),
-                  ],
+                        },
+                      );
+                    });
+                  },
                 ),
-              ),
+              ],
             ),
-            body: RefreshIndicator(
+          ),
+        ),
+        body: Consumer3<ProductProvider, SwitchProvider, StoreCategoryProvider>(
+          builder: (context, productProvider, switchProvider, storeCategoryProvider, _) {
+            final categories = switchProvider.isArchiveView
+                ? storeCategoryProvider.hiddenCategories
+                : storeCategoryProvider.visibleCategories;
+
+            return RefreshIndicator(
               onRefresh: () async {
                 await showLoadingAndNotify(context: context, task: () async => await autoSync(context));
               },
@@ -137,8 +125,7 @@ class _ProductScreenState extends State<ProductScreen> {
                                   switchProvider.toggleArchiveView();
                                 },
                                 style: TextButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                      vertical: 8, horizontal: 10),
+                                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
                                   backgroundColor: AppColor.primary,
                                   foregroundColor: AppColor.surface,
                                 ),
@@ -168,20 +155,19 @@ class _ProductScreenState extends State<ProductScreen> {
                                   child: SlideTransition(position: offsetAnimation, child: child),
                                 );
                               },
-                               child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
-                            child: Text(
-                              switchProvider.isArchiveView
-                                  ? 'Swipe right to unhide categories →'
-                                  : 'Swipe left to hide categories ←',
-                              key: ValueKey(switchProvider.isArchiveView), // ✅ Move key to Text
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: AppColor.textSecondary.withOpacity(0.7),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
+                                child: Text(
+                                  switchProvider.isArchiveView
+                                      ? 'Swipe right to unhide categories →'
+                                      : 'Swipe left to hide categories ←',
+                                  key: ValueKey(switchProvider.isArchiveView),
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: AppColor.textSecondary.withOpacity(0.7),
+                                  ),
+                                ),
                               ),
-                            ),
-                          ),
-
                             ),
                           ),
                         ),
@@ -229,12 +215,10 @@ class _ProductScreenState extends State<ProductScreen> {
                             key: ValueKey('categoryList-${switchProvider.isArchiveView}'),
                             categories: categories,
                           )
-
                               : CategoryGrid(
                             key: ValueKey('CategoryGrid-${switchProvider.isArchiveView}'),
                             categories: categories,
-                          )
-
+                          ),
                         ),
                       ],
                     ),
@@ -264,9 +248,7 @@ class _ProductScreenState extends State<ProductScreen> {
                               switchProvider.toggleCategoryGridView();
                             },
                             icon: Icon(
-                              switchProvider.isCategoryGridView
-                                  ? Icons.layers
-                                  : Icons.dashboard,
+                              switchProvider.isCategoryGridView ? Icons.layers : Icons.dashboard,
                               color: Colors.white,
                             ),
                             iconSize: 24,
@@ -277,14 +259,12 @@ class _ProductScreenState extends State<ProductScreen> {
                       ),
                     ),
                   ),
-
-
                 ],
               ),
-            ),
-          ),
-        );
-      },
+            );
+          },
+        ),
+      ),
     );
   }
 }

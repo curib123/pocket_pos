@@ -19,14 +19,18 @@ class AISnackbarManager {
       final response = await _ai.ask(
         options: AIRequestOptions(
           prompt: '''
-Analyze the stock data and return one short actionable insight for the $screenName screen. 
-Focus on low stock, fast-moving, overstocked, or inactive items. 
-Keep it under 15 words. Avoid quotes and special characters. End with a status tag like [status: good], [status: bad], or [status: neutral].
-Example: Low stock on 5 fast-selling items. [status: bad]
+You are an AI that summarizes inventory insights in one concise sentence, no more than 10 words.
+Only mention low stock, fast-selling, overstocked, or inactive items.
+Do not use quotes, special characters, or multiple sentences.
+Always end the sentence with exactly one status tag in this format: [status: good], [status: bad], or [status: neutral].
+Return nothing else.
+Format strictly: Insight here. [status: tag]
+Example: Overstocked items not selling for 3 weeks. [status: bad]
 ''',
           data: data,
         ),
       );
+
 
       if (!context.mounted) return;
 

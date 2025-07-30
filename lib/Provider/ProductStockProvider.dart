@@ -9,9 +9,9 @@ import 'package:pocketpos/Model/stock_log.dart';
 import 'package:pocketpos/View/Components/Alert/CustomNotificationDialog.dart';
 
 class ProductStockProvider extends ChangeNotifier {
-  final Box<Product> _productBox;
+  final Box<Product> _productBox = Hive.box<Product>('products');
 
-  ProductStockProvider(this._productBox);
+  ProductStockProvider();
 
   Product? _getProduct(String idOrName) {
     final normalized = idOrName.trim().toLowerCase();
@@ -500,7 +500,6 @@ class ProductStockProvider extends ChangeNotifier {
   }
 
   List<Product> getProductsByStockRange({required int minQty, required int maxQty,required BuildContext context}) {
-    refreshProduct(context);
     final List<Product> matchingProducts = [];
 
     for (final product in _productBox.values) {

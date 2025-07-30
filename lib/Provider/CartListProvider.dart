@@ -5,9 +5,9 @@ import 'package:pocketpos/Model/product_model.dart';
 
 class CartListProvider with ChangeNotifier {
   final List<CartItem> _cartItems = [];
-  final Box<Product> _productBox;
+  final Box<Product> _productBox = Hive.box<Product>('products');
 
-  CartListProvider(this._productBox);
+  CartListProvider();
 
   List<CartItem> get cartItems => List.unmodifiable(_cartItems);
 
