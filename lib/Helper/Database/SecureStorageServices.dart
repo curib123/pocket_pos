@@ -3,6 +3,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 class SecureStorageService {
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
+  // 🔐 Save user data
   Future<void> saveUser({
     required String email,
     required String userId,
@@ -15,6 +16,7 @@ class SecureStorageService {
     await _storage.write(key: 'ownerName', value: ownerName);
   }
 
+  // 📥 Read user data
   Future<Map<String, String?>> readUser() async {
     return {
       'email': await _storage.read(key: 'email'),
@@ -24,12 +26,12 @@ class SecureStorageService {
     };
   }
 
-  // Save trial expiration date
+  // 🕒 Save trial expiration date
   Future<void> saveTrialExpirationDate(DateTime date) async {
     await _storage.write(key: 'trialExpirationDate', value: date.toIso8601String());
   }
 
-  // Read trial expiration date
+  // ⏳ Read trial expiration date
   Future<DateTime?> readTrialExpirationDate() async {
     final dateString = await _storage.read(key: 'trialExpirationDate');
     if (dateString == null) return null;
@@ -40,7 +42,20 @@ class SecureStorageService {
       return null;
     }
   }
+
+  // 🧼 Wipe everything
   Future<void> clearAll() async {
     await _storage.deleteAll();
   }
+
+// 🔐 Save Supabase Key
+  Future<void> saveSupabaseKey(String key) async {
+    await _storage.write(key: 'supabaseKey', value: key);
+  }
+
+// 🔍 Read Supabase Key
+  Future<String?> readSupabaseKey() async {
+    return await _storage.read(key: 'supabaseKey');
+  }
+
 }

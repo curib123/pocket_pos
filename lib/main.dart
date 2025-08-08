@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:pocketpos/Helper/Database/SecureStorageServices.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -33,7 +35,10 @@ import 'package:pocketpos/home.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Init Hive and register adapters
+  // 🌿 Load environment variables
+  await dotenv.load(fileName: ".env");
+
+  // 🐝 Init Hive
   await Hive.initFlutter();
   Hive
     ..registerAdapter(ProductAdapter())
@@ -43,15 +48,31 @@ Future<void> main() async {
     ..registerAdapter(StockLogReasonAdapter())
     ..registerAdapter(LoanItemAdapter());
 
-  // Open Boxes
   await Hive.openBox<Product>('products');
   await Hive.openBox('categoryVisibility');
   await Hive.openBox('settings_currency');
 
-  // Supabase Init
-  const supabaseUrl = 'https://ftqrtildlcgfmfqczwle.supabase.co';
-  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ0cXJ0aWxkbGNnZm1mcWN6d2xlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE2ODU0MDIsImV4cCI6MjA2NzI2MTQwMn0.Q3I5PojjIcH4MoOQHA98BQG28HY_EatpMcElc_iXP-s';
-  await Supabase.initialize(url: supabaseUrl, anonKey: supabaseKey);
+  // 🔐 Secure Storage
+  final storage = SecureStorageService();
+
+  // 🚫 No hardcoded keys here!
+  final supabaseKey = dotenv.env['SUPABASE_ANON_KEY'];
+  final supabaseUrl = dotenv.env['SUPABASE_URL'];
+
+  if (supabaseKey == null || supabaseUrl == null) {
+    throw Exception("Supabase environment variables are missing!");
+  }
+
+  final existingKey = await storage.readSupabaseKey();
+  if (existingKey == null || existingKey.isEmpty) {
+    await storage.saveSupabaseKey(supabaseKey);
+  }
+
+  // Supabase init
+  await Supabase.initialize(
+    url: supabaseUrl,
+    anonKey: supabaseKey,
+  );
 
   runApp(
     Phoenix(
