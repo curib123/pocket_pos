@@ -10,8 +10,6 @@ import 'package:pocketpos/View/Components/Custom/CustomFlatDropdown.dart';
 
 class PaymentForm extends StatefulWidget {
   final void Function(String paymentMethod, File proofFile) onSubmit;
-
-  // Only initial payment method for edit prefill
   final String? initialPaymentMethod;
 
   const PaymentForm({
@@ -37,7 +35,6 @@ class _PaymentFormState extends State<PaymentForm> {
     super.initState();
     fetchPaymentMethods();
 
-    // Prefill only payment method dropdown for edit
     if (widget.initialPaymentMethod != null) {
       selectedPaymentMethod = widget.initialPaymentMethod;
     }
@@ -193,32 +190,100 @@ class _PaymentFormState extends State<PaymentForm> {
                 },
               ),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 10),
 
-              /// 🖼 Upload Proof
+              /// 📎 Proof File Upload
               Text(
-                "Upload Payment Proof",
+                "Got a screenshot or receipt? Upload it here",
                 style: Theme.of(context).textTheme.labelMedium,
               ),
               const SizedBox(height: 8),
-              OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
+
+              GestureDetector(
+                onTap: _pickProofFile,
+                child: Stack(
+                  children: [
+                    // Image or Placeholder
+                    Container(
+                      width: double.infinity,
+                      height: 150,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: Colors.grey.shade300),
+                        color: Colors.grey.shade100,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.04),
+                            blurRadius: 6,
+                            offset: const Offset(0, 3),
+                          )
+                        ],
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: selectedProofFile != null
+                          ? Image.file(
+                        selectedProofFile!,
+                        fit: BoxFit.cover,
+                      )
+                          : Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: const [
+                          Icon(LucideIcons.upload, size: 40, color: Colors.black45),
+                          SizedBox(height: 8),
+                          Text(
+                            "Tap to upload Payment Proof/Receipt",
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.black45,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Semi-transparent overlay for "Tap to change" instruction
+                    if (selectedProofFile != null)
+                      Positioned.fill(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.25),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: const Center(
+                            child: Text(
+                              "📎 Tap to change image",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
-                onPressed: _pickProofFile,
-                icon: const Icon(LucideIcons.upload),
-                label: Text(proofFileName ?? "Select image file"),
               ),
+
+// File name display
               if (proofFileName != null)
                 Padding(
                   padding: const EdgeInsets.only(top: 6),
                   child: Text(
                     proofFileName!,
-                    style: const TextStyle(fontSize: 12, color: AppColor.textSecondary),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColor.textSecondary,
+                    ),
+                    textAlign: TextAlign.center,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
 
               const SizedBox(height: 32),
+
 
               /// ✅ Submit Button
               CustomButton(
