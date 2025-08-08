@@ -113,35 +113,36 @@ class _PaymentFormState extends State<PaymentForm> {
           ),
         )
             : Padding(
-          padding: const EdgeInsets.all(24.0),
+          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16),
           child: ListView(
             children: [
               /// 🔘 Payment Instructions
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                 decoration: BoxDecoration(
                   color: Colors.grey[50],
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey[300]!),
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: const [
-                        Icon(LucideIcons.info, size: 18, color: Colors.black54),
-                        SizedBox(width: 8),
+                        Icon(LucideIcons.info, size: 17, color: Colors.black54),
+                        SizedBox(width: 6),
                         Text(
                           "Payment Instructions",
                           style: TextStyle(
-                            fontSize: 14.5,
+                            fontSize: 13.5,
                             fontWeight: FontWeight.w600,
                             color: Colors.black87,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 10),
+
+                    /// Mapped instructions
                     ...paymentOptions.map((method) {
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 12),
@@ -156,13 +157,20 @@ class _PaymentFormState extends State<PaymentForm> {
                                 color: Colors.black87,
                               ),
                             ),
-                            const SizedBox(height: 2),
-                            SelectableText(
-                              method['instruction'],
-                              style: const TextStyle(
-                                fontSize: 12.5,
-                                color: Colors.black54,
-                                height: 1.3,
+                            const SizedBox(height: 4),
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.025),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: SelectableText(
+                                method['instruction'],
+                                style: const TextStyle(
+                                  fontSize: 12.5,
+                                  color: Colors.black87,
+                                  height: 1.4,
+                                ),
                               ),
                             ),
                           ],
@@ -173,7 +181,7 @@ class _PaymentFormState extends State<PaymentForm> {
                 ),
               ),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
 
               /// 🔽 Payment Method Dropdown
               CustomFlatDropdown<String>(
@@ -195,29 +203,20 @@ class _PaymentFormState extends State<PaymentForm> {
               /// 📎 Proof File Upload
               Text(
                 "Got a screenshot or receipt? Upload it here",
-                style: Theme.of(context).textTheme.labelMedium,
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(fontSize: 12.5),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
 
               GestureDetector(
                 onTap: _pickProofFile,
                 child: Stack(
                   children: [
-                    // Image or Placeholder
                     Container(
                       width: double.infinity,
-                      height: 150,
+                      height: 140,
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: Colors.grey.shade300),
+                        borderRadius: BorderRadius.circular(12),
                         color: Colors.grey.shade100,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.04),
-                            blurRadius: 6,
-                            offset: const Offset(0, 3),
-                          )
-                        ],
                       ),
                       clipBehavior: Clip.antiAlias,
                       child: selectedProofFile != null
@@ -228,13 +227,13 @@ class _PaymentFormState extends State<PaymentForm> {
                           : Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: const [
-                          Icon(LucideIcons.upload, size: 40, color: Colors.black45),
-                          SizedBox(height: 8),
+                          Icon(LucideIcons.upload, size: 36, color: Colors.black45),
+                          SizedBox(height: 6),
                           Text(
                             "Tap to upload Payment Proof/Receipt",
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.black45,
+                              color: Colors.black54,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -242,20 +241,19 @@ class _PaymentFormState extends State<PaymentForm> {
                       ),
                     ),
 
-                    // Semi-transparent overlay for "Tap to change" instruction
                     if (selectedProofFile != null)
                       Positioned.fill(
                         child: Container(
                           decoration: BoxDecoration(
                             color: Colors.black.withOpacity(0.25),
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(12),
                           ),
                           child: const Center(
                             child: Text(
                               "📎 Tap to change image",
                               style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 13,
+                                fontSize: 12.5,
                                 fontWeight: FontWeight.w500,
                               ),
                               textAlign: TextAlign.center,
@@ -267,14 +265,14 @@ class _PaymentFormState extends State<PaymentForm> {
                 ),
               ),
 
-// File name display
+              /// File name
               if (proofFileName != null)
                 Padding(
-                  padding: const EdgeInsets.only(top: 6),
+                  padding: const EdgeInsets.only(top: 4),
                   child: Text(
                     proofFileName!,
                     style: const TextStyle(
-                      fontSize: 12,
+                      fontSize: 11.5,
                       color: AppColor.textSecondary,
                     ),
                     textAlign: TextAlign.center,
@@ -282,8 +280,7 @@ class _PaymentFormState extends State<PaymentForm> {
                   ),
                 ),
 
-              const SizedBox(height: 32),
-
+              const SizedBox(height: 24),
 
               /// ✅ Submit Button
               CustomButton(
@@ -295,7 +292,8 @@ class _PaymentFormState extends State<PaymentForm> {
               ),
             ],
           ),
-        ),
+        )
+
       ),
     );
   }
