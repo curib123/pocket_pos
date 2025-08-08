@@ -1,7 +1,11 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:pocketpos/Helper/Database/SecureStorageServices.dart';
 import 'package:pocketpos/View/Components/Alert/CustomConfimDialog.dart';
+import 'package:pocketpos/View/Screen/Sub/PaymentForm.dart';
+import 'package:pocketpos/View/Screen/Sub/VerificationPaymentScreen.dart';
 import 'package:pocketpos/View/Screen/Sub/VerificationScreen.dart';
 import 'package:provider/provider.dart';
 
@@ -131,6 +135,26 @@ class _HomeState extends State<Home> {
 
     print('[Home] hasTrial: $hasTrial | hasPurchase: $hasPurchase');
 
+    final details = await purchaseService.getPaymentDetails();
+
+    if (details != null &&
+        (details['paymentMethod'] as String?)?.isNotEmpty == true &&
+        (details['paymentProofUrl'] as String?)?.isNotEmpty == true &&
+        !hasPurchase
+    ) {
+
+      // ✅ Both method and proof URL exist and are not empty
+      print("🧾 Payment method and proof provided.");
+
+      // Do something here, e.g. show verification screen
+      _navigateToVerificationPaymentScreen();
+      return;
+    } else {
+      print("❌ Missing payment method or proof.");
+      // Maybe prompt user to upload proof or select method
+    }
+
+
     if (!hasTrial && !hasPurchase) {
       _navigateToVerification(purchaseService);
       return;
@@ -138,6 +162,22 @@ class _HomeState extends State<Home> {
 
     setState(() => _isLoading = false);
   }
+
+
+  void _navigateToVerificationPaymentScreen() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (newContext) => VerificationPaymentScreen(
+          onApproved: () async {
+            await Future.delayed(const Duration(milliseconds: 300));
+            // Use the new screen's context (newContext), which is still mounted
+            Phoenix.rebirth(newContext);
+          },
+        ),
+      ),
+    );
+  }
+
 
   void _navigateToVerification(PurchaseService purchaseService) {
     Navigator.of(context).pushReplacement(
@@ -168,7 +208,44 @@ class _HomeState extends State<Home> {
             );
           },
           onPurchase: () {
-            // TODO: handle purchase logic here
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => PaymentForm(
+                  onSubmit: (String paymentMethod, File file) {
+                    // Wrap the actual submit inside a confirm dialog first
+                    showDialog(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (context) => WillPopScope(
+                        onWillPop: () async => false,
+                        child: CustomConfirmDialog(
+                          title: "Confirm Payment Submission",
+                          content:
+                          "Are you sure you want to submit this payment using \"$paymentMethod\"?",
+                          onConfirm: () async {
+                            Navigator.of(context).pop(); // close dialog
+                            try {
+                              await purchaseService.sendPayment(
+                                file: file,
+                                paymentMethod: paymentMethod,
+                              );
+                              Phoenix.rebirth(context);
+                            } catch (e) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('❌ Failed to submit payment: $e'),
+                                ),
+                              );
+                            }
+                          },
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            );
           },
         ),
       ),
