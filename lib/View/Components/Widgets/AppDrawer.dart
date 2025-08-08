@@ -109,26 +109,7 @@ class AppDrawer extends StatelessWidget {
                                     label: 'Manage Categories',
                                     onTap: () => _push(context, const SetupCategoryScreen()),
                                   ),
-                                  _DrawerItem(
-                                    icon: LucideIcons.info,
-                                    label: 'About PocketPOS',
-                                    onTap: () {
-                                      showAboutDialog(
-                                        context: context,
-                                        applicationName: appName,
-                                        applicationVersion: 'v$version ($buildNumber)',
-                                        applicationLegalese: '© ${DateTime.now().year} NextTech\nAll rights reserved.',
-                                        children: const [
-                                          SizedBox(height: 16),
-                                          Text(
-                                            "PocketPOS helps you manage inventory and sales, even offline. Made for small teams doing big things.",
-                                            style: TextStyle(height: 1.5),
-                                          ),
-                                          SizedBox(height: 16),
-                                        ],
-                                      );
-                                    },
-                                  ),
+
                                   const SizedBox(height: 16),
                                 ],
                               ),
@@ -139,12 +120,25 @@ class AppDrawer extends StatelessWidget {
                           Column(
                             children: [
                               const Divider(thickness: 1, color: AppColor.textSecondary),
-                              const SizedBox(height: 12),
+                              const SizedBox(height: 8),
                               _DrawerItem(
-                                icon: LucideIcons.settings,
-                                label: 'App Settings',
+                                icon: LucideIcons.info,
+                                label: 'About PocketPOS',
                                 onTap: () {
-                                  showAboutDialog(context: context);
+                                  showAboutDialog(
+                                    context: context,
+                                    applicationName: appName,
+                                    applicationVersion: 'v$version ($buildNumber)',
+                                    applicationLegalese: '© ${DateTime.now().year} NextTech\nAll rights reserved.',
+                                    children: const [
+                                      SizedBox(height: 16),
+                                      Text(
+                                        "PocketPOS helps you manage inventory and sales, even offline. Made for small teams doing big things.",
+                                        style: TextStyle(height: 1.5),
+                                      ),
+                                      SizedBox(height: 16),
+                                    ],
+                                  );
                                 },
                               ),
                               const SizedBox(height: 8),

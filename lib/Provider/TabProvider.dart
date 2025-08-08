@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:pocketpos/View/Screen/DashBoardScreen.dart';
 import 'package:pocketpos/View/Screen/LoanScreen.dart';
 import 'package:pocketpos/View/Screen/ProductScreen.dart';
+import 'package:pocketpos/View/Screen/ProfileScreen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class TabProvider extends ChangeNotifier {
@@ -15,7 +16,7 @@ class TabProvider extends ChangeNotifier {
   DashBoardScreen(),
   ProductScreen(),
   LoanScreen(),
-  DashBoardScreen(),
+  ProfileScreen(),
   ];
 
   TabProvider() {

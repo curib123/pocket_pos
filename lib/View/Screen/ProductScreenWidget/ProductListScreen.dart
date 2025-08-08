@@ -378,7 +378,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
     );
   }
 
-  Widget _buildGridView(List<Product> products, currencyFormat,
+  Widget _buildGridView(List<Product> products, CurrencyProvider currencyProvider,
       SwitchProvider switchProvider) {
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -493,7 +493,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                           children: [
                             if (isPiece && !isPack)
                               Text(
-                                '${currencyFormat.format(
+                                '${currencyProvider.formatAmount(
                                     stock!.retailPrice)} / piece',
                                 style: TextStyle(
                                   color: Colors.black,
@@ -502,7 +502,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                               ),
                             if (isPack && !isPiece)
                               Text(
-                                '${currencyFormat.format(
+                                '${currencyProvider.formatAmount(
                                     stock!.retailPrice)} / pack',
                                 style: TextStyle(
                                   color: Colors.black,
@@ -512,7 +512,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                             if (isPack && isPiece &&
                                 (product.piecesPerPack ?? 0) > 0) ...[
                               Text(
-                                '${currencyFormat.format(
+                                '${currencyProvider.formatAmount(
                                     stock!.retailPrice)} / pack',
                                 style: TextStyle(
                                   color: Colors.black,
@@ -520,7 +520,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                                 ),
                               ),
                               Text(
-                                '${currencyFormat.format(stock.retailPrice /
+                                '${currencyProvider.formatAmount(stock.retailPrice /
                                     product.piecesPerPack!)} / piece',
                                 style: TextStyle(
                                   color: Colors.black,
@@ -620,7 +620,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
     );
   }
 
-  Widget _buildListView(List<Product> products, currencyFormat,
+  Widget _buildListView(List<Product> products, CurrencyProvider currencyProvider,
       SwitchProvider switchProvider) {
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -736,22 +736,22 @@ class _ProductListScreenState extends State<ProductListScreen> {
                                 ...(hasStock
                                     ? [
                                   if (isPiece && !isPack)
-                                    Text('${currencyFormat.format(
+                                    Text('${currencyProvider.formatAmount(
                                         stock!.retailPrice)} / piece',
                                         style: TextStyle(color: Colors.grey,
                                             fontSize: context.rf(10))),
                                   if (isPack && !isPiece)
-                                    Text('${currencyFormat.format(
+                                    Text('${currencyProvider.formatAmount(
                                         stock!.retailPrice)} / pack',
                                         style: TextStyle(color: Colors.grey,
                                             fontSize: context.rf(10))),
                                   if (isPack && isPiece &&
                                       (product.piecesPerPack ?? 0) > 0) ...[
-                                    Text('${currencyFormat.format(
+                                    Text('${currencyProvider.formatAmount(
                                         stock!.retailPrice)} / pack',
                                         style: TextStyle(color: Colors.grey,
                                             fontSize: context.rf(10))),
-                                    Text('${currencyFormat.format(
+                                    Text('${currencyProvider.formatAmount(
                                         stock.retailPrice /
                                             product.piecesPerPack!)} / piece',
                                         style: TextStyle(color: Colors.grey,
