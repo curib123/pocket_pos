@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:pocketpos/View/Screen/Main/DashboardScreenWidgets/ProductDashboardStats.dart';
 import 'package:provider/provider.dart';
 import 'package:pocketpos/Provider/CurrencyProvider.dart';
 import 'package:pocketpos/Provider/SwitchProvider.dart';
 import 'package:pocketpos/Provider/ProductProvider.dart';
 import 'package:pocketpos/View/Components/Widgets/AISnackbarManager.dart';
-import 'package:pocketpos/View/Screen/DashboardScreenWidgets/ProductDashboardStats.dart';
-import 'package:pocketpos/View/Screen/PoSReportScreen.dart';
-import 'package:pocketpos/View/Screen/PosChatScreen.dart';
+import 'package:pocketpos/View/Screen/Sub/PoSReportScreen.dart';
+import 'package:pocketpos/View/Screen/Sub/PosChatScreen.dart';
 import 'package:pocketpos/View/Components/Custom/CustomFlatDropdown.dart';
 import 'package:pocketpos/View/Components/Widgets/GreetingsCardWidget.dart';
 import 'package:pocketpos/View/Components/Widgets/AppDrawer.dart';

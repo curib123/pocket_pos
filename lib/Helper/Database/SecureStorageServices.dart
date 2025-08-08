@@ -24,6 +24,22 @@ class SecureStorageService {
     };
   }
 
+  // Save trial expiration date
+  Future<void> saveTrialExpirationDate(DateTime date) async {
+    await _storage.write(key: 'trialExpirationDate', value: date.toIso8601String());
+  }
+
+  // Read trial expiration date
+  Future<DateTime?> readTrialExpirationDate() async {
+    final dateString = await _storage.read(key: 'trialExpirationDate');
+    if (dateString == null) return null;
+
+    try {
+      return DateTime.parse(dateString);
+    } catch (_) {
+      return null;
+    }
+  }
   Future<void> clearAll() async {
     await _storage.deleteAll();
   }

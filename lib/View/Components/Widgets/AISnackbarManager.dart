@@ -14,12 +14,20 @@ class AISnackbarManager {
       }) async {
     try {
       final products = context.read<ProductProvider>().getAllProductsWithVariants();
+
+      // 🛑 Skip if there's no data to analyze
+      if (products.isEmpty) {
+        debugPrint('AISnackbarManager: No products found. Skipping AI alert.');
+        return;
+      }
+
       final data = products.map((e) => e.toMap()).toList();
 
       final response = await _ai.ask(
         options: AIRequestOptions(
           prompt: '''
 You are an AI that summarizes inventory insights in one concise sentence, no more than 10 words.
+If there is no data, say: No inventory activity to summarize. [status: neutral]
 Only mention low stock, fast-selling, overstocked, or inactive items.
 Do not use quotes, special characters, or multiple sentences.
 Always end the sentence with exactly one status tag in this format: [status: good], [status: bad], or [status: neutral].
@@ -30,7 +38,6 @@ Example: Overstocked items not selling for 3 weeks. [status: bad]
           data: data,
         ),
       );
-
 
       if (!context.mounted) return;
 

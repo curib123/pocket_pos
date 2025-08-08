@@ -25,7 +25,7 @@ import 'package:pocketpos/View/Components/Custom/CustomTextField.dart';
 import 'package:pocketpos/Helper/Classes_Methods/AppColor.dart';
 import 'package:pocketpos/View/Components/Modal/UpsertWidgets/ProductSubmitHelper.dart';
 import 'package:pocketpos/View/Components/Modal/UpsertWidgets/helperWidgets.dart';
-import 'package:pocketpos/View/Screen/BarcodeScannerScreen.dart';
+import 'package:pocketpos/View/Screen/Sub/BarcodeScannerScreen.dart';
 import 'package:provider/provider.dart';
 
 class UpsertProductModal extends StatefulWidget {

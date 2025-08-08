@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
+import 'package:pocketpos/Helper/Database/PurchaseService.dart';
 import 'package:pocketpos/Helper/Database/SecureStorageServices.dart';
 import 'package:pocketpos/Provider/ProductProvider.dart';
 import 'package:pocketpos/Provider/TabProvider.dart';
@@ -88,6 +89,7 @@ class AuthProvider with ChangeNotifier {
           ownerName: data['owner_name'],
         );
         print('[AuthProvider] User data saved in secure storage');
+
       }
     } catch (e) {
       print('[AuthProvider] SignIn Error: $e');

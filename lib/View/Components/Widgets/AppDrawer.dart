@@ -8,12 +8,12 @@ import 'package:pocketpos/Provider/AuthProvider.dart';
 import 'package:pocketpos/Provider/ProductProvider.dart';
 import 'package:pocketpos/Provider/TabProvider.dart';
 import 'package:pocketpos/View/Components/Alert/CustomConfimDialog.dart';
-import 'package:pocketpos/View/Screen/PoSReportScreen.dart';
-import 'package:pocketpos/View/Screen/PosChatScreen.dart';
-import 'package:pocketpos/View/Screen/ReceiptScreen.dart';
-import 'package:pocketpos/View/Screen/RestoreProductScreen.dart';
-import 'package:pocketpos/View/Screen/SetupCategoryScreen.dart';
-import 'package:pocketpos/View/Screen/StockLogsHistoryScreen.dart';
+import 'package:pocketpos/View/Screen/Sub/PoSReportScreen.dart';
+import 'package:pocketpos/View/Screen/Sub/PosChatScreen.dart';
+import 'package:pocketpos/View/Screen/Sub/ReceiptScreen.dart';
+import 'package:pocketpos/View/Screen/Sub/RestoreProductScreen.dart';
+import 'package:pocketpos/View/Screen/Sub/SetupCategoryScreen.dart';
+import 'package:pocketpos/View/Screen/Sub/StockLogsHistoryScreen.dart';
 import 'package:provider/provider.dart';
 
 class AppDrawer extends StatelessWidget {
@@ -129,7 +129,7 @@ class AppDrawer extends StatelessWidget {
                                     context: context,
                                     applicationName: appName,
                                     applicationVersion: 'v$version ($buildNumber)',
-                                    applicationLegalese: '© ${DateTime.now().year} NextTech\nAll rights reserved.',
+                                    applicationLegalese: '© ${DateTime.now().year} CuribTech\nAll rights reserved.',
                                     children: const [
                                       SizedBox(height: 16),
                                       Text(

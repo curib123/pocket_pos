@@ -1,28 +1,116 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:animate_do/animate_do.dart';
+import 'package:pocketpos/Helper/Database/PurchaseService.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:pocketpos/Helper/Classes_Methods/AppColor.dart';
 import 'package:pocketpos/Helper/Database/SecureStorageServices.dart';
 import 'package:pocketpos/View/Components/Widgets/ResponsiveText.dart';
-import 'package:shimmer/shimmer.dart';
 
 class GreetingCard extends StatelessWidget {
   const GreetingCard({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<Map<String, String?>>(
-      future: SecureStorageService().readUser(),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) return const SizedBox(); // Less janky than loader
+    final storage = SecureStorageService();
+    final purchase = PurchaseService();
 
-        final data = snapshot.data!;
+    return FutureBuilder<Map<String, String?>>(
+      future: storage.readUser(),
+      builder: (context, userSnapshot) {
+        if (!userSnapshot.hasData) return const SizedBox();
+
+        final data = userSnapshot.data!;
         final ownerName = data['ownerName'] ?? 'Unknown Owner';
         final storeName = data['storeName'] ?? 'Your Store';
 
-        return _GreetingCardUI(
-          ownerName: ownerName,
-          storeName: storeName,
+        return FutureBuilder<DateTime?>(
+          future: storage.readTrialExpirationDate(),
+          builder: (context, trialSnapshot) {
+            if (trialSnapshot.connectionState != ConnectionState.done) {
+              return const SizedBox();
+            }
+
+            final now = DateTime.now();
+            String trialMessage = '';
+            bool isExpired = false;
+
+            if (trialSnapshot.hasData && trialSnapshot.data != null) {
+              final expirationDate = trialSnapshot.data!;
+              isExpired = now.isAfter(expirationDate);
+              final formattedDate =
+                  "${expirationDate.month}/${expirationDate.day}/${expirationDate.year}";
+
+              trialMessage = isExpired
+                  ? "⛔ Your free trial expired on $formattedDate"
+                  : "✅ Your trial is active until $formattedDate";
+            }
+
+            return FutureBuilder<bool>(
+              future: purchase.getTrial(),
+              builder: (context, trialStatusSnapshot) {
+                final shouldShowTrial = trialStatusSnapshot.data ?? false;
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _GreetingCardUI(
+                      ownerName: ownerName,
+                      storeName: storeName,
+                    ),
+                    if (trialMessage.isNotEmpty && shouldShowTrial) ...[
+                      const SizedBox(height: 12),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 10),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(16),
+                            gradient: LinearGradient(
+                              colors: [
+                                Colors.indigo.withOpacity(0.85),
+                                Colors.blueAccent.withOpacity(0.75),
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.blueAccent.withOpacity(0.3),
+                                blurRadius: 12,
+                                offset: const Offset(0, 6),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                LucideIcons.clock4,
+                                size: 20,
+                                color: Colors.white.withOpacity(0.9),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  trialMessage,
+                                  style: TextStyle(
+                                    fontSize: context.rf(12),
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.white.withOpacity(0.95),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                );
+              },
+            );
+          },
         );
       },
     );
@@ -49,7 +137,10 @@ class _GreetingCardUI extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
           gradient: LinearGradient(
-            colors: [AppColor.primary, AppColor.primary.withOpacity(0.60)],
+            colors: [
+              Colors.indigo.withOpacity(0.85),
+              Colors.blueAccent.withOpacity(0.75),
+            ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),

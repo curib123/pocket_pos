@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class AppColor {
   // 🟦 Primary – Deep Teal (Teal-700)
-    static const Color primary = Color(0xFF0F766E); // Strong, calming, confident
+    static const Color primary = Color(0xFF3C415C); // Strong, calming, confident
 
 // 🟣 Accent – Velvet Purple
   static const Color accent = Color(0xFF7C3AED); // Like royalty but tech-forward

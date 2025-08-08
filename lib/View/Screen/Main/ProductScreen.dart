@@ -10,9 +10,9 @@ import 'package:pocketpos/View/Components/Widgets/AppDrawer.dart';
 import 'package:pocketpos/View/Components/Custom/CustomButton.dart';
 import 'package:pocketpos/View/Components/Modal/UpsertProductModal.dart';
 import 'package:pocketpos/View/Components/Widgets/SearchAndCartRow.dart';
-import 'package:pocketpos/View/Screen/ProductScreenWidget/ProductListScreen.dart';
-import 'package:pocketpos/View/Screen/ProductScreenWidget/CategoryGrid.dart';
-import 'package:pocketpos/View/Screen/ProductScreenWidget/CategoryList.dart';
+import 'package:pocketpos/View/Screen/Main/ProductScreenWidget/CategoryGrid.dart';
+import 'package:pocketpos/View/Screen/Main/ProductScreenWidget/CategoryList.dart';
+import 'package:pocketpos/View/Screen/Main/ProductScreenWidget/ProductListScreen.dart';
 import 'package:provider/provider.dart';
 import 'package:animate_do/animate_do.dart';
 

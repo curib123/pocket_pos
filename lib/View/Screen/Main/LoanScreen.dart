@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:pocketpos/Provider/LoanProvider.dart';
 import 'package:pocketpos/View/Components/Widgets/AppDrawer.dart';
 import 'package:pocketpos/View/Components/Widgets/SearchAndCartRow.dart';
+import 'package:pocketpos/View/Screen/Main/LoanScreenWidget/LoanCardWidget.dart';
 import 'package:provider/provider.dart';
 import 'package:pocketpos/Helper/Enums/Enum.dart';
 import 'package:pocketpos/Provider/CurrencyProvider.dart';
@@ -10,7 +11,6 @@ import 'package:pocketpos/View/Components/Alert/showPayAllDialog.dart';
 import 'package:pocketpos/View/Components/Alert/showPayLoanDialog.dart';
 import 'package:pocketpos/View/Components/Custom/CustomFlatDropdown.dart';
 import 'package:pocketpos/View/Components/Custom/CustomButton.dart';
-import 'package:pocketpos/View/Screen/LoanScreenWidget/LoanCardWidget.dart';
 
 class LoanScreen extends StatefulWidget {
   const LoanScreen({super.key});
