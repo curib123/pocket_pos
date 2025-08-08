@@ -257,17 +257,32 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> with Single
                     ),
 
                     Positioned(
-                      bottom: top - 50,
+                      bottom: top - 60,
                       left: 0,
                       right: 0,
                       child: Center(
-                        child: Text(
-                          'Align barcode within the frame',
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.85),
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                          ),
+                        child: Column(
+                          children: [
+                            Text(
+                              _globalIsPack == true
+                                  ? 'Currently scanning: Pack'
+                                  : 'Currently scanning: Piece',
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.95),
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              'Place the barcode inside the box to scan',
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.85),
+                                fontSize: 14,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),

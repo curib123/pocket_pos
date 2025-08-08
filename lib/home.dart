@@ -24,9 +24,8 @@ class _HomeState extends State<Home> {
   void initState() {
     super.initState();
     _checkAccessFlow();
-    _checkTrialExpired();
+    _checkTrialExpired(); // will retry automatically if offline
   }
-
 
   Future<void> _checkTrialExpired() async {
     final purchaseService = PurchaseService();
@@ -35,28 +34,33 @@ class _HomeState extends State<Home> {
 
     DateTime now = DateTime.now();
 
-    // 🔐 1. Try reading from local storage
+    // 1. Check local expiration first
     DateTime? storedExpirationDate = await secureStorageService.readTrialExpirationDate();
     if (storedExpirationDate != null) {
       print("🗄️ Local expiration: $storedExpirationDate");
 
       if (now.isAfter(storedExpirationDate)) {
         print("⛔ Local trial expired.");
-        // TODO: Handle local-only expiration (no internet)
-        // e.g. Show expired trial dialog, restrict features, etc.
       } else {
         print("✅ Local trial still active.");
       }
     } else {
       print("📭 No local expiration found.");
-      // TODO: Optional - treat no local expiration as expired, or prompt retry
     }
 
-    // 🌐 2. Try fetching from Supabase
+    // 2. Try fetching Supabase
     try {
       final paymentDetails = await purchaseService.getPaymentDetails();
 
-      final supabaseRaw = paymentDetails?['expirationDate'];
+      // 🚨 If nothing is returned, restart app after delay
+      if (paymentDetails == null) {
+        print("⚠️ Supabase returned null. Restarting app in 5 seconds...");
+        await Future.delayed(Duration(seconds: 5));
+        Phoenix.rebirth(context);
+        return;
+      }
+
+      final supabaseRaw = paymentDetails['expirationDate'];
       DateTime? supabaseExpirationDate;
 
       if (supabaseRaw is String) {
@@ -68,75 +72,70 @@ class _HomeState extends State<Home> {
       if (supabaseExpirationDate != null) {
         print("☁️ Supabase expiration: $supabaseExpirationDate");
 
-        // 🛡️ 3. Tampering check
+        // Tampering check
         if (storedExpirationDate != null &&
             storedExpirationDate.isBefore(supabaseExpirationDate)) {
-          print("🚨 Potential tampering: Local expiration earlier than online.");
-
-          // TODO: Trigger tampering warning UI or notify admin
-          // TODO: Show alert/toast and redirect to login or splash
+          print("🚨 Tampering suspected. Restarting in 5 seconds...");
           tabProvider.setFirstTimeFlag(true);
           await purchaseService.toggleTrial(false);
+          await Future.delayed(Duration(seconds: 5));
           Phoenix.rebirth(context);
           return;
         }
 
-        // 🔁 4. Sync to local if needed
+        // Sync Supabase to local
         if (storedExpirationDate == null ||
             storedExpirationDate != supabaseExpirationDate) {
           await secureStorageService.saveTrialExpirationDate(supabaseExpirationDate);
           print("🔁 Synced Supabase expiration to local.");
         }
 
-        // 🕒 5. Final trial expiration check
+        // Expired check
         if (now.isAfter(supabaseExpirationDate)) {
-          print("⛔ Trial expired (Supabase) on $supabaseExpirationDate");
-
-          // TODO: Lock app, show trial expired screen, or redirect to upgrade page
+          print("⛔ Trial expired (Supabase). Restarting in 5 seconds...");
           tabProvider.setFirstTimeFlag(true);
           await purchaseService.toggleTrial(false);
+          await Future.delayed(Duration(seconds: 5));
           Phoenix.rebirth(context);
           return;
         } else {
           print("✅ Trial is active until $supabaseExpirationDate (Supabase)");
-          // TODO: Continue normal flow
+          if (mounted) setState(() => _isLoading = false);
         }
       } else {
-        print("⚠️ Supabase didn't return a valid expiration date.");
-        // TODO: Show fallback UI or allow limited access
+        print("⚠️ Supabase expiration field is null. Restarting in 5 seconds...");
+        await Future.delayed(Duration(seconds: 5));
+        Phoenix.rebirth(context);
+        return;
       }
     } catch (e) {
-      print("🌐❌ Failed to fetch from Supabase: $e");
-      // TODO: Optional - retry logic, show error message, or proceed with offline mode
+      print("🌐❌ Failed to fetch from Supabase: $e. Restarting in 5 seconds...");
+      await Future.delayed(Duration(seconds: 5));
+      Phoenix.rebirth(context); // 💥 When in doubt, restart
     }
   }
 
-
   Future<void> _checkAccessFlow() async {
     final tabProvider = Provider.of<TabProvider>(context, listen: false);
-    final PurchaseService purchaseService = PurchaseService();
+    final purchaseService = PurchaseService();
 
     await tabProvider.loadFirstTimeStatus();
 
-    // First time? Go to onboarding/login screen
     if (tabProvider.isFirstTime) {
       _navigateToAuth();
       return;
     }
 
-    // Check subscription status
     final hasTrial = await purchaseService.getTrial();
     final hasPurchase = await purchaseService.getPurchase();
 
     print('[Home] hasTrial: $hasTrial | hasPurchase: $hasPurchase');
 
-    // If no access, push to Auth
     if (!hasTrial && !hasPurchase) {
       _navigateToVerification(purchaseService);
       return;
     }
 
-    // Allow access to main app
     setState(() => _isLoading = false);
   }
 
@@ -145,17 +144,17 @@ class _HomeState extends State<Home> {
       MaterialPageRoute(
         builder: (context) => VerificationScreen(
           onFreeTrial: () async {
-            // TODO: handle trial logic here if needed
             showDialog(
               context: context,
-              barrierDismissible: false, // ⛔️ no tap outside to dismiss
+              barrierDismissible: false,
               builder: (context) => WillPopScope(
-                onWillPop: () async => false, // ⛔️ block back button
+                onWillPop: () async => false,
                 child: CustomConfirmDialog(
                   isPop: false,
                   children: [SizedBox.shrink()],
                   title: "Enjoy a 7-Day Free Trial",
-                  content: "You’ll get full access to all features for 7 days — totally free\n\nWant to start your trial now?",
+                  content:
+                  "You’ll get full access to all features for 7 days — totally free\n\nWant to start your trial now?",
                   onConfirm: () async {
                     await purchaseService.upsertPurchaseDefaults(
                       isTrial: true,
@@ -167,17 +166,14 @@ class _HomeState extends State<Home> {
                 ),
               ),
             );
-
-
           },
           onPurchase: () {
-            // TODO: handle purchase logic here if needed
+            // TODO: handle purchase logic here
           },
         ),
       ),
     );
   }
-
 
   void _navigateToAuth() {
     Navigator.of(context).pushReplacement(
