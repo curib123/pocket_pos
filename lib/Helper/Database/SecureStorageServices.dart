@@ -26,6 +26,26 @@ class SecureStorageService {
     };
   }
 
+  // 💾 Save trial & purchase flags
+  Future<void> saveTrialAndPurchaseFlags({
+    required bool isTrial,
+    required bool isPurchase,
+  }) async {
+    await _storage.write(key: 'is_trial', value: isTrial.toString());
+    await _storage.write(key: 'is_purchase', value: isPurchase.toString());
+  }
+
+// 📂 Read trial & purchase flags
+  Future<Map<String, bool>> readTrialAndPurchaseFlags() async {
+    final trialStr = await _storage.read(key: 'is_trial');
+    final purchaseStr = await _storage.read(key: 'is_purchase');
+
+    return {
+      'is_trial': trialStr == 'true',
+      'is_purchase': purchaseStr == 'true',
+    };
+  }
+
   // 🕒 Save trial expiration date
   Future<void> saveTrialExpirationDate(DateTime date) async {
     await _storage.write(key: 'trialExpirationDate', value: date.toIso8601String());

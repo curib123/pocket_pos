@@ -71,6 +71,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
+
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(

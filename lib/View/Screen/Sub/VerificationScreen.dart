@@ -32,16 +32,16 @@ class _VerificationScreenState extends State<VerificationScreen> {
     final purchaseService = PurchaseService();
     final details = await purchaseService.getPaymentDetails();
 
-    // If there's no record or expirationDate is null, allow free trial
     final expirationDate = details?['expirationDate'];
 
     setState(() {
-      showTrialButton = expirationDate == null;
+      showTrialButton = expirationDate == null || expirationDate.toString().trim().isEmpty;
       isLoading = false;
     });
 
     print('[VerificationScreen] showTrialButton: $showTrialButton');
   }
+
 
   @override
   Widget build(BuildContext context) {
