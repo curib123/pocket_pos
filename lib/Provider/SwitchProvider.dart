@@ -4,7 +4,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 class SwitchProvider with ChangeNotifier {
   final _storage = const FlutterSecureStorage();
 
-  bool _isCategoryGridView = true;
+  bool _isCategoryGridView = false;
   bool _isProductGridView = true;
   bool _isArchiveView = true;
   bool _isDashboardGridView = false; // ✅ Fixed typo

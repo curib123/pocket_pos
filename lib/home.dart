@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
@@ -28,10 +29,60 @@ class _HomeState extends State<Home> {
   @override
   void initState() {
     super.initState();
-    _checkInternetThenInit();
+    _checkAccessAndInit();
   }
 
-  Future<void> _checkInternetThenInit() async {
+  /// 🔍 Checks trial/purchase first, then internet if needed
+  Future<void> _checkAccessAndInit() async {
+    final purchaseService = PurchaseService();
+    final secureStorageService = SecureStorageService();
+
+    bool isTrial = false;
+    bool isPurchase = false;
+
+    // 1️⃣ Try from local cache first
+    final cachedFlags = await secureStorageService.readTrialAndPurchaseFlags();
+    isTrial = cachedFlags['is_trial'] ?? false;
+    isPurchase = cachedFlags['is_purchase'] ?? false;
+
+    // 🚀 NEW: If trial/purchase active in cache → skip server calls entirely
+    if (isTrial || isPurchase) {
+      print("✅ Using cached trial/purchase — skipping server check.");
+      await _runAccessFlow(isTrial, isPurchase, skipSupabaseIfOffline: true);
+      return;
+    }
+
+    // 2️⃣ No active trial/purchase in cache → try refreshing from server
+    try {
+      final serverTrial = await purchaseService.getTrial()
+          .timeout(const Duration(seconds: 5), onTimeout: () {
+        throw TimeoutException("getTrial() took too long");
+      });
+
+      final serverPurchase = await purchaseService.getPurchase()
+          .timeout(const Duration(seconds: 5), onTimeout: () {
+        throw TimeoutException("getPurchase() took too long");
+      });
+
+      isTrial = serverTrial;
+      isPurchase = serverPurchase;
+
+      await secureStorageService.saveTrialAndPurchaseFlags(
+        isTrial: isTrial,
+        isPurchase: isPurchase,
+      );
+    } catch (e) {
+      print("⚠️ Could not refresh trial/purchase from server: $e");
+    }
+
+    // 3️⃣ If trial/purchase active after server refresh → skip internet check
+    if (isTrial || isPurchase) {
+      print("✅ Trial/Purchase active — skipping internet check.");
+      await _runAccessFlow(isTrial, isPurchase, skipSupabaseIfOffline: true);
+      return;
+    }
+
+    // 4️⃣ No trial/purchase → must be online
     final online = await InternetChecker.hasInternet();
     if (!online) {
       print("🌐❌ No internet detected — restarting in 5s...");
@@ -41,158 +92,88 @@ class _HomeState extends State<Home> {
       return;
     }
 
-    // If online, proceed as normal
-    _checkAccessFlow();
-    _checkTrialExpired();
+    await _runAccessFlow(isTrial, isPurchase, skipSupabaseIfOffline: false);
   }
 
-
-  // ------------------------------------------------
-  // TRIAL EXPIRATION CHECK
-  // ------------------------------------------------
-  Future<void> _checkTrialExpired() async {
+  /// 🚦 Combined logic for access + trial expiration check
+  Future<void> _runAccessFlow(
+      bool isTrial, bool isPurchase, {bool skipSupabaseIfOffline = false}) async {
     final purchaseService = PurchaseService();
     final secureStorageService = SecureStorageService();
     final tabProvider = Provider.of<TabProvider>(context, listen: false);
 
     final now = DateTime.now();
-    final storedExpirationDate = await secureStorageService.readTrialExpirationDate();
+    final storedExpirationDate =
+    await secureStorageService.readTrialExpirationDate();
 
-    // 1. Local expiration check first
-    if (storedExpirationDate != null) {
-      print("🗄️ Local expiration: $storedExpirationDate");
+    // Trial expiration check
+    if (isTrial) {
+      bool needSupabaseCheck = false;
 
-      if (now.isAfter(storedExpirationDate)) {
-        print("⛔ Local trial expired. Ending trial without server check.");
-        tabProvider.setFirstTimeFlag(true);
-        await purchaseService.toggleTrial(false);
-        return;
+      if (storedExpirationDate != null) {
+        if (now.isAfter(storedExpirationDate)) {
+          // Expired locally
+          print("⛔ Trial expired (Local).");
+          tabProvider.setFirstTimeFlag(true);
+          await purchaseService.toggleTrial(false);
+          isTrial = false;
+        } else {
+          print("✅ Trial active locally until $storedExpirationDate.");
+          // Only hit Supabase if we're online and not skipping
+          if (!skipSupabaseIfOffline) needSupabaseCheck = true;
+        }
       } else {
-        print("✅ Local trial still active — will verify with Supabase if possible.");
-      }
-    } else {
-      print("📭 No local expiration found — will try Supabase.");
-    }
-
-    // 2. Try Supabase only if online or needed
-    try {
-      final paymentDetails = await purchaseService.getPaymentDetails();
-
-      if (paymentDetails == null) {
-        print("⚠️ Supabase returned null. Keeping current local state.");
-        if (mounted) setState(() => _isLoading = false);
-        return;
+        // No local expiration → must verify online if possible
+        needSupabaseCheck = true;
       }
 
-      // Parse Supabase expiration
-      final supabaseRaw = paymentDetails['expirationDate'];
-      final supabaseExpirationDate = (supabaseRaw is String)
-          ? DateTime.tryParse(supabaseRaw)
-          : supabaseRaw is DateTime
-          ? supabaseRaw
-          : null;
+      if (isTrial && needSupabaseCheck) {
+        try {
+          final paymentDetails = await purchaseService.getPaymentDetails();
+          final supabaseRaw = paymentDetails?['expirationDate'];
+          final supabaseExpirationDate = (supabaseRaw is String)
+              ? DateTime.tryParse(supabaseRaw)
+              : supabaseRaw is DateTime
+              ? supabaseRaw
+              : null;
 
-      if (supabaseExpirationDate == null) {
-        print("⚠️ Supabase expiration field is null. Keeping local state.");
-        if (mounted) setState(() => _isLoading = false);
-        return;
-      }
-
-      print("☁️ Supabase expiration: $supabaseExpirationDate");
-
-      // Tampering detection
-      if (storedExpirationDate != null &&
-          storedExpirationDate.isBefore(supabaseExpirationDate)) {
-        print("🚨 Possible tampering detected — resetting trial.");
-        tabProvider.setFirstTimeFlag(true);
-        await purchaseService.toggleTrial(false);
-        return;
-      }
-
-      // Sync local if different
-      if (storedExpirationDate == null ||
-          storedExpirationDate != supabaseExpirationDate) {
-        await secureStorageService.saveTrialExpirationDate(supabaseExpirationDate);
-        print("🔁 Synced Supabase expiration to local.");
-      }
-
-      // Final expiration check from Supabase
-      if (now.isAfter(supabaseExpirationDate)) {
-        print("⛔ Trial expired (Supabase).");
-        tabProvider.setFirstTimeFlag(true);
-        await purchaseService.toggleTrial(false);
-        return;
-      }
-
-      print("✅ Trial active until $supabaseExpirationDate (Supabase)");
-      if (mounted) setState(() => _isLoading = false);
-    } catch (e) {
-      print("🌐❌ Failed to fetch from Supabase: $e — using local state.");
-      // If we still have a valid local date, just continue
-      if (storedExpirationDate != null && now.isBefore(storedExpirationDate)) {
-        if (mounted) setState(() => _isLoading = false);
-      } else {
-        // No valid local state — safest is to end trial
-        tabProvider.setFirstTimeFlag(true);
-        await purchaseService.toggleTrial(false);
+          if (supabaseExpirationDate != null &&
+              now.isAfter(supabaseExpirationDate)) {
+            print("⛔ Trial expired (Supabase).");
+            tabProvider.setFirstTimeFlag(true);
+            await purchaseService.toggleTrial(false);
+            isTrial = false;
+          } else if (supabaseExpirationDate != null &&
+              storedExpirationDate != supabaseExpirationDate) {
+            await secureStorageService
+                .saveTrialExpirationDate(supabaseExpirationDate);
+          }
+        } catch (e) {
+          print("🌐❌ Failed to verify trial online: $e — keeping local state.");
+        }
       }
     }
-  }
 
-  // ------------------------------------------------
-  // ACCESS FLOW CHECK
-  // ------------------------------------------------
-  Future<void> _checkAccessFlow() async {
-    final tabProvider = Provider.of<TabProvider>(context, listen: false);
-    final purchaseService = PurchaseService();
-    final secureStorageService = SecureStorageService();
-
-    bool isTrial = false;
-    bool isPurchase = false;
-
-    try {
-      // Fetch trial & purchase once
-      isTrial = await purchaseService.getTrial();
-      isPurchase = await purchaseService.getPurchase();
-
-      // Save flags if successful
-      await secureStorageService.saveTrialAndPurchaseFlags(
-        isTrial: isTrial,
-        isPurchase: isPurchase,
-      );
-    } catch (e) {
-      // Fallback to cached values
-      print("⚠️ Could not fetch purchase/trial status, using cached values: $e");
-      final cachedFlags = await secureStorageService.readTrialAndPurchaseFlags();
-      isTrial = cachedFlags['is_trial'] ?? false;
-      isPurchase = cachedFlags['is_purchase'] ?? false;
-    }
-
-    final isTrialOrPurchaseActive = isTrial || isPurchase;
-
-    if (isTrialOrPurchaseActive) {
-      print("[Home] ✅ Trial or purchase active — skipping auth flow.");
+    // ✅ If still trial or purchased → go straight to home
+    if (isTrial || isPurchase) {
       setState(() => _isLoading = false);
       return;
-    }else{
-
     }
 
-    // First-time user → go to auth
+    // First-time user → Auth screen
     if (tabProvider.isFirstTime) {
       _navigateToAuth();
       return;
     }
 
+    // Payment details check
     try {
-      // Check if payment data exists
       final details = await purchaseService.getPaymentDetails();
       final hasPaymentData = details != null &&
           (details['paymentMethod'] as String?)?.isNotEmpty == true &&
           (details['paymentProofUrl'] as String?)?.isNotEmpty == true;
 
       if (hasPaymentData && !isPurchase) {
-        print("🧾 Payment method and proof provided.");
         _navigateToVerificationPaymentScreen();
         return;
       }
@@ -200,13 +181,8 @@ class _HomeState extends State<Home> {
       print("⚠️ Could not fetch payment details: $e");
     }
 
-    print("❌ Missing payment method or proof.");
-    if (!isTrial && !isPurchase) {
-      _navigateToVerification(purchaseService, secureStorageService);
-      return;
-    }
-
-    setState(() => _isLoading = false);
+    // Missing payment data → Verification screen
+    _navigateToVerification(purchaseService, secureStorageService);
   }
 
   // ------------------------------------------------
@@ -225,11 +201,13 @@ class _HomeState extends State<Home> {
     );
   }
 
-  void _navigateToVerification(PurchaseService purchaseService, SecureStorageService secureStorageService) {
+  void _navigateToVerification(PurchaseService purchaseService,
+      SecureStorageService secureStorageService) {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => VerificationScreen(
-          onFreeTrial: () => _showFreeTrialDialog(purchaseService,secureStorageService),
+          onFreeTrial: () =>
+              _showFreeTrialDialog(purchaseService, secureStorageService),
           onPurchase: () => _showPurchaseFlow(purchaseService),
         ),
       ),
@@ -242,10 +220,8 @@ class _HomeState extends State<Home> {
     );
   }
 
-  void _showFreeTrialDialog(
-      PurchaseService purchaseService,
-      SecureStorageService secureStorageService,
-      ) {
+  void _showFreeTrialDialog(PurchaseService purchaseService,
+      SecureStorageService secureStorageService) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -255,7 +231,8 @@ class _HomeState extends State<Home> {
           isPop: false,
           children: [const SizedBox.shrink()],
           title: "Enjoy a 7-Day Free Trial",
-          content: "You’ll get full access to all features for 7 days — totally free\n\nWant to start your trial now?",
+          content:
+          "You’ll get full access to all features for 7 days — totally free\n\nWant to start your trial now?",
           onConfirm: () async {
             const isTrial = true;
             const isPurchase = false;
@@ -276,7 +253,6 @@ class _HomeState extends State<Home> {
             } catch (e, st) {
               debugPrint("❌ Failed to start trial: $e");
               debugPrintStack(stackTrace: st);
-              // Optionally show error dialog here
             }
           },
         ),
@@ -284,9 +260,7 @@ class _HomeState extends State<Home> {
     );
   }
 
-
   void _showPurchaseFlow(PurchaseService purchaseService) {
-    // Store the outer context so we can use it even after PaymentForm is popped
     final safeContext = context;
 
     Navigator.push(
@@ -294,13 +268,13 @@ class _HomeState extends State<Home> {
       MaterialPageRoute(
         builder: (_) => PaymentForm(
           onSubmit: (String paymentMethod, File file) {
-            Navigator.pop(safeContext); // Close PaymentForm page
+            Navigator.pop(safeContext);
             Future.microtask(() {
               _showConfirmPaymentDialog(
                 purchaseService,
                 paymentMethod,
                 file,
-                safeContext, // use safe context
+                safeContext,
               );
             });
           },
@@ -309,12 +283,8 @@ class _HomeState extends State<Home> {
     );
   }
 
-  void _showConfirmPaymentDialog(
-      PurchaseService purchaseService,
-      String paymentMethod,
-      File file,
-      BuildContext ctx, // safe context passed here
-      ) {
+  void _showConfirmPaymentDialog(PurchaseService purchaseService,
+      String paymentMethod, File file, BuildContext ctx) {
     showDialog(
       context: ctx,
       barrierDismissible: false,
@@ -342,7 +312,6 @@ class _HomeState extends State<Home> {
       ),
     );
   }
-
 
   // ------------------------------------------------
   // UI
