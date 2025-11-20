@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:pocketpos/Helper/Database/SecureStorageServices.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -35,10 +34,7 @@ import 'package:pocketpos/home.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 🌿 Load environment variables
-  await dotenv.load(fileName: ".env");
-
-  // 🐝 Init Hive
+  // Init Hive
   await Hive.initFlutter();
   Hive
     ..registerAdapter(ProductAdapter())
@@ -52,26 +48,27 @@ Future<void> main() async {
   await Hive.openBox('categoryVisibility');
   await Hive.openBox('settings_currency');
 
-  // 🔐 Secure Storage
+  // Secure Storage
   final storage = SecureStorageService();
 
-  // 🚫 No hardcoded keys here!
-  final supabaseKey = dotenv.env['SUPABASE_ANON_KEY'];
-  final supabaseUrl = dotenv.env['SUPABASE_URL'];
+  // 🔥 Replace dotenv with direct constants
+  const supabaseUrl = "YOUR_SUPABASE_URL";
+  const supabaseAnonKey = "YOUR_SUPABASE_ANON_KEY";
 
-  if (supabaseKey == null || supabaseUrl == null) {
-    throw Exception("Supabase environment variables are missing!");
+  if (supabaseUrl.isEmpty || supabaseAnonKey.isEmpty) {
+    throw Exception("Supabase URL or key is missing!");
   }
 
+  // Save to secure storage if not existing
   final existingKey = await storage.readSupabaseKey();
   if (existingKey == null || existingKey.isEmpty) {
-    await storage.saveSupabaseKey(supabaseKey);
+    await storage.saveSupabaseKey(supabaseAnonKey);
   }
 
   // Supabase init
   await Supabase.initialize(
     url: supabaseUrl,
-    anonKey: supabaseKey,
+    anonKey: supabaseAnonKey,
   );
 
   runApp(
@@ -109,7 +106,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: "Mobile POS & Inventory App",
+      title: "NextPOS AI",
       theme: ThemeData(
         useMaterial3: true,
         scaffoldBackgroundColor: Colors.white,

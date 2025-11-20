@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.nexttech.pocketpos" "\0"
-            VALUE "FileDescription", "pocketpos" "\0"
+            VALUE "CompanyName", "com.nexttech.nextpos" "\0"
+            VALUE "FileDescription", "nextpos" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "pocketpos" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2025 com.nexttech.pocketpos. All rights reserved." "\0"
-            VALUE "OriginalFilename", "pocketpos.exe" "\0"
-            VALUE "ProductName", "pocketpos" "\0"
+            VALUE "InternalName", "nextpos" "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2025 com.nexttech.nextpos. All rights reserved." "\0"
+            VALUE "OriginalFilename", "nextpos.exe" "\0"
+            VALUE "ProductName", "nextpos" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END
