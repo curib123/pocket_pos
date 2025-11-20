@@ -2,19 +2,19 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
-import 'package:pocketpos/Helper/Classes_Methods/InternetChecker.dart';
+import 'package:nextpos/Helper/Classes_Methods/InternetChecker.dart';
 import 'package:provider/provider.dart';
 
-import 'package:pocketpos/Helper/Database/SecureStorageServices.dart';
-import 'package:pocketpos/Helper/Database/PurchaseService.dart';
-import 'package:pocketpos/Provider/TabProvider.dart';
+import 'package:nextpos/Helper/Database/SecureStorageServices.dart';
+import 'package:nextpos/Helper/Database/PurchaseService.dart';
+import 'package:nextpos/Provider/TabProvider.dart';
 
-import 'package:pocketpos/View/Components/Alert/CustomConfimDialog.dart';
-import 'package:pocketpos/View/Components/Widgets/BottomNavigation.dart';
-import 'package:pocketpos/View/Screen/Sub/AuthScreen.dart';
-import 'package:pocketpos/View/Screen/Sub/PaymentForm.dart';
-import 'package:pocketpos/View/Screen/Sub/VerificationPaymentScreen.dart';
-import 'package:pocketpos/View/Screen/Sub/VerificationScreen.dart';
+import 'package:nextpos/View/Components/Alert/CustomConfimDialog.dart';
+import 'package:nextpos/View/Components/Widgets/BottomNavigation.dart';
+import 'package:nextpos/View/Screen/Sub/AuthScreen.dart';
+import 'package:nextpos/View/Screen/Sub/PaymentForm.dart';
+import 'package:nextpos/View/Screen/Sub/VerificationPaymentScreen.dart';
+import 'package:nextpos/View/Screen/Sub/VerificationScreen.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});

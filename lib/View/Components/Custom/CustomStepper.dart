@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:pocketpos/View/Components/Custom/CustomTextField.dart';
+import 'package:nextpos/View/Components/Custom/CustomTextField.dart';
 
 class CustomStepperField extends StatefulWidget {
   final int value;

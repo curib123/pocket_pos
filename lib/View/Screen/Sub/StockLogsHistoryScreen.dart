@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:pocketpos/Model/stock_log.dart';
-import 'package:pocketpos/View/Components/Custom/CustomFlatDropdown.dart';
-import 'package:pocketpos/Provider/ProductProvider.dart';
-import 'package:pocketpos/Provider/LogProvider.dart';
-import 'package:pocketpos/Helper/Classes_Methods/AppColor.dart';
+import 'package:nextpos/Model/stock_log.dart';
+import 'package:nextpos/View/Components/Custom/CustomFlatDropdown.dart';
+import 'package:nextpos/Provider/ProductProvider.dart';
+import 'package:nextpos/Provider/LogProvider.dart';
+import 'package:nextpos/Helper/Classes_Methods/AppColor.dart';
 
 class StockLogsHistoryScreen extends StatefulWidget {
   const StockLogsHistoryScreen({super.key});

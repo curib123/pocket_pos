@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
-import 'package:pocketpos/Model/product_model.dart';
-import 'package:pocketpos/Model/stock_log.dart';
+import 'package:nextpos/Model/product_model.dart';
+import 'package:nextpos/Model/stock_log.dart';
 
 class ProductProvider extends ChangeNotifier {
   final Box<Product> _productBox = Hive.box<Product>('products');

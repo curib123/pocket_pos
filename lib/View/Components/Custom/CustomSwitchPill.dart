@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:pocketpos/Helper/Classes_Methods/AppColor.dart';
+import 'package:nextpos/Helper/Classes_Methods/AppColor.dart';
 
 class CustomSwitchPill extends StatelessWidget {
   final List<String> options;

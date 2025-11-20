@@ -2,11 +2,11 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart' show Phoenix;
 import 'package:lucide_icons/lucide_icons.dart';
-import 'package:pocketpos/Helper/Classes_Methods/AppColor.dart';
-import 'package:pocketpos/Helper/Database/PurchaseService.dart';
-import 'package:pocketpos/View/Components/Alert/CustomConfimDialog.dart';
-import 'package:pocketpos/View/Components/Custom/CustomButton.dart';
-import 'package:pocketpos/View/Screen/Sub/PaymentForm.dart';
+import 'package:nextpos/Helper/Classes_Methods/AppColor.dart';
+import 'package:nextpos/Helper/Database/PurchaseService.dart';
+import 'package:nextpos/View/Components/Alert/CustomConfimDialog.dart';
+import 'package:nextpos/View/Components/Custom/CustomButton.dart';
+import 'package:nextpos/View/Screen/Sub/PaymentForm.dart';
 
 class VerificationPaymentScreen extends StatefulWidget {
   final VoidCallback onApproved;

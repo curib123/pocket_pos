@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import 'package:pocketpos/View/Components/Custom/CustomButton.dart';
-import 'package:pocketpos/View/Components/Custom/CustomTextField.dart';
+import 'package:nextpos/View/Components/Custom/CustomButton.dart';
+import 'package:nextpos/View/Components/Custom/CustomTextField.dart';
 
 Future<void> showChangeBatchQtyDialog({
   required BuildContext context,

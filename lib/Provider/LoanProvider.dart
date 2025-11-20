@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:pocketpos/Helper/Enums/Enum.dart';
-import 'package:pocketpos/Model/loan_item.dart';
-import 'package:pocketpos/Model/product_model.dart';
-import 'package:pocketpos/Model/stock_log.dart';
+import 'package:nextpos/Helper/Enums/Enum.dart';
+import 'package:nextpos/Model/loan_item.dart';
+import 'package:nextpos/Model/product_model.dart';
+import 'package:nextpos/Model/stock_log.dart';
 
 class LoanProvider with ChangeNotifier {
   final Box<Product> _productBox = Hive.box<Product>('products');

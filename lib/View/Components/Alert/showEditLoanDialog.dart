@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import 'package:pocketpos/Provider/LoanProvider.dart';
-import 'package:pocketpos/View/Components/Alert/CustomConfimDialog.dart';
+import 'package:nextpos/Provider/LoanProvider.dart';
+import 'package:nextpos/View/Components/Alert/CustomConfimDialog.dart';
 import 'package:provider/provider.dart';
-import 'package:pocketpos/View/Components/Custom/CustomButton.dart';
-import 'package:pocketpos/View/Components/Custom/CustomTextField.dart';
+import 'package:nextpos/View/Components/Custom/CustomButton.dart';
+import 'package:nextpos/View/Components/Custom/CustomTextField.dart';
 
 Future<void> showEditLoanDialog({
   required BuildContext context,

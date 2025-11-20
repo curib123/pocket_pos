@@ -1,6 +1,6 @@
-import 'package:pocketpos/Model/product_model.dart';
-import 'package:pocketpos/Model/product_stock.dart';
-import 'package:pocketpos/Model/stock_log.dart';
+import 'package:nextpos/Model/product_model.dart';
+import 'package:nextpos/Model/product_stock.dart';
+import 'package:nextpos/Model/stock_log.dart';
 
 enum DateFilterType { day, week, month, year, range }
 

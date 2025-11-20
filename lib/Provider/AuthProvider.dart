@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
-import 'package:pocketpos/Helper/Database/PurchaseService.dart';
-import 'package:pocketpos/Helper/Database/SecureStorageServices.dart';
-import 'package:pocketpos/Provider/ProductProvider.dart';
-import 'package:pocketpos/Provider/TabProvider.dart';
-import 'package:pocketpos/View/Components/Alert/CustomNotificationDialog.dart';
+import 'package:nextpos/Helper/Database/PurchaseService.dart';
+import 'package:nextpos/Helper/Database/SecureStorageServices.dart';
+import 'package:nextpos/Provider/ProductProvider.dart';
+import 'package:nextpos/Provider/TabProvider.dart';
+import 'package:nextpos/View/Components/Alert/CustomNotificationDialog.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AuthProvider with ChangeNotifier {

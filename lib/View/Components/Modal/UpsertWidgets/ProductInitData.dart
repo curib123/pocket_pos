@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:pocketpos/Model/product_model.dart';
-import 'package:pocketpos/Model/product_stock.dart';
+import 'package:nextpos/Model/product_model.dart';
+import 'package:nextpos/Model/product_stock.dart';
 
 class ProductInitData {
   final TextEditingController nameController;

@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:pocketpos/Model/product_model.dart';
-import 'package:pocketpos/Provider/ProductProvider.dart';
-import 'package:pocketpos/View/Components/Modal/UpsertProductModal.dart';
+import 'package:nextpos/Model/product_model.dart';
+import 'package:nextpos/Provider/ProductProvider.dart';
+import 'package:nextpos/View/Components/Modal/UpsertProductModal.dart';
 
 Future<void> openAddVariantDialog({
   required BuildContext context,

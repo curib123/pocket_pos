@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:pocketpos/Helper/Classes_Methods/AppColor.dart';
-import 'package:pocketpos/View/Components/Custom/CustomButton.dart';
-import 'package:pocketpos/View/Components/Custom/CustomFlatDropdown.dart';
+import 'package:nextpos/Helper/Classes_Methods/AppColor.dart';
+import 'package:nextpos/View/Components/Custom/CustomButton.dart';
+import 'package:nextpos/View/Components/Custom/CustomFlatDropdown.dart';
 
 class PaymentForm extends StatefulWidget {
   final void Function(String paymentMethod, File proofFile) onSubmit;

@@ -1,22 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import 'package:pocketpos/View/Screen/Main/DashboardScreenWidgets/ProductDashboardStats.dart';
+import 'package:nextpos/View/Screen/Main/DashboardScreenWidgets/ProductDashboardStats.dart';
 import 'package:provider/provider.dart';
-import 'package:pocketpos/Provider/CurrencyProvider.dart';
-import 'package:pocketpos/Provider/SwitchProvider.dart';
-import 'package:pocketpos/Provider/ProductProvider.dart';
-import 'package:pocketpos/View/Components/Widgets/AISnackbarManager.dart';
-import 'package:pocketpos/View/Screen/Sub/PoSReportScreen.dart';
-import 'package:pocketpos/View/Screen/Sub/PosChatScreen.dart';
-import 'package:pocketpos/View/Components/Custom/CustomFlatDropdown.dart';
-import 'package:pocketpos/View/Components/Widgets/GreetingsCardWidget.dart';
-import 'package:pocketpos/View/Components/Widgets/AppDrawer.dart';
-import 'package:pocketpos/View/Components/Widgets/SearchAndCartRow.dart';
-import 'package:pocketpos/View/Components/Alert/showLoadingAndNotify.dart';
-import 'package:pocketpos/Helper/Classes_Methods/AppColor.dart';
-import 'package:pocketpos/Helper/Classes_Methods/DashboardMetrics.dart';
-import 'package:pocketpos/Helper/Classes_Methods/helper_methods.dart';
+import 'package:nextpos/Provider/CurrencyProvider.dart';
+import 'package:nextpos/Provider/SwitchProvider.dart';
+import 'package:nextpos/Provider/ProductProvider.dart';
+import 'package:nextpos/View/Components/Widgets/AISnackbarManager.dart';
+import 'package:nextpos/View/Screen/Sub/PoSReportScreen.dart';
+import 'package:nextpos/View/Screen/Sub/PosChatScreen.dart';
+import 'package:nextpos/View/Components/Custom/CustomFlatDropdown.dart';
+import 'package:nextpos/View/Components/Widgets/GreetingsCardWidget.dart';
+import 'package:nextpos/View/Components/Widgets/AppDrawer.dart';
+import 'package:nextpos/View/Components/Widgets/SearchAndCartRow.dart';
+import 'package:nextpos/View/Components/Alert/showLoadingAndNotify.dart';
+import 'package:nextpos/Helper/Classes_Methods/AppColor.dart';
+import 'package:nextpos/Helper/Classes_Methods/DashboardMetrics.dart';
+import 'package:nextpos/Helper/Classes_Methods/helper_methods.dart';
 
 class DashBoardScreen extends StatefulWidget {
   const DashBoardScreen({super.key});

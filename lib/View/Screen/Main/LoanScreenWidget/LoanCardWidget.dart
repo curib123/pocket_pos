@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:intl/intl.dart';
-import 'package:pocketpos/Helper/Classes_Methods/AppColor.dart';
-import 'package:pocketpos/Model/loan_item.dart';
-import 'package:pocketpos/Provider/CurrencyProvider.dart';
-import 'package:pocketpos/View/Components/Custom/CustomButton.dart';
+import 'package:nextpos/Helper/Classes_Methods/AppColor.dart';
+import 'package:nextpos/Model/loan_item.dart';
+import 'package:nextpos/Provider/CurrencyProvider.dart';
+import 'package:nextpos/View/Components/Custom/CustomButton.dart';
 import 'package:provider/provider.dart';
 
 typedef LoanActionCallback = void Function(LoanItem loan);

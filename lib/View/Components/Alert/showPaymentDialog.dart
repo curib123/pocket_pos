@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:pocketpos/Model/stock_log.dart';
-import 'package:pocketpos/Provider/LoanProvider.dart';
+import 'package:nextpos/Model/stock_log.dart';
+import 'package:nextpos/Provider/LoanProvider.dart';
 import 'package:provider/provider.dart';
-import 'package:pocketpos/Helper/Classes_Methods/AppColor.dart';
-import 'package:pocketpos/Model/cart_item_model.dart';
-import 'package:pocketpos/Provider/CartListProvider.dart';
-import 'package:pocketpos/Provider/CurrencyProvider.dart';
-import 'package:pocketpos/Provider/ProductProvider.dart';
-import 'package:pocketpos/Provider/ProductStockProvider.dart';
-import 'package:pocketpos/View/Components/Alert/CustomNotificationDialog.dart';
-import 'package:pocketpos/View/Components/Custom/CustomButton.dart';
-import 'package:pocketpos/View/Components/Custom/CustomSwitchPill.dart';
-import 'package:pocketpos/View/Components/Custom/CustomTextField.dart';
+import 'package:nextpos/Helper/Classes_Methods/AppColor.dart';
+import 'package:nextpos/Model/cart_item_model.dart';
+import 'package:nextpos/Provider/CartListProvider.dart';
+import 'package:nextpos/Provider/CurrencyProvider.dart';
+import 'package:nextpos/Provider/ProductProvider.dart';
+import 'package:nextpos/Provider/ProductStockProvider.dart';
+import 'package:nextpos/View/Components/Alert/CustomNotificationDialog.dart';
+import 'package:nextpos/View/Components/Custom/CustomButton.dart';
+import 'package:nextpos/View/Components/Custom/CustomSwitchPill.dart';
+import 'package:nextpos/View/Components/Custom/CustomTextField.dart';
 
 class PaymentDialog extends StatefulWidget {
   const PaymentDialog({super.key});

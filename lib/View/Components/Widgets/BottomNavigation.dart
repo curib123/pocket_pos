@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import 'package:pocketpos/Helper/Classes_Methods/AppColor.dart';
+import 'package:nextpos/Helper/Classes_Methods/AppColor.dart';
 
 class BottomNavigation extends StatelessWidget {
   final int currentIndex;

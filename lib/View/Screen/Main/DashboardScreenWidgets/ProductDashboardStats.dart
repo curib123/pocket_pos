@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:intl/intl.dart';
-import 'package:pocketpos/Helper/Classes_Methods/DashboardMetrics.dart';
-import 'package:pocketpos/Provider/CurrencyProvider.dart';
-import 'package:pocketpos/View/Components/Widgets/ProductRangePreviewDropdown.dart';
-import 'package:pocketpos/Helper/Classes_Methods/AppColor.dart';
-import 'package:pocketpos/View/Screen/Main/DashboardScreenWidgets/GroupHeader.dart';
-import 'package:pocketpos/View/Screen/Main/DashboardScreenWidgets/StatGrid.dart';
-import 'package:pocketpos/View/Screen/Main/DashboardScreenWidgets/StatTile.dart';
+import 'package:nextpos/Helper/Classes_Methods/DashboardMetrics.dart';
+import 'package:nextpos/Provider/CurrencyProvider.dart';
+import 'package:nextpos/View/Components/Widgets/ProductRangePreviewDropdown.dart';
+import 'package:nextpos/Helper/Classes_Methods/AppColor.dart';
+import 'package:nextpos/View/Screen/Main/DashboardScreenWidgets/GroupHeader.dart';
+import 'package:nextpos/View/Screen/Main/DashboardScreenWidgets/StatGrid.dart';
+import 'package:nextpos/View/Screen/Main/DashboardScreenWidgets/StatTile.dart';
 
 String formatNumber(num number) {
   final formatter = NumberFormat.decimalPattern();

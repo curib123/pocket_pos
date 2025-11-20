@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import 'package:pocketpos/View/Components/Widgets/ResponsiveText.dart';
-import 'package:pocketpos/View/Screen/Main/ProductScreenWidget/ProductListScreen.dart';
+import 'package:nextpos/View/Components/Widgets/ResponsiveText.dart';
+import 'package:nextpos/View/Screen/Main/ProductScreenWidget/ProductListScreen.dart';
 import 'package:provider/provider.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:shimmer/shimmer.dart';
-import 'package:pocketpos/Helper/Classes_Methods/AppColor.dart';
-import 'package:pocketpos/Helper/Classes_Methods/AppCategory.dart';
-import 'package:pocketpos/Provider/ProductProvider.dart';
-import 'package:pocketpos/Provider/StoreCategoryProvider.dart';
-import 'package:pocketpos/Provider/SwitchProvider.dart';
+import 'package:nextpos/Helper/Classes_Methods/AppColor.dart';
+import 'package:nextpos/Helper/Classes_Methods/AppCategory.dart';
+import 'package:nextpos/Provider/ProductProvider.dart';
+import 'package:nextpos/Provider/StoreCategoryProvider.dart';
+import 'package:nextpos/Provider/SwitchProvider.dart';
 
 class CategoryList extends StatefulWidget {
   final List<String> categories;

@@ -1,11 +1,11 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:pocketpos/Helper/Classes_Methods/AppColor.dart';
+import 'package:nextpos/Helper/Classes_Methods/AppColor.dart';
 import 'package:provider/provider.dart';
-import 'package:pocketpos/View/Components/Alert/CustomConfimDialog.dart';
-import 'package:pocketpos/View/Components/Custom/CustomButton.dart';
-import 'package:pocketpos/Model/product_model.dart';
-import 'package:pocketpos/Provider/ProductProvider.dart';
+import 'package:nextpos/View/Components/Alert/CustomConfimDialog.dart';
+import 'package:nextpos/View/Components/Custom/CustomButton.dart';
+import 'package:nextpos/Model/product_model.dart';
+import 'package:nextpos/Provider/ProductProvider.dart';
 
 class RestoreProductScreen extends StatelessWidget {
   const RestoreProductScreen({super.key});

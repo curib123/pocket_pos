@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:pocketpos/Helper/Classes_Methods/AppColor.dart';
-import 'package:pocketpos/Helper/Classes_Methods/AppCategory.dart';
-import 'package:pocketpos/Provider/StoreCategoryProvider.dart';
+import 'package:nextpos/Helper/Classes_Methods/AppColor.dart';
+import 'package:nextpos/Helper/Classes_Methods/AppCategory.dart';
+import 'package:nextpos/Provider/StoreCategoryProvider.dart';
 
 class SetupCategoryScreen extends StatelessWidget {
   const SetupCategoryScreen({super.key});

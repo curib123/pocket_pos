@@ -1,5 +1,5 @@
-import 'package:pocketpos/Model/product_model.dart';
-import 'package:pocketpos/Helper/Database/SupabaseProductServices.dart';
+import 'package:nextpos/Model/product_model.dart';
+import 'package:nextpos/Helper/Database/SupabaseProductServices.dart';
 
 class ProductSync {
   final SupabaseProductServices _supabaseService = SupabaseProductServices();

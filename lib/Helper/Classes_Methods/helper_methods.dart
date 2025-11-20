@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
-import 'package:pocketpos/Provider/ProductProvider.dart';
-import 'package:pocketpos/Provider/ProductSync.dart';
+import 'package:nextpos/Provider/ProductProvider.dart';
+import 'package:nextpos/Provider/ProductSync.dart';
 import 'package:provider/provider.dart';
 
 /// Safely syncs products between local and Supabase

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:pocketpos/Model/product_model.dart';
-import 'package:pocketpos/Model/product_stock.dart';
-import 'package:pocketpos/Model/loose_stock.dart';
-import 'package:pocketpos/Provider/ProductProvider.dart';
-import 'package:pocketpos/Provider/VariantProductProvider.dart';
-import 'package:pocketpos/Provider/LooseStockProvider.dart';
-import 'package:pocketpos/View/Components/Alert/CustomNotificationDialog.dart';
+import 'package:nextpos/Model/product_model.dart';
+import 'package:nextpos/Model/product_stock.dart';
+import 'package:nextpos/Model/loose_stock.dart';
+import 'package:nextpos/Provider/ProductProvider.dart';
+import 'package:nextpos/Provider/VariantProductProvider.dart';
+import 'package:nextpos/Provider/LooseStockProvider.dart';
+import 'package:nextpos/View/Components/Alert/CustomNotificationDialog.dart';
 
 Future<void> submitProductHelper({
   required BuildContext context,

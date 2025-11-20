@@ -1,10 +1,10 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:pocketpos/Helper/Classes_Methods/AppColor.dart';
-import 'package:pocketpos/View/Components/Modal/ProductDetailScreenModal.dart';
+import 'package:nextpos/Helper/Classes_Methods/AppColor.dart';
+import 'package:nextpos/View/Components/Modal/ProductDetailScreenModal.dart';
 import 'package:provider/provider.dart';
-import 'package:pocketpos/Provider/ProductStockProvider.dart';
+import 'package:nextpos/Provider/ProductStockProvider.dart';
 
 class ProductRangePreviewDropdown extends StatelessWidget {
   final int minQty;

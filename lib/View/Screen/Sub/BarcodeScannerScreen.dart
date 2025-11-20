@@ -2,12 +2,12 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:pocketpos/View/Components/Alert/CustomConfimDialog.dart';
-import 'package:pocketpos/View/Components/Alert/CustomNotificationDialog.dart';
-import 'package:pocketpos/View/Components/Widgets/BouncingCartIcon.dart';
+import 'package:nextpos/View/Components/Alert/CustomConfimDialog.dart';
+import 'package:nextpos/View/Components/Alert/CustomNotificationDialog.dart';
+import 'package:nextpos/View/Components/Widgets/BouncingCartIcon.dart';
 import 'package:provider/provider.dart';
 import 'package:vibration/vibration.dart';
-import 'package:pocketpos/Provider/CartListProvider.dart';
+import 'package:nextpos/Provider/CartListProvider.dart';
 
 class BarcodeScannerScreen extends StatefulWidget {
   final void Function(String barcode)? onScanned;

@@ -1,7 +1,7 @@
-import 'package:pocketpos/Helper/Database/ProductImageHelper.dart';
+import 'package:nextpos/Helper/Database/ProductImageHelper.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:pocketpos/Model/product_model.dart';
-import 'package:pocketpos/Model/stock_log.dart';
+import 'package:nextpos/Model/product_model.dart';
+import 'package:nextpos/Model/stock_log.dart';
 
 class SupabaseProductServices {
   final _client = Supabase.instance.client;

@@ -1,4 +1,4 @@
-# pocketpos
+# nextpos
 
 A new Flutter project.
 

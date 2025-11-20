@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:pocketpos/Helper/Classes_Methods/AppColor.dart';
-import 'package:pocketpos/View/Components/Widgets/ResponsiveText.dart';
+import 'package:nextpos/Helper/Classes_Methods/AppColor.dart';
+import 'package:nextpos/View/Components/Widgets/ResponsiveText.dart';
 import 'package:shimmer/shimmer.dart';
 
 class GroupHeader extends StatelessWidget {

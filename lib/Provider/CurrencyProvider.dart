@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:pocketpos/Helper/Classes_Methods/Currency.dart';
+import 'package:nextpos/Helper/Classes_Methods/Currency.dart';
 class CurrencyProvider with ChangeNotifier {
   final List<Map<String, dynamic>> currencies = currencyList;
 

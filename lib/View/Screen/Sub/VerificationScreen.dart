@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import 'package:pocketpos/Helper/Classes_Methods/AppColor.dart';
-import 'package:pocketpos/Helper/Database/PurchaseService.dart';
-import 'package:pocketpos/View/Components/Custom/CustomButton.dart';
+import 'package:nextpos/Helper/Classes_Methods/AppColor.dart';
+import 'package:nextpos/Helper/Database/PurchaseService.dart';
+import 'package:nextpos/View/Components/Custom/CustomButton.dart';
 
 class VerificationScreen extends StatefulWidget {
   final VoidCallback onFreeTrial;
@@ -69,7 +69,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                 const SizedBox(height: 24),
 
                 Text(
-                  "Welcome to PocketPOS!",
+                  "Welcome to nextpos!",
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),

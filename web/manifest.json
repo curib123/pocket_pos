@@ -1,6 +1,6 @@
 {
-    "name": "pocketpos",
-    "short_name": "pocketpos",
+    "name": "nextpos",
+    "short_name": "nextpos",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

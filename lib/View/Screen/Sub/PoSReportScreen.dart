@@ -3,12 +3,12 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import 'package:pocketpos/View/Components/Custom/CustomFlatDropdown.dart';
+import 'package:nextpos/View/Components/Custom/CustomFlatDropdown.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:intl/intl.dart';
-import 'package:pocketpos/Helper/Classes_Methods/mistral_ai_helper.dart';
-import 'package:pocketpos/Provider/ProductProvider.dart';
+import 'package:nextpos/Helper/Classes_Methods/mistral_ai_helper.dart';
+import 'package:nextpos/Provider/ProductProvider.dart';
 
 class POSReportScreen extends StatefulWidget {
   const POSReportScreen({super.key});

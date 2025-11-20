@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:pocketpos/View/Components/Alert/CustomNotificationDialog.dart';
+import 'package:nextpos/View/Components/Alert/CustomNotificationDialog.dart';
 Future<void> showLoadingAndNotify({
   required BuildContext context,
   required Future<void> Function() task,

@@ -2,18 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:pocketpos/Helper/Classes_Methods/AppColor.dart';
-import 'package:pocketpos/Helper/Database/SecureStorageServices.dart';
-import 'package:pocketpos/Provider/AuthProvider.dart';
-import 'package:pocketpos/Provider/ProductProvider.dart';
-import 'package:pocketpos/Provider/TabProvider.dart';
-import 'package:pocketpos/View/Components/Alert/CustomConfimDialog.dart';
-import 'package:pocketpos/View/Screen/Sub/PoSReportScreen.dart';
-import 'package:pocketpos/View/Screen/Sub/PosChatScreen.dart';
-import 'package:pocketpos/View/Screen/Sub/ReceiptScreen.dart';
-import 'package:pocketpos/View/Screen/Sub/RestoreProductScreen.dart';
-import 'package:pocketpos/View/Screen/Sub/SetupCategoryScreen.dart';
-import 'package:pocketpos/View/Screen/Sub/StockLogsHistoryScreen.dart';
+import 'package:nextpos/Helper/Classes_Methods/AppColor.dart';
+import 'package:nextpos/Helper/Database/SecureStorageServices.dart';
+import 'package:nextpos/Provider/AuthProvider.dart';
+import 'package:nextpos/Provider/ProductProvider.dart';
+import 'package:nextpos/Provider/TabProvider.dart';
+import 'package:nextpos/View/Components/Alert/CustomConfimDialog.dart';
+import 'package:nextpos/View/Screen/Sub/PoSReportScreen.dart';
+import 'package:nextpos/View/Screen/Sub/PosChatScreen.dart';
+import 'package:nextpos/View/Screen/Sub/ReceiptScreen.dart';
+import 'package:nextpos/View/Screen/Sub/RestoreProductScreen.dart';
+import 'package:nextpos/View/Screen/Sub/SetupCategoryScreen.dart';
+import 'package:nextpos/View/Screen/Sub/StockLogsHistoryScreen.dart';
 import 'package:provider/provider.dart';
 
 class AppDrawer extends StatelessWidget {
@@ -36,7 +36,7 @@ class AppDrawer extends StatelessWidget {
                 child: FutureBuilder<PackageInfo>(
                   future: PackageInfo.fromPlatform(),
                   builder: (context, snapshot) {
-                    final appName = snapshot.data?.appName ?? 'PocketPOS';
+                    final appName = snapshot.data?.appName ?? 'nextpos';
                     final version = snapshot.data?.version ?? '1.0.0';
                     final buildNumber = snapshot.data?.buildNumber ?? '1';
 
@@ -123,7 +123,7 @@ class AppDrawer extends StatelessWidget {
                               const SizedBox(height: 8),
                               _DrawerItem(
                                 icon: LucideIcons.info,
-                                label: 'About PocketPOS',
+                                label: 'About nextpos',
                                 onTap: () {
                                   showAboutDialog(
                                     context: context,
@@ -133,7 +133,7 @@ class AppDrawer extends StatelessWidget {
                                     children: const [
                                       SizedBox(height: 16),
                                       Text(
-                                        "PocketPOS helps you manage inventory and sales, even offline. Made for small teams doing big things.",
+                                        "nextpos helps you manage inventory and sales, even offline. Made for small teams doing big things.",
                                         style: TextStyle(height: 1.5),
                                       ),
                                       SizedBox(height: 16),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import 'package:pocketpos/Helper/Classes_Methods/AppColor.dart';
-import 'package:pocketpos/View/Screen/Sub/BarcodeScannerScreen.dart';
+import 'package:nextpos/Helper/Classes_Methods/AppColor.dart';
+import 'package:nextpos/View/Screen/Sub/BarcodeScannerScreen.dart';
 
 class AnimatedScannerButton extends StatefulWidget {
   const AnimatedScannerButton({super.key});

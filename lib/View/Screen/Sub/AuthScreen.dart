@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
-import 'package:pocketpos/Helper/Classes_Methods/helper_methods.dart';
-import 'package:pocketpos/Provider/TabProvider.dart';
-import 'package:pocketpos/View/Components/Alert/CustomNotificationDialog.dart';
-import 'package:pocketpos/View/Components/Alert/showLoadingAndNotify.dart';
-import 'package:pocketpos/View/Components/Widgets/ResponsiveText.dart';
+import 'package:nextpos/Helper/Classes_Methods/helper_methods.dart';
+import 'package:nextpos/Provider/TabProvider.dart';
+import 'package:nextpos/View/Components/Alert/CustomNotificationDialog.dart';
+import 'package:nextpos/View/Components/Alert/showLoadingAndNotify.dart';
+import 'package:nextpos/View/Components/Widgets/ResponsiveText.dart';
 import 'package:provider/provider.dart';
-import 'package:pocketpos/Helper/Classes_Methods/AppColor.dart';
-import 'package:pocketpos/View/Components/Widgets/AuthFormWidget.dart';
-import 'package:pocketpos/Provider/AuthProvider.dart';
+import 'package:nextpos/Helper/Classes_Methods/AppColor.dart';
+import 'package:nextpos/View/Components/Widgets/AuthFormWidget.dart';
+import 'package:nextpos/Provider/AuthProvider.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});

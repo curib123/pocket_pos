@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:animate_do/animate_do.dart';
-import 'package:pocketpos/Helper/Database/PurchaseService.dart';
+import 'package:nextpos/Helper/Database/PurchaseService.dart';
 import 'package:shimmer/shimmer.dart';
-import 'package:pocketpos/Helper/Classes_Methods/AppColor.dart';
-import 'package:pocketpos/Helper/Database/SecureStorageServices.dart';
-import 'package:pocketpos/View/Components/Widgets/ResponsiveText.dart';
+import 'package:nextpos/Helper/Classes_Methods/AppColor.dart';
+import 'package:nextpos/Helper/Database/SecureStorageServices.dart';
+import 'package:nextpos/View/Components/Widgets/ResponsiveText.dart';
 
 class GreetingCard extends StatelessWidget {
   const GreetingCard({super.key});

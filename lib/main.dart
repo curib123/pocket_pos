@@ -2,34 +2,34 @@ import 'package:flutter/material.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:pocketpos/Helper/Database/SecureStorageServices.dart';
+import 'package:nextpos/Helper/Database/SecureStorageServices.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 // Models
-import 'package:pocketpos/Model/product_model.dart';
-import 'package:pocketpos/Model/product_stock.dart';
-import 'package:pocketpos/Model/loose_stock.dart';
-import 'package:pocketpos/Model/stock_log.dart';
-import 'package:pocketpos/Model/loan_item.dart';
+import 'package:nextpos/Model/product_model.dart';
+import 'package:nextpos/Model/product_stock.dart';
+import 'package:nextpos/Model/loose_stock.dart';
+import 'package:nextpos/Model/stock_log.dart';
+import 'package:nextpos/Model/loan_item.dart';
 
 // Providers
-import 'package:pocketpos/Provider/AuthProvider.dart';
-import 'package:pocketpos/Provider/CartListProvider.dart';
-import 'package:pocketpos/Provider/CurrencyProvider.dart';
-import 'package:pocketpos/Provider/LoanProvider.dart';
-import 'package:pocketpos/Provider/LogProvider.dart';
-import 'package:pocketpos/Provider/LooseStockProvider.dart';
-import 'package:pocketpos/Provider/ProductProvider.dart';
-import 'package:pocketpos/Provider/ProductStockProvider.dart';
-import 'package:pocketpos/Provider/ProductSync.dart';
-import 'package:pocketpos/Provider/StoreCategoryProvider.dart';
-import 'package:pocketpos/Provider/SwitchProvider.dart';
-import 'package:pocketpos/Provider/TabProvider.dart';
-import 'package:pocketpos/Provider/VariantProductProvider.dart';
+import 'package:nextpos/Provider/AuthProvider.dart';
+import 'package:nextpos/Provider/CartListProvider.dart';
+import 'package:nextpos/Provider/CurrencyProvider.dart';
+import 'package:nextpos/Provider/LoanProvider.dart';
+import 'package:nextpos/Provider/LogProvider.dart';
+import 'package:nextpos/Provider/LooseStockProvider.dart';
+import 'package:nextpos/Provider/ProductProvider.dart';
+import 'package:nextpos/Provider/ProductStockProvider.dart';
+import 'package:nextpos/Provider/ProductSync.dart';
+import 'package:nextpos/Provider/StoreCategoryProvider.dart';
+import 'package:nextpos/Provider/SwitchProvider.dart';
+import 'package:nextpos/Provider/TabProvider.dart';
+import 'package:nextpos/Provider/VariantProductProvider.dart';
 
 // UI
-import 'package:pocketpos/home.dart';
+import 'package:nextpos/home.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
