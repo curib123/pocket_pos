@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'dart:io';
+import 'package:file_picker/file_picker.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:nextpos/Helper/Classes_Methods/AppColor.dart';
 import 'package:nextpos/Helper/Database/SecureStorageServices.dart';
 import 'package:nextpos/Provider/CurrencyProvider.dart';
+import 'package:nextpos/Provider/OfflineDataProvider.dart';
 import 'package:nextpos/View/Components/Widgets/ResponsiveText.dart';
 import 'package:provider/provider.dart';
 
@@ -29,7 +32,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _loadUserDetails() async {
     SecureStorageService secureStorage = SecureStorageService();
 
-    final userDetails = await secureStorage.readUser(); // 👈 don't forget the await!
+    final userDetails = await secureStorage
+        .readUser(); // 👈 don't forget the await!
 
     setState(() {
       accountEmail = userDetails['email'] ?? 'Unknown';
@@ -37,7 +41,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ownerName = userDetails['ownerName'] ?? 'Unknown Owner';
     });
   }
-
 
   @override
   void didChangeDependencies() {
@@ -86,7 +89,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       const CircleAvatar(
                         radius: 30,
                         backgroundColor: Colors.white24,
-                        child: Icon(LucideIcons.user, color: Colors.white, size: 28),
+                        child: Icon(
+                          LucideIcons.user,
+                          color: Colors.white,
+                          size: 28,
+                        ),
                       ),
                       const SizedBox(width: 20),
                       Expanded(
@@ -128,13 +135,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     color: AppColor.surface,
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
-                      BoxShadow(color: Colors.black12.withOpacity(0.04), blurRadius: 6),
+                      BoxShadow(
+                        color: Colors.black12.withOpacity(0.04),
+                        blurRadius: 6,
+                      ),
                     ],
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text("Currency", style: TextStyle(fontWeight: FontWeight.bold)),
+                      const Text(
+                        "Currency",
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                       const SizedBox(height: 4),
                       Consumer<CurrencyProvider>(
                         builder: (context, provider, child) {
@@ -142,7 +155,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             isExpanded: true,
                             value: provider.selectedCurrency,
                             onChanged: (value) {
-                              if (value != null && value != provider.selectedCurrency) {
+                              if (value != null &&
+                                  value != provider.selectedCurrency) {
                                 provider.selectCurrency(value);
                               }
                             },
@@ -153,20 +167,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   children: [
                                     Text(
                                       currency['symbol'],
-                                      style: const TextStyle(fontWeight: FontWeight.bold),
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                     const SizedBox(width: 8),
-                                    Expanded(
-                                      child: Text(currency['name']),
-                                    ),
+                                    Expanded(child: Text(currency['name'])),
                                   ],
                                 ),
                               );
                             }).toList(),
                           );
                         },
-                      )
-
+                      ),
                     ],
                   ),
                 ),
@@ -188,8 +201,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 subtitle: aboutDev,
               ),
 
-              const SizedBox(height: 10),
+              Consumer<OfflineDataProvider>(
+                builder: (context, offline, _) => Column(
+                  children: [
+                    _profileTile(
+                      context,
+                      icon: LucideIcons.download,
+                      title: 'Backup offline data',
+                      subtitle: offline.isBusy
+                          ? 'Preparing backup…'
+                          : 'Export products, stock, loans, logs, and sync queue',
+                      onTap: offline.isBusy ? null : () => _backup(context),
+                    ),
+                    _profileTile(
+                      context,
+                      icon: LucideIcons.upload,
+                      title: 'Restore offline data',
+                      subtitle: offline.isBusy
+                          ? 'Restoring backup…'
+                          : 'Import a NextPOS backup file',
+                      onTap: offline.isBusy ? null : () => _restore(context),
+                    ),
+                  ],
+                ),
+              ),
 
+              const SizedBox(height: 10),
             ],
           ),
         ),
@@ -197,13 +234,62 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  Future<void> _backup(BuildContext context) async {
+    final path = await FilePicker.platform.saveFile(
+      dialogTitle: 'Save NextPOS backup',
+      fileName:
+          'nextpos-backup-${DateTime.now().toIso8601String().split('T').first}.json',
+      type: FileType.custom,
+      allowedExtensions: ['json'],
+    );
+    if (!context.mounted || path == null) return;
+    try {
+      await context.read<OfflineDataProvider>().backupTo(File(path));
+      if (context.mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Offline backup saved successfully.')),
+        );
+    } catch (error) {
+      if (context.mounted)
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Backup failed: $error')));
+    }
+  }
+
+  Future<void> _restore(BuildContext context) async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['json'],
+    );
+    if (!context.mounted || result?.files.single.path == null) return;
+    try {
+      final count = await context.read<OfflineDataProvider>().restoreFrom(
+        File(result!.files.single.path!),
+      );
+      if (context.mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Restored $count product records. Restart or sync to refresh all screens.',
+            ),
+          ),
+        );
+    } catch (error) {
+      if (context.mounted)
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Restore failed: $error')));
+    }
+  }
+
   Widget _profileTile(
-      BuildContext context, {
-        required IconData icon,
-        required String title,
-        required String subtitle,
-        VoidCallback? onTap,
-      }) {
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    VoidCallback? onTap,
+  }) {
     final bool isAboutDeveloper = title == "About the Developer";
 
     return FadeInUp(
@@ -229,12 +315,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                    Text(
+                      title,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
                     const SizedBox(height: 4),
                     Text(
                       subtitle,
                       style: const TextStyle(color: AppColor.textSecondary),
-                      overflow: isAboutDeveloper ? TextOverflow.visible : TextOverflow.ellipsis,
+                      overflow: isAboutDeveloper
+                          ? TextOverflow.visible
+                          : TextOverflow.ellipsis,
                     ),
                   ],
                 ),
