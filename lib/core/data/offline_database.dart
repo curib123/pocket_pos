@@ -170,14 +170,22 @@ class OfflineDatabase {
     final db = await database;
     await db.transaction((txn) async {
       for (final product in products) {
+        final payload = jsonEncode(product.toMap());
         await txn.insert('products', {
           'id': product.id,
           'name': product.name,
           'category': product.category,
-          'payload': jsonEncode(product.toMap()),
+          'payload': payload,
           'is_deleted': product.isSoftDeleted ? 1 : 0,
           'modified_at': product.lastModified.toUtc().toIso8601String(),
         }, conflictAlgorithm: ConflictAlgorithm.replace);
+        await txn.insert('sync_outbox', {
+          'entity': 'product',
+          'entity_id': product.id,
+          'operation': 'restore',
+          'payload': payload,
+          'created_at': DateTime.now().toUtc().toIso8601String(),
+        });
       }
     });
     return products.length;
