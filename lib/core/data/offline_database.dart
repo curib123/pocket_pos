@@ -114,6 +114,38 @@ class OfflineDatabase {
     return db.query('sync_outbox', orderBy: 'created_at ASC', limit: limit);
   }
 
+  Future<void> setMetadata(String key, String value) async {
+    final db = await database;
+    await db.insert('app_metadata', {
+      'key': key,
+      'value': value,
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
+  Future<String?> getMetadata(String key) async {
+    final db = await database;
+    final rows = await db.query(
+      'app_metadata',
+      where: 'key = ?',
+      whereArgs: [key],
+      limit: 1,
+    );
+    return rows.isEmpty ? null : rows.first['value'] as String;
+  }
+
+  Future<void> markSyncAttempt(int id, {String? error}) async {
+    final db = await database;
+    await db.rawUpdate(
+      'UPDATE sync_outbox SET attempts = attempts + 1, last_error = ? WHERE id = ?',
+      [error, id],
+    );
+  }
+
+  Future<void> removeSyncItem(int id) async {
+    final db = await database;
+    await db.delete('sync_outbox', where: 'id = ?', whereArgs: [id]);
+  }
+
   Future<File> exportBackup(File destination) async {
     final products = await readProducts();
     final outbox = await pendingSync(limit: 1000000);

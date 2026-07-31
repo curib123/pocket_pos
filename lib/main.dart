@@ -29,6 +29,7 @@ import 'package:nextpos/Provider/TabProvider.dart';
 import 'package:nextpos/Provider/VariantProductProvider.dart';
 import 'package:nextpos/Provider/OfflineDataProvider.dart';
 import 'package:nextpos/core/data/offline_database.dart';
+import 'package:nextpos/Provider/OfflineSyncProvider.dart';
 
 // UI
 import 'package:nextpos/home.dart';
@@ -87,6 +88,7 @@ Future<void> main() async {
           ChangeNotifierProvider(create: (_) => LogProvider()),
           ChangeNotifierProvider(create: (_) => CartListProvider()),
           ChangeNotifierProvider(create: (_) => OfflineDataProvider()),
+          ChangeNotifierProvider(create: (_) => OfflineSyncProvider()),
           ChangeNotifierProxyProvider<ProductProvider, VariantProductProvider>(
             create: (_) => VariantProductProvider(),
             update: (_, productProvider, previous) =>

@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 import 'package:nextpos/Helper/Classes_Methods/Currency.dart';
+import 'package:nextpos/core/data/offline_database.dart';
+
 class CurrencyProvider with ChangeNotifier {
   final List<Map<String, dynamic>> currencies = currencyList;
 
   late Map<String, dynamic> _selectedCurrency;
   late NumberFormat _currencyFormat;
+  final _database = OfflineDatabase.instance;
 
   CurrencyProvider() {
     // Initialize with fallback currency synchronously
@@ -29,12 +31,11 @@ class CurrencyProvider with ChangeNotifier {
   }
 
   Future<void> loadCurrency() async {
-    final box = Hive.box('settings_currency');
-    final savedCurrencyName = box.get('currencyName');
+    final savedCurrencyName = await _database.getMetadata('currencyName');
 
     if (savedCurrencyName != null) {
       final savedCurrency = currencies.firstWhere(
-            (currency) => currency['name'] == savedCurrencyName,
+        (currency) => currency['name'] == savedCurrencyName,
         orElse: () => currencies[0],
       );
       _selectedCurrency = savedCurrency;
@@ -43,14 +44,16 @@ class CurrencyProvider with ChangeNotifier {
     }
   }
 
-  Future<void> selectCurrency(Map<String, dynamic> currency, {bool save = true}) async {
+  Future<void> selectCurrency(
+    Map<String, dynamic> currency, {
+    bool save = true,
+  }) async {
     _selectedCurrency = currency;
     _currencyFormat = _createFormatter(currency);
     notifyListeners();
 
     if (save) {
-      final box = Hive.box('settings_currency');
-      await box.put('currencyName', currency['name']);
+      await _database.setMetadata('currencyName', currency['name'] as String);
     }
   }
 
