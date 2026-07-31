@@ -27,6 +27,8 @@ import 'package:nextpos/Provider/StoreCategoryProvider.dart';
 import 'package:nextpos/Provider/SwitchProvider.dart';
 import 'package:nextpos/Provider/TabProvider.dart';
 import 'package:nextpos/Provider/VariantProductProvider.dart';
+import 'package:nextpos/Provider/OfflineDataProvider.dart';
+import 'package:nextpos/core/data/offline_database.dart';
 
 // UI
 import 'package:nextpos/home.dart';
@@ -48,6 +50,10 @@ Future<void> main() async {
   await Hive.openBox('categoryVisibility');
   await Hive.openBox('settings_currency');
 
+  // SQLite is the durable offline-first store and sync outbox. Hive remains
+  // available during the migration so existing screens keep their behavior.
+  await OfflineDatabase.instance.database;
+
   // Secure Storage
   final storage = SecureStorageService();
 
@@ -55,21 +61,15 @@ Future<void> main() async {
   const supabaseUrl = "YOUR_SUPABASE_URL";
   const supabaseAnonKey = "YOUR_SUPABASE_ANON_KEY";
 
-  if (supabaseUrl.isEmpty || supabaseAnonKey.isEmpty) {
-    throw Exception("Supabase URL or key is missing!");
+  // Cloud sync is optional. A production build supplies these through a
+  // secure configuration layer; an offline build must still start normally.
+  if (supabaseUrl.startsWith('http') && supabaseAnonKey.isNotEmpty) {
+    final existingKey = await storage.readSupabaseKey();
+    if (existingKey == null || existingKey.isEmpty) {
+      await storage.saveSupabaseKey(supabaseAnonKey);
+    }
+    await Supabase.initialize(url: supabaseUrl, anonKey: supabaseAnonKey);
   }
-
-  // Save to secure storage if not existing
-  final existingKey = await storage.readSupabaseKey();
-  if (existingKey == null || existingKey.isEmpty) {
-    await storage.saveSupabaseKey(supabaseAnonKey);
-  }
-
-  // Supabase init
-  await Supabase.initialize(
-    url: supabaseUrl,
-    anonKey: supabaseAnonKey,
-  );
 
   runApp(
     Phoenix(
@@ -86,10 +86,11 @@ Future<void> main() async {
           ChangeNotifierProvider(create: (_) => LoanProvider()),
           ChangeNotifierProvider(create: (_) => LogProvider()),
           ChangeNotifierProvider(create: (_) => CartListProvider()),
+          ChangeNotifierProvider(create: (_) => OfflineDataProvider()),
           ChangeNotifierProxyProvider<ProductProvider, VariantProductProvider>(
             create: (_) => VariantProductProvider(),
             update: (_, productProvider, previous) =>
-            previous!..attachProductProvider(productProvider),
+                previous!..attachProductProvider(productProvider),
           ),
           Provider(create: (_) => ProductSync()),
         ],
