@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:animate_do/animate_do.dart';
+import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:nextpos/Helper/Classes_Methods/AppColor.dart';
 import 'package:nextpos/Helper/Database/SecureStorageServices.dart';
 import 'package:nextpos/Provider/CurrencyProvider.dart';
@@ -267,14 +268,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final count = await context.read<OfflineDataProvider>().restoreFrom(
         File(result!.files.single.path!),
       );
-      if (context.mounted)
+      if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Restored $count product records. Restart or sync to refresh all screens.',
+              'Restored $count product records. Reloading the POS…',
             ),
           ),
         );
+        await Future<void>.delayed(const Duration(milliseconds: 350));
+        if (context.mounted) Phoenix.rebirth(context);
+      }
     } catch (error) {
       if (context.mounted)
         ScaffoldMessenger.of(
