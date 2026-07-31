@@ -4,9 +4,17 @@ import 'package:uuid/uuid.dart';
 import 'package:nextpos/Model/loose_stock.dart';
 import 'package:nextpos/Model/product_model.dart';
 import 'package:nextpos/Model/stock_log.dart';
+import 'package:nextpos/core/data/offline_database.dart';
 
 class LooseStockProvider extends ChangeNotifier {
   final Box<Product> _productBox = Hive.box<Product>('products');
+  final _offlineDatabase = OfflineDatabase.instance;
+
+  Future<void> _mirror(Product product) async {
+    try {
+      await _offlineDatabase.upsertProduct(product);
+    } catch (_) {}
+  }
 
   LooseStockProvider();
 
@@ -40,7 +48,6 @@ class LooseStockProvider extends ChangeNotifier {
     return null;
   }
 
-
   LooseStock? getLooseStock(String idOrName) {
     final product = _getProduct(idOrName);
     return product?.looseStock;
@@ -48,7 +55,9 @@ class LooseStockProvider extends ChangeNotifier {
 
   /// 🪵 CREATE / UPDATE Loose Stock
   Future<void> upsertLooseStock(String idOrName, int quantity) async {
-    print('🟡 [upsertLooseStock] Called with idOrName: $idOrName | Quantity: $quantity');
+    print(
+      '🟡 [upsertLooseStock] Called with idOrName: $idOrName | Quantity: $quantity',
+    );
 
     Product? product = _getProduct(idOrName);
     Product? parent;
@@ -58,7 +67,8 @@ class LooseStockProvider extends ChangeNotifier {
       print('🔍 Not found in main products. Searching variants...');
       for (final p in _productBox.values) {
         for (final v in p.variants) {
-          if (v.id == idOrName || v.name.toLowerCase() == idOrName.toLowerCase()) {
+          if (v.id == idOrName ||
+              v.name.toLowerCase() == idOrName.toLowerCase()) {
             product = v;
             parent = p;
             print('🧬 Variant found: ${v.name} (Parent: ${parent.name})');
@@ -117,14 +127,22 @@ class LooseStockProvider extends ChangeNotifier {
       );
 
       await _productBox.put(updatedParent.id, updatedParent);
+      await _mirror(updatedParent);
       print('✅ Variant loose stock updated in parent: ${parent.name}');
     } else {
       await _productBox.put(product.id, updatedProduct);
-      print('✅ Main product loose stock ${isNew ? "created" : "updated"} successfully');
+      await _mirror(updatedProduct);
+      print(
+        '✅ Main product loose stock ${isNew ? "created" : "updated"} successfully',
+      );
     }
 
-    print('🧾 Log added: ${isNew ? "Initial loose stock created" : "Adjusted from $previousQty to $quantity"}');
-    print("🧮 Final Loose Stock: ${updatedProduct.looseStock?.remainingPieces}");
+    print(
+      '🧾 Log added: ${isNew ? "Initial loose stock created" : "Adjusted from $previousQty to $quantity"}',
+    );
+    print(
+      "🧮 Final Loose Stock: ${updatedProduct.looseStock?.remainingPieces}",
+    );
 
     notifyListeners();
     print('📣 Listeners notified.');
@@ -162,6 +180,7 @@ class LooseStockProvider extends ChangeNotifier {
     );
 
     await _productBox.put(product.id, updatedProduct);
+    await _mirror(updatedProduct);
     notifyListeners();
   }
 
@@ -190,6 +209,7 @@ class LooseStockProvider extends ChangeNotifier {
     );
 
     await _productBox.put(product.id, updatedProduct);
+    await _mirror(updatedProduct);
     notifyListeners();
   }
 

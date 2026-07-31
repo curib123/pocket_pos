@@ -3,9 +3,18 @@ import 'package:hive/hive.dart';
 import 'package:nextpos/Model/product_model.dart';
 import 'package:nextpos/Model/stock_log.dart';
 import 'package:nextpos/Provider/ProductProvider.dart';
+import 'package:nextpos/core/data/offline_database.dart';
 
 class VariantProductProvider extends ChangeNotifier {
   final Box<Product> _productBox = Hive.box<Product>('products');
+  final _offlineDatabase = OfflineDatabase.instance;
+
+  Future<void> _mirror(Product product) async {
+    try {
+      await _offlineDatabase.upsertProduct(product);
+    } catch (_) {}
+  }
+
   late ProductProvider _productProvider;
 
   VariantProductProvider();
@@ -21,15 +30,14 @@ class VariantProductProvider extends ChangeNotifier {
 
     try {
       return _productBox.values.firstWhere(
-            (p) =>
-        !p.isSoftDeleted &&
+        (p) =>
+            !p.isSoftDeleted &&
             (p.id == idOrName || p.name.trim().toLowerCase() == query),
       );
     } catch (_) {
       return null;
     }
   }
-
 
   List<Product> getVariants(String idOrName) {
     final parent = _getParent(idOrName);
@@ -39,8 +47,8 @@ class VariantProductProvider extends ChangeNotifier {
   String? getParentProductIdFromVariantId(String variantId) {
     try {
       final parent = _productBox.values.firstWhere(
-            (product) =>
-        !product.isSoftDeleted  &&
+        (product) =>
+            !product.isSoftDeleted &&
             product.hasVariant &&
             product.variants.any((v) => v.id == variantId),
       );
@@ -51,12 +59,16 @@ class VariantProductProvider extends ChangeNotifier {
   }
 
   Future<void> upsertVariant(String parentId, Product variant) async {
-    debugPrint("🚀 Starting upsertVariant for parentId: $parentId, variant: ${variant.name}");
+    debugPrint(
+      "🚀 Starting upsertVariant for parentId: $parentId, variant: ${variant.name}",
+    );
 
     try {
       final parent = _getParent(parentId);
       if (parent == null) {
-        debugPrint("❌ Parent not found for id: $parentId. Aborting variant upsert.");
+        debugPrint(
+          "❌ Parent not found for id: $parentId. Aborting variant upsert.",
+        );
         return;
       }
 
@@ -65,8 +77,9 @@ class VariantProductProvider extends ChangeNotifier {
         lastModified: DateTime.now(),
       );
 
-      final int existingIndex =
-      parent.variants.indexWhere((v) => v.id == updatedVariant.id);
+      final int existingIndex = parent.variants.indexWhere(
+        (v) => v.id == updatedVariant.id,
+      );
       List<StockLog> logs = [];
 
       if (existingIndex == -1) {
@@ -85,7 +98,9 @@ class VariantProductProvider extends ChangeNotifier {
                 remarks: 'Initial stock (pack)',
               ),
             );
-            debugPrint("📦 Logged initial pack stock: ${stock.quantity} for stockId: ${stock.id}");
+            debugPrint(
+              "📦 Logged initial pack stock: ${stock.quantity} for stockId: ${stock.id}",
+            );
           }
         }
 
@@ -107,7 +122,9 @@ class VariantProductProvider extends ChangeNotifier {
         }
 
         updatedVariant = updatedVariant.copyWith(
-          looseStock: updatedVariant.looseStock?.copyWith(remainingPieces: loose),
+          looseStock: updatedVariant.looseStock?.copyWith(
+            remainingPieces: loose,
+          ),
           logs: [...updatedVariant.logs, ...logs],
         );
 
@@ -118,7 +135,10 @@ class VariantProductProvider extends ChangeNotifier {
         );
 
         await _productBox.put(updatedParent.id, updatedParent);
-        debugPrint("📦 New variant saved under parent: ${parent.name} (${parent.id})");
+        await _mirror(updatedParent);
+        debugPrint(
+          "📦 New variant saved under parent: ${parent.name} (${parent.id})",
+        );
 
         notifyListeners();
         debugPrint("✅ New variant upsert completed and listeners notified.");
@@ -130,7 +150,7 @@ class VariantProductProvider extends ChangeNotifier {
         // 🛠️ Check and log stock changes
         for (final newStock in updatedVariant.stocks) {
           final oldStock = oldVariant.stocks.firstWhere(
-                (s) => s.id == newStock.id,
+            (s) => s.id == newStock.id,
             orElse: () => newStock,
           );
 
@@ -143,10 +163,12 @@ class VariantProductProvider extends ChangeNotifier {
                 isPiece: false,
                 reason: StockLogReason.adjusted,
                 remarks:
-                'Updated stock: ${oldStock.quantity} → ${newStock.quantity}',
+                    'Updated stock: ${oldStock.quantity} → ${newStock.quantity}',
               ),
             );
-            debugPrint("🛠️ Pack stock changed for ${newStock.id}: ${oldStock.quantity} → ${newStock.quantity}");
+            debugPrint(
+              "🛠️ Pack stock changed for ${newStock.id}: ${oldStock.quantity} → ${newStock.quantity}",
+            );
           }
         }
 
@@ -169,7 +191,9 @@ class VariantProductProvider extends ChangeNotifier {
         }
 
         updatedVariant = updatedVariant.copyWith(
-          looseStock: updatedVariant.looseStock?.copyWith(remainingPieces: newLoose),
+          looseStock: updatedVariant.looseStock?.copyWith(
+            remainingPieces: newLoose,
+          ),
           logs: [...updatedVariant.logs, ...logs],
         );
 
@@ -182,14 +206,19 @@ class VariantProductProvider extends ChangeNotifier {
         );
 
         await _productBox.put(updatedParent.id, updatedParent);
+        await _mirror(updatedParent);
         debugPrint("💾 Existing variant updated under parent: ${parent.name}");
 
         notifyListeners();
-        debugPrint("✅ Existing variant update completed and listeners notified.");
+        debugPrint(
+          "✅ Existing variant update completed and listeners notified.",
+        );
 
         final savedParent = _productBox.get(parent.id);
         if (savedParent != null) {
-          debugPrint("🧠 Saved parent confirmed: ${savedParent.name}, Variants: ${savedParent.variants.map((v) => v.name).toList()}");
+          debugPrint(
+            "🧠 Saved parent confirmed: ${savedParent.name}, Variants: ${savedParent.variants.map((v) => v.name).toList()}",
+          );
         }
       }
     } catch (e, stack) {
@@ -203,10 +232,11 @@ class VariantProductProvider extends ChangeNotifier {
       final parent = _getParent(idOrName);
       if (parent == null) return;
 
-      final matchingVariants = parent.variants.where((v) => v.id == variantId).toList();
+      final matchingVariants = parent.variants
+          .where((v) => v.id == variantId)
+          .toList();
 
       if (matchingVariants.isEmpty) {
-
         return;
       }
 
@@ -243,7 +273,9 @@ class VariantProductProvider extends ChangeNotifier {
         );
       }
 
-      final updatedVariants = parent.variants.where((v) => v.id != variantId).toList();
+      final updatedVariants = parent.variants
+          .where((v) => v.id != variantId)
+          .toList();
 
       final updatedParent = parent.copyWith(
         variants: updatedVariants,
@@ -253,11 +285,8 @@ class VariantProductProvider extends ChangeNotifier {
       );
 
       await _productBox.put(updatedParent.id, updatedParent);
+      await _mirror(updatedParent);
       notifyListeners();
-
-
-    } catch (e) {
-
-    }
+    } catch (e) {}
   }
 }

@@ -7,9 +7,17 @@ import 'package:nextpos/Model/product_model.dart';
 import 'package:nextpos/Model/product_stock.dart';
 import 'package:nextpos/Model/stock_log.dart';
 import 'package:nextpos/View/Components/Alert/CustomNotificationDialog.dart';
+import 'package:nextpos/core/data/offline_database.dart';
 
 class ProductStockProvider extends ChangeNotifier {
   final Box<Product> _productBox = Hive.box<Product>('products');
+  final _offlineDatabase = OfflineDatabase.instance;
+
+  Future<void> _mirror(Product product) async {
+    try {
+      await _offlineDatabase.upsertProduct(product);
+    } catch (_) {}
+  }
 
   ProductStockProvider();
 
@@ -40,16 +48,15 @@ class ProductStockProvider extends ChangeNotifier {
 
     return null;
   }
+
   Future<bool> sellPack(
-      String productIdOrName,
-      int quantity,
-      StockLogReason reason, // <- added here
-      bool isSellingINPiece,
-          {
-        bool isLoan = false,
-        String borrowName = 'Unknown',
-      }
-      ) async {
+    String productIdOrName,
+    int quantity,
+    StockLogReason reason, // <- added here
+    bool isSellingINPiece, {
+    bool isLoan = false,
+    String borrowName = 'Unknown',
+  }) async {
     final product = _getProduct(productIdOrName);
     if (product == null) {
       print('❌ Product not found: $productIdOrName');
@@ -64,7 +71,9 @@ class ProductStockProvider extends ChangeNotifier {
     List<ProductStock> updatedStocks = [...product.stocks];
     List<StockLog> logs = [];
 
-    print('🛒 ${isLoan ? 'Loaning' : reason.name} $quantity pack(s) of ${product.name}');
+    print(
+      '🛒 ${isLoan ? 'Loaning' : reason.name} $quantity pack(s) of ${product.name}',
+    );
     print('📦 Initial stocks:');
     for (final s in sortedStocks) {
       print(' - ${s.id} | qty: ${s.quantity} | received: ${s.dateReceived}');
@@ -85,26 +94,29 @@ class ProductStockProvider extends ChangeNotifier {
       if (index != -1) updatedStocks[index] = updated;
 
       final unitProfit = stock.retailPrice - stock.costPrice;
-       totalProfit = unitProfit * deduct;
-
-
+      totalProfit = unitProfit * deduct;
 
       remainingToDeduct -= deduct;
     }
 
     if (remainingToDeduct > 0) {
-      print('❗ Not enough stock to fulfill request. Needed $quantity, could only deduct ${quantity - remainingToDeduct}.');
+      print(
+        '❗ Not enough stock to fulfill request. Needed $quantity, could only deduct ${quantity - remainingToDeduct}.',
+      );
       return false;
     }
 
     LooseStock? updatedLoose;
     if (product.looseStock != null && product.piecesPerPack != null) {
       final totalPiecesDeducted = quantity * product.piecesPerPack!;
-      final newRemaining = (product.looseStock!.remainingPieces - totalPiecesDeducted)
-          .clamp(0, double.infinity)
-          .toInt();
+      final newRemaining =
+          (product.looseStock!.remainingPieces - totalPiecesDeducted)
+              .clamp(0, double.infinity)
+              .toInt();
 
-      updatedLoose = product.looseStock!.copyWith(remainingPieces: newRemaining);
+      updatedLoose = product.looseStock!.copyWith(
+        remainingPieces: newRemaining,
+      );
 
       logs.add(
         StockLog(
@@ -113,15 +125,18 @@ class ProductStockProvider extends ChangeNotifier {
           profit: totalProfit,
           quantity: quantity,
           isPiece: isSellingINPiece,
-          reason: isLoan ? StockLogReason.borrowed : reason, // ✅ use passed reason
+          reason: isLoan
+              ? StockLogReason.borrowed
+              : reason, // ✅ use passed reason
           remarks: isLoan
               ? 'Loaned out $quantity pack(s) • $totalPiecesDeducted pcs deducted from inventory'
               : '${reason.name} $quantity pack(s) • Deducted $totalPiecesDeducted pcs from stock',
-
         ),
       );
 
-      print('🔁 Synced loose stock: -$totalPiecesDeducted pcs, newRemaining: $newRemaining');
+      print(
+        '🔁 Synced loose stock: -$totalPiecesDeducted pcs, newRemaining: $newRemaining',
+      );
     } else {
       print('⚠️ Skipped loose stock sync: looseStock or piecesPerPack is null');
     }
@@ -179,9 +194,11 @@ class ProductStockProvider extends ChangeNotifier {
       );
 
       await _productBox.put(updatedParent.id, updatedParent);
+      await _mirror(updatedParent);
       print('📦 Updated parent with new variant info');
     } else {
       await _productBox.put(updatedProduct.id, updatedProduct);
+      await _mirror(updatedProduct);
       print('📦 Updated main product entry directly');
     }
 
@@ -191,13 +208,13 @@ class ProductStockProvider extends ChangeNotifier {
   }
 
   Future<bool> sellItemsPerPack(
-      String productIdOrName,
-      int quantity,
-      StockLogReason reason,
-      BuildContext context, {
-        bool isLoan = false,
-        String borrowName = 'Unknown',
-      }) async {
+    String productIdOrName,
+    int quantity,
+    StockLogReason reason,
+    BuildContext context, {
+    bool isLoan = false,
+    String borrowName = 'Unknown',
+  }) async {
     if (quantity <= 0) {
       print('❌ Invalid quantity: $quantity');
       return false;
@@ -209,7 +226,8 @@ class ProductStockProvider extends ChangeNotifier {
         context: context,
         builder: (_) => CustomNotificationDialog(
           title: 'Product Not Found',
-          content: 'The product "$productIdOrName" could not be found in your inventory.',
+          content:
+              'The product "$productIdOrName" could not be found in your inventory.',
           onConfirm: () => Navigator.pop(context),
         ),
       );
@@ -224,7 +242,8 @@ class ProductStockProvider extends ChangeNotifier {
         context: context,
         builder: (_) => CustomNotificationDialog(
           title: 'Loose Stock Not Available',
-          content: 'This product has no loose stock configured. Please set it up before selling by piece.',
+          content:
+              'This product has no loose stock configured. Please set it up before selling by piece.',
           onConfirm: () => Navigator.pop(context),
         ),
       );
@@ -237,7 +256,8 @@ class ProductStockProvider extends ChangeNotifier {
         context: context,
         builder: (_) => CustomNotificationDialog(
           title: 'Not Enough Stock',
-          content: 'Only $looseBefore pieces available, but $quantity requested.',
+          content:
+              'Only $looseBefore pieces available, but $quantity requested.',
           onConfirm: () => Navigator.pop(context),
         ),
       );
@@ -258,10 +278,12 @@ class ProductStockProvider extends ChangeNotifier {
       final stock = updatedStocks[i];
       if (stock.quantity <= 0) continue;
 
-      final deduct = stock.quantity >= remainingToDeduct ? remainingToDeduct : stock.quantity;
+      final deduct = stock.quantity >= remainingToDeduct
+          ? remainingToDeduct
+          : stock.quantity;
       updatedStocks[i] = stock.copyWith(quantity: stock.quantity - deduct);
 
-      final unitProfit = (stock.retailPrice ) - (stock.costPrice );
+      final unitProfit = (stock.retailPrice) - (stock.costPrice);
       totalPackProfit += unitProfit * deduct;
       remainingToDeduct -= deduct;
     }
@@ -278,14 +300,15 @@ class ProductStockProvider extends ChangeNotifier {
       isPiece: true,
       profit: totalProfit,
       reason: isLoan ? StockLogReason.borrowed : reason,
-      remarks: '${isLoan ? 'Loaned' : reason.name} $quantity pcs, auto-deducted $packsToDeduct pack(s)',
+      remarks:
+          '${isLoan ? 'Loaned' : reason.name} $quantity pcs, auto-deducted $packsToDeduct pack(s)',
     );
 
     print(singleLog.quantity);
     LoanItem? loanItem;
     if (isLoan) {
       final firstAvailableStock = updatedStocks.firstWhere(
-            (s) => s.retailPrice != null,
+        (s) => s.retailPrice != null,
         orElse: () => updatedStocks.first,
       );
 
@@ -321,29 +344,35 @@ class ProductStockProvider extends ChangeNotifier {
     Product? parent;
     try {
       parent = _productBox.values.firstWhere(
-            (p) => p.hasVariant && p.variants.any((v) => v.id == product.id),
+        (p) => p.hasVariant && p.variants.any((v) => v.id == product.id),
       );
     } catch (_) {
       parent = null;
     }
 
     if (parent != null) {
-      final updatedVariants = parent.variants.map((v) => v.id == product.id ? updatedProduct : v).toList();
+      final updatedVariants = parent.variants
+          .map((v) => v.id == product.id ? updatedProduct : v)
+          .toList();
       final updatedParent = parent.copyWith(
         variants: updatedVariants,
         lastModified: DateTime.now(),
       );
       await _productBox.put(updatedParent.id, updatedParent);
+      await _mirror(updatedParent);
       print('🧬 Variant updated under parent: ${updatedParent.name}');
     } else {
       await _productBox.put(updatedProduct.id, updatedProduct);
+      await _mirror(updatedProduct);
       print('📦 Product updated: ${updatedProduct.name}');
     }
 
     notifyListeners();
 
     print('🧮 Loose stock: $looseBefore ➡️ $looseAfter');
-    print('📦 Pack count: $currentPackCount ➡️ $newPackCount (deducted $packsToDeduct pack[s])');
+    print(
+      '📦 Pack count: $currentPackCount ➡️ $newPackCount (deducted $packsToDeduct pack[s])',
+    );
 
     return true;
   }
@@ -377,6 +406,7 @@ class ProductStockProvider extends ChangeNotifier {
     );
 
     await _productBox.put(updatedProduct.id, updatedProduct);
+    await _mirror(updatedProduct);
     notifyListeners();
   }
 
@@ -406,12 +436,14 @@ class ProductStockProvider extends ChangeNotifier {
     );
 
     await _productBox.put(updatedProduct.id, updatedProduct);
+    await _mirror(updatedProduct);
     notifyListeners();
   }
 
-
-
-  Future<void> updateLooseStock(String productIdOrName, int remainingPieces) async {
+  Future<void> updateLooseStock(
+    String productIdOrName,
+    int remainingPieces,
+  ) async {
     final product = _getProduct(productIdOrName);
     if (product == null) return;
 
@@ -426,6 +458,7 @@ class ProductStockProvider extends ChangeNotifier {
     );
 
     await _productBox.put(updatedProduct.id, updatedProduct);
+    await _mirror(updatedProduct);
     notifyListeners();
   }
 
@@ -465,10 +498,14 @@ class ProductStockProvider extends ChangeNotifier {
           if (product.isSoldByPiece && piecesPerPack != null) {
             final diff = (updatedQty - oldQty) * piecesPerPack;
             if (diff != 0) {
-              updatedLoose = (product.looseStock ?? LooseStock(remainingPieces: 0, productId: product.id)).copyWith(
-                remainingPieces: (product.looseStock?.remainingPieces ?? 0) + diff,
-                lastModified: DateTime.now(),
-              );
+              updatedLoose =
+                  (product.looseStock ??
+                          LooseStock(remainingPieces: 0, productId: product.id))
+                      .copyWith(
+                        remainingPieces:
+                            (product.looseStock?.remainingPieces ?? 0) + diff,
+                        lastModified: DateTime.now(),
+                      );
             }
           }
 
@@ -493,13 +530,16 @@ class ProductStockProvider extends ChangeNotifier {
       );
 
       await _productBox.put(updatedProduct.id, updatedProduct);
+      await _mirror(updatedProduct);
       notifyListeners();
-
-    } catch (e) {
-    }
+    } catch (e) {}
   }
 
-  List<Product> getProductsByStockRange({required int minQty, required int maxQty,required BuildContext context}) {
+  List<Product> getProductsByStockRange({
+    required int minQty,
+    required int maxQty,
+    required BuildContext context,
+  }) {
     final List<Product> matchingProducts = [];
 
     for (final product in _productBox.values) {
@@ -517,7 +557,10 @@ class ProductStockProvider extends ChangeNotifier {
         for (final variant in product.variants.whereType<Product>()) {
           if (variant.isSoftDeleted) continue;
 
-          final int variantQty = variant.stocks.fold(0, (sum, s) => sum + s.quantity);
+          final int variantQty = variant.stocks.fold(
+            0,
+            (sum, s) => sum + s.quantity,
+          );
 
           if (variantQty >= minQty && variantQty <= maxQty) {
             matchingProducts.add(variant);
@@ -528,6 +571,4 @@ class ProductStockProvider extends ChangeNotifier {
 
     return matchingProducts;
   }
-
 }
-
