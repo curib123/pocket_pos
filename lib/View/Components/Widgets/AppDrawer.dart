@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 import 'package:nextpos/Helper/Classes_Methods/AppColor.dart';
 import 'package:nextpos/Helper/Database/SecureStorageServices.dart';
 import 'package:nextpos/Provider/AuthProvider.dart';
 import 'package:nextpos/Provider/ProductProvider.dart';
 import 'package:nextpos/Provider/TabProvider.dart';
 import 'package:nextpos/View/Components/Alert/CustomConfimDialog.dart';
+import 'package:nextpos/View/Components/Brand/PocketInventoryBrand.dart';
+import 'package:nextpos/View/Components/Inventory/StockMovementSheet.dart';
 import 'package:nextpos/View/Screen/Sub/RestoreProductScreen.dart';
 import 'package:nextpos/View/Screen/Sub/SetupCategoryScreen.dart';
-import 'package:nextpos/View/Screen/Sub/StockLogsHistoryScreen.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 
 class AppDrawer extends StatelessWidget {
@@ -40,10 +41,10 @@ class AppDrawer extends StatelessWidget {
                     final ownerName = user['ownerName'] ?? 'Owner';
 
                     return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
                       child: Column(
                         children: [
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 16),
                           _buildHeader(context, storeName, ownerName),
                           const SizedBox(height: 18),
                           Expanded(
@@ -51,31 +52,62 @@ class AppDrawer extends StatelessWidget {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const _SectionTitle(title: 'Inventory'),
+                                  const _SectionTitle(title: 'Navigate'),
                                   _DrawerItem(
                                     icon: LucideIcons.layoutDashboard,
-                                    label: 'Dashboard',
-                                    onTap: () => _selectTab(context, tabProvider, 0),
+                                    label: 'Home',
+                                    selected: tabProvider.currentIndex == 0,
+                                    onTap: () =>
+                                        _selectTab(context, tabProvider, 0),
                                   ),
                                   _DrawerItem(
                                     icon: LucideIcons.boxes,
-                                    label: 'Products',
-                                    onTap: () => _selectTab(context, tabProvider, 1),
-                                  ),
-                                  _DrawerItem(
-                                    icon: LucideIcons.arrowLeftRight,
-                                    label: 'Stock In / Out / Adjustment',
-                                    onTap: () => _selectTab(context, tabProvider, 2),
+                                    label: 'Inventory',
+                                    selected: tabProvider.currentIndex == 1,
+                                    onTap: () =>
+                                        _selectTab(context, tabProvider, 1),
                                   ),
                                   _DrawerItem(
                                     icon: LucideIcons.history,
-                                    label: 'Stock Movement History',
-                                    onTap: () => _push(
+                                    label: 'Activity',
+                                    selected: tabProvider.currentIndex == 2,
+                                    onTap: () =>
+                                        _selectTab(context, tabProvider, 2),
+                                  ),
+                                  _DrawerItem(
+                                    icon: LucideIcons.settings,
+                                    label: 'Settings',
+                                    selected: tabProvider.currentIndex == 3,
+                                    onTap: () =>
+                                        _selectTab(context, tabProvider, 3),
+                                  ),
+                                  const SizedBox(height: 14),
+                                  const _SectionTitle(title: 'Quick stock'),
+                                  _DrawerItem(
+                                    icon: LucideIcons.plus,
+                                    label: 'Stock In',
+                                    onTap: () => _openMovement(
                                       context,
-                                      const StockLogsHistoryScreen(),
+                                      StockMovementType.stockIn,
                                     ),
                                   ),
-                                  const SizedBox(height: 16),
+                                  _DrawerItem(
+                                    icon: LucideIcons.minus,
+                                    label: 'Stock Out',
+                                    onTap: () => _openMovement(
+                                      context,
+                                      StockMovementType.stockOut,
+                                    ),
+                                  ),
+                                  _DrawerItem(
+                                    icon: LucideIcons.slidersHorizontal,
+                                    label: 'Adjust stock',
+                                    onTap: () => _openMovement(
+                                      context,
+                                      StockMovementType.adjustment,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 14),
                                   const _SectionTitle(title: 'Manage'),
                                   _DrawerItem(
                                     icon: LucideIcons.tags,
@@ -87,7 +119,7 @@ class AppDrawer extends StatelessWidget {
                                   ),
                                   _DrawerItem(
                                     icon: LucideIcons.rotateCcw,
-                                    label: 'Restore Deleted Products',
+                                    label: 'Deleted products',
                                     onTap: () => _push(
                                       context,
                                       const RestoreProductScreen(),
@@ -105,9 +137,12 @@ class AppDrawer extends StatelessWidget {
                               showAboutDialog(
                                 context: context,
                                 applicationName: appName,
-                                applicationVersion: 'v' + version + ' (' + buildNumber + ')',
+                                applicationVersion:
+                                    'v$version ($buildNumber)',
+                                applicationIcon:
+                                    const PocketInventoryMark(size: 48),
                                 applicationLegalese:
-                                    '© ' + DateTime.now().year.toString() + ' BantayStock',
+                                    '© ${DateTime.now().year} Pocket Inventory',
                                 children: const [
                                   SizedBox(height: 16),
                                   Text(
@@ -136,13 +171,15 @@ class AppDrawer extends StatelessWidget {
                                       productProvider,
                                       context,
                                     );
-                                    if (context.mounted) Phoenix.rebirth(context);
+                                    if (context.mounted) {
+                                      Phoenix.rebirth(context);
+                                    }
                                   },
                                 ),
                               );
                             },
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 10),
                         ],
                       ),
                     );
@@ -157,13 +194,23 @@ class AppDrawer extends StatelessWidget {
   }
 
   void _selectTab(BuildContext context, TabProvider provider, int index) {
-    Navigator.pop(context);
     provider.setTab(index);
+    Navigator.pop(context);
+  }
+
+  void _openMovement(BuildContext context, StockMovementType type) {
+    final navigator = Navigator.of(context);
+    final hostContext = navigator.context;
+    navigator.pop();
+    Future<void>.delayed(Duration.zero, () {
+      StockMovementSheet.show(hostContext, type: type);
+    });
   }
 
   void _push(BuildContext context, Widget screen) {
-    Navigator.pop(context);
-    Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
+    final navigator = Navigator.of(context);
+    navigator.pop();
+    navigator.push(MaterialPageRoute(builder: (_) => screen));
   }
 
   Widget _buildHeader(
@@ -173,12 +220,8 @@ class AppDrawer extends StatelessWidget {
   ) {
     return Row(
       children: [
-        const CircleAvatar(
-          radius: 26,
-          backgroundColor: AppColor.primary,
-          child: Icon(LucideIcons.store, color: Colors.white, size: 25),
-        ),
-        const SizedBox(width: 14),
+        const PocketInventoryMark(size: 54),
+        const SizedBox(width: 12),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -188,10 +231,11 @@ class AppDrawer extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
+              const SizedBox(height: 2),
               Text(
                 ownerName,
                 maxLines: 1,
@@ -202,9 +246,10 @@ class AppDrawer extends StatelessWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                'Sari-sari Inventory',
+                'Pocket Inventory',
                 style: TextStyle(
                   fontSize: 12,
+                  fontWeight: FontWeight.w600,
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
@@ -242,20 +287,33 @@ class _DrawerItem extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
+  final bool selected;
 
   const _DrawerItem({
     required this.icon,
     required this.label,
     required this.onTap,
+    this.selected = false,
   });
 
   @override
   Widget build(BuildContext context) {
     return ListTile(
       dense: true,
+      selected: selected,
+      selectedTileColor: AppColor.primary.withOpacity(.08),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      leading: Icon(icon, size: 20, color: AppColor.primary),
-      title: Text(label),
+      leading: Icon(
+        icon,
+        size: 20,
+        color: selected ? AppColor.primary : null,
+      ),
+      title: Text(
+        label,
+        style: TextStyle(
+          fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+        ),
+      ),
       onTap: onTap,
     );
   }
