@@ -11,6 +11,8 @@ import 'package:provider/provider.dart';
 
 enum _InventoryFilter { all, low, out }
 
+enum _InventoryLayout { list, grid }
+
 class InventoryScreen extends StatefulWidget {
   const InventoryScreen({super.key});
 
@@ -20,7 +22,11 @@ class InventoryScreen extends StatefulWidget {
 
 class _InventoryScreenState extends State<InventoryScreen> {
   final _searchController = TextEditingController();
+  static const String _allCategories = 'All categories';
+
   _InventoryFilter _filter = _InventoryFilter.all;
+  _InventoryLayout _layout = _InventoryLayout.list;
+  String _category = _allCategories;
   int _page = 0;
   int _pageSize = 10;
 
@@ -34,7 +40,18 @@ class _InventoryScreenState extends State<InventoryScreen> {
   Widget build(BuildContext context) {
     final allProducts =
         context.watch<ProductProvider>().getAllProductsWithVariants();
-    final products = _applyFilters(allProducts);
+    final categories = <String>[
+      _allCategories,
+      ...allProducts
+          .map((product) => product.category?.trim() ?? '')
+          .where((category) => category.isNotEmpty)
+          .toSet()
+          .toList()
+        ..sort(),
+    ];
+    final selectedCategory =
+        categories.contains(_category) ? _category : _allCategories;
+    final products = _applyFilters(allProducts, selectedCategory);
     final totalPages =
         products.isEmpty ? 1 : (products.length / _pageSize).ceil();
     final safePage = _page.clamp(0, totalPages - 1).toInt();
@@ -92,6 +109,63 @@ class _InventoryScreenState extends State<InventoryScreen> {
                     ],
                   ),
                 ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        value: selectedCategory,
+                        isExpanded: true,
+                        decoration: const InputDecoration(
+                          labelText: 'Category',
+                          isDense: true,
+                        ),
+                        items: categories
+                            .map(
+                              (category) => DropdownMenuItem(
+                                value: category,
+                                child: Text(
+                                  category,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (value) {
+                          if (value == null) return;
+                          setState(() {
+                            _category = value;
+                            _page = 0;
+                          });
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    SegmentedButton<_InventoryLayout>(
+                      showSelectedIcon: false,
+                      segments: const [
+                        ButtonSegment(
+                          value: _InventoryLayout.list,
+                          icon: Icon(Icons.view_list_rounded),
+                          tooltip: 'List view',
+                        ),
+                        ButtonSegment(
+                          value: _InventoryLayout.grid,
+                          icon: Icon(Icons.grid_view_rounded),
+                          tooltip: 'Grid view',
+                        ),
+                      ],
+                      selected: {_layout},
+                      onSelectionChanged: (selection) {
+                        setState(() {
+                          _layout = selection.first;
+                          _page = 0;
+                        });
+                      },
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
@@ -101,13 +175,31 @@ class _InventoryScreenState extends State<InventoryScreen> {
                     hasAnyProducts: allProducts.isNotEmpty,
                     onAddProduct: _addProduct,
                   )
-                : ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(20, 4, 20, 18),
-                    itemCount: visibleProducts.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 10),
-                    itemBuilder: (_, index) =>
-                        _ProductRow(product: visibleProducts[index]),
-                  ),
+                : _layout == _InventoryLayout.list
+                    ? ListView.separated(
+                        padding: const EdgeInsets.fromLTRB(20, 4, 20, 18),
+                        itemCount: visibleProducts.length,
+                        separatorBuilder: (_, __) =>
+                            const SizedBox(height: 10),
+                        itemBuilder: (_, index) =>
+                            _ProductRow(product: visibleProducts[index]),
+                      )
+                    : GridView.builder(
+                        padding: const EdgeInsets.fromLTRB(20, 4, 20, 18),
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount:
+                              MediaQuery.sizeOf(context).width >= 720 ? 3 : 2,
+                          crossAxisSpacing: 10,
+                          mainAxisSpacing: 10,
+                          childAspectRatio:
+                              MediaQuery.sizeOf(context).width >= 720
+                                  ? 1.08
+                                  : .88,
+                        ),
+                        itemCount: visibleProducts.length,
+                        itemBuilder: (_, index) =>
+                            _ProductGridCard(product: visibleProducts[index]),
+                      ),
           ),
           if (products.isNotEmpty)
             _PaginationBar(
@@ -150,19 +242,22 @@ class _InventoryScreenState extends State<InventoryScreen> {
           _page = 0;
         });
       },
-      selectedColor: AppBrand.primarySoft,
-      backgroundColor: AppBrand.surface,
+      selectedColor: AppBrand.primarySoftOf(context),
+      backgroundColor: AppBrand.surfaceOf(context),
       side: BorderSide(
-        color: selected ? AppBrand.primary : AppBrand.border,
+        color: selected ? AppBrand.primary : AppBrand.borderOf(context),
       ),
       labelStyle: TextStyle(
-        color: selected ? AppBrand.primary : AppBrand.ink,
+        color: selected ? AppBrand.primary : AppBrand.inkOf(context),
         fontWeight: FontWeight.w600,
       ),
     );
   }
 
-  List<Product> _applyFilters(List<Product> source) {
+  List<Product> _applyFilters(
+    List<Product> source,
+    String selectedCategory,
+  ) {
     final query = _searchController.text.trim().toLowerCase();
 
     return source.where((product) {
@@ -171,6 +266,11 @@ class _InventoryScreenState extends State<InventoryScreen> {
           (product.category ?? '').toLowerCase().contains(query) ||
           (product.barcode ?? '').toLowerCase().contains(query);
       if (!matchesQuery) return false;
+
+      if (selectedCategory != _allCategories &&
+          product.category?.trim() != selectedCategory) {
+        return false;
+      }
 
       return switch (_filter) {
         _InventoryFilter.all => true,
@@ -197,14 +297,14 @@ class _ProductRow extends StatelessWidget {
     final unit = product.unit?.trim().isNotEmpty == true
         ? product.unit!.trim()
         : (product.isSoldByPiece && !product.isSoldByPack ? 'pcs' : 'units');
-    final status = _stockStatus(product);
+    final status = _stockStatus(context, product);
     final imagePath = product.imagePath;
     final hasImage = imagePath != null &&
         imagePath.isNotEmpty &&
         File(imagePath).existsSync();
 
     return Material(
-      color: AppBrand.surface,
+      color: AppBrand.surfaceOf(context),
       borderRadius: BorderRadius.circular(18),
       child: InkWell(
         onTap: () => _showActions(context),
@@ -212,7 +312,7 @@ class _ProductRow extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            border: Border.all(color: AppBrand.border),
+            border: Border.all(color: AppBrand.borderOf(context)),
             borderRadius: BorderRadius.circular(18),
           ),
           child: Row(
@@ -268,7 +368,7 @@ class _ProductRow extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                             style:
                                 Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: AppBrand.muted,
+                                      color: AppBrand.mutedOf(context),
                                     ),
                           ),
                         ),
@@ -293,15 +393,15 @@ class _ProductRow extends StatelessWidget {
                   Text(
                     unit,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppBrand.muted,
+                          color: AppBrand.mutedOf(context),
                         ),
                   ),
                 ],
               ),
               const SizedBox(width: 4),
-              const Icon(
+              Icon(
                 Icons.chevron_right_rounded,
-                color: AppBrand.muted,
+                color: AppBrand.mutedOf(context),
               ),
             ],
           ),
@@ -311,7 +411,7 @@ class _ProductRow extends StatelessWidget {
   }
 
   void _showActions(BuildContext context) {
-    final status = _stockStatus(product);
+    final status = _stockStatus(context, product);
 
     showModalBottomSheet<void>(
       context: context,
@@ -345,7 +445,7 @@ class _ProductRow extends StatelessWidget {
                 child: Text(
                   '${product.totalQuantity} in stock · reorder at ${product.reorderLevel}',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppBrand.muted,
+                        color: AppBrand.mutedOf(context),
                       ),
                 ),
               ),
@@ -418,25 +518,173 @@ class _ProductRow extends StatelessWidget {
     );
   }
 
-  _StockStatus _stockStatus(Product product) {
+  _StockStatus _stockStatus(BuildContext context, Product product) {
     if (product.isOutOfStock) {
-      return const _StockStatus(
+      return _StockStatus(
         label: 'Out',
         color: AppBrand.danger,
-        background: AppBrand.dangerSoft,
+        background: AppBrand.dangerSoftOf(context),
       );
     }
     if (product.isLowStock) {
-      return const _StockStatus(
+      return _StockStatus(
         label: 'Low',
         color: AppBrand.warning,
-        background: AppBrand.warningSoft,
+        background: AppBrand.warningSoftOf(context),
       );
     }
-    return const _StockStatus(
+    return _StockStatus(
       label: 'Healthy',
       color: AppBrand.primary,
-      background: AppBrand.primarySoft,
+      background: AppBrand.primarySoftOf(context),
+    );
+  }
+}
+
+class _ProductGridCard extends StatelessWidget {
+  final Product product;
+
+  const _ProductGridCard({required this.product});
+
+  @override
+  Widget build(BuildContext context) {
+    final quantity = product.totalQuantity;
+    final status = _status(context);
+    final imagePath = product.imagePath;
+    final hasImage = imagePath != null &&
+        imagePath.isNotEmpty &&
+        File(imagePath).existsSync();
+
+    return Material(
+      color: AppBrand.surfaceOf(context),
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        onTap: () => _ProductRow(product: product)._showActions(context),
+        borderRadius: BorderRadius.circular(18),
+        child: Container(
+          padding: const EdgeInsets.all(13),
+          decoration: BoxDecoration(
+            border: Border.all(color: AppBrand.borderOf(context)),
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(13),
+                    child: hasImage
+                        ? Image.file(
+                            File(imagePath),
+                            width: 48,
+                            height: 48,
+                            fit: BoxFit.cover,
+                          )
+                        : Container(
+                            width: 48,
+                            height: 48,
+                            alignment: Alignment.center,
+                            color: status.background,
+                            child: Text(
+                              product.name.isEmpty
+                                  ? '?'
+                                  : product.name[0].toUpperCase(),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(
+                                    color: status.color,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                            ),
+                          ),
+                  ),
+                  const Spacer(),
+                  _StatusBadge(status: status),
+                ],
+              ),
+              const Spacer(),
+              Text(
+                product.name,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                product.category?.trim().isNotEmpty == true
+                    ? product.category!
+                    : 'Uncategorized',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppBrand.mutedOf(context),
+                    ),
+              ),
+              const SizedBox(height: 10),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    quantity.toString(),
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          color: status.color,
+                          fontWeight: FontWeight.w800,
+                        ),
+                  ),
+                  const SizedBox(width: 5),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: 3),
+                      child: Text(
+                        product.unit?.trim().isNotEmpty == true
+                            ? product.unit!
+                            : 'units',
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppBrand.mutedOf(context),
+                            ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 3),
+              Text(
+                'Reorder at ${product.reorderLevel}',
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: AppBrand.mutedOf(context),
+                    ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  _StockStatus _status(BuildContext context) {
+    if (product.isOutOfStock) {
+      return _StockStatus(
+        label: 'Out',
+        color: AppBrand.danger,
+        background: AppBrand.dangerSoftOf(context),
+      );
+    }
+    if (product.isLowStock) {
+      return _StockStatus(
+        label: 'Low',
+        color: AppBrand.warning,
+        background: AppBrand.warningSoftOf(context),
+      );
+    }
+    return _StockStatus(
+      label: 'Healthy',
+      color: AppBrand.primary,
+      background: AppBrand.primarySoftOf(context),
     );
   }
 }
@@ -462,7 +710,7 @@ class _ActionTile extends StatelessWidget {
         width: 42,
         height: 42,
         decoration: BoxDecoration(
-          color: AppBrand.primarySoft,
+          color: AppBrand.primarySoftOf(context),
           borderRadius: BorderRadius.circular(13),
         ),
         child: Icon(icon, color: AppBrand.primary),
@@ -504,9 +752,11 @@ class _PaginationBar extends StatelessWidget {
       top: false,
       child: Container(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
-        decoration: const BoxDecoration(
-          color: AppBrand.surface,
-          border: Border(top: BorderSide(color: AppBrand.border)),
+        decoration: BoxDecoration(
+          color: AppBrand.surfaceOf(context),
+          border: Border(
+            top: BorderSide(color: AppBrand.borderOf(context)),
+          ),
         ),
         child: Row(
           children: [
@@ -532,7 +782,7 @@ class _PaginationBar extends StatelessWidget {
                 '$start–$end of $totalItems',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppBrand.muted,
+                      color: AppBrand.mutedOf(context),
                     ),
               ),
             ),
@@ -647,7 +897,7 @@ class _EmptyInventory extends StatelessWidget {
               width: 64,
               height: 64,
               decoration: BoxDecoration(
-                color: AppBrand.primarySoft,
+                color: AppBrand.primarySoftOf(context),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: const Icon(
@@ -670,7 +920,7 @@ class _EmptyInventory extends StatelessWidget {
                   : 'Add your first product, then use Stock In to record what is on the shelf.',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppBrand.muted,
+                    color: AppBrand.mutedOf(context),
                   ),
             ),
             if (!hasAnyProducts) ...[
