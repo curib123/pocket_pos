@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:nextpos/Helper/Classes_Methods/AppColor.dart';
 import 'package:nextpos/Provider/ProductProvider.dart';
-import 'package:nextpos/View/Components/Modal/UpsertProductModal.dart';
+import 'package:nextpos/Model/product_model.dart';
+import 'package:nextpos/View/Components/Modal/SimpleProductForm.dart';
 import 'package:nextpos/View/Screen/Main/StockManagementScreen.dart';
 import 'package:provider/provider.dart';
 
@@ -208,34 +209,15 @@ class _ProductDetailContent extends StatelessWidget {
     );
   }
 
-  void _editProduct(BuildContext context, dynamic product) {
+  void _editProduct(BuildContext context, Product product) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => DraggableScrollableSheet(
-        expand: false,
-        maxChildSize: 0.95,
-        initialChildSize: 0.9,
-        minChildSize: 0.65,
-        builder: (_, controller) => Material(
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          color: Colors.white,
-          child: SingleChildScrollView(
-            controller: controller,
-            padding: EdgeInsets.fromLTRB(
-              16,
-              20,
-              16,
-              MediaQuery.of(context).viewInsets.bottom + 20,
-            ),
-            child: UpsertProductModal(
-              Category: product.category ?? '',
-              existingProduct: product,
-            ),
-          ),
-        ),
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
+      builder: (_) => SimpleProductForm(existingProduct: product),
     );
   }
 }
