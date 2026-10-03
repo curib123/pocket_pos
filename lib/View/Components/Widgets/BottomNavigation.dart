@@ -14,24 +14,31 @@ class BottomNavigation extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final baseTheme = Theme.of(context);
+    final background = Color.alphaBlend(
+      AppBrand.primary.withOpacity(
+        baseTheme.brightness == Brightness.dark ? .86 : .94,
+      ),
+      baseTheme.colorScheme.surface,
+    );
+    final inactive = Colors.white.withOpacity(.66);
 
     return Theme(
       data: baseTheme.copyWith(
         navigationBarTheme: NavigationBarThemeData(
           height: 70,
-          backgroundColor: AppBrand.surface,
-          indicatorColor: const Color(0xE62457D6),
+          backgroundColor: background,
+          indicatorColor: Colors.white.withOpacity(.15),
           elevation: 0,
           iconTheme: WidgetStateProperty.resolveWith((states) {
             if (states.contains(WidgetState.selected)) {
               return const IconThemeData(color: Colors.white, size: 24);
             }
-            return const IconThemeData(color: AppBrand.muted, size: 24);
+            return IconThemeData(color: inactive, size: 24);
           }),
           labelTextStyle: WidgetStateProperty.resolveWith((states) {
             final selected = states.contains(WidgetState.selected);
             return baseTheme.textTheme.labelSmall?.copyWith(
-              color: selected ? AppBrand.primary : AppBrand.muted,
+              color: selected ? Colors.white : inactive,
               fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
             );
           }),
