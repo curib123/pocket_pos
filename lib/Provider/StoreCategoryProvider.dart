@@ -14,6 +14,7 @@ class StoreCategoryProvider with ChangeNotifier {
 
   final OfflineDatabase _database;
   final Map<String, bool> _hidden = <String, bool>{};
+  bool _disposed = false;
 
   List<String> get visibleCategories =>
       StoreCategory.all.where((category) => !isHidden(category)).toList();
@@ -28,14 +29,14 @@ class StoreCategoryProvider with ChangeNotifier {
     for (final category in StoreCategory.all) {
       _hidden[category] = metadata['$_prefix$category'] == 'true';
     }
-    notifyListeners();
+    if (!_disposed) notifyListeners();
   }
 
   void setHidden(String category, bool hidden) {
     if ((_hidden[category] ?? false) == hidden) return;
 
     _hidden[category] = hidden;
-    notifyListeners();
+    if (!_disposed) notifyListeners();
     unawaited(_database.setMetadata('$_prefix$category', hidden.toString()));
   }
 
@@ -50,6 +51,12 @@ class StoreCategoryProvider with ChangeNotifier {
       _hidden[category] = false;
       unawaited(_database.setMetadata('$_prefix$category', 'false'));
     }
-    if (changed) notifyListeners();
+    if (changed && !_disposed) notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
   }
 }
