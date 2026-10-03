@@ -4,46 +4,69 @@ import 'package:nextpos/core/brand/app_brand.dart';
 class AppTheme {
   AppTheme._();
 
-  static ThemeData light() {
-    final baseText = ThemeData.light().textTheme.apply(
+  static ThemeData light() => _build(Brightness.light);
+
+  static ThemeData dark() => _build(Brightness.dark);
+
+  static ThemeData _build(Brightness brightness) {
+    final dark = brightness == Brightness.dark;
+    final background =
+        dark ? const Color(0xFF0F131B) : AppBrand.background;
+    final surface = dark ? const Color(0xFF171C26) : AppBrand.surface;
+    final onSurface = dark ? const Color(0xFFF3F5F8) : AppBrand.ink;
+    final onSurfaceVariant =
+        dark ? const Color(0xFFAAB2C0) : AppBrand.muted;
+    final outline =
+        dark ? const Color(0xFF303846) : AppBrand.border;
+
+    final scheme = ColorScheme.fromSeed(
+      seedColor: AppBrand.primary,
+      brightness: brightness,
+    ).copyWith(
+      primary: AppBrand.primary,
+      onPrimary: Colors.white,
+      secondary: AppBrand.primary,
+      onSecondary: Colors.white,
+      surface: surface,
+      onSurface: onSurface,
+      onSurfaceVariant: onSurfaceVariant,
+      outline: outline,
+      outlineVariant: outline,
+      error: AppBrand.danger,
+      onError: Colors.white,
+    );
+
+    final baseText = (dark ? ThemeData.dark() : ThemeData.light())
+        .textTheme
+        .apply(
           fontFamily: 'Inter',
-          bodyColor: AppBrand.ink,
-          displayColor: AppBrand.ink,
+          bodyColor: onSurface,
+          displayColor: onSurface,
         );
 
     return ThemeData(
       useMaterial3: true,
-      brightness: Brightness.light,
-      scaffoldBackgroundColor: AppBrand.background,
-      canvasColor: AppBrand.background,
-      dialogBackgroundColor: AppBrand.surface,
-      colorScheme: const ColorScheme.light(
-        primary: AppBrand.primary,
-        onPrimary: Colors.white,
-        secondary: AppBrand.primary,
-        onSecondary: Colors.white,
-        surface: AppBrand.surface,
-        onSurface: AppBrand.ink,
-        error: AppBrand.primary,
-        onError: Colors.white,
-        outline: AppBrand.border,
-      ),
+      brightness: brightness,
+      scaffoldBackgroundColor: background,
+      canvasColor: background,
+      dialogBackgroundColor: surface,
+      colorScheme: scheme,
       textTheme: baseText,
       appBarTheme: AppBarTheme(
-        backgroundColor: AppBrand.background,
-        foregroundColor: AppBrand.ink,
+        backgroundColor: background,
+        foregroundColor: onSurface,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         centerTitle: false,
         titleTextStyle: baseText.titleLarge?.copyWith(
-          color: AppBrand.ink,
+          color: onSurface,
           fontWeight: FontWeight.w700,
         ),
       ),
       navigationBarTheme: NavigationBarThemeData(
         height: 70,
-        backgroundColor: AppBrand.surface,
-        indicatorColor: AppBrand.primarySoft,
+        backgroundColor: surface,
+        indicatorColor: AppBrand.primary,
         elevation: 0,
         labelTextStyle: WidgetStatePropertyAll(
           baseText.labelSmall?.copyWith(fontWeight: FontWeight.w600),
@@ -51,20 +74,20 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: AppBrand.surface,
+        fillColor: surface,
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        hintStyle: baseText.bodyMedium?.copyWith(color: AppBrand.muted),
-        labelStyle: baseText.bodyMedium?.copyWith(color: AppBrand.muted),
-        prefixIconColor: AppBrand.muted,
-        suffixIconColor: AppBrand.muted,
+        hintStyle: baseText.bodyMedium?.copyWith(color: onSurfaceVariant),
+        labelStyle: baseText.bodyMedium?.copyWith(color: onSurfaceVariant),
+        prefixIconColor: onSurfaceVariant,
+        suffixIconColor: onSurfaceVariant,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppBrand.border),
+          borderSide: BorderSide(color: outline),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppBrand.border),
+          borderSide: BorderSide(color: outline),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
@@ -88,33 +111,35 @@ class AppTheme {
           foregroundColor: AppBrand.primary,
           minimumSize: const Size(48, 48),
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-          side: const BorderSide(color: AppBrand.border),
+          side: BorderSide(color: outline),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
           ),
           textStyle: baseText.labelLarge?.copyWith(fontWeight: FontWeight.w700),
         ),
       ),
-      dividerTheme: const DividerThemeData(
-        color: AppBrand.border,
+      dividerTheme: DividerThemeData(
+        color: outline,
         space: 1,
         thickness: 1,
       ),
       snackBarTheme: SnackBarThemeData(
-        backgroundColor: AppBrand.ink,
-        contentTextStyle: baseText.bodyMedium?.copyWith(color: Colors.white),
+        backgroundColor: dark ? const Color(0xFFE8ECF4) : AppBrand.ink,
+        contentTextStyle: baseText.bodyMedium?.copyWith(
+          color: dark ? const Color(0xFF10141C) : Colors.white,
+        ),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
         ),
       ),
-      bottomSheetTheme: const BottomSheetThemeData(
-        backgroundColor: AppBrand.surface,
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: surface,
         surfaceTintColor: Colors.transparent,
         showDragHandle: true,
       ),
       dialogTheme: DialogThemeData(
-        backgroundColor: AppBrand.surface,
+        backgroundColor: surface,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
