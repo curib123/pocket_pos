@@ -9,6 +9,14 @@ import 'package:nextpos/Model/stock_log.dart';
 import 'package:nextpos/View/Components/Alert/CustomNotificationDialog.dart';
 import 'package:nextpos/core/data/offline_database.dart';
 
+class InventoryMutationResult {
+  final bool success;
+  final String message;
+
+  const InventoryMutationResult.success(this.message) : success = true;
+  const InventoryMutationResult.failure(this.message) : success = false;
+}
+
 class ProductStockProvider extends ChangeNotifier {
   final Box<Product> _productBox = Hive.box<Product>('products');
   final _offlineDatabase = OfflineDatabase.instance;
@@ -571,4 +579,288 @@ class ProductStockProvider extends ChangeNotifier {
 
     return matchingProducts;
   }
+
+  Future<void> _persistInventoryMutation(
+    Product original,
+    Product updated,
+  ) async {
+    Product? parent;
+
+    for (final candidate in _productBox.values) {
+      if (candidate.hasVariant &&
+          candidate.variants.any((variant) => variant.id == original.id)) {
+        parent = candidate;
+        break;
+      }
+    }
+
+    if (parent != null) {
+      final updatedParent = parent.copyWith(
+        variants: parent.variants
+            .map((variant) => variant.id == original.id ? updated : variant)
+            .toList(),
+        lastModified: updated.lastModified,
+      );
+      await _productBox.put(updatedParent.id, updatedParent);
+      await _mirror(updatedParent);
+    } else {
+      await _productBox.put(updated.id, updated);
+      await _mirror(updated);
+    }
+
+    notifyListeners();
+  }
+
+  /// Inventory-first stock in action used by the simplified BantayStock UI.
+  Future<InventoryMutationResult> stockIn({
+    required String productIdOrName,
+    required int quantity,
+  }) async {
+    if (quantity <= 0) {
+      return const InventoryMutationResult.failure(
+        'Enter a quantity greater than zero.',
+      );
+    }
+
+    final product = _getProduct(productIdOrName);
+    if (product == null) {
+      return const InventoryMutationResult.failure('Product not found.');
+    }
+
+    final now = DateTime.now();
+    final stocks = [...product.stocks];
+
+    if (stocks.isEmpty) {
+      stocks.add(
+        ProductStock(
+          id: 'stock-${product.id}-${now.microsecondsSinceEpoch}',
+          productId: product.id,
+          quantity: quantity,
+          costPrice: 0,
+          retailPrice: 0,
+          dateReceived: now,
+          lastModified: now,
+        ),
+      );
+    } else {
+      final latest = stocks.last;
+      stocks[stocks.length - 1] = latest.copyWith(
+        quantity: latest.quantity + quantity,
+        lastModified: now,
+      );
+    }
+
+    LooseStock? looseStock = product.looseStock;
+    if (product.isSoldByPiece && product.piecesPerPack != null) {
+      final piecesAdded = quantity * product.piecesPerPack!;
+      looseStock =
+          (looseStock ??
+                  LooseStock(
+                    remainingPieces: 0,
+                    productId: product.id,
+                  ))
+              .copyWith(
+                remainingPieces:
+                    (looseStock?.remainingPieces ?? 0) + piecesAdded,
+                lastModified: now,
+              );
+    }
+
+    final updated = product.copyWith(
+      stocks: stocks,
+      looseStock: looseStock,
+      lastModified: now,
+      logs: [
+        ...product.logs,
+        StockLog(
+          id: 'log-${product.id}-in-${now.microsecondsSinceEpoch}',
+          productId: product.id,
+          quantity: quantity,
+          isPiece: false,
+          reason: StockLogReason.restocked,
+          remarks: 'Stock In: +$quantity',
+          dateLogged: now,
+          lastModified: now,
+        ),
+      ],
+    );
+
+    await _persistInventoryMutation(product, updated);
+    return InventoryMutationResult.success(
+      'Added $quantity to ${product.name}.',
+    );
+  }
+
+  /// Inventory-first stock out action. It never allows negative inventory.
+  Future<InventoryMutationResult> stockOut({
+    required String productIdOrName,
+    required int quantity,
+  }) async {
+    if (quantity <= 0) {
+      return const InventoryMutationResult.failure(
+        'Enter a quantity greater than zero.',
+      );
+    }
+
+    final product = _getProduct(productIdOrName);
+    if (product == null) {
+      return const InventoryMutationResult.failure('Product not found.');
+    }
+
+    final available =
+        product.stocks.fold<int>(0, (total, stock) => total + stock.quantity);
+
+    if (quantity > available) {
+      return InventoryMutationResult.failure(
+        'Only $available available. Stock cannot go below zero.',
+      );
+    }
+
+    final now = DateTime.now();
+    var remaining = quantity;
+    final stocks = [...product.stocks]
+      ..sort((a, b) => a.dateReceived.compareTo(b.dateReceived));
+
+    final updatedStocks = <ProductStock>[];
+    for (final stock in stocks) {
+      if (remaining <= 0 || stock.quantity <= 0) {
+        updatedStocks.add(stock);
+        continue;
+      }
+
+      final deducted =
+          remaining > stock.quantity ? stock.quantity : remaining;
+      updatedStocks.add(
+        stock.copyWith(
+          quantity: stock.quantity - deducted,
+          lastModified: now,
+        ),
+      );
+      remaining -= deducted;
+    }
+
+    LooseStock? looseStock = product.looseStock;
+    if (looseStock != null &&
+        product.isSoldByPiece &&
+        product.piecesPerPack != null) {
+      final piecesRemoved = quantity * product.piecesPerPack!;
+      final nextPieces =
+          (looseStock.remainingPieces - piecesRemoved).clamp(0, 1 << 31);
+      looseStock = looseStock.copyWith(
+        remainingPieces: nextPieces,
+        lastModified: now,
+      );
+    }
+
+    final updated = product.copyWith(
+      stocks: updatedStocks,
+      looseStock: looseStock,
+      lastModified: now,
+      logs: [
+        ...product.logs,
+        StockLog(
+          id: 'log-${product.id}-out-${now.microsecondsSinceEpoch}',
+          productId: product.id,
+          quantity: quantity,
+          isPiece: false,
+          reason: StockLogReason.consumed,
+          remarks: 'Stock Out: -$quantity',
+          dateLogged: now,
+          lastModified: now,
+        ),
+      ],
+    );
+
+    await _persistInventoryMutation(product, updated);
+    return InventoryMutationResult.success(
+      'Removed $quantity from ${product.name}.',
+    );
+  }
+
+  /// Reconciles system stock with a physical count.
+  Future<InventoryMutationResult> adjustStockCount({
+    required String productIdOrName,
+    required int physicalCount,
+  }) async {
+    if (physicalCount < 0) {
+      return const InventoryMutationResult.failure(
+        'Physical count cannot be negative.',
+      );
+    }
+
+    final product = _getProduct(productIdOrName);
+    if (product == null) {
+      return const InventoryMutationResult.failure('Product not found.');
+    }
+
+    final now = DateTime.now();
+    final previousCount =
+        product.stocks.fold<int>(0, (total, stock) => total + stock.quantity);
+    final difference = physicalCount - previousCount;
+    final stocks = [...product.stocks];
+
+    if (stocks.isEmpty) {
+      if (physicalCount > 0) {
+        stocks.add(
+          ProductStock(
+            id: 'stock-${product.id}-${now.microsecondsSinceEpoch}',
+            productId: product.id,
+            quantity: physicalCount,
+            costPrice: 0,
+            retailPrice: 0,
+            dateReceived: now,
+            lastModified: now,
+          ),
+        );
+      }
+    } else {
+      for (var i = 0; i < stocks.length; i++) {
+        stocks[i] = stocks[i].copyWith(
+          quantity: i == stocks.length - 1 ? physicalCount : 0,
+          lastModified: now,
+        );
+      }
+    }
+
+    LooseStock? looseStock = product.looseStock;
+    if (product.isSoldByPiece && product.piecesPerPack != null) {
+      final pieceCount = physicalCount * product.piecesPerPack!;
+      looseStock =
+          (looseStock ??
+                  LooseStock(
+                    remainingPieces: 0,
+                    productId: product.id,
+                  ))
+              .copyWith(
+                remainingPieces: pieceCount,
+                lastModified: now,
+              );
+    }
+
+    final updated = product.copyWith(
+      stocks: stocks,
+      looseStock: looseStock,
+      lastModified: now,
+      logs: [
+        ...product.logs,
+        StockLog(
+          id: 'log-${product.id}-adjust-${now.microsecondsSinceEpoch}',
+          productId: product.id,
+          quantity: difference.abs(),
+          isPiece: false,
+          reason: StockLogReason.adjusted,
+          remarks:
+              'Physical count: $previousCount → $physicalCount (${difference >= 0 ? '+' : ''}$difference)',
+          dateLogged: now,
+          lastModified: now,
+        ),
+      ],
+    );
+
+    await _persistInventoryMutation(product, updated);
+    return InventoryMutationResult.success(
+      'Adjusted ${product.name} to $physicalCount.',
+    );
+  }
+
 }
