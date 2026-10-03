@@ -10,7 +10,6 @@ class ProductProvider extends ChangeNotifier {
 
   ProductProvider() {
     _storeSubscription = _productBox.watch().listen((_) {
-      notifyListeners();
     });
   }
 
@@ -136,7 +135,6 @@ class ProductProvider extends ChangeNotifier {
   Future<void> silentUpsertProduct(Product product) async {
     try {
       await _productBox.put(product.id, product);
-      notifyListeners();
     } catch (e) {
       debugPrint("⚠️ silentUpsertProduct error: $e");
     }
@@ -220,7 +218,6 @@ class ProductProvider extends ChangeNotifier {
         await _productBox.put(updated.id, updated);
       }
 
-      notifyListeners();
     } catch (e) {
       debugPrint("❌ upsertProduct error: $e");
     }
@@ -246,7 +243,6 @@ class ProductProvider extends ChangeNotifier {
           ],
         );
         await _productBox.put(id, updated);
-        notifyListeners();
       }
     } catch (e) {
       debugPrint("❌ softDeleteProduct failed: $e");
@@ -262,7 +258,6 @@ class ProductProvider extends ChangeNotifier {
           lastModified: DateTime.now(),
         );
         await _productBox.put(id, updated);
-        notifyListeners();
         return true;
       }
     } catch (e) {
@@ -294,7 +289,6 @@ class ProductProvider extends ChangeNotifier {
           ],
         );
         await _productBox.put(id, restored);
-        notifyListeners();
         return restored;
       }
     } catch (e) {
@@ -323,7 +317,6 @@ class ProductProvider extends ChangeNotifier {
         await _productBox.put(cleared.id, cleared);
       }
       await _productBox.clear();
-      notifyListeners();
     } catch (e) {
       debugPrint("❌ clearAll failed: $e");
     }
