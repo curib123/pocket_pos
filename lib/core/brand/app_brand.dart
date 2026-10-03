@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
-/// BantayStock's visual identity.
+/// Pocket Inventory's visual identity.
 ///
 /// Blue remains the primary product color. Red and orange are reserved for
 /// inventory status so out-of-stock and low-stock states are immediately clear.
 class AppBrand {
   AppBrand._();
 
-  static const String name = 'BantayStock';
+  static const String name = 'Pocket Inventory';
   static const String tagline = 'Simple stock, klaro araw-araw.';
 
   static const Color primary = Color(0xFF2457D6);

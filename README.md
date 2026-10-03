@@ -1,8 +1,8 @@
-# BantayStock
+# Pocket Inventory
 
 **Simple stock, klaro araw-araw.**
 
-BantayStock is a mobile-first, offline-first inventory app for sari-sari stores and other small neighborhood retailers.
+Pocket Inventory is a mobile-first, offline-first inventory app for sari-sari stores and other small neighborhood retailers.
 
 ## Product goal
 
@@ -37,7 +37,7 @@ The active product intentionally avoids a traditional POS workflow. Cart, cashie
 
 ## Brand
 
-BantayStock uses one chromatic hue: **Bantay Blue `#2457D6`**, supported by neutral surfaces and text. The UI uses Inter, avoids decorative gradients, and prioritizes fast one-handed mobile use.
+Pocket Inventory uses one chromatic hue: **Bantay Blue `#2457D6`**, supported by neutral surfaces and text. The UI uses Inter, avoids decorative gradients, and prioritizes fast one-handed mobile use.
 
 See [BRAND.md](BRAND.md) for the complete identity and UI rules.
 
@@ -51,7 +51,7 @@ Settings provides JSON backup and restore for product data, metadata, and pendin
 
 ## Cloud sync
 
-Supabase synchronization is optional. BantayStock can start and operate without cloud credentials.
+Supabase synchronization is optional. Pocket Inventory can start and operate without cloud credentials.
 
 ## Tech stack
 
@@ -71,7 +71,7 @@ flutter test
 flutter build apk --debug
 ```
 
-The Android application label is **BantayStock**. The internal Dart package remains `nextpos` for compatibility with the existing import graph.
+The Android application label is **Pocket Inventory**. The internal Dart package remains `nextpos` for compatibility with the existing import graph.
 
 ## Android release
 

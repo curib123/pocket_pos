@@ -3,7 +3,7 @@ import 'package:nextpos/core/brand/app_brand.dart';
 
 /// Compatibility color tokens for legacy screens.
 ///
-/// New BantayStock UI should import AppBrand directly. These aliases keep older
+/// New Pocket Inventory UI should import AppBrand directly. These aliases keep older
 /// components visually aligned with the one-hue brand while they are retired.
 class AppColor {
   static const Color primary = AppBrand.primary;

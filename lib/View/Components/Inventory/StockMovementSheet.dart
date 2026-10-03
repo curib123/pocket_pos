@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -5,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:nextpos/Model/product_model.dart';
 import 'package:nextpos/Provider/ProductProvider.dart';
 import 'package:nextpos/Provider/ProductStockProvider.dart';
+import 'package:nextpos/core/ads/ad_service.dart';
 import 'package:nextpos/core/brand/app_brand.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -387,6 +389,7 @@ class _StockMovementSheetState extends State<StockMovementSheet> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(result.message)),
       );
+      unawaited(StartIoAdService.instance.registerNaturalBreak());
     } else {
       _showMessage(result.message);
     }

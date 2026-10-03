@@ -6,7 +6,8 @@ import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:nextpos/Helper/Database/SecureStorageServices.dart';
 import 'package:nextpos/Provider/CurrencyProvider.dart';
 import 'package:nextpos/Provider/OfflineDataProvider.dart';
-import 'package:nextpos/View/Components/Brand/BantayStockBrand.dart';
+import 'package:nextpos/View/Components/Brand/PocketInventoryBrand.dart';
+import 'package:nextpos/View/Components/Widgets/AppDrawer.dart';
 import 'package:nextpos/View/Screen/Sub/RestoreProductScreen.dart';
 import 'package:nextpos/View/Screen/Sub/SetupCategoryScreen.dart';
 import 'package:nextpos/core/brand/app_brand.dart';
@@ -56,6 +57,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      drawer: const AppDrawer(),
       appBar: AppBar(title: const Text('Settings')),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 6, 20, 32),
@@ -69,7 +71,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             child: Row(
               children: [
-                const BantayStockMark(size: 52),
+                const PocketInventoryMark(size: 52),
                 const SizedBox(width: 14),
                 Expanded(
                   child: Column(
@@ -188,7 +190,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   title: 'Restore backup',
                   subtitle: offline.isBusy
                       ? 'Restoring data…'
-                      : 'Restore from a BantayStock backup file',
+                      : 'Restore from a Pocket Inventory backup file',
                   onTap: offline.isBusy ? null : _restore,
                 ),
               ],
@@ -207,7 +209,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 children: [
                   const Padding(
                     padding: EdgeInsets.fromLTRB(16, 16, 16, 6),
-                    child: BantayStockBrand(
+                    child: PocketInventoryBrand(
                       showTagline: true,
                       markSize: 42,
                     ),
@@ -236,9 +238,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _backup() async {
     final path = await FilePicker.platform.saveFile(
-      dialogTitle: 'Save BantayStock backup',
+      dialogTitle: 'Save Pocket Inventory backup',
       fileName:
-          'bantaystock-backup-${DateTime.now().toIso8601String().split('T').first}.json',
+          'pocket-inventory-backup-${DateTime.now().toIso8601String().split('T').first}.json',
       type: FileType.custom,
       allowedExtensions: const ['json'],
     );

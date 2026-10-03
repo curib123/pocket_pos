@@ -5,7 +5,8 @@ import 'package:nextpos/Model/stock_log.dart';
 import 'package:nextpos/Provider/CurrencyProvider.dart';
 import 'package:nextpos/Provider/ProductProvider.dart';
 import 'package:nextpos/Provider/TabProvider.dart';
-import 'package:nextpos/View/Components/Brand/BantayStockBrand.dart';
+import 'package:nextpos/View/Components/Brand/PocketInventoryBrand.dart';
+import 'package:nextpos/View/Components/Widgets/AppDrawer.dart';
 import 'package:nextpos/View/Components/Inventory/StockMovementSheet.dart';
 import 'package:nextpos/core/brand/app_brand.dart';
 import 'package:provider/provider.dart';
@@ -39,13 +40,14 @@ class _DashBoardScreenState extends State<DashBoardScreen> {
     final movement = _movementSummary(products, _range);
 
     return Scaffold(
+      drawer: const AppDrawer(),
       appBar: AppBar(
         toolbarHeight: 76,
         titleSpacing: 20,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const BantayStockBrand(
+            const PocketInventoryBrand(
               showTagline: false,
               markSize: 32,
             ),

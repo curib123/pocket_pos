@@ -11,8 +11,8 @@ adb shell am start -W -n com.nexttech.nextpos/.MainActivity
 # A successful native activity launch alone does not prove Dart startup worked.
 mkdir -p build/release-smoke
 for attempt in $(seq 1 20); do
-  adb shell uiautomator dump /sdcard/bantaystock-startup.xml >/dev/null
-  adb pull /sdcard/bantaystock-startup.xml build/release-smoke/startup.xml >/dev/null
+  adb shell uiautomator dump /sdcard/pocket-inventory-startup.xml >/dev/null
+  adb pull /sdcard/pocket-inventory-startup.xml build/release-smoke/startup.xml >/dev/null
   if grep -q 'Inventory' build/release-smoke/startup.xml; then
     adb logcat -d > build/release-smoke/startup.log
     if grep -E 'FATAL EXCEPTION|Unhandled Exception|Queries can be performed using SQLiteDatabase' build/release-smoke/startup.log; then

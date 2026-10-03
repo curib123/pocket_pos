@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:nextpos/Model/product_model.dart';
 import 'package:nextpos/Model/stock_log.dart';
 import 'package:nextpos/Provider/ProductProvider.dart';
+import 'package:nextpos/View/Components/Widgets/AppDrawer.dart';
 import 'package:nextpos/core/brand/app_brand.dart';
 import 'package:provider/provider.dart';
 
@@ -40,6 +41,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
     final visible = activities.sublist(start, end);
 
     return Scaffold(
+      drawer: const AppDrawer(),
       appBar: AppBar(title: const Text('Activity')),
       body: Column(
         children: [

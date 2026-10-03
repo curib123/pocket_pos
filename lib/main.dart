@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:nextpos/Helper/Database/SecureStorageServices.dart';
@@ -17,6 +19,7 @@ import 'package:nextpos/Provider/SwitchProvider.dart';
 import 'package:nextpos/Provider/TabProvider.dart';
 import 'package:nextpos/Provider/VariantProductProvider.dart';
 import 'package:nextpos/Provider/OfflineDataProvider.dart';
+import 'package:nextpos/core/ads/ad_service.dart';
 import 'package:nextpos/core/data/offline_database.dart';
 import 'package:nextpos/core/data/product_store.dart';
 import 'package:nextpos/core/theme/app_theme.dart';
@@ -32,6 +35,9 @@ Future<void> main() async {
   // ProductStore before Providers are created.
   await OfflineDatabase.instance.database;
   await ProductStore.instance.initialize();
+
+  // Ads never block the offline-first startup path.
+  unawaited(StartIoAdService.instance.initialize());
 
   // Secure Storage
   final storage = SecureStorageService();
@@ -85,7 +91,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'BantayStock',
+      title: 'Pocket Inventory',
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
       themeMode: ThemeMode.system,
