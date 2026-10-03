@@ -20,9 +20,44 @@ class AppBrand {
   static const Color danger = Color(0xFFD92D20);
   static const Color dangerSoft = Color(0xFFFEF3F2);
 
+  // Light palette constants kept for legacy screens.
   static const Color ink = Color(0xFF111827);
   static const Color muted = Color(0xFF667085);
   static const Color border = Color(0xFFE4E7EC);
   static const Color background = Color(0xFFF8FAFC);
   static const Color surface = Color(0xFFFFFFFF);
+
+  static bool isDark(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark;
+
+  static Color inkOf(BuildContext context) =>
+      Theme.of(context).colorScheme.onSurface;
+
+  static Color mutedOf(BuildContext context) =>
+      Theme.of(context).colorScheme.onSurfaceVariant;
+
+  static Color borderOf(BuildContext context) =>
+      Theme.of(context).colorScheme.outlineVariant;
+
+  static Color surfaceOf(BuildContext context) =>
+      Theme.of(context).colorScheme.surface;
+
+  static Color backgroundOf(BuildContext context) =>
+      Theme.of(context).scaffoldBackgroundColor;
+
+  static Color primarySoftOf(BuildContext context) => isDark(context)
+      ? Color.alphaBlend(primary.withOpacity(.20), surfaceOf(context))
+      : primarySoft;
+
+  static Color primaryFaintOf(BuildContext context) => isDark(context)
+      ? Color.alphaBlend(primary.withOpacity(.10), surfaceOf(context))
+      : primaryFaint;
+
+  static Color warningSoftOf(BuildContext context) => isDark(context)
+      ? Color.alphaBlend(warning.withOpacity(.16), surfaceOf(context))
+      : warningSoft;
+
+  static Color dangerSoftOf(BuildContext context) => isDark(context)
+      ? Color.alphaBlend(danger.withOpacity(.16), surfaceOf(context))
+      : dangerSoft;
 }
