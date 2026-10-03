@@ -11,6 +11,7 @@ import 'package:nextpos/View/Components/Brand/PocketInventoryBrand.dart';
 import 'package:nextpos/View/Components/Inventory/StockMovementSheet.dart';
 import 'package:nextpos/View/Screen/Sub/RestoreProductScreen.dart';
 import 'package:nextpos/View/Screen/Sub/SetupCategoryScreen.dart';
+import 'package:nextpos/core/brand/app_brand.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 
@@ -218,47 +219,49 @@ class AppDrawer extends StatelessWidget {
     String storeName,
     String ownerName,
   ) {
-    return Row(
-      children: [
-        const PocketInventoryMark(size: 54),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                storeName,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 17,
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppBrand.primaryFaintOf(context),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppBrand.borderOf(context)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const PocketInventoryBrand(
+            showTagline: true,
+            markSize: 42,
+          ),
+          const SizedBox(height: 14),
+          Divider(
+            height: 1,
+            color: AppBrand.borderOf(context),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            storeName,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w800,
                 ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                ownerName,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                'Pocket Inventory',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
           ),
-        ),
-      ],
+          const SizedBox(height: 2),
+          Text(
+            ownerName,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppBrand.mutedOf(context),
+                ),
+          ),
+        ],
+      ),
     );
   }
+
 }
 
 class _SectionTitle extends StatelessWidget {
