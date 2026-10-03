@@ -275,16 +275,17 @@ class _StockMovementSheetState extends State<StockMovementSheet> {
 
     final result = switch (widget.type) {
       StockMovementType.stockIn => await provider.stockIn(
-          productIdOrName: id,
+          productId: id,
           quantity: quantity,
         ),
       StockMovementType.stockOut => await provider.stockOut(
-          productIdOrName: id,
+          productId: id,
           quantity: quantity,
         ),
-      StockMovementType.adjustment => await provider.adjustStockCount(
-          productIdOrName: id,
-          physicalCount: quantity,
+      StockMovementType.adjustment => await provider.adjustStock(
+          productId: id,
+          actualStock: quantity,
+          reason: 'Physical count correction',
         ),
     };
 
