@@ -6,8 +6,6 @@ class ProductStock {
   final DateTime dateReceived;
   final DateTime lastModified;
   final DateTime? deletedAt;
-
-  @HiveField(7) // 👈 new field
   final double retailPrice;
 
   ProductStock({
