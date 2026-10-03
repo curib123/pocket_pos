@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:nextpos/Model/product_model.dart';
 import 'package:nextpos/Provider/ProductProvider.dart';
 import 'package:nextpos/View/Components/Inventory/StockMovementSheet.dart';
-import 'package:nextpos/View/Components/Modal/UpsertProductModal.dart';
+import 'package:nextpos/View/Components/Inventory/ProductEditorSheet.dart';
 import 'package:nextpos/core/brand/app_brand.dart';
 import 'package:provider/provider.dart';
 
@@ -146,12 +146,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
   }
 
   void _addProduct() {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      builder: (_) => const UpsertProductModal(Category: 'Groceries'),
-    );
+    ProductEditorSheet.show(context);
   }
 }
 
@@ -325,6 +320,16 @@ class _ProductRow extends StatelessWidget {
                 );
               },
             ),
+            if (!product.isVariant)
+              _ActionTile(
+                icon: Icons.edit_outlined,
+                title: 'Edit details',
+                subtitle: 'Name, category, unit, or barcode',
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  ProductEditorSheet.show(context, product: product);
+                },
+              ),
           ],
         ),
       ),
