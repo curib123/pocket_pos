@@ -75,6 +75,7 @@ class ProductStockProvider extends ChangeNotifier {
     String remarks = '',
     double? costPrice,
     double? retailPrice,
+    String? imagePath,
   }) async {
     final product = _getProduct(productId);
     if (product == null) {
@@ -111,6 +112,7 @@ class ProductStockProvider extends ChangeNotifier {
         ),
         dateLogged: now,
         lastModified: now,
+        imagePath: imagePath,
       );
 
       final updated = product.copyWith(
@@ -142,6 +144,7 @@ class ProductStockProvider extends ChangeNotifier {
     required String productId,
     required int quantity,
     String remarks = '',
+    String? imagePath,
   }) async {
     final product = _getProduct(productId);
     if (product == null) {
@@ -168,6 +171,7 @@ class ProductStockProvider extends ChangeNotifier {
         ),
         dateLogged: now,
         lastModified: now,
+        imagePath: imagePath,
       );
 
       final updated = product.copyWith(
@@ -201,6 +205,7 @@ class ProductStockProvider extends ChangeNotifier {
     required String productId,
     required int actualStock,
     required String reason,
+    String? imagePath,
   }) async {
     final product = _getProduct(productId);
     if (product == null) {
@@ -265,6 +270,7 @@ class ProductStockProvider extends ChangeNotifier {
             reason.trim(),
         dateLogged: now,
         lastModified: now,
+        imagePath: imagePath,
       );
 
       final updated = product.copyWith(
