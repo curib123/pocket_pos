@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:nextpos/Helper/Database/SecureStorageServices.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -20,6 +19,7 @@ import 'package:nextpos/Provider/VariantProductProvider.dart';
 import 'package:nextpos/Provider/OfflineDataProvider.dart';
 import 'package:nextpos/core/data/offline_database.dart';
 import 'package:nextpos/core/data/product_store.dart';
+import 'package:nextpos/core/theme/app_theme.dart';
 import 'package:nextpos/Provider/OfflineSyncProvider.dart';
 
 // UI
@@ -85,18 +85,8 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: "Pocket Inventory",
-      theme: ThemeData(
-        useMaterial3: true,
-        scaffoldBackgroundColor: Colors.white,
-        canvasColor: Colors.white,
-        dialogBackgroundColor: Colors.white,
-        textTheme: GoogleFonts.workSansTextTheme(),
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.blue,
-          surface: Colors.white,
-        ),
-      ),
+      title: 'BantayStock',
+      theme: AppTheme.light(),
       home: const Home(),
     );
   }
