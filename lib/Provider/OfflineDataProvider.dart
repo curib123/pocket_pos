@@ -9,6 +9,7 @@ class OfflineDataProvider extends ChangeNotifier {
   final OfflineDatabase database;
   bool isBusy = false;
   String? lastError;
+  bool _disposed = false;
 
   OfflineDataProvider({OfflineDatabase? database})
     : database = database ?? OfflineDatabase.instance;
@@ -28,7 +29,7 @@ class OfflineDataProvider extends ChangeNotifier {
   Future<T> _run<T>(Future<T> Function() operation) async {
     isBusy = true;
     lastError = null;
-    notifyListeners();
+    if (!_disposed) notifyListeners();
     try {
       return await operation();
     } catch (error) {
@@ -36,7 +37,13 @@ class OfflineDataProvider extends ChangeNotifier {
       rethrow;
     } finally {
       isBusy = false;
-      notifyListeners();
+      if (!_disposed) notifyListeners();
     }
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
   }
 }
