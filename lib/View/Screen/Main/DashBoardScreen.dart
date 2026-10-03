@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:nextpos/Model/product_model.dart';
+import 'package:nextpos/Model/stock_log.dart';
+import 'package:nextpos/Provider/CurrencyProvider.dart';
 import 'package:nextpos/Provider/ProductProvider.dart';
 import 'package:nextpos/Provider/TabProvider.dart';
 import 'package:nextpos/View/Components/Brand/BantayStockBrand.dart';
@@ -7,36 +10,64 @@ import 'package:nextpos/View/Components/Inventory/StockMovementSheet.dart';
 import 'package:nextpos/core/brand/app_brand.dart';
 import 'package:provider/provider.dart';
 
-class DashBoardScreen extends StatelessWidget {
+enum _DashboardRange { today, week, month, year, all }
+
+class DashBoardScreen extends StatefulWidget {
   const DashBoardScreen({super.key});
+
+  @override
+  State<DashBoardScreen> createState() => _DashBoardScreenState();
+}
+
+class _DashBoardScreenState extends State<DashBoardScreen> {
+  _DashboardRange _range = _DashboardRange.today;
 
   @override
   Widget build(BuildContext context) {
     final products =
         context.watch<ProductProvider>().getAllProductsWithVariants();
+    final currency = context.watch<CurrencyProvider>();
     final totalUnits =
         products.fold<int>(0, (total, product) => total + product.totalQuantity);
+    final stockValue = _stockValue(products);
     final lowStock = products.where((product) => product.isLowStock).length;
     final outOfStock = products.where((product) => product.isOutOfStock).length;
     final needsAttention = products
         .where((product) => product.isLowStock || product.isOutOfStock)
         .toList()
       ..sort((a, b) => a.totalQuantity.compareTo(b.totalQuantity));
+    final movement = _movementSummary(products, _range);
 
     return Scaffold(
       appBar: AppBar(
-        title: const BantayStockBrand(
-          showTagline: false,
-          markSize: 34,
+        toolbarHeight: 76,
+        titleSpacing: 20,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const BantayStockBrand(
+              showTagline: false,
+              markSize: 32,
+            ),
+            const SizedBox(height: 3),
+            Text(
+              DateFormat('EEEE, MMM d').format(DateTime.now()),
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: AppBrand.mutedOf(context),
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+          ],
         ),
-        toolbarHeight: 66,
         actions: [
-          IconButton(
-            tooltip: 'Open inventory',
-            onPressed: () => context.read<TabProvider>().setTab(1),
-            icon: const Icon(Icons.inventory_2_outlined),
+          Padding(
+            padding: const EdgeInsets.only(right: 14),
+            child: IconButton.filledTonal(
+              tooltip: 'Open inventory',
+              onPressed: () => context.read<TabProvider>().setTab(1),
+              icon: const Icon(Icons.inventory_2_outlined),
+            ),
           ),
-          const SizedBox(width: 8),
         ],
       ),
       body: RefreshIndicator(
@@ -50,6 +81,7 @@ class DashBoardScreen extends StatelessWidget {
               productCount: products.length,
               totalUnits: totalUnits,
               needsAttention: needsAttention.length,
+              stockValue: currency.formatAmount(stockValue),
             ),
             const SizedBox(height: 18),
             Text(
@@ -97,6 +129,56 @@ class DashBoardScreen extends StatelessWidget {
             ),
             const SizedBox(height: 26),
             _SectionHeader(
+              title: 'Movement',
+              actionLabel: null,
+              onTap: () {},
+            ),
+            const SizedBox(height: 10),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _rangeChip(_DashboardRange.today, 'Today'),
+                  _rangeChip(_DashboardRange.week, 'Week'),
+                  _rangeChip(_DashboardRange.month, 'Month'),
+                  _rangeChip(_DashboardRange.year, 'Year'),
+                  _rangeChip(_DashboardRange.all, 'All'),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _MovementCard(
+                    label: 'Stock In',
+                    value: movement.stockIn.toString(),
+                    color: AppBrand.primary,
+                    background: AppBrand.primarySoftOf(context),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _MovementCard(
+                    label: 'Stock Out',
+                    value: movement.stockOut.toString(),
+                    color: AppBrand.danger,
+                    background: AppBrand.dangerSoftOf(context),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _MovementCard(
+                    label: 'Adjusted',
+                    value: movement.adjusted.toString(),
+                    color: AppBrand.warning,
+                    background: AppBrand.warningSoftOf(context),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 26),
+            _SectionHeader(
               title: 'Snapshot',
               actionLabel: 'View inventory',
               onTap: () => context.read<TabProvider>().setTab(1),
@@ -115,28 +197,28 @@ class DashBoardScreen extends StatelessWidget {
                   value: products.length.toString(),
                   icon: Icons.inventory_2_outlined,
                   color: AppBrand.primary,
-                  background: AppBrand.primarySoft,
+                  background: AppBrand.primarySoftOf(context),
                 ),
                 _MetricCard(
                   label: 'On hand',
                   value: totalUnits.toString(),
                   icon: Icons.layers_outlined,
                   color: AppBrand.primary,
-                  background: AppBrand.primarySoft,
+                  background: AppBrand.primarySoftOf(context),
                 ),
                 _MetricCard(
                   label: 'Low stock',
                   value: lowStock.toString(),
                   icon: Icons.low_priority_rounded,
                   color: AppBrand.warning,
-                  background: AppBrand.warningSoft,
+                  background: AppBrand.warningSoftOf(context),
                 ),
                 _MetricCard(
                   label: 'Out of stock',
                   value: outOfStock.toString(),
                   icon: Icons.inventory_outlined,
                   color: AppBrand.danger,
-                  background: AppBrand.dangerSoft,
+                  background: AppBrand.dangerSoftOf(context),
                 ),
               ],
             ),
@@ -165,8 +247,8 @@ class DashBoardScreen extends StatelessWidget {
             else
               Container(
                 decoration: BoxDecoration(
-                  color: AppBrand.surface,
-                  border: Border.all(color: AppBrand.border),
+                  color: AppBrand.surfaceOf(context),
+                  border: Border.all(color: AppBrand.borderOf(context)),
                   borderRadius: BorderRadius.circular(18),
                 ),
                 child: Column(
@@ -186,17 +268,104 @@ class DashBoardScreen extends StatelessWidget {
       ),
     );
   }
+
+  Widget _rangeChip(_DashboardRange value, String label) {
+    final selected = _range == value;
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: ChoiceChip(
+        label: Text(label),
+        selected: selected,
+        showCheckmark: false,
+        selectedColor: AppBrand.primarySoftOf(context),
+        backgroundColor: AppBrand.surfaceOf(context),
+        side: BorderSide(
+          color: selected ? AppBrand.primary : AppBrand.borderOf(context),
+        ),
+        labelStyle: TextStyle(
+          color: selected ? AppBrand.primary : AppBrand.inkOf(context),
+          fontWeight: FontWeight.w700,
+        ),
+        onSelected: (_) => setState(() => _range = value),
+      ),
+    );
+  }
+
+  double _stockValue(List<Product> products) {
+    var total = 0.0;
+    for (final product in products) {
+      for (final stock in product.stocks) {
+        final price = stock.retailPrice > 0 ? stock.retailPrice : stock.costPrice;
+        total += stock.quantity * price;
+      }
+    }
+    return total;
+  }
+
+  _MovementSummary _movementSummary(
+    List<Product> products,
+    _DashboardRange range,
+  ) {
+    var stockIn = 0;
+    var stockOut = 0;
+    var adjusted = 0;
+    final now = DateTime.now();
+    final start = switch (range) {
+      _DashboardRange.today => DateTime(now.year, now.month, now.day),
+      _DashboardRange.week => DateTime(now.year, now.month, now.day)
+          .subtract(const Duration(days: 6)),
+      _DashboardRange.month => DateTime(now.year, now.month),
+      _DashboardRange.year => DateTime(now.year),
+      _DashboardRange.all => null,
+    };
+
+    for (final product in products) {
+      for (final log in product.logs) {
+        if (start != null && log.dateLogged.isBefore(start)) continue;
+        switch (log.reason) {
+          case StockLogReason.stockIn:
+          case StockLogReason.added:
+          case StockLogReason.restocked:
+            stockIn += log.quantity.abs();
+            break;
+          case StockLogReason.stockOut:
+          case StockLogReason.sold:
+          case StockLogReason.expired:
+          case StockLogReason.damaged:
+          case StockLogReason.donated:
+          case StockLogReason.borrowed:
+          case StockLogReason.consumed:
+            stockOut += log.quantity.abs();
+            break;
+          case StockLogReason.stockAdjustment:
+          case StockLogReason.adjusted:
+            adjusted += log.quantity.abs();
+            break;
+          default:
+            break;
+        }
+      }
+    }
+
+    return _MovementSummary(
+      stockIn: stockIn,
+      stockOut: stockOut,
+      adjusted: adjusted,
+    );
+  }
 }
 
 class _OverviewHeader extends StatelessWidget {
   final int productCount;
   final int totalUnits;
   final int needsAttention;
+  final String stockValue;
 
   const _OverviewHeader({
     required this.productCount,
     required this.totalUnits,
     required this.needsAttention,
+    required this.stockValue,
   });
 
   @override
@@ -206,30 +375,49 @@ class _OverviewHeader extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: AppBrand.primaryFaint,
-        border: Border.all(color: AppBrand.primarySoft),
+        color: AppBrand.primaryFaintOf(context),
+        border: Border.all(color: AppBrand.primarySoftOf(context)),
         borderRadius: BorderRadius.circular(22),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: Text(
-                  'Inventory overview',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.6,
-                      ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Stock value',
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                            color: AppBrand.mutedOf(context),
+                            fontWeight: FontWeight.w700,
+                          ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      stockValue,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style:
+                          Theme.of(context).textTheme.headlineMedium?.copyWith(
+                                color: AppBrand.primary,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: -0.8,
+                              ),
+                    ),
+                  ],
                 ),
               ),
               Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
                 decoration: BoxDecoration(
-                  color:
-                      allHealthy ? AppBrand.primarySoft : AppBrand.warningSoft,
+                  color: allHealthy
+                      ? AppBrand.primarySoftOf(context)
+                      : AppBrand.warningSoftOf(context),
                   borderRadius: BorderRadius.circular(99),
                 ),
                 child: Row(
@@ -258,11 +446,11 @@ class _OverviewHeader extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 12),
           Text(
             '$productCount products • $totalUnits units on hand',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppBrand.muted,
+                  color: AppBrand.mutedOf(context),
                 ),
           ),
           const SizedBox(height: 4),
@@ -271,7 +459,7 @@ class _OverviewHeader extends StatelessWidget {
                 ? 'Everything is above its reorder level.'
                 : 'Review low and out-of-stock products before the next restock.',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppBrand.muted,
+                  color: AppBrand.mutedOf(context),
                   height: 1.35,
                 ),
           ),
@@ -322,6 +510,64 @@ class _QuickAction extends StatelessWidget {
   }
 }
 
+class _MovementCard extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+  final Color background;
+
+  const _MovementCard({
+    required this.label,
+    required this.value,
+    required this.color,
+    required this.background,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
+      decoration: BoxDecoration(
+        color: AppBrand.surfaceOf(context),
+        border: Border.all(color: AppBrand.borderOf(context)),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 34,
+            height: 34,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: background,
+              borderRadius: BorderRadius.circular(11),
+            ),
+            child: Text(
+              value,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: color,
+                    fontWeight: FontWeight.w900,
+                  ),
+            ),
+          ),
+          const SizedBox(height: 7),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: AppBrand.mutedOf(context),
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _MetricCard extends StatelessWidget {
   final String label;
   final String value;
@@ -342,8 +588,8 @@ class _MetricCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
-        color: AppBrand.surface,
-        border: Border.all(color: AppBrand.border),
+        color: AppBrand.surfaceOf(context),
+        border: Border.all(color: AppBrand.borderOf(context)),
         borderRadius: BorderRadius.circular(18),
       ),
       child: Row(
@@ -376,7 +622,7 @@ class _MetricCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppBrand.muted,
+                        color: AppBrand.mutedOf(context),
                       ),
                 ),
               ],
@@ -431,7 +677,9 @@ class _AttentionRow extends StatelessWidget {
     final quantity = product.totalQuantity;
     final isOut = product.isOutOfStock;
     final color = isOut ? AppBrand.danger : AppBrand.warning;
-    final background = isOut ? AppBrand.dangerSoft : AppBrand.warningSoft;
+    final background = isOut
+        ? AppBrand.dangerSoftOf(context)
+        : AppBrand.warningSoftOf(context);
 
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
@@ -498,8 +746,8 @@ class _InfoCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: AppBrand.surface,
-        border: Border.all(color: AppBrand.border),
+        color: AppBrand.surfaceOf(context),
+        border: Border.all(color: AppBrand.borderOf(context)),
         borderRadius: BorderRadius.circular(18),
       ),
       child: Row(
@@ -509,7 +757,7 @@ class _InfoCard extends StatelessWidget {
             width: 42,
             height: 42,
             decoration: BoxDecoration(
-              color: AppBrand.primarySoft,
+              color: AppBrand.primarySoftOf(context),
               borderRadius: BorderRadius.circular(13),
             ),
             child: Icon(icon, color: AppBrand.primary),
@@ -524,7 +772,7 @@ class _InfoCard extends StatelessWidget {
                 Text(
                   body,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppBrand.muted,
+                        color: AppBrand.mutedOf(context),
                         height: 1.35,
                       ),
                 ),
@@ -546,4 +794,16 @@ class _InfoCard extends StatelessWidget {
       ),
     );
   }
+}
+
+class _MovementSummary {
+  final int stockIn;
+  final int stockOut;
+  final int adjusted;
+
+  const _MovementSummary({
+    required this.stockIn,
+    required this.stockOut,
+    required this.adjusted,
+  });
 }
