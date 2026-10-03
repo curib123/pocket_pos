@@ -1,21 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
+import 'package:nextpos/core/data/product_store.dart';
 import 'package:uuid/uuid.dart';
 import 'package:nextpos/Model/loose_stock.dart';
 import 'package:nextpos/Model/product_model.dart';
 import 'package:nextpos/Model/stock_log.dart';
-import 'package:nextpos/core/data/offline_database.dart';
 
 class LooseStockProvider extends ChangeNotifier {
-  final Box<Product> _productBox = Hive.box<Product>('products');
-  final _offlineDatabase = OfflineDatabase.instance;
-
-  Future<void> _mirror(Product product) async {
-    try {
-      await _offlineDatabase.upsertProduct(product);
-    } catch (_) {}
-  }
-
+  final ProductStore _productBox = ProductStore.instance;
   LooseStockProvider();
 
   final uuid = const Uuid();
@@ -127,11 +118,9 @@ class LooseStockProvider extends ChangeNotifier {
       );
 
       await _productBox.put(updatedParent.id, updatedParent);
-      await _mirror(updatedParent);
       print('✅ Variant loose stock updated in parent: ${parent.name}');
     } else {
       await _productBox.put(product.id, updatedProduct);
-      await _mirror(updatedProduct);
       print(
         '✅ Main product loose stock ${isNew ? "created" : "updated"} successfully',
       );
@@ -180,7 +169,6 @@ class LooseStockProvider extends ChangeNotifier {
     );
 
     await _productBox.put(product.id, updatedProduct);
-    await _mirror(updatedProduct);
     notifyListeners();
   }
 
@@ -209,7 +197,6 @@ class LooseStockProvider extends ChangeNotifier {
     );
 
     await _productBox.put(product.id, updatedProduct);
-    await _mirror(updatedProduct);
     notifyListeners();
   }
 
