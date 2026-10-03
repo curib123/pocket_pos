@@ -1,79 +1,28 @@
-import 'package:hive/hive.dart';
-
-part 'stock_log.g.dart';
-
-@HiveType(typeId: 3)
 enum StockLogReason {
-  @HiveField(0)
   sold,
-
-  @HiveField(1)
   expired,
-
-  @HiveField(2)
   damaged,
-
-  @HiveField(3)
   donated,
-
-  @HiveField(4)
   borrowed,
-
-  @HiveField(5)
   added,       // ➕ Initial stock entry
-
-  @HiveField(6)
   restocked,   // 🔁 Manual stock in
-
-  @HiveField(7)
   adjusted,    // ✏️ Manual stock update/edit
-
-  @HiveField(8)
   deleted,     // ❌ Product archived or deleted
-
-  @HiveField(9)
   restored,    // ♻️ Product restored from archive
-
-  @HiveField(10)
   cleared,     // 🧹 Product wiped in bulk clear
-
-  @HiveField(11)
   consumed,
-
-  @HiveField(12)
   unknown,     // 🚨 Fallback enum for unexpected strings
 }
-
-@HiveType(typeId: 4)
-class StockLog extends HiveObject {
-  @HiveField(0)
+class StockLog {
   final String id;
-
-  @HiveField(1)
   final String productId;
-
-  @HiveField(2)
   final int quantity;
-
-  @HiveField(3)
   final bool isPiece;
-
-  @HiveField(4)
   final StockLogReason reason;
-
-  @HiveField(5)
   final String? remarks;
-
-  @HiveField(6)
   final DateTime dateLogged;
-
-  @HiveField(7)
   final DateTime lastModified;
-
-  @HiveField(8)
   final DateTime? deletedAt;
-
-  @HiveField(9)
   final double? profit;
 
   StockLog({
