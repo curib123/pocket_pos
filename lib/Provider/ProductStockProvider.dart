@@ -745,7 +745,7 @@ class ProductStockProvider extends ChangeNotifier {
         product.piecesPerPack != null) {
       final piecesRemoved = quantity * product.piecesPerPack!;
       final nextPieces =
-          (looseStock.remainingPieces - piecesRemoved).clamp(0, 1 << 31);
+          (looseStock.remainingPieces - piecesRemoved).clamp(0, 1 << 31).toInt();
       looseStock = looseStock.copyWith(
         remainingPieces: nextPieces,
         lastModified: now,
