@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:nextpos/Model/product_model.dart';
 import 'package:nextpos/View/Components/Modal/ProductDetailScreenModal.dart';
 
