@@ -1,40 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:nextpos/core/brand/app_brand.dart';
 
+/// Compatibility color tokens for legacy screens.
+///
+/// New BantayStock UI should import AppBrand directly. These aliases keep older
+/// components visually aligned with the one-hue brand while they are retired.
 class AppColor {
-  // 🟦 Primary – Deep Teal (Teal-700)
-    static const Color primary = Color(0xFF3C415C); // Strong, calming, confident
+  static const Color primary = AppBrand.primary;
+  static const Color accent = AppBrand.primary;
+  static const Color secondary = AppBrand.primary;
 
-// 🟣 Accent – Velvet Purple
-  static const Color accent = Color(0xFF7C3AED); // Like royalty but tech-forward
+  static const Color background = AppBrand.background;
+  static const Color surface = AppBrand.surface;
+  static const Color textPrimary = AppBrand.ink;
+  static const Color textSecondary = AppBrand.muted;
+  static const Color secondarySurface = AppBrand.primaryFaint;
 
-// 🪵 Secondary – Slate
-  static const Color secondary = Color(0xFF475569); // Almost stormy, ultra-modern
+  static const Color warning = AppBrand.primary;
+  static const Color warningBackground = AppBrand.primarySoft;
+  static const Color warningText = AppBrand.primaryDark;
 
-  // ☁️ Background – Ultra Soft
-  static const Color background = Color(0xFFFAFAFA); // Gentle on eyes
+  static const Color error = AppBrand.primary;
+  static const Color errorBackground = AppBrand.primarySoft;
+  static const Color errorText = AppBrand.primaryDark;
 
-  // 📄 Surface – Clean White
-  static const Color surface = Color(0xFFFFFFFF); // For cards, modals, etc.
-
-  // 🖋️ Text – Crisp & Clear
-  static const Color textPrimary = Color(0xFF111827);    // Deep slate
-  static const Color textSecondary = Color(0xFF6B7280);  // Muted gray
-
-  // ⚠️ Warning – Warm Honey
-  static const Color warning = Color(0xFFFBBF24);           // Amber-400
-  static const Color warningBackground = Color(0xFFFFF7E6); // Light amber bg
-  static const Color warningText = Color(0xFF78350F);       // Deep amber text
-
-  // ❌ Error – Rose Red
-  static const Color error = Color(0xFFEF4444);             // Red-500
-  static const Color errorBackground = Color(0xFFFFE4E6);   // Gentle red bg
-  static const Color errorText = Color(0xFF7F1D1D);         // Contrast error label
-
-  // ✅ Success – Emerald
-  static const Color success = Color(0xFF10B981);           // Emerald-500
-  static const Color successBackground = Color(0xFFF0FDF4); // Light minty bg
-  static const Color successText = Color(0xFF064E3B);       // Deep green
-
-  // 🔘 Inputs / Fields – Ultra Light Gray
-  static const Color secondarySurface = Color(0xFFF3F4F6); // Field bg, soft contrast
+  static const Color success = AppBrand.primary;
+  static const Color successBackground = AppBrand.primarySoft;
+  static const Color successText = AppBrand.primaryDark;
 }
