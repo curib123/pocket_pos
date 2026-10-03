@@ -1,10 +1,9 @@
 import 'package:flutter/foundation.dart';
-import 'package:hive/hive.dart';
+import 'package:nextpos/core/data/product_store.dart';
 import 'package:nextpos/Model/loose_stock.dart';
 import 'package:nextpos/Model/product_model.dart';
 import 'package:nextpos/Model/product_stock.dart';
 import 'package:nextpos/Model/stock_log.dart';
-import 'package:nextpos/core/data/offline_database.dart';
 import 'package:nextpos/core/inventory/stock_rules.dart';
 
 class StockOperationResult {
@@ -363,12 +362,10 @@ class ProductStockProvider extends ChangeNotifier {
         lastModified: updated.lastModified,
       );
       await _productBox.put(updatedParent.id, updatedParent);
-      await _mirror(updatedParent);
       return;
     }
 
     await _productBox.put(updated.id, updated);
-    await _mirror(updated);
   }
 
   Future<void> _mirror(Product product) async {
