@@ -2,12 +2,14 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import '../core/data/offline_database.dart';
+import '../core/data/product_store.dart';
 
 /// Coordinates local backup/restore and exposes sync readiness to the UI.
 class OfflineDataProvider extends ChangeNotifier {
   final OfflineDatabase database;
   bool isBusy = false;
   String? lastError;
+  bool _disposed = false;
 
   OfflineDataProvider({OfflineDatabase? database})
     : database = database ?? OfflineDatabase.instance;
@@ -17,13 +19,17 @@ class OfflineDataProvider extends ChangeNotifier {
   }
 
   Future<int> restoreFrom(File source) async {
-    return _run(() => database.importBackup(source));
+    return _run(() async {
+      final count = await database.importBackup(source);
+      await ProductStore.instance.reload();
+      return count;
+    });
   }
 
   Future<T> _run<T>(Future<T> Function() operation) async {
     isBusy = true;
     lastError = null;
-    notifyListeners();
+    if (!_disposed) notifyListeners();
     try {
       return await operation();
     } catch (error) {
@@ -31,7 +37,13 @@ class OfflineDataProvider extends ChangeNotifier {
       rethrow;
     } finally {
       isBusy = false;
-      notifyListeners();
+      if (!_disposed) notifyListeners();
     }
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
   }
 }
