@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
+import 'package:nextpos/core/data/product_store.dart';
 import 'package:nextpos/Helper/Classes_Methods/helper_methods.dart';
 import 'package:nextpos/Model/loan_item.dart';
 import 'package:nextpos/Model/loose_stock.dart';
@@ -7,18 +7,9 @@ import 'package:nextpos/Model/product_model.dart';
 import 'package:nextpos/Model/product_stock.dart';
 import 'package:nextpos/Model/stock_log.dart';
 import 'package:nextpos/View/Components/Alert/CustomNotificationDialog.dart';
-import 'package:nextpos/core/data/offline_database.dart';
 
 class ProductStockProvider extends ChangeNotifier {
-  final Box<Product> _productBox = Hive.box<Product>('products');
-  final _offlineDatabase = OfflineDatabase.instance;
-
-  Future<void> _mirror(Product product) async {
-    try {
-      await _offlineDatabase.upsertProduct(product);
-    } catch (_) {}
-  }
-
+  final ProductStore _productBox = ProductStore.instance;
   ProductStockProvider();
 
   Product? _getProduct(String idOrName) {
@@ -194,11 +185,9 @@ class ProductStockProvider extends ChangeNotifier {
       );
 
       await _productBox.put(updatedParent.id, updatedParent);
-      await _mirror(updatedParent);
       print('📦 Updated parent with new variant info');
     } else {
       await _productBox.put(updatedProduct.id, updatedProduct);
-      await _mirror(updatedProduct);
       print('📦 Updated main product entry directly');
     }
 
@@ -359,11 +348,9 @@ class ProductStockProvider extends ChangeNotifier {
         lastModified: DateTime.now(),
       );
       await _productBox.put(updatedParent.id, updatedParent);
-      await _mirror(updatedParent);
       print('🧬 Variant updated under parent: ${updatedParent.name}');
     } else {
       await _productBox.put(updatedProduct.id, updatedProduct);
-      await _mirror(updatedProduct);
       print('📦 Product updated: ${updatedProduct.name}');
     }
 
@@ -406,7 +393,6 @@ class ProductStockProvider extends ChangeNotifier {
     );
 
     await _productBox.put(updatedProduct.id, updatedProduct);
-    await _mirror(updatedProduct);
     notifyListeners();
   }
 
@@ -436,7 +422,6 @@ class ProductStockProvider extends ChangeNotifier {
     );
 
     await _productBox.put(updatedProduct.id, updatedProduct);
-    await _mirror(updatedProduct);
     notifyListeners();
   }
 
@@ -458,7 +443,6 @@ class ProductStockProvider extends ChangeNotifier {
     );
 
     await _productBox.put(updatedProduct.id, updatedProduct);
-    await _mirror(updatedProduct);
     notifyListeners();
   }
 
@@ -530,7 +514,6 @@ class ProductStockProvider extends ChangeNotifier {
       );
 
       await _productBox.put(updatedProduct.id, updatedProduct);
-      await _mirror(updatedProduct);
       notifyListeners();
     } catch (e) {}
   }
