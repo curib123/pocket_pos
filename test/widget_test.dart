@@ -1,30 +1,30 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:nextpos/main.dart';
+import 'package:nextpos/core/inventory/stock_rules.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  group('StockRules', () {
+    test('Stock In adds quantity', () {
+      expect(StockRules.stockIn(10, 5), 15);
+    });
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    test('Stock Out subtracts quantity', () {
+      expect(StockRules.stockOut(10, 4), 6);
+    });
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    test('Stock Out prevents negative inventory', () {
+      expect(
+        () => StockRules.stockOut(3, 4),
+        throwsA(isA<StateError>()),
+      );
+    });
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    test('Adjustment keeps signed difference', () {
+      expect(StockRules.adjustmentDifference(10, 13), 3);
+      expect(StockRules.adjustmentDifference(10, 7), -3);
+    });
+
+    test('Adjustment accepts zero actual stock', () {
+      expect(StockRules.adjustmentDifference(4, 0), -4);
+    });
   });
 }
