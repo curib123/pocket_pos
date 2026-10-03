@@ -10,6 +10,7 @@ class ProductProvider extends ChangeNotifier {
 
   ProductProvider() {
     _storeSubscription = _productBox.watch().listen((_) {
+      notifyListeners();
     });
   }
 
