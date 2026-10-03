@@ -56,7 +56,7 @@ jobs:
           version="$(sed -n 's/^version: //p' pubspec.yaml)"
           version_name="${version%%+*}"
           build_number="${version##*+}"
-          apk="BantayStock-${version_name}-build${build_number}.apk"
+          apk="Pocket-Inventory-${version_name}-build${build_number}.apk"
           mkdir -p release
           cp build/app/outputs/flutter-apk/app-release.apk "release/$apk"
           build_tools="$(find "$ANDROID_HOME/build-tools" -maxdepth 1 -mindepth 1 -type d | sort -V | tail -n 1)"
@@ -64,13 +64,13 @@ jobs:
           "$build_tools/aapt" dump badging "release/$apk" | sed -n '1,5p'
           (cd release && sha256sum "$apk" > "$apk.sha256")
           printf 'tag=v%s\n' "$version_name" >> "$GITHUB_OUTPUT"
-          printf 'name=BantayStock %s\n' "$version_name" >> "$GITHUB_OUTPUT"
+          printf 'name=Pocket Inventory %s\n' "$version_name" >> "$GITHUB_OUTPUT"
         id: package
 
       - name: Upload release artifact
         uses: actions/upload-artifact@v4
         with:
-          name: BantayStock-Android-Release
+          name: Pocket-Inventory-Android-Release
           path: release/*
           if-no-files-found: error
           retention-days: 30
@@ -99,7 +99,7 @@ jobs:
           fail_on_unmatched_files: true
           files: release/*
           body: |
-            Installable Android release APK for BantayStock (formerly Pocket POS).
+            Installable Android release APK for Pocket Inventory.
 
             Includes the current inventory interface, SQLite storage, and backup/restore.
             Supports ARM64, ARMv7, and x86_64 devices in one APK.
