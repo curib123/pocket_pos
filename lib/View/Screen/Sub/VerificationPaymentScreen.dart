@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart' show Phoenix;
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:nextpos/Helper/Classes_Methods/AppColor.dart';
 import 'package:nextpos/Helper/Database/PurchaseService.dart';
 import 'package:nextpos/View/Components/Alert/CustomConfimDialog.dart';
