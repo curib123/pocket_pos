@@ -9,6 +9,7 @@ class CurrencyProvider with ChangeNotifier {
   late Map<String, dynamic> _selectedCurrency;
   late NumberFormat _currencyFormat;
   final _database = OfflineDatabase.instance;
+  bool _disposed = false;
 
   CurrencyProvider() {
     // Initialize with fallback currency synchronously
@@ -40,7 +41,7 @@ class CurrencyProvider with ChangeNotifier {
       );
       _selectedCurrency = savedCurrency;
       _currencyFormat = _createFormatter(savedCurrency);
-      notifyListeners();
+      if (!_disposed) notifyListeners();
     }
   }
 
@@ -50,7 +51,7 @@ class CurrencyProvider with ChangeNotifier {
   }) async {
     _selectedCurrency = currency;
     _currencyFormat = _createFormatter(currency);
-    notifyListeners();
+    if (!_disposed) notifyListeners();
 
     if (save) {
       await _database.setMetadata('currencyName', currency['name'] as String);
@@ -60,4 +61,11 @@ class CurrencyProvider with ChangeNotifier {
   String formatAmount(double amount) {
     return _currencyFormat.format(amount);
   }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
+  }
 }
+
