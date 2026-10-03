@@ -31,9 +31,10 @@ class OfflineDatabase {
       version: _version,
       onConfigure: (db) async {
         await db.execute('PRAGMA foreign_keys = ON');
-        await db.execute('PRAGMA journal_mode = WAL');
+        // Android rejects row-returning PRAGMAs through execute/execSQL.
+        await db.rawQuery('PRAGMA journal_mode = WAL');
         await db.execute('PRAGMA synchronous = NORMAL');
-        await db.execute('PRAGMA busy_timeout = 5000');
+        await db.rawQuery('PRAGMA busy_timeout = 5000');
       },
       onCreate: (db, version) async {
         await db.execute('''

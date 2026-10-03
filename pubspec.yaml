@@ -93,6 +93,10 @@ flutter:
   assets:
     - assets/brand/
     - assets/icon/
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter-Variable.ttf
 
   #   - images/a_dot_ham.jpeg
 

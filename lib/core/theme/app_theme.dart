@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:nextpos/core/brand/app_brand.dart';
 
 class AppTheme {
   AppTheme._();
 
   static ThemeData light() {
-    final baseText = GoogleFonts.interTextTheme(ThemeData.light().textTheme)
-        .apply(bodyColor: AppBrand.ink, displayColor: AppBrand.ink);
+    final baseText = ThemeData.light().textTheme.apply(
+          fontFamily: 'Inter',
+          bodyColor: AppBrand.ink,
+          displayColor: AppBrand.ink,
+        );
 
     return ThemeData(
       useMaterial3: true,

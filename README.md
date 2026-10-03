@@ -77,7 +77,7 @@ The Android application label is **BantayStock**. The internal Dart package rema
 
 Download the installable APK and its SHA-256 checksum from [GitHub Releases](https://github.com/curib123/pocket_pos/releases).
 
-The **Android Release** workflow runs analysis, tests, release compilation, and APK signature verification before publishing. It can be started manually, by pushing a version tag, or by updating the `release/android-apk` branch. The version and build number come from `pubspec.yaml`.
+The **Android Release** workflow runs analysis, tests, release compilation, APK signature verification, and an offline Android startup check before publishing. It can be started manually, by pushing a version tag, or by updating the `release/android-apk` branch. The version and build number come from `pubspec.yaml`. Inter fonts are bundled so the interface does not need a network connection to load its font.
 
 For a local build, run `flutter build apk --release`. The output is `build/app/outputs/flutter-apk/app-release.apk`.
 
