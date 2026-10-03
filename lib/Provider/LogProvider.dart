@@ -1,12 +1,17 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
+import 'package:nextpos/core/data/product_store.dart';
 import 'package:nextpos/Model/product_model.dart';
 import 'package:nextpos/Model/stock_log.dart';
 
 class LogProvider with ChangeNotifier {
-  final Box<Product> _productBox = Hive.box<Product>('products');
+  final ProductStore _productBox = ProductStore.instance;
+  StreamSubscription<void>? _storeSubscription;
 
-  LogProvider();
+  LogProvider() {
+    _storeSubscription = _productBox.watch().listen((_) => notifyListeners());
+  }
 
   List<StockLog> getLogs({
     String? productIdOrName,
@@ -101,5 +106,9 @@ class LogProvider with ChangeNotifier {
     return allLogs.sublist(offset, end);
   }
 
-
+  @override
+  void dispose() {
+    _storeSubscription?.cancel();
+    super.dispose();
+  }
 }
