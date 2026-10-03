@@ -1,270 +1,209 @@
-import 'package:flutter/material.dart';
-import 'package:lucide_icons/lucide_icons.dart';
-import 'package:nextpos/Helper/Classes_Methods/AppColor.dart';
-import 'package:nextpos/Helper/Classes_Methods/helper_methods.dart';
-import 'package:nextpos/Provider/ProductProvider.dart';
-import 'package:nextpos/Provider/SwitchProvider.dart';
-import 'package:nextpos/Provider/StoreCategoryProvider.dart';
-import 'package:nextpos/View/Components/Alert/showLoadingAndNotify.dart';
-import 'package:nextpos/View/Components/Widgets/AppDrawer.dart';
-import 'package:nextpos/View/Components/Custom/CustomButton.dart';
-import 'package:nextpos/View/Components/Modal/UpsertProductModal.dart';
-import 'package:nextpos/View/Components/Widgets/SearchAndCartRow.dart';
-import 'package:nextpos/View/Screen/Main/ProductScreenWidget/CategoryGrid.dart';
-import 'package:nextpos/View/Screen/Main/ProductScreenWidget/CategoryList.dart';
-import 'package:nextpos/View/Screen/Main/ProductScreenWidget/ProductListScreen.dart';
-import 'package:provider/provider.dart';
-import 'package:animate_do/animate_do.dart';
+import 'dart:io';
 
-class ProductScreen extends StatelessWidget {
+import 'package:flutter/material.dart';
+import 'package:nextpos/Helper/Classes_Methods/AppColor.dart';
+import 'package:nextpos/Provider/ProductProvider.dart';
+import 'package:nextpos/Provider/StoreCategoryProvider.dart';
+import 'package:nextpos/View/Components/Modal/ProductDetailScreenModal.dart';
+import 'package:nextpos/View/Components/Modal/SimpleProductForm.dart';
+import 'package:nextpos/View/Components/Widgets/AppDrawer.dart';
+import 'package:nextpos/View/Components/Widgets/SearchAndCartRow.dart';
+import 'package:provider/provider.dart';
+
+class ProductScreen extends StatefulWidget {
   const ProductScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-        appBar: SearchAndCartAppBar(),
-        drawer: AppDrawer(),
-        bottomNavigationBar: SlideInUp(
-          duration: const Duration(milliseconds: 500),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CustomButton(
-                  text: "View All Products",
-                  isFilled: false,
-                  icon: LucideIcons.box,
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => ProductListScreen(category: ''),
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(height: 10),
-                CustomButton(
-                  text: "Add Products",
-                  icon: LucideIcons.plusCircle,
-                  onPressed: () {
-                    Future.delayed(const Duration(milliseconds: 100), () {
-                      showModalBottomSheet(
-                        context: context,
-                        isScrollControlled: true,
-                        backgroundColor: Colors.transparent,
-                        shape: const RoundedRectangleBorder(
-                          borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
-                        ),
-                        builder: (context) {
-                          return DraggableScrollableSheet(
-                            expand: false,
-                            maxChildSize: 0.95,
-                            initialChildSize: 0.8,
-                            minChildSize: 0.75,
-                            builder: (_, controller) => Padding(
-                              padding: EdgeInsets.only(
-                                bottom: MediaQuery.of(context).viewInsets.bottom,
-                              ),
-                              child: Material(
-                                borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
-                                color: Colors.white,
-                                child: SafeArea(
-                                  top: false,
-                                  child: SingleChildScrollView(
-                                    controller: controller,
-                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-                                    child: UpsertProductModal(Category: ''),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      );
-                    });
-                  },
-                ),
-              ],
-            ),
-          ),
-        ),
-        body: Consumer3<ProductProvider, SwitchProvider, StoreCategoryProvider>(
-          builder: (context, productProvider, switchProvider, storeCategoryProvider, _) {
-            final categories = switchProvider.isArchiveView
-                ? storeCategoryProvider.hiddenCategories
-                : storeCategoryProvider.visibleCategories;
+  State<ProductScreen> createState() => _ProductScreenState();
+}
 
-            return RefreshIndicator(
-              onRefresh: () async {
-                await showLoadingAndNotify(context: context, task: () async => await autoSync(context));
-              },
-              child: Stack(
+class _ProductScreenState extends State<ProductScreen> {
+  String? _category;
+
+  @override
+  Widget build(BuildContext context) {
+    final productProvider = context.watch<ProductProvider>();
+    final categoryProvider = context.watch<StoreCategoryProvider>();
+    final allProducts = productProvider.getAllProductsWithVariants();
+    final products = _category == null
+        ? allProducts
+        : allProducts.where((product) => product.category == _category).toList();
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF7F8FA),
+      drawer: const AppDrawer(),
+      appBar: const SearchAndCartAppBar(),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _openProductForm(context),
+        backgroundColor: AppColor.primary,
+        foregroundColor: Colors.white,
+        icon: const Icon(Icons.add),
+        label: const Text('Add Product'),
+      ),
+      body: Column(
+        children: [
+          Container(
+            color: Colors.white,
+            padding: const EdgeInsets.fromLTRB(12, 4, 12, 10),
+            child: SizedBox(
+              height: 42,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
                 children: [
                   Padding(
-                    padding: const EdgeInsets.only(bottom: 0),
-                    child: Column(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 15),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text(
-                                "Product Category",
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColor.textSecondary,
-                                ),
-                              ),
-                              TextButton(
-                                onPressed: () {
-                                  switchProvider.toggleArchiveView();
-                                },
-                                style: TextButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
-                                  backgroundColor: AppColor.primary,
-                                  foregroundColor: AppColor.surface,
-                                ),
-                                child: Text(
-                                  switchProvider.isArchiveView
-                                      ? 'Show Categories'
-                                      : 'Hide Categories',
-                                  style: const TextStyle(fontSize: 14),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        FadeInUp(
-                          duration: const Duration(milliseconds: 500),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
-                            child: AnimatedSwitcher(
-                              duration: const Duration(milliseconds: 400),
-                              transitionBuilder: (child, animation) {
-                                final offsetAnimation = Tween<Offset>(
-                                  begin: const Offset(0, -0.2),
-                                  end: Offset.zero,
-                                ).animate(animation);
-                                return FadeTransition(
-                                  opacity: animation,
-                                  child: SlideTransition(position: offsetAnimation, child: child),
-                                );
-                              },
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
-                                child: Text(
-                                  switchProvider.isArchiveView
-                                      ? 'Swipe right to unhide categories →'
-                                      : 'Swipe left to hide categories ←',
-                                  key: ValueKey(switchProvider.isArchiveView),
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: AppColor.textSecondary.withOpacity(0.7),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 5),
-                        Expanded(
-                          child: categories.isEmpty
-                              ? Center(
-                            child: FadeIn(
-                              duration: const Duration(milliseconds: 500),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    LucideIcons.folderOpen,
-                                    size: 60,
-                                    color: AppColor.textSecondary.withOpacity(0.4),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  Text(
-                                    switchProvider.isArchiveView
-                                        ? 'No hidden categories yet.'
-                                        : 'No categories available.',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: AppColor.textSecondary.withOpacity(0.7),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    switchProvider.isArchiveView
-                                        ? 'Switch back to view visible categories.'
-                                        : 'Add new categories to get started.',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      color: AppColor.textSecondary.withOpacity(0.6),
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          )
-                              : switchProvider.isCategoryGridView
-                              ? CategoryList(
-                            key: ValueKey('categoryList-${switchProvider.isArchiveView}'),
-                            categories: categories,
-                          )
-                              : CategoryGrid(
-                            key: ValueKey('CategoryGrid-${switchProvider.isArchiveView}'),
-                            categories: categories,
-                          ),
-                        ),
-                      ],
+                    padding: const EdgeInsets.only(right: 8),
+                    child: ChoiceChip(
+                      label: const Text('All'),
+                      selected: _category == null,
+                      onSelected: (_) => setState(() => _category = null),
                     ),
                   ),
-
-                  /// Toggle View Button
-                  Align(
-                    alignment: Alignment.bottomRight,
-                    child: FadeInUp(
-                      duration: const Duration(milliseconds: 500),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: AppColor.primary.withOpacity(0.9),
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.15),
-                                blurRadius: 8,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: IconButton(
-                            onPressed: () {
-                              switchProvider.toggleCategoryGridView();
-                            },
-                            icon: Icon(
-                              switchProvider.isCategoryGridView ? Icons.layers : Icons.dashboard,
-                              color: Colors.white,
-                            ),
-                            iconSize: 24,
-                            padding: const EdgeInsets.all(12),
-                            constraints: const BoxConstraints(),
-                          ),
-                        ),
+                  ...categoryProvider.visibleCategories.map(
+                    (category) => Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: ChoiceChip(
+                        label: Text(category),
+                        selected: _category == category,
+                        onSelected: (_) => setState(() => _category = category),
                       ),
                     ),
                   ),
                 ],
               ),
-            );
-          },
+            ),
+          ),
+          Expanded(
+            child: products.isEmpty
+                ? _emptyState()
+                : ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(14, 14, 14, 100),
+                    itemCount: products.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    itemBuilder: (context, index) {
+                      final product = products[index];
+                      return Material(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                        child: ListTile(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 7,
+                          ),
+                          leading: _image(product.imagePath),
+                          title: Text(
+                            product.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                          subtitle: Text(
+                            (product.category ?? 'Uncategorized') +
+                                ' • ' +
+                                (product.unit ?? 'unit'),
+                          ),
+                          trailing: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                product.totalQuantity.toString(),
+                                style: TextStyle(
+                                  fontSize: 19,
+                                  fontWeight: FontWeight.w800,
+                                  color: _stockColor(product.totalQuantity),
+                                ),
+                              ),
+                              const Text(
+                                'on hand',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.black45,
+                                ),
+                              ),
+                            ],
+                          ),
+                          onTap: () => ProductDetailModal.show(
+                            context,
+                            product.id,
+                            product.isVariant,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _image(String? path) {
+    final exists = path != null && path.isNotEmpty && File(path).existsSync();
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(10),
+      child: exists
+          ? Image.file(
+              File(path),
+              width: 48,
+              height: 48,
+              fit: BoxFit.cover,
+            )
+          : Container(
+              width: 48,
+              height: 48,
+              color: Colors.grey.shade100,
+              child: const Icon(Icons.inventory_2_outlined),
+            ),
+    );
+  }
+
+  Color _stockColor(int stock) {
+    if (stock == 0) return Colors.red;
+    if (stock <= 5) return Colors.orange;
+    return AppColor.primary;
+  }
+
+  Widget _emptyState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.inventory_2_outlined,
+              size: 58,
+              color: Colors.grey.shade400,
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'No products yet',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'Add the product first, then use Stock In to record the opening quantity.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.black54, height: 1.4),
+            ),
+          ],
         ),
       ),
+    );
+  }
+
+  void _openProductForm(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => const SimpleProductForm(),
     );
   }
 }

@@ -211,7 +211,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       title: 'Backup offline data',
                       subtitle: offline.isBusy
                           ? 'Preparing backup…'
-                          : 'Export products, stock, loans, logs, and sync queue',
+                          : 'Export products, stock movements, logs, and sync queue',
                       onTap: offline.isBusy ? null : () => _backup(context),
                     ),
                     _profileTile(
@@ -220,7 +220,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       title: 'Restore offline data',
                       subtitle: offline.isBusy
                           ? 'Restoring backup…'
-                          : 'Import a NextPOS backup file',
+                          : 'Import a Pocket Inventory backup file',
                       onTap: offline.isBusy ? null : () => _restore(context),
                     ),
                   ],
@@ -237,7 +237,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _backup(BuildContext context) async {
     final path = await FilePicker.platform.saveFile(
-      dialogTitle: 'Save NextPOS backup',
+      dialogTitle: 'Save Pocket Inventory backup',
       fileName:
           'nextpos-backup-${DateTime.now().toIso8601String().split('T').first}.json',
       type: FileType.custom,
@@ -272,7 +272,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Restored $count product records. Reloading the POS…',
+              'Restored $count product records. Reloading inventory…',
             ),
           ),
         );

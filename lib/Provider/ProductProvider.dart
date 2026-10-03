@@ -165,84 +165,76 @@ class ProductProvider extends ChangeNotifier {
 
   Future<void> upsertProduct(Product product) async {
     try {
-      final exists = _productBox.containsKey(product.id);
       final now = DateTime.now();
 
-      if (!exists) {
-        final nameExists = _productBox.values.any(
-          (p) =>
-              p.name.trim().toLowerCase() ==
-                  product.name.trim().toLowerCase() &&
-              !p.isSoftDeleted,
-        );
-        if (nameExists) return;
-
-        final logs = <StockLog>[
-          ...product.stocks
-              .where((s) => s.quantity > 0)
-              .map(
-                (s) => StockLog(
-                  id: 'log-${s.id}',
-                  productId: product.id,
-                  quantity: s.quantity,
-                  isPiece: false,
-                  reason: StockLogReason.added,
-                  remarks: 'Initial stock (pack)',
-                ),
-              ),
-          if (product.looseStock?.remainingPieces != null &&
-              product.looseStock!.remainingPieces > 0)
-            StockLog(
-              id: 'log-${product.id}-loose',
-              productId: product.id,
-              quantity: product.looseStock!.remainingPieces,
-              isPiece: true,
-              reason: StockLogReason.added,
-              remarks: 'Initial stock (loose)',
-            ),
-        ];
-
-        final newProduct = product.copyWith(
-          lastModified: now,
-          logs: [...product.logs, ...logs],
-        );
-        await _productBox.put(newProduct.id, newProduct);
-        await _mirror(newProduct);
-      } else {
+      if (_productBox.containsKey(product.id)) {
         final current = _productBox.get(product.id);
-        final looseBefore = current?.looseStock?.remainingPieces ?? 0;
-        final looseAfter = product.looseStock?.remainingPieces ?? 0;
-        final diff = looseAfter - looseBefore;
-
-        final logs = <StockLog>[
-          StockLog(
-            id: 'log-${product.id}-adjust-${now.millisecondsSinceEpoch}',
-            productId: product.id,
-            quantity: 0,
-            isPiece: false,
-            reason: StockLogReason.adjusted,
-            remarks: 'Product updated manually',
-          ),
-          if (diff != 0)
-            StockLog(
-              id: 'log-${product.id}-loose-adjust-${now.millisecondsSinceEpoch}',
-              productId: product.id,
-              quantity: diff.abs(),
-              isPiece: true,
-              reason: StockLogReason.adjusted,
-              remarks: diff > 0 ? 'Added loose stock' : 'Removed loose stock',
-            ),
-        ];
+        if (current == null) return;
 
         final updated = product.copyWith(
+          stocks: current.stocks,
+          looseStock: current.looseStock,
+          logs: current.logs,
+          loans: current.loans,
+          variants: current.variants,
           lastModified: now,
-          logs: [...product.logs, ...logs],
         );
 
         await _productBox.put(updated.id, updated);
         await _mirror(updated);
+        notifyListeners();
+        return;
       }
 
+      for (final key in _productBox.keys) {
+        final parent = _productBox.get(key);
+        if (parent == null) continue;
+
+        final variantIndex =
+            parent.variants.indexWhere((variant) => variant.id == product.id);
+        if (variantIndex == -1) continue;
+
+        final currentVariant = parent.variants[variantIndex];
+        final updatedVariant = product.copyWith(
+          stocks: currentVariant.stocks,
+          looseStock: currentVariant.looseStock,
+          logs: currentVariant.logs,
+          loans: currentVariant.loans,
+          variants: currentVariant.variants,
+          lastModified: now,
+        );
+
+        final variants = [...parent.variants];
+        variants[variantIndex] = updatedVariant;
+        final updatedParent = parent.copyWith(
+          variants: variants,
+          lastModified: now,
+        );
+
+        await _productBox.put(key, updatedParent);
+        await _mirror(updatedParent);
+        notifyListeners();
+        return;
+      }
+
+      final nameExists = _productBox.values.any(
+        (existing) =>
+            existing.name.trim().toLowerCase() ==
+                product.name.trim().toLowerCase() &&
+            !existing.isSoftDeleted &&
+            !existing.isDeletedPermanent,
+      );
+      if (nameExists) return;
+
+      final newProduct = product.copyWith(
+        stocks: const [],
+        logs: const [],
+        loans: const [],
+        lastModified: now,
+      );
+
+      await _productBox.put(newProduct.id, newProduct);
+      await _mirror(newProduct);
       notifyListeners();
     } catch (e) {
       debugPrint("❌ upsertProduct error: $e");

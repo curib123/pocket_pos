@@ -100,6 +100,12 @@ class StockLogReasonAdapter extends TypeAdapter<StockLogReason> {
         return StockLogReason.consumed;
       case 12:
         return StockLogReason.unknown;
+      case 13:
+        return StockLogReason.stockIn;
+      case 14:
+        return StockLogReason.stockOut;
+      case 15:
+        return StockLogReason.stockAdjustment;
       default:
         return StockLogReason.sold;
     }
@@ -146,6 +152,15 @@ class StockLogReasonAdapter extends TypeAdapter<StockLogReason> {
         break;
       case StockLogReason.unknown:
         writer.writeByte(12);
+        break;
+      case StockLogReason.stockIn:
+        writer.writeByte(13);
+        break;
+      case StockLogReason.stockOut:
+        writer.writeByte(14);
+        break;
+      case StockLogReason.stockAdjustment:
+        writer.writeByte(15);
         break;
     }
   }

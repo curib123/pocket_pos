@@ -42,6 +42,15 @@ enum StockLogReason {
 
   @HiveField(12)
   unknown,     // 🚨 Fallback enum for unexpected strings
+
+  @HiveField(13)
+  stockIn,
+
+  @HiveField(14)
+  stockOut,
+
+  @HiveField(15)
+  stockAdjustment,
 }
 
 @HiveType(typeId: 4)

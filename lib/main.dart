@@ -15,9 +15,7 @@ import 'package:nextpos/Model/loan_item.dart';
 
 // Providers
 import 'package:nextpos/Provider/AuthProvider.dart';
-import 'package:nextpos/Provider/CartListProvider.dart';
 import 'package:nextpos/Provider/CurrencyProvider.dart';
-import 'package:nextpos/Provider/LoanProvider.dart';
 import 'package:nextpos/Provider/LogProvider.dart';
 import 'package:nextpos/Provider/LooseStockProvider.dart';
 import 'package:nextpos/Provider/ProductProvider.dart';
@@ -84,9 +82,7 @@ Future<void> main() async {
           ChangeNotifierProvider(create: (_) => StoreCategoryProvider()),
           ChangeNotifierProvider(create: (_) => SwitchProvider()),
           ChangeNotifierProvider(create: (_) => CurrencyProvider()),
-          ChangeNotifierProvider(create: (_) => LoanProvider()),
           ChangeNotifierProvider(create: (_) => LogProvider()),
-          ChangeNotifierProvider(create: (_) => CartListProvider()),
           ChangeNotifierProvider(create: (_) => OfflineDataProvider()),
           ChangeNotifierProvider(create: (_) => OfflineSyncProvider()),
           ChangeNotifierProxyProvider<ProductProvider, VariantProductProvider>(
@@ -109,7 +105,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: "NextPOS AI",
+      title: "Pocket Inventory",
       theme: ThemeData(
         useMaterial3: true,
         scaffoldBackgroundColor: Colors.white,
