@@ -213,8 +213,8 @@ class _HomeState extends State<Home> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
-        backgroundColor: AppBrand.background,
+      return Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -235,7 +235,7 @@ class _HomeState extends State<Home> {
     return Consumer<TabProvider>(
       builder: (context, tabProvider, _) {
         return Scaffold(
-          backgroundColor: AppBrand.background,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           body: tabProvider.screens[tabProvider.currentIndex],
           bottomNavigationBar: BottomNavigation(
             currentIndex: tabProvider.currentIndex,
