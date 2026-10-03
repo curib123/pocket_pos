@@ -56,7 +56,9 @@ class DashBoardScreen extends StatelessWidget {
       drawer: const AppDrawer(),
       appBar: const SearchAndCartAppBar(),
       body: RefreshIndicator(
-        onRefresh: () async => context.read<ProductProvider>().notifyListeners(),
+        onRefresh: () async {
+          await Future<void>.delayed(const Duration(milliseconds: 150));
+        },
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
           children: [
