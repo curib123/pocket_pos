@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:nextpos/Helper/Classes_Methods/AppColor.dart';
 import 'package:nextpos/Helper/Classes_Methods/mistral_ai_helper.dart';
 import 'package:nextpos/Provider/ProductProvider.dart';
