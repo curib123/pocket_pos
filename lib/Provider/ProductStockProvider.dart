@@ -42,8 +42,7 @@ class StockOperationResult {
 }
 
 class ProductStockProvider extends ChangeNotifier {
-  final Box<Product> _productBox = Hive.box<Product>('products');
-  final OfflineDatabase _offlineDatabase = OfflineDatabase.instance;
+  final ProductStore _productBox = ProductStore.instance;
 
   Product? _getProduct(String idOrName) {
     final normalized = idOrName.trim().toLowerCase();
@@ -355,7 +354,7 @@ class ProductStockProvider extends ChangeNotifier {
           parent.variants.indexWhere((variant) => variant.id == original.id);
       if (index == -1) continue;
 
-      final variants = [...parent.variants];
+      final List<Product> variants = List<Product>.from(parent.variants);
       variants[index] = updated;
       final updatedParent = parent.copyWith(
         variants: variants,
@@ -366,14 +365,6 @@ class ProductStockProvider extends ChangeNotifier {
     }
 
     await _productBox.put(updated.id, updated);
-  }
-
-  Future<void> _mirror(Product product) async {
-    try {
-      await _offlineDatabase.upsertProduct(product);
-    } catch (error) {
-      debugPrint('[ProductStockProvider] Offline mirror failed: ' + error.toString());
-    }
   }
 
   String _movementNote(
