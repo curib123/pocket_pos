@@ -518,7 +518,7 @@ class _PhotoPicker extends StatelessWidget {
                 : Container(
                     width: 64,
                     height: 64,
-                    color: AppBrand.primarySoft,
+                    color: AppBrand.primarySoftOf(context),
                     child: const Icon(
                       Icons.image_outlined,
                       color: AppBrand.primary,
