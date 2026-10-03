@@ -436,7 +436,7 @@ class _TimelineItem extends StatelessWidget {
                       ClipRRect(
                         borderRadius: BorderRadius.circular(12),
                         child: Image.file(
-                          File(imagePath),
+                          File(imagePath!),
                           width: double.infinity,
                           height: 150,
                           fit: BoxFit.cover,
