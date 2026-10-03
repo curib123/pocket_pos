@@ -1,8 +1,8 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:nextpos/View/Components/Brand/BantayStockBrand.dart';
-import 'package:nextpos/core/brand/app_brand.dart';
+import 'package:nextpos/View/Components/Ads/StartIoBannerSlot.dart';
+import 'package:nextpos/View/Components/Brand/PocketInventoryBrand.dart';
+import 'package:nextpos/core/ads/ad_service.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:nextpos/Helper/Classes_Methods/InternetChecker.dart';
 import 'package:provider/provider.dart';
@@ -219,7 +219,7 @@ class _HomeState extends State<Home> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              BantayStockMark(size: 56),
+              PocketInventoryMark(size: 56),
               SizedBox(height: 18),
               SizedBox(
                 width: 22,
@@ -237,9 +237,24 @@ class _HomeState extends State<Home> {
         return Scaffold(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           body: tabProvider.screens[tabProvider.currentIndex],
-          bottomNavigationBar: BottomNavigation(
-            currentIndex: tabProvider.currentIndex,
-            onTabSelected: tabProvider.setTab,
+          bottomNavigationBar: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              StartIoBannerSlot(
+                visible: tabProvider.currentIndex == 0 ||
+                    tabProvider.currentIndex == 2,
+              ),
+              BottomNavigation(
+                currentIndex: tabProvider.currentIndex,
+                onTabSelected: (index) {
+                  if (index == tabProvider.currentIndex) return;
+                  tabProvider.setTab(index);
+                  unawaited(
+                    StartIoAdService.instance.registerNaturalBreak(),
+                  );
+                },
+              ),
+            ],
           ),
         );
       },
