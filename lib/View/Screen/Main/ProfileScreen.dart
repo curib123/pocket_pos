@@ -44,12 +44,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    Provider.of<CurrencyProvider>(context, listen: false).loadCurrency();
-  }
-
-  @override
   Widget build(BuildContext context) {
     const String aboutDev = "CuribTech Software Development Services";
 
