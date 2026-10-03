@@ -16,19 +16,28 @@ class DashBoardScreen extends StatelessWidget {
         context.watch<ProductProvider>().getAllProductsWithVariants();
     final totalUnits =
         products.fold<int>(0, (total, product) => total + product.totalQuantity);
-    final lowStock =
-        products.where((product) => product.totalQuantity > 0 && product.totalQuantity <= 5).length;
-    final outOfStock =
-        products.where((product) => product.totalQuantity == 0).length;
+    final lowStock = products.where((product) => product.isLowStock).length;
+    final outOfStock = products.where((product) => product.isOutOfStock).length;
     final needsAttention = products
-        .where((product) => product.totalQuantity <= 5)
+        .where((product) => product.isLowStock || product.isOutOfStock)
         .toList()
       ..sort((a, b) => a.totalQuantity.compareTo(b.totalQuantity));
 
     return Scaffold(
       appBar: AppBar(
-        title: const BantayStockBrand(showTagline: true, markSize: 38),
-        toolbarHeight: 72,
+        title: const BantayStockBrand(
+          showTagline: false,
+          markSize: 34,
+        ),
+        toolbarHeight: 66,
+        actions: [
+          IconButton(
+            tooltip: 'Open inventory',
+            onPressed: () => context.read<TabProvider>().setTab(1),
+            icon: const Icon(Icons.inventory_2_outlined),
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: RefreshIndicator(
         onRefresh: () async {
@@ -37,21 +46,19 @@ class DashBoardScreen extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
           children: [
+            _OverviewHeader(
+              productCount: products.length,
+              totalUnits: totalUnits,
+              needsAttention: needsAttention.length,
+            ),
+            const SizedBox(height: 18),
             Text(
-              'Inventory at a glance',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              'Quick actions',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w800,
-                    letterSpacing: -0.6,
                   ),
             ),
-            const SizedBox(height: 5),
-            Text(
-              'The three actions you need for daily stock keeping.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppBrand.muted,
-                  ),
-            ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 10),
             Row(
               children: [
                 Expanded(
@@ -107,21 +114,29 @@ class DashBoardScreen extends StatelessWidget {
                   label: 'Products',
                   value: products.length.toString(),
                   icon: Icons.inventory_2_outlined,
+                  color: AppBrand.primary,
+                  background: AppBrand.primarySoft,
                 ),
                 _MetricCard(
                   label: 'On hand',
                   value: totalUnits.toString(),
                   icon: Icons.layers_outlined,
+                  color: AppBrand.primary,
+                  background: AppBrand.primarySoft,
                 ),
                 _MetricCard(
                   label: 'Low stock',
                   value: lowStock.toString(),
                   icon: Icons.low_priority_rounded,
+                  color: AppBrand.warning,
+                  background: AppBrand.warningSoft,
                 ),
                 _MetricCard(
                   label: 'Out of stock',
                   value: outOfStock.toString(),
                   icon: Icons.inventory_outlined,
+                  color: AppBrand.danger,
+                  background: AppBrand.dangerSoft,
                 ),
               ],
             ),
@@ -173,6 +188,99 @@ class DashBoardScreen extends StatelessWidget {
   }
 }
 
+class _OverviewHeader extends StatelessWidget {
+  final int productCount;
+  final int totalUnits;
+  final int needsAttention;
+
+  const _OverviewHeader({
+    required this.productCount,
+    required this.totalUnits,
+    required this.needsAttention,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final allHealthy = needsAttention == 0;
+
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: AppBrand.primaryFaint,
+        border: Border.all(color: AppBrand.primarySoft),
+        borderRadius: BorderRadius.circular(22),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Inventory overview',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.6,
+                      ),
+                ),
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                decoration: BoxDecoration(
+                  color:
+                      allHealthy ? AppBrand.primarySoft : AppBrand.warningSoft,
+                  borderRadius: BorderRadius.circular(99),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      allHealthy
+                          ? Icons.check_circle_outline_rounded
+                          : Icons.notification_important_outlined,
+                      size: 16,
+                      color:
+                          allHealthy ? AppBrand.primary : AppBrand.warning,
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      allHealthy ? 'Healthy' : '$needsAttention attention',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: allHealthy
+                                ? AppBrand.primary
+                                : AppBrand.warning,
+                            fontWeight: FontWeight.w800,
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            '$productCount products • $totalUnits units on hand',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppBrand.muted,
+                ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            allHealthy
+                ? 'Everything is above its reorder level.'
+                : 'Review low and out-of-stock products before the next restock.',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppBrand.muted,
+                  height: 1.35,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _QuickAction extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -218,11 +326,15 @@ class _MetricCard extends StatelessWidget {
   final String label;
   final String value;
   final IconData icon;
+  final Color color;
+  final Color background;
 
   const _MetricCard({
     required this.label,
     required this.value,
     required this.icon,
+    required this.color,
+    required this.background,
   });
 
   @override
@@ -240,10 +352,10 @@ class _MetricCard extends StatelessWidget {
             width: 38,
             height: 38,
             decoration: BoxDecoration(
-              color: AppBrand.primarySoft,
+              color: background,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: AppBrand.primary, size: 20),
+            child: Icon(icon, color: color, size: 20),
           ),
           const SizedBox(width: 11),
           Expanded(
@@ -256,6 +368,7 @@ class _MetricCard extends StatelessWidget {
                   maxLines: 1,
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.w800,
+                        color: color,
                       ),
                 ),
                 Text(
@@ -316,6 +429,9 @@ class _AttentionRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final quantity = product.totalQuantity;
+    final isOut = product.isOutOfStock;
+    final color = isOut ? AppBrand.danger : AppBrand.warning;
+    final background = isOut ? AppBrand.dangerSoft : AppBrand.warningSoft;
 
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
@@ -324,13 +440,13 @@ class _AttentionRow extends StatelessWidget {
         height: 40,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: AppBrand.primarySoft,
+          color: background,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Text(
           product.name.isEmpty ? '?' : product.name[0].toUpperCase(),
-          style: const TextStyle(
-            color: AppBrand.primary,
+          style: TextStyle(
+            color: color,
             fontWeight: FontWeight.w800,
           ),
         ),
@@ -342,8 +458,10 @@ class _AttentionRow extends StatelessWidget {
         style: const TextStyle(fontWeight: FontWeight.w700),
       ),
       subtitle: Text(
-        quantity == 0 ? 'Out of stock' : 'Only $quantity left',
-        style: const TextStyle(color: AppBrand.muted),
+        isOut
+            ? 'Out of stock'
+            : '$quantity left · reorder at ${product.reorderLevel}',
+        style: TextStyle(color: color),
       ),
       trailing: IconButton(
         tooltip: 'Stock In',
