@@ -42,6 +42,14 @@ class _StartIoBannerSlotState extends State<StartIoBannerSlot> {
   }
 
   @override
+  void dispose() {
+    try {
+      _bannerAd?.dispose();
+    } catch (_) {}
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final ad = _bannerAd;
     if (!widget.visible || ad == null) {

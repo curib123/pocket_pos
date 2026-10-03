@@ -13,6 +13,14 @@ subprojects {
     project.evaluationDependsOn(":app")
 }
 
+// AGP 9 compiles Android Java sources to JVM 11. Keep legacy Flutter plugin
+// Kotlin tasks on the same target until all dependencies migrate to built-in Kotlin.
+subprojects {
+    tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+        kotlinOptions.jvmTarget = "11"
+    }
+}
+
 tasks.register("clean", Delete) {
     delete rootProject.buildDir
 }
