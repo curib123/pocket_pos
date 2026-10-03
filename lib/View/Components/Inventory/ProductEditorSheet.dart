@@ -123,7 +123,7 @@ class _ProductEditorSheetState extends State<ProductEditorSheet> {
                   ? 'Keep the details clear so stock checks stay fast.'
                   : 'Add the basics now. Photo and starting stock are optional.',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppBrand.muted,
+                    color: AppBrand.mutedOf(context),
                   ),
             ),
             const SizedBox(height: 20),
@@ -146,7 +146,7 @@ class _ProductEditorSheetState extends State<ProductEditorSheet> {
               textCapitalization: TextCapitalization.words,
               decoration: const InputDecoration(
                 labelText: 'Product name',
-                prefixIcon: Icon(Icons.inventory_2_outlined),
+                hintText: 'e.g. Coca-Cola 1.5L',
               ),
             ),
             const SizedBox(height: 12),
@@ -156,7 +156,7 @@ class _ProductEditorSheetState extends State<ProductEditorSheet> {
                 isExpanded: true,
                 decoration: const InputDecoration(
                   labelText: 'Category',
-                  prefixIcon: Icon(Icons.category_outlined),
+                  hintText: 'Choose a category',
                 ),
                 items: categories
                     .map(
@@ -179,7 +179,7 @@ class _ProductEditorSheetState extends State<ProductEditorSheet> {
               value: _units.contains(_unit) ? _unit : 'pcs',
               decoration: const InputDecoration(
                 labelText: 'Stock unit',
-                prefixIcon: Icon(Icons.straighten_outlined),
+                hintText: 'e.g. pcs, pack, bottle',
               ),
               items: _units
                   .map(
@@ -200,7 +200,7 @@ class _ProductEditorSheetState extends State<ProductEditorSheet> {
               keyboardType: TextInputType.text,
               decoration: const InputDecoration(
                 labelText: 'Barcode (optional)',
-                prefixIcon: Icon(Icons.qr_code_2_rounded),
+                hintText: 'e.g. 4801234567890',
               ),
             ),
             const SizedBox(height: 12),
@@ -210,7 +210,7 @@ class _ProductEditorSheetState extends State<ProductEditorSheet> {
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(
                 labelText: 'Reorder level',
-                prefixIcon: Icon(Icons.notification_important_outlined),
+                hintText: 'e.g. 5',
                 helperText:
                     'At or below this quantity, the product is marked low stock.',
               ),
@@ -223,7 +223,7 @@ class _ProductEditorSheetState extends State<ProductEditorSheet> {
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(
                   labelText: 'Initial stock',
-                  prefixIcon: Icon(Icons.numbers_rounded),
+                  hintText: 'e.g. 24',
                   helperText: 'Leave at 0 and use Stock In later if preferred.',
                 ),
               ),
@@ -500,8 +500,8 @@ class _PhotoPicker extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppBrand.surface,
-        border: Border.all(color: AppBrand.border),
+        color: AppBrand.surfaceOf(context),
+        border: Border.all(color: AppBrand.borderOf(context)),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -540,7 +540,7 @@ class _PhotoPicker extends StatelessWidget {
                 Text(
                   hasImage ? 'Photo added' : 'Optional',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppBrand.muted,
+                        color: AppBrand.mutedOf(context),
                       ),
                 ),
               ],
