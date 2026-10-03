@@ -37,6 +37,9 @@ jobs:
       - name: Flutter version
         run: flutter --version
 
+      - name: Clean build workspace
+        run: flutter clean
+
       - name: Install dependencies
         run: flutter pub get
 
@@ -49,10 +52,21 @@ jobs:
       - name: Build release APK
         run: flutter build apk --release
 
+      - name: Package versioned APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(sed -n 's/^version: //p' pubspec.yaml)"
+          version_name="${version%%+*}"
+          build_number="${version##*+}"
+          mkdir -p release
+          cp build/app/outputs/flutter-apk/app-release.apk "release/BantayStock-${version_name}-build${build_number}.apk"
+          echo "APK_VERSION=${version}" >> "$GITHUB_ENV"
+
       - name: Upload release APK
         uses: actions/upload-artifact@v4
         with:
-          name: pocket-pos-release-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          name: BantayStock-${{ env.APK_VERSION }}-${{ github.sha }}
+          path: release/*.apk
           if-no-files-found: error
           retention-days: 30
