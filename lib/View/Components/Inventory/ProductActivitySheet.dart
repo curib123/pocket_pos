@@ -66,7 +66,7 @@ class _ProductActivitySheetState extends State<ProductActivitySheet> {
         ? activities.length
         : start + _pageSize;
     final visible = activities.sublist(start, end);
-    final status = _statusFor(product);
+    final status = _statusFor(context, product);
 
     return SafeArea(
       top: false,
@@ -99,7 +99,7 @@ class _ProductActivitySheetState extends State<ProductActivitySheet> {
                             'Product activity',
                             style:
                                 Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                      color: AppBrand.muted,
+                                      color: AppBrand.mutedOf(context),
                                     ),
                           ),
                         ],
@@ -118,7 +118,7 @@ class _ProductActivitySheetState extends State<ProductActivitySheet> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   decoration: BoxDecoration(
-                    color: AppBrand.primaryFaint,
+                    color: AppBrand.primaryFaintOf(context),
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Row(
@@ -132,7 +132,7 @@ class _ProductActivitySheetState extends State<ProductActivitySheet> {
                       Container(
                         width: 1,
                         height: 34,
-                        color: AppBrand.border,
+                        color: AppBrand.borderOf(context),
                       ),
                       Expanded(
                         child: _SummaryValue(
@@ -238,25 +238,25 @@ class _ProductActivitySheetState extends State<ProductActivitySheet> {
     };
   }
 
-  _StockStatus _statusFor(Product product) {
+  _StockStatus _statusFor(BuildContext context, Product product) {
     if (product.isOutOfStock) {
-      return const _StockStatus(
+      return _StockStatus(
         label: 'Out of stock',
         color: AppBrand.danger,
-        background: AppBrand.dangerSoft,
+        background: AppBrand.dangerSoftOf(context),
       );
     }
     if (product.isLowStock) {
-      return const _StockStatus(
+      return _StockStatus(
         label: 'Low stock',
         color: AppBrand.warning,
-        background: AppBrand.warningSoft,
+        background: AppBrand.warningSoftOf(context),
       );
     }
-    return const _StockStatus(
+    return _StockStatus(
       label: 'Healthy',
       color: AppBrand.primary,
-      background: AppBrand.primarySoft,
+      background: AppBrand.primarySoftOf(context),
     );
   }
 }
@@ -285,7 +285,7 @@ class _ProductAvatar extends StatelessWidget {
               width: 52,
               height: 52,
               alignment: Alignment.center,
-              color: AppBrand.primarySoft,
+              color: AppBrand.primarySoftOf(context),
               child: Text(
                 product.name.isEmpty ? '?' : product.name[0].toUpperCase(),
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -321,7 +321,7 @@ class _SummaryValue extends StatelessWidget {
         Text(
           label,
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppBrand.muted,
+                color: AppBrand.mutedOf(context),
               ),
         ),
       ],
@@ -341,7 +341,11 @@ class _TimelineItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final kind = _kind(log.reason);
-    final presentation = _presentation(kind, log.quantity);
+    final presentation = _presentation(context, kind, log.quantity);
+    final imagePath = log.imagePath;
+    final hasImage = imagePath != null &&
+        imagePath.trim().isNotEmpty &&
+        File(imagePath).existsSync();
 
     return IntrinsicHeight(
       child: Row(
@@ -369,7 +373,7 @@ class _TimelineItem extends StatelessWidget {
                     child: Container(
                       width: 2,
                       margin: const EdgeInsets.symmetric(vertical: 5),
-                      color: AppBrand.border,
+                      color: AppBrand.borderOf(context),
                     ),
                   ),
               ],
@@ -382,8 +386,8 @@ class _TimelineItem extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: AppBrand.surface,
-                  border: Border.all(color: AppBrand.border),
+                  color: AppBrand.surfaceOf(context),
+                  border: Border.all(color: AppBrand.borderOf(context)),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Column(
@@ -414,7 +418,7 @@ class _TimelineItem extends StatelessWidget {
                     Text(
                       DateFormat('MMM d, yyyy • h:mm a').format(log.dateLogged),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppBrand.muted,
+                            color: AppBrand.mutedOf(context),
                           ),
                     ),
                     if (log.remarks?.trim().isNotEmpty == true) ...[
@@ -422,9 +426,21 @@ class _TimelineItem extends StatelessWidget {
                       Text(
                         log.remarks!,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: AppBrand.muted,
+                              color: AppBrand.mutedOf(context),
                               height: 1.4,
                             ),
+                      ),
+                    ],
+                    if (hasImage) ...[
+                      const SizedBox(height: 10),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.file(
+                          File(imagePath),
+                          width: double.infinity,
+                          height: 150,
+                          fit: BoxFit.cover,
+                        ),
                       ),
                     ],
                   ],
@@ -456,6 +472,7 @@ class _TimelineItem extends StatelessWidget {
   }
 
   _ActivityPresentation _presentation(
+    BuildContext context,
     _ProductActivityKind kind,
     int quantity,
   ) {
@@ -465,21 +482,21 @@ class _TimelineItem extends StatelessWidget {
           quantity: '+${quantity.abs()}',
           icon: Icons.add_rounded,
           color: AppBrand.primary,
-          background: AppBrand.primarySoft,
+          background: AppBrand.primarySoftOf(context),
         ),
       _ProductActivityKind.stockOut => _ActivityPresentation(
           label: 'Stock Out',
           quantity: '-${quantity.abs()}',
           icon: Icons.remove_rounded,
           color: AppBrand.danger,
-          background: AppBrand.dangerSoft,
+          background: AppBrand.dangerSoftOf(context),
         ),
       _ProductActivityKind.adjustment => _ActivityPresentation(
           label: 'Adjustment',
           quantity: quantity > 0 ? '+$quantity' : quantity.toString(),
           icon: Icons.tune_rounded,
           color: AppBrand.warning,
-          background: AppBrand.warningSoft,
+          background: AppBrand.warningSoftOf(context),
         ),
     };
   }
@@ -536,7 +553,7 @@ class _PaginationBar extends StatelessWidget {
               '$start–$end of $totalItems',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppBrand.muted,
+                    color: AppBrand.mutedOf(context),
                   ),
             ),
           ),
@@ -577,7 +594,7 @@ class _EmptyProductActivity extends StatelessWidget {
               width: 62,
               height: 62,
               decoration: BoxDecoration(
-                color: AppBrand.primarySoft,
+                color: AppBrand.primarySoftOf(context),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: const Icon(
@@ -598,7 +615,7 @@ class _EmptyProductActivity extends StatelessWidget {
               'Stock In, Stock Out, and adjustments for this product will appear here.',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppBrand.muted,
+                    color: AppBrand.mutedOf(context),
                   ),
             ),
           ],
