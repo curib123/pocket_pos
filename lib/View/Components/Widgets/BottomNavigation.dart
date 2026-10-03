@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:lucide_icons/lucide_icons.dart';
-import 'package:nextpos/Helper/Classes_Methods/AppColor.dart';
 
 class BottomNavigation extends StatelessWidget {
   final int currentIndex;
-  final Function(int) onTabSelected;
+  final ValueChanged<int> onTabSelected;
 
   const BottomNavigation({
     super.key,
@@ -14,28 +12,29 @@ class BottomNavigation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BottomNavigationBar(
-      currentIndex: currentIndex,
-      onTap: onTabSelected,
-      type: BottomNavigationBarType.fixed,
-      selectedItemColor: AppColor.primary,
-      unselectedItemColor: AppColor.textSecondary,
-      items: const [
-        BottomNavigationBarItem(
-          icon: Icon(LucideIcons.layoutDashboard),
-          label: 'Dashboard',
+    return NavigationBar(
+      selectedIndex: currentIndex,
+      onDestinationSelected: onTabSelected,
+      destinations: const [
+        NavigationDestination(
+          icon: Icon(Icons.home_outlined),
+          selectedIcon: Icon(Icons.home_rounded),
+          label: 'Home',
         ),
-        BottomNavigationBarItem(
-          icon: Icon(LucideIcons.boxes),
-          label: 'Product',
+        NavigationDestination(
+          icon: Icon(Icons.inventory_2_outlined),
+          selectedIcon: Icon(Icons.inventory_2_rounded),
+          label: 'Inventory',
         ),
-        BottomNavigationBarItem(
-          icon: Icon(LucideIcons.wallet),
-          label: 'Loan',
+        NavigationDestination(
+          icon: Icon(Icons.history_outlined),
+          selectedIcon: Icon(Icons.history_rounded),
+          label: 'Activity',
         ),
-        BottomNavigationBarItem(
-          icon: Icon(LucideIcons.store),
-          label: 'Profile',
+        NavigationDestination(
+          icon: Icon(Icons.settings_outlined),
+          selectedIcon: Icon(Icons.settings_rounded),
+          label: 'Settings',
         ),
       ],
     );
