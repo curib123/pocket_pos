@@ -87,13 +87,19 @@ class ProductStockProvider extends ChangeNotifier {
       final newTotal = StockRules.stockIn(current, quantity);
       final now = DateTime.now();
       final lastStock = product.stocks.isNotEmpty ? product.stocks.last : null;
+      final defaultCostPrice = product.costPrice > 0
+          ? product.costPrice
+          : (lastStock?.costPrice ?? 0);
+      final defaultSellingPrice = product.sellingPrice > 0
+          ? product.sellingPrice
+          : (lastStock?.retailPrice ?? 0);
 
       final batch = ProductStock(
         id: 'stock-in-' + now.microsecondsSinceEpoch.toString(),
         productId: product.id,
         quantity: quantity,
-        costPrice: costPrice ?? lastStock?.costPrice ?? 0,
-        retailPrice: retailPrice ?? lastStock?.retailPrice ?? 0,
+        costPrice: costPrice ?? defaultCostPrice,
+        retailPrice: retailPrice ?? defaultSellingPrice,
         dateReceived: now,
         lastModified: now,
       );
@@ -233,14 +239,20 @@ class ProductStockProvider extends ChangeNotifier {
 
       if (difference > 0) {
         final lastStock = product.stocks.isNotEmpty ? product.stocks.last : null;
+        final defaultCostPrice = product.costPrice > 0
+            ? product.costPrice
+            : (lastStock?.costPrice ?? 0);
+        final defaultSellingPrice = product.sellingPrice > 0
+            ? product.sellingPrice
+            : (lastStock?.retailPrice ?? 0);
         updatedStocks = [
           ...product.stocks,
           ProductStock(
             id: 'adjustment-' + now.microsecondsSinceEpoch.toString(),
             productId: product.id,
             quantity: difference,
-            costPrice: lastStock?.costPrice ?? 0,
-            retailPrice: lastStock?.retailPrice ?? 0,
+            costPrice: defaultCostPrice,
+            retailPrice: defaultSellingPrice,
             dateReceived: now,
             lastModified: now,
           ),
