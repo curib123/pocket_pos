@@ -33,8 +33,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _loadUserDetails() async {
     SecureStorageService secureStorage = SecureStorageService();
 
-    final userDetails = await secureStorage
-        .readUser(); // 👈 don't forget the await!
+    final userDetails = await secureStorage.readUser();
+    if (!mounted) return;
 
     setState(() {
       accountEmail = userDetails['email'] ?? 'Unknown';
