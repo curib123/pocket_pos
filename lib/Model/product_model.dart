@@ -1,7 +1,8 @@
 import 'product_stock.dart';
 import 'loose_stock.dart';
 import 'stock_log.dart';
-import 'loan_item.dart'; // 🆕 Import LoanItem
+import 'loan_item.dart';
+
 class Product {
   final String id;
   final String name;
@@ -11,9 +12,10 @@ class Product {
   final int? piecesPerPack;
   final String? unit;
   final String? imagePath;
+  final int reorderLevel;
   final DateTime createdAt;
   final DateTime lastModified;
-  final bool isSoftDeleted; // 🆕 replaces deletedAt
+  final bool isSoftDeleted;
   final List<ProductStock> stocks;
   final LooseStock? looseStock;
   final List<StockLog> logs;
@@ -24,11 +26,14 @@ class Product {
   final List<LoanItem> loans;
   final bool isDeletedPermanent;
 
-  // 🔢 Computed
   int get totalQuantity => stocks.fold(0, (sum, stock) => sum + stock.quantity);
 
-  int get totalQuantityByPieces =>
-      totalQuantity * (piecesPerPack ?? 1);
+  int get totalQuantityByPieces => totalQuantity * (piecesPerPack ?? 1);
+
+  bool get isOutOfStock => totalQuantity == 0;
+
+  bool get isLowStock =>
+      totalQuantity > 0 && totalQuantity <= reorderLevel;
 
   List<StockLog> getLogsByReason(StockLogReason reason) =>
       logs.where((log) => log.reason == reason).toList();
@@ -60,10 +65,11 @@ class Product {
     this.category,
     this.unit,
     this.imagePath,
+    this.reorderLevel = 5,
     this.barcode,
     required this.createdAt,
     required this.lastModified,
-    this.isSoftDeleted = false, // 🆕 default false
+    this.isSoftDeleted = false,
     this.stocks = const [],
     this.looseStock,
     this.logs = const [],
@@ -84,10 +90,11 @@ class Product {
       'piecesPerPack': piecesPerPack,
       'unit': unit,
       'imagePath': imagePath,
+      'reorderLevel': reorderLevel,
       'barcode': barcode,
       'createdAt': createdAt.toIso8601String(),
       'lastModified': lastModified.toIso8601String(),
-      'isSoftDeleted': isSoftDeleted, // ✅
+      'isSoftDeleted': isSoftDeleted,
       'stocks': stocks.map((s) => s.toMap()).toList(),
       'looseStock': looseStock?.toMap(),
       'logs': logs.map((l) => l.toMap()).toList(),
@@ -100,6 +107,9 @@ class Product {
   }
 
   factory Product.fromMap(Map<String, dynamic> map) {
+    final reorderLevel =
+        int.tryParse(map['reorderLevel']?.toString() ?? '') ?? 5;
+
     return Product(
       id: map['id'],
       name: map['name'],
@@ -109,17 +119,32 @@ class Product {
       piecesPerPack: map['piecesPerPack'],
       unit: map['unit'],
       imagePath: map['imagePath'],
+      reorderLevel: reorderLevel < 0 ? 0 : reorderLevel,
       barcode: map['barcode'],
       createdAt: DateTime.parse(map['createdAt']),
       lastModified: DateTime.parse(map['lastModified']),
-      isSoftDeleted: map['isSoftDeleted'] ?? false, // ✅
-      stocks: (map['stocks'] as List?)?.map((s) => ProductStock.fromMap(s)).toList() ?? [],
-      looseStock: map['looseStock'] != null ? LooseStock.fromMap(map['looseStock']) : null,
-      logs: (map['logs'] as List?)?.map((l) => StockLog.fromMap(l)).toList() ?? [],
+      isSoftDeleted: map['isSoftDeleted'] ?? false,
+      stocks: (map['stocks'] as List?)
+              ?.map((s) => ProductStock.fromMap(s))
+              .toList() ??
+          [],
+      looseStock: map['looseStock'] != null
+          ? LooseStock.fromMap(map['looseStock'])
+          : null,
+      logs: (map['logs'] as List?)
+              ?.map((l) => StockLog.fromMap(l))
+              .toList() ??
+          [],
       hasVariant: map['hasVariant'] ?? false,
-      variants: (map['variants'] as List?)?.map((v) => Product.fromMap(v)).toList() ?? [],
+      variants: (map['variants'] as List?)
+              ?.map((v) => Product.fromMap(v))
+              .toList() ??
+          [],
       isVariant: map['isVariant'] ?? false,
-      loans: (map['loans'] as List?)?.map((l) => LoanItem.fromMap(l)).toList() ?? [],
+      loans: (map['loans'] as List?)
+              ?.map((l) => LoanItem.fromMap(l))
+              .toList() ??
+          [],
       isDeletedPermanent: map['isDeletedPermanent'] ?? false,
     );
   }
@@ -133,10 +158,11 @@ class Product {
     int? piecesPerPack,
     String? unit,
     String? imagePath,
+    int? reorderLevel,
     String? barcode,
     DateTime? createdAt,
     DateTime? lastModified,
-    bool? isSoftDeleted, // ✅
+    bool? isSoftDeleted,
     List<ProductStock>? stocks,
     LooseStock? looseStock,
     List<StockLog>? logs,
@@ -155,10 +181,11 @@ class Product {
       piecesPerPack: piecesPerPack ?? this.piecesPerPack,
       unit: unit ?? this.unit,
       imagePath: imagePath ?? this.imagePath,
+      reorderLevel: reorderLevel ?? this.reorderLevel,
       barcode: barcode ?? this.barcode,
       createdAt: createdAt ?? this.createdAt,
       lastModified: lastModified ?? this.lastModified,
-      isSoftDeleted: isSoftDeleted ?? this.isSoftDeleted, // ✅
+      isSoftDeleted: isSoftDeleted ?? this.isSoftDeleted,
       stocks: stocks ?? this.stocks,
       looseStock: looseStock ?? this.looseStock,
       logs: logs ?? this.logs,
