@@ -1,20 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
+import 'package:nextpos/core/data/product_store.dart';
 import 'package:nextpos/Model/product_model.dart';
 import 'package:nextpos/Model/stock_log.dart';
 import 'package:nextpos/Provider/ProductProvider.dart';
-import 'package:nextpos/core/data/offline_database.dart';
 
 class VariantProductProvider extends ChangeNotifier {
-  final Box<Product> _productBox = Hive.box<Product>('products');
-  final _offlineDatabase = OfflineDatabase.instance;
-
-  Future<void> _mirror(Product product) async {
-    try {
-      await _offlineDatabase.upsertProduct(product);
-    } catch (_) {}
-  }
-
+  final ProductStore _productBox = ProductStore.instance;
   late ProductProvider _productProvider;
 
   VariantProductProvider();
@@ -135,7 +126,6 @@ class VariantProductProvider extends ChangeNotifier {
         );
 
         await _productBox.put(updatedParent.id, updatedParent);
-        await _mirror(updatedParent);
         debugPrint(
           "📦 New variant saved under parent: ${parent.name} (${parent.id})",
         );
@@ -206,7 +196,6 @@ class VariantProductProvider extends ChangeNotifier {
         );
 
         await _productBox.put(updatedParent.id, updatedParent);
-        await _mirror(updatedParent);
         debugPrint("💾 Existing variant updated under parent: ${parent.name}");
 
         notifyListeners();
@@ -285,7 +274,6 @@ class VariantProductProvider extends ChangeNotifier {
       );
 
       await _productBox.put(updatedParent.id, updatedParent);
-      await _mirror(updatedParent);
       notifyListeners();
     } catch (e) {}
   }

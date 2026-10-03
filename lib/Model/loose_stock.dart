@@ -1,19 +1,7 @@
-import 'package:hive/hive.dart';
-
-part 'loose_stock.g.dart';
-
-@HiveType(typeId: 2)
-class LooseStock extends HiveObject {
-  @HiveField(0)
+class LooseStock {
   final String productId;
-
-  @HiveField(1)
   int remainingPieces;
-
-  @HiveField(2)
   final DateTime lastModified;
-
-  @HiveField(3)
   final DateTime? deletedAt;
 
   LooseStock({

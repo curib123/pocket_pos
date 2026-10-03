@@ -1,31 +1,11 @@
-import 'package:hive/hive.dart';
-
-part 'product_stock.g.dart';
-
-@HiveType(typeId: 1)
-class ProductStock extends HiveObject {
-  @HiveField(0)
+class ProductStock {
   final String id;
-
-  @HiveField(1)
   final String productId;
-
-  @HiveField(2)
   int quantity;
-
-  @HiveField(3)
   final double costPrice;
-
-  @HiveField(4)
   final DateTime dateReceived;
-
-  @HiveField(5)
   final DateTime lastModified;
-
-  @HiveField(6)
   final DateTime? deletedAt;
-
-  @HiveField(7) // 👈 new field
   final double retailPrice;
 
   ProductStock({

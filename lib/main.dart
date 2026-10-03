@@ -1,17 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 import 'package:nextpos/Helper/Database/SecureStorageServices.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
-// Models
-import 'package:nextpos/Model/product_model.dart';
-import 'package:nextpos/Model/product_stock.dart';
-import 'package:nextpos/Model/loose_stock.dart';
-import 'package:nextpos/Model/stock_log.dart';
-import 'package:nextpos/Model/loan_item.dart';
 
 // Providers
 import 'package:nextpos/Provider/AuthProvider.dart';
@@ -27,6 +18,8 @@ import 'package:nextpos/Provider/TabProvider.dart';
 import 'package:nextpos/Provider/VariantProductProvider.dart';
 import 'package:nextpos/Provider/OfflineDataProvider.dart';
 import 'package:nextpos/core/data/offline_database.dart';
+import 'package:nextpos/core/data/product_store.dart';
+import 'package:nextpos/core/theme/app_theme.dart';
 import 'package:nextpos/Provider/OfflineSyncProvider.dart';
 
 // UI
@@ -35,23 +28,10 @@ import 'package:nextpos/home.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Init Hive
-  await Hive.initFlutter();
-  Hive
-    ..registerAdapter(ProductAdapter())
-    ..registerAdapter(ProductStockAdapter())
-    ..registerAdapter(LooseStockAdapter())
-    ..registerAdapter(StockLogAdapter())
-    ..registerAdapter(StockLogReasonAdapter())
-    ..registerAdapter(LoanItemAdapter());
-
-  await Hive.openBox<Product>('products');
-  await Hive.openBox('categoryVisibility');
-  await Hive.openBox('settings_currency');
-
-  // SQLite is the durable offline-first store and sync outbox. Hive remains
-  // available during the migration so existing screens keep their behavior.
+  // SQLite is the only local persistence layer. Initialize the database and
+  // ProductStore before Providers are created.
   await OfflineDatabase.instance.database;
+  await ProductStore.instance.initialize();
 
   // Secure Storage
   final storage = SecureStorageService();
@@ -105,18 +85,8 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: "Pocket Inventory",
-      theme: ThemeData(
-        useMaterial3: true,
-        scaffoldBackgroundColor: Colors.white,
-        canvasColor: Colors.white,
-        dialogBackgroundColor: Colors.white,
-        textTheme: GoogleFonts.workSansTextTheme(),
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.blue,
-          surface: Colors.white,
-        ),
-      ),
+      title: 'BantayStock',
+      theme: AppTheme.light(),
       home: const Home(),
     );
   }

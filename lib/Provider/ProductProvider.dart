@@ -1,43 +1,23 @@
 import 'package:flutter/foundation.dart';
 import 'dart:async';
-import 'package:hive/hive.dart';
+import 'package:nextpos/core/data/product_store.dart';
 import 'package:nextpos/Model/product_model.dart';
 import 'package:nextpos/Model/stock_log.dart';
-import 'package:nextpos/core/data/offline_database.dart';
 
 class ProductProvider extends ChangeNotifier {
-  final Box<Product> _productBox = Hive.box<Product>('products');
-  final OfflineDatabase _offlineDatabase = OfflineDatabase.instance;
-  late final Stream<BoxEvent> _hiveListener;
+  final ProductStore _productBox = ProductStore.instance;
+  StreamSubscription<void>? _storeSubscription;
 
   ProductProvider() {
-    _listenToBoxChanges();
-    unawaited(_bootstrapOfflineStore());
-  }
-
-  Future<void> _bootstrapOfflineStore() async {
-    try {
-      for (final product in _productBox.values) {
-        await _offlineDatabase.upsertProduct(product, queueSync: false);
-      }
-    } catch (error) {
-      debugPrint('[ProductProvider] SQLite bootstrap skipped: $error');
-    }
-  }
-
-  Future<void> _mirror(Product product) async {
-    try {
-      await _offlineDatabase.upsertProduct(product);
-    } catch (error) {
-      debugPrint('[ProductProvider] SQLite mirror failed: $error');
-    }
-  }
-
-  void _listenToBoxChanges() {
-    _hiveListener = _productBox.watch();
-    _hiveListener.listen((event) {
-      notifyListeners(); // Trigger UI rebuild when data in Hive changes
+    _storeSubscription = _productBox.watch().listen((_) {
+      notifyListeners();
     });
+  }
+
+  @override
+  void dispose() {
+    _storeSubscription?.cancel();
+    super.dispose();
   }
 
   // 🔍 CHECKERS
@@ -156,7 +136,6 @@ class ProductProvider extends ChangeNotifier {
   Future<void> silentUpsertProduct(Product product) async {
     try {
       await _productBox.put(product.id, product);
-      await _mirror(product);
       notifyListeners();
     } catch (e) {
       debugPrint("⚠️ silentUpsertProduct error: $e");
@@ -181,7 +160,6 @@ class ProductProvider extends ChangeNotifier {
         );
 
         await _productBox.put(updated.id, updated);
-        await _mirror(updated);
         notifyListeners();
         return;
       }
@@ -212,7 +190,6 @@ class ProductProvider extends ChangeNotifier {
         );
 
         await _productBox.put(key, updatedParent);
-        await _mirror(updatedParent);
         notifyListeners();
         return;
       }
@@ -234,7 +211,6 @@ class ProductProvider extends ChangeNotifier {
       );
 
       await _productBox.put(newProduct.id, newProduct);
-      await _mirror(newProduct);
       notifyListeners();
     } catch (e) {
       debugPrint("❌ upsertProduct error: $e");
@@ -261,7 +237,6 @@ class ProductProvider extends ChangeNotifier {
           ],
         );
         await _productBox.put(id, updated);
-        await _mirror(updated);
         notifyListeners();
       }
     } catch (e) {
@@ -278,7 +253,6 @@ class ProductProvider extends ChangeNotifier {
           lastModified: DateTime.now(),
         );
         await _productBox.put(id, updated);
-        await _mirror(updated);
         notifyListeners();
         return true;
       }
@@ -311,7 +285,6 @@ class ProductProvider extends ChangeNotifier {
           ],
         );
         await _productBox.put(id, restored);
-        await _mirror(restored);
         notifyListeners();
         return restored;
       }
@@ -339,7 +312,6 @@ class ProductProvider extends ChangeNotifier {
           ],
         );
         await _productBox.put(cleared.id, cleared);
-        await _mirror(cleared);
       }
       await _productBox.clear();
       notifyListeners();

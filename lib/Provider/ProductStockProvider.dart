@@ -1,10 +1,9 @@
 import 'package:flutter/foundation.dart';
-import 'package:hive/hive.dart';
+import 'package:nextpos/core/data/product_store.dart';
 import 'package:nextpos/Model/loose_stock.dart';
 import 'package:nextpos/Model/product_model.dart';
 import 'package:nextpos/Model/product_stock.dart';
 import 'package:nextpos/Model/stock_log.dart';
-import 'package:nextpos/core/data/offline_database.dart';
 import 'package:nextpos/core/inventory/stock_rules.dart';
 
 class StockOperationResult {
@@ -43,8 +42,7 @@ class StockOperationResult {
 }
 
 class ProductStockProvider extends ChangeNotifier {
-  final Box<Product> _productBox = Hive.box<Product>('products');
-  final OfflineDatabase _offlineDatabase = OfflineDatabase.instance;
+  final ProductStore _productBox = ProductStore.instance;
 
   Product? _getProduct(String idOrName) {
     final normalized = idOrName.trim().toLowerCase();
@@ -356,27 +354,17 @@ class ProductStockProvider extends ChangeNotifier {
           parent.variants.indexWhere((variant) => variant.id == original.id);
       if (index == -1) continue;
 
-      final variants = [...parent.variants];
+      final List<Product> variants = List<Product>.from(parent.variants);
       variants[index] = updated;
       final updatedParent = parent.copyWith(
         variants: variants,
         lastModified: updated.lastModified,
       );
       await _productBox.put(updatedParent.id, updatedParent);
-      await _mirror(updatedParent);
       return;
     }
 
     await _productBox.put(updated.id, updated);
-    await _mirror(updated);
-  }
-
-  Future<void> _mirror(Product product) async {
-    try {
-      await _offlineDatabase.upsertProduct(product);
-    } catch (error) {
-      debugPrint('[ProductStockProvider] Offline mirror failed: ' + error.toString());
-    }
   }
 
   String _movementNote(

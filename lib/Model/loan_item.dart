@@ -1,49 +1,17 @@
-import 'package:hive/hive.dart';
-
-part 'loan_item.g.dart'; // 🛠️ Needed for code generation
-
-@HiveType(typeId: 6)
-class LoanItem extends HiveObject {
-  @HiveField(0)
+class LoanItem {
   final String productId;
-
-  @HiveField(1)
   final String name;
-
-  @HiveField(2)
   final double price;
-
-  @HiveField(3)
   int quantity;
-
-  @HiveField(4)
   final int maxQuantity;
-
-  @HiveField(5)
   final String? imagePath;
-
-  @HiveField(6)
   final String? barcode;
-
-  @HiveField(7)
   final String borrowerName;
-
-  @HiveField(8)
   final DateTime loanDate;
-
-  @HiveField(9)
   final DateTime? dueDate;
-
-  @HiveField(10)
   bool isReturned;
-
-  @HiveField(11)
   double amount;
-
-  @HiveField(12)
   double paid;
-
-  @HiveField(13)
   DateTime? returnDate;
 
   LoanItem({

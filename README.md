@@ -1,6 +1,8 @@
-# Pocket Inventory
+# BantayStock
 
-Pocket Inventory is a mobile-first, offline-first inventory tracker designed for sari-sari stores and other micro-retail shops.
+**Simple stock, klaro araw-araw.**
+
+BantayStock is a mobile-first, offline-first inventory app for sari-sari stores and other small neighborhood retailers.
 
 ## Product goal
 
@@ -8,90 +10,65 @@ Keep daily inventory work simple:
 
 **Product Setup → Stock In → Stock Out → Stock Adjustment → Movement History**
 
-This branch intentionally removes the checkout/POS workflow. There is no cart, cashier payment flow, sales receipt flow, customer-loan workflow, or POS AI assistant in the active product.
+The active product intentionally avoids a traditional POS workflow. Cart, cashier payment, receipt, customer-loan, and POS-AI flows are not part of the primary experience.
+
+## Daily workflow
+
+- **Stock In** — add newly received inventory.
+- **Stock Out** — remove inventory that left the shelf; negative inventory is blocked.
+- **Adjust** — reconcile the system quantity with the actual physical count.
+- **Activity** — review a readable chronological history of inventory movement.
+
+## Primary navigation
+
+1. **Home** — stock snapshot, low/out-of-stock attention, and quick stock actions.
+2. **Inventory** — search products, filter stock status, add products, and open stock actions.
+3. **Activity** — chronological Stock In, Stock Out, and Adjustment history.
+4. **Settings** — preferences, categories, deleted products, backup/restore, and app information.
 
 ## Core inventory rules
 
-1. **Stock In**: new stock = current stock + received quantity.
-2. **Stock Out**: new stock = current stock - released quantity.
-3. Stock Out is rejected when the requested quantity is greater than stock on hand.
-4. **Adjustment** sets stock to the physical count and records a signed difference.
-5. A no-op adjustment is rejected when physical stock already matches system stock.
-6. Every inventory movement creates a dated history record.
-7. Product editing cannot directly overwrite stock quantities.
-8. New products start at zero stock; use Stock In to establish opening inventory.
+1. Stock In adds to current quantity.
+2. Stock Out subtracts quantity and is rejected when it would make inventory negative.
+3. Adjustment sets stock to the physical count and records the signed difference.
+4. Every inventory movement creates a dated history record.
+5. Product editing does not directly overwrite stock quantities.
+6. New products start at zero stock; use Stock In to establish opening inventory.
 
-## Sari-sari workflow
+## Brand
 
-### Product Setup
+BantayStock uses one chromatic hue: **Bantay Blue `#2457D6`**, supported by neutral surfaces and text. The UI uses Inter, avoids decorative gradients, and prioritizes fast one-handed mobile use.
 
-Create only the information needed to identify and count the item:
-
-- product name
-- category
-- tracking unit
-- optional barcode
-
-Stock is not entered in Product Setup.
-
-### Stock In
-
-Use when deliveries or restocks arrive.
-
-Example:
-
-Current stock: 12  
-Received: 24  
-New stock: 36
-
-### Stock Out
-
-Use when stock leaves the store, including:
-
-- sold / released
-- damaged
-- expired
-- personal / store use
-- other
-
-Stock cannot become negative.
-
-### Adjustment
-
-Use only for physical-count reconciliation.
-
-Example:
-
-System stock: 20  
-Physical count: 17  
-Difference: -3  
-New system stock: 17
-
-The signed difference is stored in movement history so upward and downward adjustments remain distinguishable.
+See [BRAND.md](BRAND.md) for the complete identity and UI rules.
 
 ## Offline-first storage
 
-The application keeps local product data in Hive and mirrors inventory aggregates to SQLite. SQLite also contains the durable sync outbox used for future/optional cloud synchronization.
+SQLite is the single local persistence source. Product state, metadata, backup data, and the sync outbox are stored locally so the app remains usable without a network connection.
+
+## Backup and restore
+
+Settings provides JSON backup and restore for product data, metadata, and pending sync records. Restoring reloads the live Provider-backed ProductStore so the UI reflects restored data immediately.
 
 ## Cloud sync
 
-Supabase synchronization remains optional. The inventory app can start and operate without cloud credentials.
+Supabase synchronization is optional. BantayStock can start and operate without cloud credentials.
 
 ## Tech stack
 
 - Flutter / Dart
 - Provider
-- Hive
 - SQLite / sqflite
 - Supabase (optional sync)
-- Mobile Scanner for product barcode setup
+- Mobile Scanner
+- Material 3
 
-## Development branch
+## Development
 
-The sari-sari inventory refactor is developed on:
+```bash
+flutter pub get
+flutter analyze
+flutter test
+flutter build apk --debug
+```
 
-`feature/sari-sari-inventory-flow`
-
-Base branch:
-
-`productionv3`
+The Android application label is **BantayStock**. The internal Dart package remains `nextpos` for compatibility with the existing import graph.
