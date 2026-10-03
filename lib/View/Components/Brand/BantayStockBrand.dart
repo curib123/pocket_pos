@@ -18,7 +18,7 @@ class BantayStockMark extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: filled ? AppBrand.primary : AppBrand.primarySoft,
+        color: filled ? AppBrand.primary : AppBrand.primarySoftOf(context),
         borderRadius: BorderRadius.circular(size * .28),
       ),
       child: Stack(
@@ -93,7 +93,7 @@ class BantayStockBrand extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: textTheme.bodySmall?.copyWith(
-                    color: AppBrand.muted,
+                    color: AppBrand.mutedOf(context),
                     fontWeight: FontWeight.w500,
                   ),
                 ),
