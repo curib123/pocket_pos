@@ -6,6 +6,7 @@ import 'package:nextpos/Provider/ProductProvider.dart';
 import 'package:nextpos/View/Components/Inventory/ProductActivitySheet.dart';
 import 'package:nextpos/View/Components/Inventory/ProductEditorSheet.dart';
 import 'package:nextpos/View/Components/Inventory/StockMovementSheet.dart';
+import 'package:nextpos/View/Components/Widgets/AppDrawer.dart';
 import 'package:nextpos/core/brand/app_brand.dart';
 import 'package:provider/provider.dart';
 
@@ -62,6 +63,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
     final visibleProducts = products.sublist(start, end);
 
     return Scaffold(
+      drawer: const AppDrawer(),
       appBar: AppBar(
         title: const Text('Inventory'),
         actions: [
