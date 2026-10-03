@@ -12,6 +12,9 @@ class Product {
   final int? piecesPerPack;
   final String? unit;
   final String? imagePath;
+  final double costPrice;
+  final double sellingPrice;
+  final String? supplierName;
   final int reorderLevel;
   final DateTime createdAt;
   final DateTime lastModified;
@@ -65,6 +68,9 @@ class Product {
     this.category,
     this.unit,
     this.imagePath,
+    this.costPrice = 0,
+    this.sellingPrice = 0,
+    this.supplierName,
     this.reorderLevel = 5,
     this.barcode,
     required this.createdAt,
@@ -90,6 +96,9 @@ class Product {
       'piecesPerPack': piecesPerPack,
       'unit': unit,
       'imagePath': imagePath,
+      'costPrice': costPrice,
+      'sellingPrice': sellingPrice,
+      'supplierName': supplierName,
       'reorderLevel': reorderLevel,
       'barcode': barcode,
       'createdAt': createdAt.toIso8601String(),
@@ -119,6 +128,10 @@ class Product {
       piecesPerPack: map['piecesPerPack'],
       unit: map['unit'],
       imagePath: map['imagePath'],
+      costPrice: double.tryParse(map['costPrice']?.toString() ?? '') ?? 0,
+      sellingPrice:
+          double.tryParse(map['sellingPrice']?.toString() ?? '') ?? 0,
+      supplierName: map['supplierName']?.toString(),
       reorderLevel: reorderLevel < 0 ? 0 : reorderLevel,
       barcode: map['barcode'],
       createdAt: DateTime.parse(map['createdAt']),
@@ -158,6 +171,9 @@ class Product {
     int? piecesPerPack,
     String? unit,
     String? imagePath,
+    double? costPrice,
+    double? sellingPrice,
+    String? supplierName,
     int? reorderLevel,
     String? barcode,
     DateTime? createdAt,
@@ -181,6 +197,9 @@ class Product {
       piecesPerPack: piecesPerPack ?? this.piecesPerPack,
       unit: unit ?? this.unit,
       imagePath: imagePath ?? this.imagePath,
+      costPrice: costPrice ?? this.costPrice,
+      sellingPrice: sellingPrice ?? this.sellingPrice,
+      supplierName: supplierName ?? this.supplierName,
       reorderLevel: reorderLevel ?? this.reorderLevel,
       barcode: barcode ?? this.barcode,
       createdAt: createdAt ?? this.createdAt,
