@@ -203,7 +203,7 @@ class _ActivityRow extends StatelessWidget {
       _ActivityKind.stockIn => AppBrand.primary,
       _ActivityKind.stockOut => AppBrand.danger,
       _ActivityKind.adjustment => AppBrand.warning,
-      _ActivityKind.other => AppBrand.muted,
+      _ActivityKind.other => AppBrand.mutedOf(context),
     };
     final background = switch (item.kind) {
       _ActivityKind.stockIn => AppBrand.primarySoftOf(context),
@@ -289,7 +289,7 @@ class _ActivityRow extends StatelessWidget {
                   ClipRRect(
                     borderRadius: BorderRadius.circular(10),
                     child: Image.file(
-                      File(imagePath),
+                      File(imagePath!),
                       width: 92,
                       height: 64,
                       fit: BoxFit.cover,
@@ -343,9 +343,11 @@ class _PaginationBar extends StatelessWidget {
       top: false,
       child: Container(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
-        decoration: const BoxDecoration(
-          color: AppBrand.surface,
-          border: Border(top: BorderSide(color: AppBrand.border)),
+        decoration: BoxDecoration(
+          color: AppBrand.surfaceOf(context),
+          border: Border(
+            top: BorderSide(color: AppBrand.borderOf(context)),
+          ),
         ),
         child: Row(
           children: [
