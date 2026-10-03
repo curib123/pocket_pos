@@ -27,6 +27,7 @@ class StockLog {
   final DateTime lastModified;
   final DateTime? deletedAt;
   final double? profit;
+  final String? imagePath;
 
   StockLog({
     required this.id,
@@ -39,6 +40,7 @@ class StockLog {
     DateTime? lastModified,
     this.deletedAt,
     this.profit,
+    this.imagePath,
   })  : dateLogged = dateLogged ?? DateTime.now(),
         lastModified = lastModified ?? DateTime.now();
 
@@ -54,6 +56,7 @@ class StockLog {
       'lastModified': lastModified.toIso8601String(),
       'deletedAt': deletedAt?.toIso8601String(),
       'profit': profit ?? 0.0,
+      'imagePath': imagePath,
     };
   }
 
@@ -78,6 +81,7 @@ class StockLog {
           map['deletedAt'].toString().isNotEmpty)
           ? DateTime.tryParse(map['deletedAt'])
           : null,
+      imagePath: map['imagePath']?.toString(),
     );
   }
 
@@ -92,6 +96,7 @@ class StockLog {
     DateTime? lastModified,
     DateTime? deletedAt,
     double? profit,
+    String? imagePath,
   }) {
     return StockLog(
       id: id ?? this.id,
@@ -104,6 +109,7 @@ class StockLog {
       lastModified: lastModified ?? this.lastModified,
       deletedAt: deletedAt ?? this.deletedAt,
       profit: profit ?? this.profit,
+      imagePath: imagePath ?? this.imagePath,
     );
   }
 }
