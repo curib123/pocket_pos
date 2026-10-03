@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:nextpos/View/Components/Brand/BantayStockBrand.dart';
+import 'package:nextpos/core/brand/app_brand.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:nextpos/Helper/Classes_Methods/InternetChecker.dart';
 import 'package:provider/provider.dart';
@@ -212,14 +214,28 @@ class _HomeState extends State<Home> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+        backgroundColor: AppBrand.background,
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              BantayStockMark(size: 56),
+              SizedBox(height: 18),
+              SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ],
+          ),
+        ),
       );
     }
 
     return Consumer<TabProvider>(
       builder: (context, tabProvider, _) {
         return Scaffold(
-          backgroundColor: Colors.white,
+          backgroundColor: AppBrand.background,
           body: tabProvider.screens[tabProvider.currentIndex],
           bottomNavigationBar: BottomNavigation(
             currentIndex: tabProvider.currentIndex,
