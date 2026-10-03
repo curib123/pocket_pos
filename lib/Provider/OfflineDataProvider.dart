@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import '../core/data/offline_database.dart';
+import '../core/data/product_store.dart';
 
 /// Coordinates local backup/restore and exposes sync readiness to the UI.
 class OfflineDataProvider extends ChangeNotifier {
@@ -17,7 +18,11 @@ class OfflineDataProvider extends ChangeNotifier {
   }
 
   Future<int> restoreFrom(File source) async {
-    return _run(() => database.importBackup(source));
+    return _run(() async {
+      final count = await database.importBackup(source);
+      await ProductStore.instance.reload();
+      return count;
+    });
   }
 
   Future<T> _run<T>(Future<T> Function() operation) async {
