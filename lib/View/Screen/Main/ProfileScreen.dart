@@ -63,8 +63,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           Container(
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
-              color: AppBrand.surface,
-              border: Border.all(color: AppBrand.border),
+              color: AppBrand.surfaceOf(context),
+              border: Border.all(color: AppBrand.borderOf(context)),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Row(
@@ -87,7 +87,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Text(
                         _ownerName,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: AppBrand.muted,
+                              color: AppBrand.mutedOf(context),
                             ),
                       ),
                       if (_accountEmail.isNotEmpty) ...[
@@ -98,7 +98,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           overflow: TextOverflow.ellipsis,
                           style:
                               Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: AppBrand.muted,
+                                    color: AppBrand.mutedOf(context),
                                   ),
                         ),
                       ],
@@ -217,7 +217,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: Text(
                       '$version',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppBrand.muted,
+                            color: AppBrand.mutedOf(context),
                           ),
                     ),
                   ),
@@ -294,7 +294,7 @@ class _SectionLabel extends StatelessWidget {
       text,
       style: Theme.of(context).textTheme.labelLarge?.copyWith(
             fontWeight: FontWeight.w800,
-            color: AppBrand.muted,
+            color: AppBrand.mutedOf(context),
           ),
     );
   }
@@ -309,8 +309,8 @@ class _SettingsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppBrand.surface,
-        border: Border.all(color: AppBrand.border),
+        color: AppBrand.surfaceOf(context),
+        border: Border.all(color: AppBrand.borderOf(context)),
         borderRadius: BorderRadius.circular(18),
       ),
       clipBehavior: Clip.antiAlias,
@@ -341,7 +341,7 @@ class _SettingsTile extends StatelessWidget {
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: AppBrand.primarySoft,
+          color: AppBrand.primarySoftOf(context),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Icon(icon, color: AppBrand.primary, size: 20),
