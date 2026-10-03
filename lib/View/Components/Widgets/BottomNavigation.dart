@@ -27,11 +27,11 @@ class BottomNavigation extends StatelessWidget {
         ),
         BottomNavigationBarItem(
           icon: Icon(LucideIcons.boxes),
-          label: 'Product',
+          label: 'Products',
         ),
         BottomNavigationBarItem(
-          icon: Icon(LucideIcons.wallet),
-          label: 'Loan',
+          icon: Icon(LucideIcons.arrowLeftRight),
+          label: 'Stock',
         ),
         BottomNavigationBarItem(
           icon: Icon(LucideIcons.store),
