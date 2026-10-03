@@ -21,7 +21,7 @@ class AppDrawer extends StatelessWidget {
     final secureStorage = SecureStorageService();
 
     return Drawer(
-      backgroundColor: AppColor.surface,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       child: FutureBuilder<Map<String, String?>>(
         future: secureStorage.readUser(),
         builder: (context, userSnapshot) {
@@ -44,7 +44,7 @@ class AppDrawer extends StatelessWidget {
                       child: Column(
                         children: [
                           const SizedBox(height: 20),
-                          _buildHeader(storeName, ownerName),
+                          _buildHeader(context, storeName, ownerName),
                           const SizedBox(height: 18),
                           Expanded(
                             child: SingleChildScrollView(
@@ -107,7 +107,7 @@ class AppDrawer extends StatelessWidget {
                                 applicationName: appName,
                                 applicationVersion: 'v' + version + ' (' + buildNumber + ')',
                                 applicationLegalese:
-                                    '© ' + DateTime.now().year.toString() + ' CuribTech',
+                                    '© ' + DateTime.now().year.toString() + ' BantayStock',
                                 children: const [
                                   SizedBox(height: 16),
                                   Text(
@@ -166,7 +166,11 @@ class AppDrawer extends StatelessWidget {
     Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
   }
 
-  Widget _buildHeader(String storeName, String ownerName) {
+  Widget _buildHeader(
+    BuildContext context,
+    String storeName,
+    String ownerName,
+  ) {
     return Row(
       children: [
         const CircleAvatar(
@@ -192,12 +196,17 @@ class AppDrawer extends StatelessWidget {
                 ownerName,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: AppColor.textSecondary),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ),
               const SizedBox(height: 2),
-              const Text(
+              Text(
                 'Sari-sari Inventory',
-                style: TextStyle(fontSize: 12, color: AppColor.textSecondary),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ),
             ],
           ),
