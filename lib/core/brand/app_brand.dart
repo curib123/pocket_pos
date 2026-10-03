@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 
 /// BantayStock's visual identity.
 ///
-/// The product intentionally uses one brand hue (blue) plus neutral surfaces
-/// and text. Status meaning is communicated with copy and icons instead of
-/// introducing extra red/green/yellow accent colors.
+/// Blue remains the primary product color. Red and orange are reserved for
+/// inventory status so out-of-stock and low-stock states are immediately clear.
 class AppBrand {
   AppBrand._();
 
@@ -15,6 +14,11 @@ class AppBrand {
   static const Color primaryDark = Color(0xFF173B93);
   static const Color primarySoft = Color(0xFFEAF0FF);
   static const Color primaryFaint = Color(0xFFF5F7FF);
+
+  static const Color warning = Color(0xFFF79009);
+  static const Color warningSoft = Color(0xFFFFFAEB);
+  static const Color danger = Color(0xFFD92D20);
+  static const Color dangerSoft = Color(0xFFFEF3F2);
 
   static const Color ink = Color(0xFF111827);
   static const Color muted = Color(0xFF667085);

@@ -19,12 +19,23 @@ class ActivityScreen extends StatefulWidget {
 
 class _ActivityScreenState extends State<ActivityScreen> {
   _ActivityFilter _filter = _ActivityFilter.all;
+  int _page = 0;
+  int _pageSize = 10;
 
   @override
   Widget build(BuildContext context) {
     final products =
         context.watch<ProductProvider>().getAllProductsWithVariants();
     final activities = _activities(products).where(_matchesFilter).toList();
+
+    final totalPages =
+        activities.isEmpty ? 1 : (activities.length / _pageSize).ceil();
+    final safePage = _page.clamp(0, totalPages - 1).toInt();
+    final start = safePage * _pageSize;
+    final end = (start + _pageSize) > activities.length
+        ? activities.length
+        : start + _pageSize;
+    final visible = activities.sublist(start, end);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Activity')),
@@ -47,13 +58,32 @@ class _ActivityScreenState extends State<ActivityScreen> {
             child: activities.isEmpty
                 ? const _EmptyActivity()
                 : ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
-                    itemCount: activities.length,
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+                    itemCount: visible.length,
                     separatorBuilder: (_, __) => const Divider(height: 1),
                     itemBuilder: (_, index) =>
-                        _ActivityRow(item: activities[index]),
+                        _ActivityRow(item: visible[index]),
                   ),
           ),
+          if (activities.isNotEmpty)
+            _PaginationBar(
+              page: safePage,
+              pageSize: _pageSize,
+              totalItems: activities.length,
+              totalPages: totalPages,
+              onPrevious: safePage == 0
+                  ? null
+                  : () => setState(() => _page = safePage - 1),
+              onNext: safePage >= totalPages - 1
+                  ? null
+                  : () => setState(() => _page = safePage + 1),
+              onPageSizeChanged: (value) {
+                setState(() {
+                  _pageSize = value;
+                  _page = 0;
+                });
+              },
+            ),
         ],
       ),
     );
@@ -76,7 +106,12 @@ class _ActivityScreenState extends State<ActivityScreen> {
           color: selected ? AppBrand.primary : AppBrand.ink,
           fontWeight: FontWeight.w600,
         ),
-        onSelected: (_) => setState(() => _filter = value),
+        onSelected: (_) {
+          setState(() {
+            _filter = value;
+            _page = 0;
+          });
+        },
       ),
     );
   }
@@ -110,10 +145,12 @@ class _ActivityScreenState extends State<ActivityScreen> {
 
   _ActivityKind _kind(StockLogReason reason) {
     return switch (reason) {
+      StockLogReason.stockIn ||
       StockLogReason.added ||
       StockLogReason.restocked ||
       StockLogReason.restored =>
         _ActivityKind.stockIn,
+      StockLogReason.stockOut ||
       StockLogReason.sold ||
       StockLogReason.expired ||
       StockLogReason.damaged ||
@@ -121,7 +158,9 @@ class _ActivityScreenState extends State<ActivityScreen> {
       StockLogReason.borrowed ||
       StockLogReason.consumed =>
         _ActivityKind.stockOut,
-      StockLogReason.adjusted => _ActivityKind.adjustment,
+      StockLogReason.stockAdjustment ||
+      StockLogReason.adjusted =>
+        _ActivityKind.adjustment,
       _ => _ActivityKind.other,
     };
   }
@@ -158,10 +197,26 @@ class _ActivityRow extends StatelessWidget {
       _ActivityKind.adjustment => Icons.tune_rounded,
       _ActivityKind.other => Icons.history_rounded,
     };
+    final color = switch (item.kind) {
+      _ActivityKind.stockIn => AppBrand.primary,
+      _ActivityKind.stockOut => AppBrand.danger,
+      _ActivityKind.adjustment => AppBrand.warning,
+      _ActivityKind.other => AppBrand.muted,
+    };
+    final background = switch (item.kind) {
+      _ActivityKind.stockIn => AppBrand.primarySoft,
+      _ActivityKind.stockOut => AppBrand.dangerSoft,
+      _ActivityKind.adjustment => AppBrand.warningSoft,
+      _ActivityKind.other => AppBrand.background,
+    };
     final quantity = switch (item.kind) {
-      _ActivityKind.stockIn => '+${item.log.quantity}',
-      _ActivityKind.stockOut => '-${item.log.quantity}',
-      _ => item.log.quantity == 0 ? '—' : item.log.quantity.toString(),
+      _ActivityKind.stockIn => '+${item.log.quantity.abs()}',
+      _ActivityKind.stockOut => '-${item.log.quantity.abs()}',
+      _ActivityKind.adjustment => item.log.quantity > 0
+          ? '+${item.log.quantity}'
+          : item.log.quantity.toString(),
+      _ActivityKind.other =>
+        item.log.quantity == 0 ? '—' : item.log.quantity.toString(),
     };
 
     return Padding(
@@ -173,10 +228,10 @@ class _ActivityRow extends StatelessWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: AppBrand.primarySoft,
+              color: background,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: AppBrand.primary, size: 20),
+            child: Icon(icon, color: color, size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -199,7 +254,7 @@ class _ActivityRow extends StatelessWidget {
                     Text(
                       quantity,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: AppBrand.primary,
+                            color: color,
                             fontWeight: FontWeight.w800,
                           ),
                     ),
@@ -238,6 +293,89 @@ class _ActivityRow extends StatelessWidget {
       StockLogReason.unknown => 'Inventory update',
       _ => reason.name,
     };
+  }
+}
+
+class _PaginationBar extends StatelessWidget {
+  final int page;
+  final int pageSize;
+  final int totalItems;
+  final int totalPages;
+  final VoidCallback? onPrevious;
+  final VoidCallback? onNext;
+  final ValueChanged<int> onPageSizeChanged;
+
+  const _PaginationBar({
+    required this.page,
+    required this.pageSize,
+    required this.totalItems,
+    required this.totalPages,
+    required this.onPrevious,
+    required this.onNext,
+    required this.onPageSizeChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final start = totalItems == 0 ? 0 : (page * pageSize) + 1;
+    final calculatedEnd = (page + 1) * pageSize;
+    final end = calculatedEnd > totalItems ? totalItems : calculatedEnd;
+
+    return SafeArea(
+      top: false,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
+        decoration: const BoxDecoration(
+          color: AppBrand.surface,
+          border: Border(top: BorderSide(color: AppBrand.border)),
+        ),
+        child: Row(
+          children: [
+            DropdownButton<int>(
+              value: pageSize,
+              underline: const SizedBox.shrink(),
+              items: const [10, 25, 50]
+                  .map(
+                    (value) => DropdownMenuItem(
+                      value: value,
+                      child: Text('$value / page'),
+                    ),
+                  )
+                  .toList(),
+              onChanged: (value) {
+                if (value != null) onPageSizeChanged(value);
+              },
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                '$start–$end of $totalItems',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppBrand.muted,
+                    ),
+              ),
+            ),
+            IconButton(
+              tooltip: 'Previous page',
+              onPressed: onPrevious,
+              icon: const Icon(Icons.chevron_left_rounded),
+            ),
+            Text(
+              '${page + 1}/$totalPages',
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+            IconButton(
+              tooltip: 'Next page',
+              onPressed: onNext,
+              icon: const Icon(Icons.chevron_right_rounded),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

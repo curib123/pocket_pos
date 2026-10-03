@@ -215,7 +215,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 6, 16, 16),
                     child: Text(
-                      '$version · CuribTech Software Development Services',
+                      '$version',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: AppBrand.muted,
                           ),

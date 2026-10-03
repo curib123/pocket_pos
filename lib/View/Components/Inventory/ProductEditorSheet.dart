@@ -1,9 +1,15 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:nextpos/Model/product_model.dart';
 import 'package:nextpos/Model/product_stock.dart';
+import 'package:nextpos/Model/stock_log.dart';
 import 'package:nextpos/Provider/ProductProvider.dart';
 import 'package:nextpos/Provider/StoreCategoryProvider.dart';
 import 'package:nextpos/core/brand/app_brand.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
@@ -30,10 +36,13 @@ class ProductEditorSheet extends StatefulWidget {
 class _ProductEditorSheetState extends State<ProductEditorSheet> {
   late final TextEditingController _nameController;
   late final TextEditingController _barcodeController;
+  late final TextEditingController _reorderLevelController;
   final _initialStockController = TextEditingController(text: '0');
 
   String? _category;
   String _unit = 'pcs';
+  String? _imagePath;
+  bool _imageRemoved = false;
   bool _saving = false;
 
   static const _units = [
@@ -53,7 +62,14 @@ class _ProductEditorSheetState extends State<ProductEditorSheet> {
     final product = widget.product;
     _nameController = TextEditingController(text: product?.name ?? '');
     _barcodeController = TextEditingController(text: product?.barcode ?? '');
+    _reorderLevelController = TextEditingController(
+      text: (product?.reorderLevel ?? 5).toString(),
+    );
     _category = product?.category;
+    _imagePath = product?.imagePath?.trim().isNotEmpty == true
+        ? product!.imagePath
+        : null;
+
     final existingUnit = product?.unit?.trim();
     if (existingUnit != null && existingUnit.isNotEmpty) {
       _unit = existingUnit;
@@ -64,6 +80,7 @@ class _ProductEditorSheetState extends State<ProductEditorSheet> {
   void dispose() {
     _nameController.dispose();
     _barcodeController.dispose();
+    _reorderLevelController.dispose();
     _initialStockController.dispose();
     super.dispose();
   }
@@ -82,6 +99,10 @@ class _ProductEditorSheetState extends State<ProductEditorSheet> {
     }
 
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final hasImage = !_imageRemoved &&
+        _imagePath != null &&
+        _imagePath!.isNotEmpty &&
+        File(_imagePath!).existsSync();
 
     return Padding(
       padding: EdgeInsets.fromLTRB(20, 8, 20, 20 + bottomInset),
@@ -99,13 +120,25 @@ class _ProductEditorSheetState extends State<ProductEditorSheet> {
             const SizedBox(height: 4),
             Text(
               widget.isEditing
-                  ? 'Keep the details simple and easy to recognize on the shelf.'
-                  : 'You only need the basics. Stock and activity can be updated anytime.',
+                  ? 'Keep the details clear so stock checks stay fast.'
+                  : 'Add the basics now. Photo and starting stock are optional.',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: AppBrand.muted,
                   ),
             ),
             const SizedBox(height: 20),
+            _PhotoPicker(
+              imagePath: hasImage ? _imagePath : null,
+              enabled: !_saving,
+              onPick: _choosePhoto,
+              onRemove: hasImage
+                  ? () => setState(() {
+                        _imagePath = null;
+                        _imageRemoved = true;
+                      })
+                  : null,
+            ),
+            const SizedBox(height: 16),
             TextField(
               controller: _nameController,
               enabled: !_saving,
@@ -137,8 +170,9 @@ class _ProductEditorSheetState extends State<ProductEditorSheet> {
                       ),
                     )
                     .toList(),
-                onChanged:
-                    _saving ? null : (value) => setState(() => _category = value),
+                onChanged: _saving
+                    ? null
+                    : (value) => setState(() => _category = value),
               ),
             if (categories.isNotEmpty) const SizedBox(height: 12),
             DropdownButtonFormField<String>(
@@ -155,8 +189,9 @@ class _ProductEditorSheetState extends State<ProductEditorSheet> {
                     ),
                   )
                   .toList(),
-              onChanged:
-                  _saving ? null : (value) => setState(() => _unit = value ?? 'pcs'),
+              onChanged: _saving
+                  ? null
+                  : (value) => setState(() => _unit = value ?? 'pcs'),
             ),
             const SizedBox(height: 12),
             TextField(
@@ -168,6 +203,18 @@ class _ProductEditorSheetState extends State<ProductEditorSheet> {
                 prefixIcon: Icon(Icons.qr_code_2_rounded),
               ),
             ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _reorderLevelController,
+              enabled: !_saving,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Reorder level',
+                prefixIcon: Icon(Icons.notification_important_outlined),
+                helperText:
+                    'At or below this quantity, the product is marked low stock.',
+              ),
+            ),
             if (!widget.isEditing) ...[
               const SizedBox(height: 12),
               TextField(
@@ -177,7 +224,7 @@ class _ProductEditorSheetState extends State<ProductEditorSheet> {
                 decoration: const InputDecoration(
                   labelText: 'Initial stock',
                   prefixIcon: Icon(Icons.numbers_rounded),
-                  helperText: 'You can leave this at 0 and use Stock In later.',
+                  helperText: 'Leave at 0 and use Stock In later if preferred.',
                 ),
               ),
             ],
@@ -222,10 +269,68 @@ class _ProductEditorSheetState extends State<ProductEditorSheet> {
     );
   }
 
+  Future<void> _choosePhoto() async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      useSafeArea: true,
+      builder: (sheetContext) => Padding(
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_camera_outlined),
+              title: const Text('Take photo'),
+              onTap: () => Navigator.pop(sheetContext, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('Choose from gallery'),
+              onTap: () => Navigator.pop(sheetContext, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (source == null || !mounted) return;
+
+    final picked = await ImagePicker().pickImage(
+      source: source,
+      imageQuality: 85,
+      maxWidth: 1600,
+    );
+    if (picked == null || !mounted) return;
+
+    try {
+      final root = await getApplicationDocumentsDirectory();
+      final directory = Directory(p.join(root.path, 'product_images'));
+      await directory.create(recursive: true);
+
+      final extension = p.extension(picked.path).isEmpty
+          ? '.jpg'
+          : p.extension(picked.path).toLowerCase();
+      final fileName =
+          'product-${widget.product?.id ?? 'new'}-${DateTime.now().microsecondsSinceEpoch}$extension';
+      final saved = await File(picked.path).copy(
+        p.join(directory.path, fileName),
+      );
+
+      if (!mounted) return;
+      setState(() {
+        _imagePath = saved.path;
+        _imageRemoved = false;
+      });
+    } catch (_) {
+      _message('Could not save that photo. Please try another image.');
+    }
+  }
+
   Future<void> _save() async {
     final name = _nameController.text.trim();
     final barcode = _barcodeController.text.trim();
     final initialStock = int.tryParse(_initialStockController.text.trim()) ?? 0;
+    final reorderLevel =
+        int.tryParse(_reorderLevelController.text.trim());
 
     if (name.isEmpty) {
       _message('Enter a product name.');
@@ -233,6 +338,10 @@ class _ProductEditorSheetState extends State<ProductEditorSheet> {
     }
     if (initialStock < 0) {
       _message('Initial stock cannot be negative.');
+      return;
+    }
+    if (reorderLevel == null || reorderLevel < 0) {
+      _message('Enter a valid reorder level of 0 or more.');
       return;
     }
 
@@ -267,6 +376,8 @@ class _ProductEditorSheetState extends State<ProductEditorSheet> {
         name: name,
         category: _category,
         unit: _unit,
+        imagePath: _imageRemoved ? '' : _imagePath,
+        reorderLevel: reorderLevel,
         barcode: barcode.isEmpty ? null : barcode,
         lastModified: now,
       );
@@ -287,6 +398,20 @@ class _ProductEditorSheetState extends State<ProductEditorSheet> {
                 lastModified: now,
               ),
             ];
+      final logs = initialStock == 0
+          ? <StockLog>[]
+          : [
+              StockLog(
+                id: uuid.v4(),
+                productId: id,
+                quantity: initialStock,
+                isPiece: false,
+                reason: StockLogReason.added,
+                remarks: 'Initial stock • 0 → $initialStock',
+                dateLogged: now,
+                lastModified: now,
+              ),
+            ];
 
       await provider.upsertProduct(
         Product(
@@ -296,10 +421,13 @@ class _ProductEditorSheetState extends State<ProductEditorSheet> {
           isSoldByPack: true,
           isSoldByPiece: false,
           unit: _unit,
+          imagePath: _imagePath,
+          reorderLevel: reorderLevel,
           barcode: barcode.isEmpty ? null : barcode,
           createdAt: now,
           lastModified: now,
           stocks: stocks,
+          logs: logs,
         ),
       );
     }
@@ -345,6 +473,91 @@ class _ProductEditorSheetState extends State<ProductEditorSheet> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
+    );
+  }
+}
+
+class _PhotoPicker extends StatelessWidget {
+  final String? imagePath;
+  final bool enabled;
+  final VoidCallback onPick;
+  final VoidCallback? onRemove;
+
+  const _PhotoPicker({
+    required this.imagePath,
+    required this.enabled,
+    required this.onPick,
+    this.onRemove,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final hasImage = imagePath != null &&
+        imagePath!.isNotEmpty &&
+        File(imagePath!).existsSync();
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppBrand.surface,
+        border: Border.all(color: AppBrand.border),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(13),
+            child: hasImage
+                ? Image.file(
+                    File(imagePath!),
+                    width: 64,
+                    height: 64,
+                    fit: BoxFit.cover,
+                  )
+                : Container(
+                    width: 64,
+                    height: 64,
+                    color: AppBrand.primarySoft,
+                    child: const Icon(
+                      Icons.image_outlined,
+                      color: AppBrand.primary,
+                    ),
+                  ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Product photo',
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  hasImage ? 'Photo added' : 'Optional',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppBrand.muted,
+                      ),
+                ),
+              ],
+            ),
+          ),
+          TextButton(
+            onPressed: enabled ? onPick : null,
+            child: Text(hasImage ? 'Change' : 'Add'),
+          ),
+          if (onRemove != null)
+            IconButton(
+              tooltip: 'Remove photo',
+              onPressed: enabled ? onRemove : null,
+              icon: const Icon(Icons.close_rounded),
+            ),
+        ],
+      ),
     );
   }
 }
