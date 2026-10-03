@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:nextpos/View/Components/Widgets/ResponsiveText.dart';
 import 'package:nextpos/View/Screen/Main/ProductScreenWidget/ProductListScreen.dart';
 import 'package:provider/provider.dart';
