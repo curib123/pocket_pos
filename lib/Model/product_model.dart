@@ -1,71 +1,27 @@
-import 'package:hive/hive.dart';
 import 'product_stock.dart';
 import 'loose_stock.dart';
 import 'stock_log.dart';
 import 'loan_item.dart'; // 🆕 Import LoanItem
-
-part 'product_model.g.dart';
-
-@HiveType(typeId: 0)
-class Product extends HiveObject {
-  @HiveField(0)
+class Product {
   final String id;
-
-  @HiveField(1)
   final String name;
-
-  @HiveField(2)
   final String? category;
-
-  @HiveField(3)
   final bool isSoldByPack;
-
-  @HiveField(4)
   final bool isSoldByPiece;
-
-  @HiveField(5)
   final int? piecesPerPack;
-
-  @HiveField(6)
   final String? unit;
-
-  @HiveField(7)
   final String? imagePath;
-
-  @HiveField(8)
   final DateTime createdAt;
-
-  @HiveField(9)
   final DateTime lastModified;
-
-  @HiveField(10)
   final bool isSoftDeleted; // 🆕 replaces deletedAt
-
-  @HiveField(11)
   final List<ProductStock> stocks;
-
-  @HiveField(12)
   final LooseStock? looseStock;
-
-  @HiveField(13)
   final List<StockLog> logs;
-
-  @HiveField(14)
   final bool hasVariant;
-
-  @HiveField(15)
   final List<Product> variants;
-
-  @HiveField(16)
   final bool isVariant;
-
-  @HiveField(17)
   final String? barcode;
-
-  @HiveField(18)
   final List<LoanItem> loans;
-
-  @HiveField(19)
   final bool isDeletedPermanent;
 
   // 🔢 Computed
