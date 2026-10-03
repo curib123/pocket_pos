@@ -1,8 +1,13 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:nextpos/Model/product_model.dart';
 import 'package:nextpos/Provider/ProductProvider.dart';
 import 'package:nextpos/Provider/ProductStockProvider.dart';
 import 'package:nextpos/core/brand/app_brand.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
 enum StockMovementType { stockIn, stockOut, adjustment }
@@ -58,7 +63,9 @@ class StockMovementSheet extends StatefulWidget {
 
 class _StockMovementSheetState extends State<StockMovementSheet> {
   final _quantityController = TextEditingController();
+  final _remarksController = TextEditingController();
   String? _selectedProductId;
+  String? _imagePath;
   bool _saving = false;
 
   @override
@@ -70,12 +77,14 @@ class _StockMovementSheetState extends State<StockMovementSheet> {
   @override
   void dispose() {
     _quantityController.dispose();
+    _remarksController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final products = context.watch<ProductProvider>().getAllProductsWithVariants();
+    final products =
+        context.watch<ProductProvider>().getAllProductsWithVariants();
     final selected = _selectedProduct(products);
     final currentCount = selected?.totalQuantity ?? 0;
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
@@ -93,7 +102,7 @@ class _StockMovementSheetState extends State<StockMovementSheet> {
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    color: AppBrand.primarySoft,
+                    color: AppBrand.primarySoftOf(context),
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Icon(widget.type.icon, color: AppBrand.primary),
@@ -113,7 +122,7 @@ class _StockMovementSheetState extends State<StockMovementSheet> {
                       Text(
                         widget.type.helper,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: AppBrand.muted,
+                              color: AppBrand.mutedOf(context),
                               height: 1.35,
                             ),
                       ),
@@ -153,7 +162,7 @@ class _StockMovementSheetState extends State<StockMovementSheet> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 decoration: BoxDecoration(
-                  color: AppBrand.primaryFaint,
+                  color: AppBrand.primaryFaintOf(context),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Row(
@@ -167,7 +176,7 @@ class _StockMovementSheetState extends State<StockMovementSheet> {
                     Text(
                       'Current stock',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: AppBrand.muted,
+                            color: AppBrand.mutedOf(context),
                           ),
                     ),
                     const Spacer(),
@@ -202,6 +211,30 @@ class _StockMovementSheetState extends State<StockMovementSheet> {
               ),
               onSubmitted: (_) => _submit(),
             ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _remarksController,
+              enabled: !_saving,
+              textCapitalization: TextCapitalization.sentences,
+              maxLines: 2,
+              decoration: InputDecoration(
+                labelText: widget.type == StockMovementType.adjustment
+                    ? 'Reason'
+                    : 'Note (optional)',
+                hintText: widget.type == StockMovementType.adjustment
+                    ? 'e.g. Physical count correction'
+                    : 'e.g. Delivery from supplier',
+              ),
+            ),
+            const SizedBox(height: 12),
+            _MovementPhotoPicker(
+              imagePath: _imagePath,
+              enabled: !_saving,
+              onPick: _choosePhoto,
+              onRemove: _imagePath == null
+                  ? null
+                  : () => setState(() => _imagePath = null),
+            ),
             const SizedBox(height: 18),
             SizedBox(
               width: double.infinity,
@@ -225,7 +258,7 @@ class _StockMovementSheetState extends State<StockMovementSheet> {
               Text(
                 'Add a product first before recording stock movement.',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppBrand.muted,
+                      color: AppBrand.mutedOf(context),
                     ),
               ),
             ],
@@ -250,9 +283,61 @@ class _StockMovementSheetState extends State<StockMovementSheet> {
     return product.isSoldByPiece && !product.isSoldByPack ? 'pcs' : 'units';
   }
 
+  Future<void> _choosePhoto() async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      useSafeArea: true,
+      builder: (sheetContext) => Padding(
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_camera_outlined),
+              title: const Text('Take photo'),
+              onTap: () => Navigator.pop(sheetContext, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('Choose from gallery'),
+              onTap: () => Navigator.pop(sheetContext, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (source == null || !mounted) return;
+
+    final picked = await ImagePicker().pickImage(
+      source: source,
+      imageQuality: 82,
+      maxWidth: 1600,
+    );
+    if (picked == null || !mounted) return;
+
+    try {
+      final root = await getApplicationDocumentsDirectory();
+      final directory = Directory(p.join(root.path, 'activity_images'));
+      await directory.create(recursive: true);
+      final extension = p.extension(picked.path).isEmpty
+          ? '.jpg'
+          : p.extension(picked.path).toLowerCase();
+      final fileName =
+          'activity-${DateTime.now().microsecondsSinceEpoch}$extension';
+      final saved = await File(picked.path).copy(
+        p.join(directory.path, fileName),
+      );
+      if (!mounted) return;
+      setState(() => _imagePath = saved.path);
+    } catch (_) {
+      _showMessage('Could not save that photo. Please try another image.');
+    }
+  }
+
   Future<void> _submit() async {
     final id = _selectedProductId;
     final quantity = int.tryParse(_quantityController.text.trim());
+    final note = _remarksController.text.trim();
 
     if (id == null) {
       _showMessage('Choose a product.');
@@ -277,15 +362,20 @@ class _StockMovementSheetState extends State<StockMovementSheet> {
       StockMovementType.stockIn => await provider.stockIn(
           productId: id,
           quantity: quantity,
+          remarks: note,
+          imagePath: _imagePath,
         ),
       StockMovementType.stockOut => await provider.stockOut(
           productId: id,
           quantity: quantity,
+          remarks: note,
+          imagePath: _imagePath,
         ),
       StockMovementType.adjustment => await provider.adjustStock(
           productId: id,
           actualStock: quantity,
-          reason: 'Physical count correction',
+          reason: note.isEmpty ? 'Physical count correction' : note,
+          imagePath: _imagePath,
         ),
     };
 
@@ -306,6 +396,91 @@ class _StockMovementSheetState extends State<StockMovementSheet> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
+    );
+  }
+}
+
+class _MovementPhotoPicker extends StatelessWidget {
+  final String? imagePath;
+  final bool enabled;
+  final VoidCallback onPick;
+  final VoidCallback? onRemove;
+
+  const _MovementPhotoPicker({
+    required this.imagePath,
+    required this.enabled,
+    required this.onPick,
+    this.onRemove,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final hasImage = imagePath != null &&
+        imagePath!.isNotEmpty &&
+        File(imagePath!).existsSync();
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppBrand.surfaceOf(context),
+        border: Border.all(color: AppBrand.borderOf(context)),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: hasImage
+                ? Image.file(
+                    File(imagePath!),
+                    width: 52,
+                    height: 52,
+                    fit: BoxFit.cover,
+                  )
+                : Container(
+                    width: 52,
+                    height: 52,
+                    color: AppBrand.primarySoftOf(context),
+                    child: const Icon(
+                      Icons.add_a_photo_outlined,
+                      color: AppBrand.primary,
+                    ),
+                  ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Activity photo',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  hasImage ? 'Photo attached' : 'Optional proof or reference',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppBrand.mutedOf(context),
+                      ),
+                ),
+              ],
+            ),
+          ),
+          TextButton(
+            onPressed: enabled ? onPick : null,
+            child: Text(hasImage ? 'Change' : 'Add'),
+          ),
+          if (onRemove != null)
+            IconButton(
+              tooltip: 'Remove photo',
+              onPressed: enabled ? onRemove : null,
+              icon: const Icon(Icons.close_rounded),
+            ),
+        ],
+      ),
     );
   }
 }
