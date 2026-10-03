@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
+import 'package:nextpos/core/data/product_store.dart';
 import 'package:nextpos/Model/cart_item_model.dart';
 import 'package:nextpos/Model/product_model.dart';
 
 class CartListProvider with ChangeNotifier {
   final List<CartItem> _cartItems = [];
-  final Box<Product> _productBox = Hive.box<Product>('products');
+  final ProductStore _productBox = ProductStore.instance;
 
   CartListProvider();
 
