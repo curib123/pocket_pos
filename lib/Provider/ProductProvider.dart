@@ -203,10 +203,10 @@ class ProductProvider extends ChangeNotifier {
       );
       if (nameExists) return;
 
+      // Preserve initial stocks/logs supplied by ProductEditorSheet.
+      // The previous implementation replaced them with empty lists, which
+      // caused newly entered initial stock to disappear immediately.
       final newProduct = product.copyWith(
-        stocks: const [],
-        logs: const [],
-        loans: const [],
         lastModified: now,
       );
 
