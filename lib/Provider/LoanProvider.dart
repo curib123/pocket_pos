@@ -1,21 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
+import 'package:nextpos/core/data/product_store.dart';
 import 'package:nextpos/Helper/Enums/Enum.dart';
 import 'package:nextpos/Model/loan_item.dart';
 import 'package:nextpos/Model/product_model.dart';
 import 'package:nextpos/Model/stock_log.dart';
-import 'package:nextpos/core/data/offline_database.dart';
 
 class LoanProvider with ChangeNotifier {
-  final Box<Product> _productBox = Hive.box<Product>('products');
-  final _offlineDatabase = OfflineDatabase.instance;
-
-  Future<void> _mirror(Product product) async {
-    try {
-      await _offlineDatabase.upsertProduct(product);
-    } catch (_) {}
-  }
-
+  final ProductStore _productBox = ProductStore.instance;
   LoanProvider();
 
   Product? getProductById(String id) {
@@ -164,7 +155,6 @@ class LoanProvider with ChangeNotifier {
       (k) => _productBox.get(k)?.id == productId,
     );
     await _productBox.put(key, updatedProduct);
-    await _mirror(updatedProduct);
     notifyListeners();
   }
 
@@ -240,7 +230,6 @@ class LoanProvider with ChangeNotifier {
       );
 
       await _productBox.put(key, updatedProduct);
-      await _mirror(updatedProduct);
       if (remaining <= 0) break;
     }
 
@@ -367,7 +356,6 @@ class LoanProvider with ChangeNotifier {
       (k) => _productBox.get(k)?.id == productId,
     );
     await _productBox.put(key, updatedProduct);
-    await _mirror(updatedProduct);
 
     notifyListeners();
   }
