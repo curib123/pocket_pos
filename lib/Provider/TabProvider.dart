@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:nextpos/View/Screen/Main/ActivityScreen.dart';
 import 'package:nextpos/View/Screen/Main/DashBoardScreen.dart';
-import 'package:nextpos/View/Screen/Main/ProductScreen.dart';
+import 'package:nextpos/View/Screen/Main/InventoryScreen.dart';
 import 'package:nextpos/View/Screen/Main/ProfileScreen.dart';
-import 'package:nextpos/View/Screen/Main/StockManagementScreen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class TabProvider extends ChangeNotifier {
@@ -14,8 +14,8 @@ class TabProvider extends ChangeNotifier {
 
   final List<Widget> screens = const [
     DashBoardScreen(),
-    ProductScreen(),
-    StockManagementScreen(),
+    InventoryScreen(),
+    ActivityScreen(),
     ProfileScreen(),
   ];
 
@@ -24,7 +24,7 @@ class TabProvider extends ChangeNotifier {
   }
 
   void setTab(int index) {
-    if (index < 0 || index >= screens.length) return;
+    if (index < 0 || index >= screens.length || index == _currentIndex) return;
     _currentIndex = index;
     notifyListeners();
   }
