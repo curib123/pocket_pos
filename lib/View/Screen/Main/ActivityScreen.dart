@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:nextpos/Model/product_model.dart';
@@ -97,13 +99,13 @@ class _ActivityScreenState extends State<ActivityScreen> {
         label: Text(label),
         selected: selected,
         showCheckmark: false,
-        selectedColor: AppBrand.primarySoft,
-        backgroundColor: AppBrand.surface,
+        selectedColor: AppBrand.primarySoftOf(context),
+        backgroundColor: AppBrand.surfaceOf(context),
         side: BorderSide(
-          color: selected ? AppBrand.primary : AppBrand.border,
+          color: selected ? AppBrand.primary : AppBrand.borderOf(context),
         ),
         labelStyle: TextStyle(
-          color: selected ? AppBrand.primary : AppBrand.ink,
+          color: selected ? AppBrand.primary : AppBrand.inkOf(context),
           fontWeight: FontWeight.w600,
         ),
         onSelected: (_) {
@@ -204,10 +206,10 @@ class _ActivityRow extends StatelessWidget {
       _ActivityKind.other => AppBrand.muted,
     };
     final background = switch (item.kind) {
-      _ActivityKind.stockIn => AppBrand.primarySoft,
-      _ActivityKind.stockOut => AppBrand.dangerSoft,
-      _ActivityKind.adjustment => AppBrand.warningSoft,
-      _ActivityKind.other => AppBrand.background,
+      _ActivityKind.stockIn => AppBrand.primarySoftOf(context),
+      _ActivityKind.stockOut => AppBrand.dangerSoftOf(context),
+      _ActivityKind.adjustment => AppBrand.warningSoftOf(context),
+      _ActivityKind.other => Theme.of(context).colorScheme.surfaceContainerHighest,
     };
     final quantity = switch (item.kind) {
       _ActivityKind.stockIn => '+${item.log.quantity.abs()}',
@@ -218,6 +220,10 @@ class _ActivityRow extends StatelessWidget {
       _ActivityKind.other =>
         item.log.quantity == 0 ? '—' : item.log.quantity.toString(),
     };
+    final imagePath = item.log.imagePath;
+    final hasImage = imagePath != null &&
+        imagePath.trim().isNotEmpty &&
+        File(imagePath).existsSync();
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 13),
@@ -264,7 +270,7 @@ class _ActivityRow extends StatelessWidget {
                 Text(
                   '$label · ${DateFormat('MMM d, h:mm a').format(item.log.dateLogged)}',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppBrand.muted,
+                        color: AppBrand.mutedOf(context),
                       ),
                 ),
                 if (item.log.remarks?.trim().isNotEmpty == true) ...[
@@ -274,8 +280,20 @@ class _ActivityRow extends StatelessWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppBrand.muted,
+                          color: AppBrand.mutedOf(context),
                         ),
+                  ),
+                ],
+                if (hasImage) ...[
+                  const SizedBox(height: 8),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: Image.file(
+                      File(imagePath),
+                      width: 92,
+                      height: 64,
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ],
               ],
@@ -352,7 +370,7 @@ class _PaginationBar extends StatelessWidget {
                 '$start–$end of $totalItems',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppBrand.muted,
+                      color: AppBrand.mutedOf(context),
                     ),
               ),
             ),
@@ -394,7 +412,7 @@ class _EmptyActivity extends StatelessWidget {
               width: 64,
               height: 64,
               decoration: BoxDecoration(
-                color: AppBrand.primarySoft,
+                color: AppBrand.primarySoftOf(context),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: const Icon(
@@ -415,7 +433,7 @@ class _EmptyActivity extends StatelessWidget {
               'Stock In, Stock Out, and adjustments will appear here.',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppBrand.muted,
+                    color: AppBrand.mutedOf(context),
                   ),
             ),
           ],
