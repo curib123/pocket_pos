@@ -1,0 +1,12 @@
+name: lucide_icons
+description: Compatibility shim for the maintained lucide_icons_flutter package.
+version: 0.257.1
+publish_to: none
+
+environment:
+  sdk: ^3.8.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+  lucide_icons_flutter: ^3.1.21
