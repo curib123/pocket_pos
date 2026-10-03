@@ -1,6 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:nextpos/View/Components/Alert/CustomConfimDialog.dart';
 import 'package:nextpos/View/Components/Alert/CustomNotificationDialog.dart';
