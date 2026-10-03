@@ -1,30 +1,23 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:nextpos/main.dart';
+import 'package:nextpos/Model/product_model.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  test('product payload round-trips for SQLite persistence', () {
+    final now = DateTime.utc(2026, 10, 3, 10, 0);
+    final product = Product(
+      id: 'rice-1',
+      name: 'Rice',
+      isSoldByPack: false,
+      isSoldByPiece: true,
+      createdAt: now,
+      lastModified: now,
+    );
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    final restored = Product.fromMap(product.toMap());
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(restored.id, product.id);
+    expect(restored.name, product.name);
+    expect(restored.isSoldByPiece, isTrue);
+    expect(restored.lastModified, product.lastModified);
   });
 }
