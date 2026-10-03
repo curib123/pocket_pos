@@ -1,272 +1,431 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-import 'package:lucide_icons/lucide_icons.dart';
-import 'package:nextpos/View/Screen/Main/DashboardScreenWidgets/ProductDashboardStats.dart';
-import 'package:provider/provider.dart';
-import 'package:nextpos/Provider/CurrencyProvider.dart';
-import 'package:nextpos/Provider/SwitchProvider.dart';
+import 'package:nextpos/Model/product_model.dart';
 import 'package:nextpos/Provider/ProductProvider.dart';
-import 'package:nextpos/View/Components/Widgets/AISnackbarManager.dart';
-import 'package:nextpos/View/Screen/Sub/PoSReportScreen.dart';
-import 'package:nextpos/View/Screen/Sub/PosChatScreen.dart';
-import 'package:nextpos/View/Components/Custom/CustomFlatDropdown.dart';
-import 'package:nextpos/View/Components/Widgets/GreetingsCardWidget.dart';
-import 'package:nextpos/View/Components/Widgets/AppDrawer.dart';
-import 'package:nextpos/View/Components/Widgets/SearchAndCartRow.dart';
-import 'package:nextpos/View/Components/Alert/showLoadingAndNotify.dart';
-import 'package:nextpos/Helper/Classes_Methods/AppColor.dart';
-import 'package:nextpos/Helper/Classes_Methods/DashboardMetrics.dart';
-import 'package:nextpos/Helper/Classes_Methods/helper_methods.dart';
+import 'package:nextpos/Provider/TabProvider.dart';
+import 'package:nextpos/View/Components/Brand/BantayStockBrand.dart';
+import 'package:nextpos/View/Components/Inventory/StockMovementSheet.dart';
+import 'package:nextpos/core/brand/app_brand.dart';
+import 'package:provider/provider.dart';
 
-class DashBoardScreen extends StatefulWidget {
+class DashBoardScreen extends StatelessWidget {
   const DashBoardScreen({super.key});
 
   @override
-  State<DashBoardScreen> createState() => _DashBoardScreenState();
-}
-
-class _DashBoardScreenState extends State<DashBoardScreen> {
-  late DashboardMetrics metrics;
-  bool isReady = false;
-
-  DateFilterType _selectedFilter = DateFilterType.day;
-  DateTime? _customStartDate;
-  DateTime? _customEndDate;
-
-  @override
-  void initState() {
-    super.initState();
-    autoSync(context);
-    _refreshMetrics();
-    AISnackbarManager.showAIAlert(context, screenName: 'Dashboard Screen');
-  }
-
-  Future<void> _refreshMetrics() async {
-    final allProducts = context.read<ProductProvider>().getAllProductsWithVariants();
-    final data = generateDashboardMetrics(
-      allProducts: allProducts,
-      filterType: _selectedFilter,
-      customStart: _customStartDate,
-      customEnd: _customEndDate,
-    );
-    setState(() {
-      metrics = data;
-      isReady = true;
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return Consumer2<CurrencyProvider, SwitchProvider>(
-      builder: (context, currencyProvider, switchProvider, _) {
-        return Scaffold(
-          drawer: const AppDrawer(),
-          appBar: const SearchAndCartAppBar(),
-          body: RefreshIndicator(
-            onRefresh: () => showLoadingAndNotify(context: context, task: _refreshMetrics),
-            child: isReady
-                ? Column(
+    final products =
+        context.watch<ProductProvider>().getAllProductsWithVariants();
+    final totalUnits =
+        products.fold<int>(0, (total, product) => total + product.totalQuantity);
+    final lowStock =
+        products.where((product) => product.totalQuantity > 0 && product.totalQuantity <= 5).length;
+    final outOfStock =
+        products.where((product) => product.totalQuantity == 0).length;
+    final needsAttention = products
+        .where((product) => product.totalQuantity <= 5)
+        .toList()
+      ..sort((a, b) => a.totalQuantity.compareTo(b.totalQuantity));
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const BantayStockBrand(showTagline: true, markSize: 38),
+        toolbarHeight: 72,
+      ),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          context.read<ProductProvider>().notifyListeners();
+        },
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+          children: [
+            Text(
+              'Inventory at a glance',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.6,
+                  ),
+            ),
+            const SizedBox(height: 5),
+            Text(
+              'The three actions you need for daily stock keeping.',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppBrand.muted,
+                  ),
+            ),
+            const SizedBox(height: 20),
+            Row(
               children: [
-                _buildTopSection(), // stays fixed
                 Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.only(bottom: 140),
-                    child: Column(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 5),
-                          child: ProductDashboardStats(
-                            metrics: metrics,
-                            currencyProvider: currencyProvider,
-                            isTile: switchProvider.isDashboardGridView,
-                          ),
-                        ),
-                      ],
+                  child: _QuickAction(
+                    icon: Icons.add_rounded,
+                    label: 'Stock In',
+                    onTap: () => StockMovementSheet.show(
+                      context,
+                      type: StockMovementType.stockIn,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _QuickAction(
+                    icon: Icons.remove_rounded,
+                    label: 'Stock Out',
+                    onTap: () => StockMovementSheet.show(
+                      context,
+                      type: StockMovementType.stockOut,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _QuickAction(
+                    icon: Icons.tune_rounded,
+                    label: 'Adjust',
+                    onTap: () => StockMovementSheet.show(
+                      context,
+                      type: StockMovementType.adjustment,
                     ),
                   ),
                 ),
               ],
-            )
-                : const Center(child: CircularProgressIndicator()),
-          ),
-          // floating buttons layer on top
-          floatingActionButton: _buildFloatingButtons(context, switchProvider),
-        );
-      },
-    );
-  }
-
-  Widget _buildTopSection() {
-    return Container(
-      width: double.infinity,
-      color: Colors.white,
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          GreetingCard(),
-          const SizedBox(height: 5),
-          CustomFlatDropdown<DateFilterType>(
-            hint: "Choose timeframe",
-            value: _selectedFilter,
-            items: DateFilterType.values,
-            prefixIcon: LucideIcons.calendarRange,
-            onChanged: (type) {
-              if (type != null) {
-                setState(() {
-                  _selectedFilter = type;
-                  isReady = false;
-                });
-                _refreshMetrics();
-              }
-            },
-            itemBuilder: (type) => Text(type.name.toUpperCase()),
-          ),
-          if (_selectedFilter == DateFilterType.range)
-            Row(
+            ),
+            const SizedBox(height: 26),
+            _SectionHeader(
+              title: 'Snapshot',
+              actionLabel: 'View inventory',
+              onTap: () => context.read<TabProvider>().setTab(1),
+            ),
+            const SizedBox(height: 12),
+            GridView.count(
+              crossAxisCount: 2,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              mainAxisSpacing: 10,
+              crossAxisSpacing: 10,
+              childAspectRatio: 1.72,
               children: [
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => _pickDate(isStart: true),
-                    child: _dateTile(_customStartDate, "Start Date", LucideIcons.calendar),
-                  ),
+                _MetricCard(
+                  label: 'Products',
+                  value: products.length.toString(),
+                  icon: Icons.inventory_2_outlined,
                 ),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => _pickDate(isStart: false),
-                    child: _dateTile(_customEndDate, "End Date", LucideIcons.calendarCheck),
-                  ),
+                _MetricCard(
+                  label: 'On hand',
+                  value: totalUnits.toString(),
+                  icon: Icons.layers_outlined,
+                ),
+                _MetricCard(
+                  label: 'Low stock',
+                  value: lowStock.toString(),
+                  icon: Icons.low_priority_rounded,
+                ),
+                _MetricCard(
+                  label: 'Out of stock',
+                  value: outOfStock.toString(),
+                  icon: Icons.inventory_outlined,
                 ),
               ],
             ),
-        ],
+            const SizedBox(height: 26),
+            _SectionHeader(
+              title: 'Needs attention',
+              actionLabel: needsAttention.isEmpty ? null : 'See all',
+              onTap: () => context.read<TabProvider>().setTab(1),
+            ),
+            const SizedBox(height: 10),
+            if (products.isEmpty)
+              _InfoCard(
+                icon: Icons.inventory_2_outlined,
+                title: 'Start with your products',
+                body:
+                    'Open Inventory to add your first item, then use Stock In to record what you have.',
+                action: 'Open inventory',
+                onTap: () => context.read<TabProvider>().setTab(1),
+              )
+            else if (needsAttention.isEmpty)
+              const _InfoCard(
+                icon: Icons.check_rounded,
+                title: 'Stock looks good',
+                body: 'No products are currently low or out of stock.',
+              )
+            else
+              Container(
+                decoration: BoxDecoration(
+                  color: AppBrand.surface,
+                  border: Border.all(color: AppBrand.border),
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: Column(
+                  children: [
+                    for (var i = 0;
+                        i < needsAttention.length && i < 5;
+                        i++) ...[
+                      _AttentionRow(product: needsAttention[i]),
+                      if (i < needsAttention.length - 1 && i < 4)
+                        const Divider(indent: 16, endIndent: 16),
+                    ],
+                  ],
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
+}
 
-  Widget _buildFloatingButtons(BuildContext context, SwitchProvider switchProvider) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        _floatingAction(
-          icon: LucideIcons.pieChart,
-          tooltip: "AI Reports",
-          color: AppColor.primary, // 🔮 AI vibes
-          onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => POSReportScreen()),
-          ),
-        ),
-        const SizedBox(height: 10),
-        _floatingAction(
-          icon: LucideIcons.bot,
-          tooltip: "Open Assistant",
-          color: AppColor.secondary, // 🤖 assistant
-          onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => POSChatScreen()),
-          ),
-        ),
-        const SizedBox(height: 10),
-        _floatingAction(
-          icon: !switchProvider.isDashboardGridView ? LucideIcons.layoutDashboard : LucideIcons.layers,
-          tooltip: "Toggle Grid View",
-          color: AppColor.textSecondary, // 🧩 layout
-          onPressed: () => switchProvider.toggleDashboardGridView(),
-        ),
-      ],
-    );
-  }
+class _QuickAction extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
 
-  Widget _floatingAction({
-    required IconData icon,
-    required String tooltip,
-    required VoidCallback onPressed,
-    Color? color, // 💡 optional, default fallback
-  }) {
-    final Color buttonColor = color ?? AppColor.primary;
-    return Tooltip(
-      message: tooltip,
-      child: GestureDetector(
-        onTap: onPressed,
-        child: Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            color: buttonColor,
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: buttonColor.withOpacity(0.2),
-                offset: const Offset(0, 2),
-                blurRadius: 6,
+  const _QuickAction({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppBrand.primary,
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
+          child: Column(
+            children: [
+              Icon(icon, color: Colors.white, size: 25),
+              const SizedBox(height: 8),
+              Text(
+                label,
+                maxLines: 1,
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                    ),
               ),
             ],
           ),
-          child: Center(
-            child: Icon(
-              icon,
-              size: 20,
-              color: AppColor.surface,
-            ),
-          ),
         ),
       ),
     );
   }
+}
 
+class _MetricCard extends StatelessWidget {
+  final String label;
+  final String value;
+  final IconData icon;
 
-  Widget _dateTile(DateTime? date, String label, IconData icon) {
-    final isSelected = date != null;
+  const _MetricCard({
+    required this.label,
+    required this.value,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
-      margin: const EdgeInsets.only(top: 10, left: 6, right: 6),
+      padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
-        color: isSelected ? AppColor.primary.withOpacity(0.05) : Colors.white,
-        border: Border.all(
-          color: isSelected ? AppColor.primary : Colors.grey.shade300,
-          width: 1.2,
-        ),
-        borderRadius: BorderRadius.circular(12),
+        color: AppBrand.surface,
+        border: Border.all(color: AppBrand.border),
+        borderRadius: BorderRadius.circular(18),
       ),
       child: Row(
         children: [
-          Icon(icon, size: 18, color: isSelected ? AppColor.primary : Colors.grey[700]),
-          const SizedBox(width: 10),
-          Text(
-            date != null ? formatDate(date) : label,
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w500,
-              color: isSelected ? AppColor.primary : Colors.black87,
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: AppBrand.primarySoft,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: AppBrand.primary, size: 20),
+          ),
+          const SizedBox(width: 11),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  value,
+                  maxLines: 1,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                ),
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppBrand.muted,
+                      ),
+                ),
+              ],
             ),
           ),
         ],
       ),
     );
   }
+}
 
-  String formatDate(DateTime date) => DateFormat('yyyy-MM-dd').format(date);
+class _SectionHeader extends StatelessWidget {
+  final String title;
+  final String? actionLabel;
+  final VoidCallback onTap;
 
-  Future<void> _pickDate({required bool isStart}) async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: (isStart ? _customStartDate : _customEndDate) ?? DateTime.now(),
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
+  const _SectionHeader({
+    required this.title,
+    required this.onTap,
+    this.actionLabel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            title,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+          ),
+        ),
+        if (actionLabel != null)
+          TextButton(
+            onPressed: onTap,
+            child: Text(actionLabel!),
+          ),
+      ],
     );
+  }
+}
 
-    if (picked != null) {
-      setState(() {
-        if (isStart) {
-          _customStartDate = picked;
-        } else {
-          _customEndDate = picked;
-        }
-        isReady = false;
-      });
-      _refreshMetrics();
-    }
+class _AttentionRow extends StatelessWidget {
+  final Product product;
+
+  const _AttentionRow({required this.product});
+
+  @override
+  Widget build(BuildContext context) {
+    final quantity = product.totalQuantity;
+
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+      leading: Container(
+        width: 40,
+        height: 40,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: AppBrand.primarySoft,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Text(
+          product.name.isEmpty ? '?' : product.name[0].toUpperCase(),
+          style: const TextStyle(
+            color: AppBrand.primary,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      ),
+      title: Text(
+        product.name,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(fontWeight: FontWeight.w700),
+      ),
+      subtitle: Text(
+        quantity == 0 ? 'Out of stock' : 'Only $quantity left',
+        style: const TextStyle(color: AppBrand.muted),
+      ),
+      trailing: IconButton(
+        tooltip: 'Stock In',
+        onPressed: () => StockMovementSheet.show(
+          context,
+          type: StockMovementType.stockIn,
+          product: product,
+        ),
+        icon: const Icon(Icons.add_circle_outline_rounded),
+        color: AppBrand.primary,
+      ),
+    );
+  }
+}
+
+class _InfoCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String body;
+  final String? action;
+  final VoidCallback? onTap;
+
+  const _InfoCard({
+    required this.icon,
+    required this.title,
+    required this.body,
+    this.action,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: AppBrand.surface,
+        border: Border.all(color: AppBrand.border),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: AppBrand.primarySoft,
+              borderRadius: BorderRadius.circular(13),
+            ),
+            child: Icon(icon, color: AppBrand.primary),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
+                const SizedBox(height: 4),
+                Text(
+                  body,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppBrand.muted,
+                        height: 1.35,
+                      ),
+                ),
+                if (action != null && onTap != null) ...[
+                  const SizedBox(height: 8),
+                  TextButton(
+                    onPressed: onTap,
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    child: Text(action!),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
