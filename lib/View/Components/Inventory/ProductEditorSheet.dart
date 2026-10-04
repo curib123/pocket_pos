@@ -37,6 +37,9 @@ class _ProductEditorSheetState extends State<ProductEditorSheet> {
   late final TextEditingController _nameController;
   late final TextEditingController _barcodeController;
   late final TextEditingController _reorderLevelController;
+  late final TextEditingController _costPriceController;
+  late final TextEditingController _sellingPriceController;
+  late final TextEditingController _supplierController;
   final _initialStockController = TextEditingController(text: '0');
 
   String? _category;
@@ -65,6 +68,19 @@ class _ProductEditorSheetState extends State<ProductEditorSheet> {
     _reorderLevelController = TextEditingController(
       text: (product?.reorderLevel ?? 5).toString(),
     );
+    _costPriceController = TextEditingController(
+      text: product != null && product.costPrice > 0
+          ? product.costPrice.toStringAsFixed(2)
+          : '',
+    );
+    _sellingPriceController = TextEditingController(
+      text: product != null && product.sellingPrice > 0
+          ? product.sellingPrice.toStringAsFixed(2)
+          : '',
+    );
+    _supplierController = TextEditingController(
+      text: product?.supplierName ?? '',
+    );
     _category = product?.category;
     _imagePath = product?.imagePath?.trim().isNotEmpty == true
         ? product!.imagePath
@@ -81,6 +97,9 @@ class _ProductEditorSheetState extends State<ProductEditorSheet> {
     _nameController.dispose();
     _barcodeController.dispose();
     _reorderLevelController.dispose();
+    _costPriceController.dispose();
+    _sellingPriceController.dispose();
+    _supplierController.dispose();
     _initialStockController.dispose();
     super.dispose();
   }
@@ -192,6 +211,52 @@ class _ProductEditorSheetState extends State<ProductEditorSheet> {
               onChanged: _saving
                   ? null
                   : (value) => setState(() => _unit = value ?? 'pcs'),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              key: const Key('product-supplier-input'),
+              controller: _supplierController,
+              enabled: !_saving,
+              textCapitalization: TextCapitalization.words,
+              decoration: const InputDecoration(
+                labelText: 'Supplier / bought from',
+                hintText: 'e.g. Shoppers Mall',
+                helperText: 'Optional. Where you usually buy this product.',
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    key: const Key('product-cost-price-input'),
+                    controller: _costPriceController,
+                    enabled: !_saving,
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    decoration: const InputDecoration(
+                      labelText: 'Cost price',
+                      hintText: 'e.g. 25.50',
+                      prefixText: '₱ ',
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: TextField(
+                    key: const Key('product-selling-price-input'),
+                    controller: _sellingPriceController,
+                    enabled: !_saving,
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    decoration: const InputDecoration(
+                      labelText: 'Selling price',
+                      hintText: 'e.g. 30.00',
+                      prefixText: '₱ ',
+                    ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 12),
             TextField(
@@ -328,6 +393,13 @@ class _ProductEditorSheetState extends State<ProductEditorSheet> {
   Future<void> _save() async {
     final name = _nameController.text.trim();
     final barcode = _barcodeController.text.trim();
+    final supplierName = _supplierController.text.trim();
+    final costPriceText = _costPriceController.text.trim();
+    final sellingPriceText = _sellingPriceController.text.trim();
+    final costPrice =
+        costPriceText.isEmpty ? 0.0 : double.tryParse(costPriceText);
+    final sellingPrice =
+        sellingPriceText.isEmpty ? 0.0 : double.tryParse(sellingPriceText);
     final initialStock = int.tryParse(_initialStockController.text.trim()) ?? 0;
     final reorderLevel =
         int.tryParse(_reorderLevelController.text.trim());
@@ -338,6 +410,14 @@ class _ProductEditorSheetState extends State<ProductEditorSheet> {
     }
     if (initialStock < 0) {
       _message('Initial stock cannot be negative.');
+      return;
+    }
+    if (costPrice == null || costPrice < 0) {
+      _message('Enter a valid cost price of 0 or more.');
+      return;
+    }
+    if (sellingPrice == null || sellingPrice < 0) {
+      _message('Enter a valid selling price of 0 or more.');
       return;
     }
     if (reorderLevel == null || reorderLevel < 0) {
@@ -377,6 +457,9 @@ class _ProductEditorSheetState extends State<ProductEditorSheet> {
         category: _category,
         unit: _unit,
         imagePath: _imageRemoved ? '' : _imagePath,
+        costPrice: costPrice,
+        sellingPrice: sellingPrice,
+        supplierName: supplierName,
         reorderLevel: reorderLevel,
         barcode: barcode.isEmpty ? null : barcode,
         lastModified: now,
@@ -392,8 +475,8 @@ class _ProductEditorSheetState extends State<ProductEditorSheet> {
                 id: uuid.v4(),
                 productId: id,
                 quantity: initialStock,
-                costPrice: 0,
-                retailPrice: 0,
+                costPrice: costPrice,
+                retailPrice: sellingPrice,
                 dateReceived: now,
                 lastModified: now,
               ),
@@ -422,6 +505,9 @@ class _ProductEditorSheetState extends State<ProductEditorSheet> {
           isSoldByPiece: false,
           unit: _unit,
           imagePath: _imagePath,
+          costPrice: costPrice,
+          sellingPrice: sellingPrice,
+          supplierName: supplierName.isEmpty ? null : supplierName,
           reorderLevel: reorderLevel,
           barcode: barcode.isEmpty ? null : barcode,
           createdAt: now,

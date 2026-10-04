@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:nextpos/Model/product_model.dart';
 import 'package:nextpos/Provider/ProductProvider.dart';
+import 'package:nextpos/View/Components/Brand/PocketInventoryBrand.dart';
 import 'package:nextpos/View/Components/Inventory/ProductActivitySheet.dart';
 import 'package:nextpos/View/Components/Inventory/ProductEditorSheet.dart';
 import 'package:nextpos/View/Components/Inventory/StockMovementSheet.dart';
@@ -61,34 +62,69 @@ class _InventoryScreenState extends State<InventoryScreen> {
         ? products.length
         : start + _pageSize;
     final visibleProducts = products.sublist(start, end);
+    final hasActiveFilters = _filter != _InventoryFilter.all ||
+        selectedCategory != _allCategories;
 
     return Scaffold(
       drawer: const AppDrawer(),
       appBar: AppBar(
-        title: const Text('Inventory'),
+        toolbarHeight: 72,
+        titleSpacing: 12,
+        title: Row(
+          children: [
+            const PocketInventoryMark(size: 34),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Inventory',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
+                  ),
+                  Text(
+                    '${allProducts.length} products · Pocket Inventory',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: AppBrand.mutedOf(context),
+                          fontWeight: FontWeight.w500,
+                        ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
         actions: [
-          IconButton(
-            tooltip: 'Add product',
-            onPressed: _addProduct,
-            icon: const Icon(Icons.add_rounded),
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: FilledButton.tonalIcon(
+              onPressed: _addProduct,
+              icon: const Icon(Icons.add_rounded, size: 18),
+              label: const Text('Add'),
+            ),
           ),
-          const SizedBox(width: 6),
         ],
       ),
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 6, 20, 12),
+            padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
             child: Column(
               children: [
                 TextField(
                   controller: _searchController,
                   decoration: InputDecoration(
-                    hintText: 'Search products',
+                    hintText: 'Search name, category, supplier or barcode',
                     prefixIcon: const Icon(Icons.search_rounded),
                     suffixIcon: _searchController.text.isEmpty
                         ? null
                         : IconButton(
+                            tooltip: 'Clear search',
                             onPressed: () {
                               _searchController.clear();
                               setState(() => _page = 0);
@@ -98,49 +134,27 @@ class _InventoryScreenState extends State<InventoryScreen> {
                   ),
                   onChanged: (_) => setState(() => _page = 0),
                 ),
-                const SizedBox(height: 12),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      _filterChip(_InventoryFilter.all, 'All'),
-                      const SizedBox(width: 8),
-                      _filterChip(_InventoryFilter.low, 'Low stock'),
-                      const SizedBox(width: 8),
-                      _filterChip(_InventoryFilter.out, 'Out of stock'),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
                 Row(
                   children: [
                     Expanded(
-                      child: DropdownButtonFormField<String>(
-                        value: selectedCategory,
-                        isExpanded: true,
-                        decoration: const InputDecoration(
-                          labelText: 'Category',
-                          isDense: true,
+                      child: OutlinedButton.icon(
+                        onPressed: () =>
+                            _showFilters(categories, selectedCategory),
+                        icon: Icon(
+                          Icons.tune_rounded,
+                          color: hasActiveFilters
+                              ? AppBrand.primary
+                              : AppBrand.mutedOf(context),
                         ),
-                        items: categories
-                            .map(
-                              (category) => DropdownMenuItem(
-                                value: category,
-                                child: Text(
-                                  category,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            )
-                            .toList(),
-                        onChanged: (value) {
-                          if (value == null) return;
-                          setState(() {
-                            _category = value;
-                            _page = 0;
-                          });
-                        },
+                        label: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            _filterSummary(selectedCategory),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -149,7 +163,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                       segments: const [
                         ButtonSegment(
                           value: _InventoryLayout.list,
-                          icon: Icon(Icons.view_list_rounded),
+                          icon: Icon(Icons.view_agenda_outlined),
                           tooltip: 'List view',
                         ),
                         ButtonSegment(
@@ -166,6 +180,30 @@ class _InventoryScreenState extends State<InventoryScreen> {
                         });
                       },
                     ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Text(
+                      '${products.length} ${products.length == 1 ? 'product' : 'products'}',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppBrand.mutedOf(context),
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                    const Spacer(),
+                    if (hasActiveFilters)
+                      TextButton(
+                        onPressed: () {
+                          setState(() {
+                            _filter = _InventoryFilter.all;
+                            _category = _allCategories;
+                            _page = 0;
+                          });
+                        },
+                        child: const Text('Clear filters'),
+                      ),
                   ],
                 ),
               ],
@@ -195,8 +233,8 @@ class _InventoryScreenState extends State<InventoryScreen> {
                           mainAxisSpacing: 10,
                           childAspectRatio:
                               MediaQuery.sizeOf(context).width >= 720
-                                  ? 1.08
-                                  : .88,
+                                  ? .98
+                                  : .72,
                         ),
                         itemCount: visibleProducts.length,
                         itemBuilder: (_, index) =>
@@ -224,34 +262,134 @@ class _InventoryScreenState extends State<InventoryScreen> {
             ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _addProduct,
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Add product'),
-      ),
     );
   }
 
-  Widget _filterChip(_InventoryFilter value, String label) {
-    final selected = _filter == value;
-    return ChoiceChip(
-      label: Text(label),
-      selected: selected,
-      showCheckmark: false,
-      onSelected: (_) {
-        setState(() {
-          _filter = value;
-          _page = 0;
-        });
-      },
-      selectedColor: AppBrand.primarySoftOf(context),
-      backgroundColor: AppBrand.surfaceOf(context),
-      side: BorderSide(
-        color: selected ? AppBrand.primary : AppBrand.borderOf(context),
-      ),
-      labelStyle: TextStyle(
-        color: selected ? AppBrand.primary : AppBrand.inkOf(context),
-        fontWeight: FontWeight.w600,
+  String _filterSummary(String selectedCategory) {
+    final labels = <String>[];
+    if (_filter == _InventoryFilter.low) labels.add('Low stock');
+    if (_filter == _InventoryFilter.out) labels.add('Out of stock');
+    if (selectedCategory != _allCategories) labels.add(selectedCategory);
+    if (labels.isEmpty) return 'Filter products';
+    if (labels.length == 1) return labels.first;
+    return '${labels.length} filters active';
+  }
+
+  Future<void> _showFilters(
+    List<String> categories,
+    String selectedCategory,
+  ) async {
+    var pendingFilter = _filter;
+    var pendingCategory = selectedCategory;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      useSafeArea: true,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (sheetContext, setSheetState) {
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Filter inventory',
+                    style: Theme.of(sheetContext)
+                        .textTheme
+                        .titleLarge
+                        ?.copyWith(fontWeight: FontWeight.w800),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Keep the inventory screen focused. Filters stay here until you need them.',
+                    style: Theme.of(sheetContext).textTheme.bodyMedium?.copyWith(
+                          color: AppBrand.mutedOf(sheetContext),
+                        ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    'Stock status',
+                    style: Theme.of(sheetContext).textTheme.labelLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                  ),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (final entry in const [
+                        (_InventoryFilter.all, 'All'),
+                        (_InventoryFilter.low, 'Low stock'),
+                        (_InventoryFilter.out, 'Out of stock'),
+                      ])
+                        ChoiceChip(
+                          label: Text(entry.$2),
+                          selected: pendingFilter == entry.$1,
+                          showCheckmark: false,
+                          onSelected: (_) => setSheetState(
+                            () => pendingFilter = entry.$1,
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    'Category',
+                    style: Theme.of(sheetContext).textTheme.labelLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                  ),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: categories
+                        .map(
+                          (category) => ChoiceChip(
+                            label: Text(category),
+                            selected: pendingCategory == category,
+                            showCheckmark: false,
+                            onSelected: (_) => setSheetState(
+                              () => pendingCategory = category,
+                            ),
+                          ),
+                        )
+                        .toList(),
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      TextButton(
+                        onPressed: () => setSheetState(() {
+                          pendingFilter = _InventoryFilter.all;
+                          pendingCategory = _allCategories;
+                        }),
+                        child: const Text('Reset'),
+                      ),
+                      const Spacer(),
+                      FilledButton(
+                        onPressed: () {
+                          setState(() {
+                            _filter = pendingFilter;
+                            _category = pendingCategory;
+                            _page = 0;
+                          });
+                          Navigator.pop(sheetContext);
+                        },
+                        child: const Text('Apply filters'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -266,6 +404,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
       final matchesQuery = query.isEmpty ||
           product.name.toLowerCase().contains(query) ||
           (product.category ?? '').toLowerCase().contains(query) ||
+          (product.supplierName ?? '').toLowerCase().contains(query) ||
           (product.barcode ?? '').toLowerCase().contains(query);
       if (!matchesQuery) return false;
 
@@ -304,6 +443,13 @@ class _ProductRow extends StatelessWidget {
     final hasImage = imagePath != null &&
         imagePath.isNotEmpty &&
         File(imagePath).existsSync();
+    final category = product.category?.trim().isNotEmpty == true
+        ? product.category!.trim()
+        : 'Uncategorized';
+    final supplier = product.supplierName?.trim() ?? '';
+    final sellingPrice = product.sellingPrice > 0
+        ? '₱${product.sellingPrice.toStringAsFixed(2)}'
+        : 'Price not set';
 
     return Material(
       color: AppBrand.surfaceOf(context),
@@ -318,19 +464,20 @@ class _ProductRow extends StatelessWidget {
             borderRadius: BorderRadius.circular(18),
           ),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(14),
                 child: hasImage
                     ? Image.file(
                         File(imagePath),
-                        width: 50,
-                        height: 50,
+                        width: 54,
+                        height: 54,
                         fit: BoxFit.cover,
                       )
                     : Container(
-                        width: 50,
-                        height: 50,
+                        width: 54,
+                        height: 54,
                         alignment: Alignment.center,
                         color: status.background,
                         child: Text(
@@ -355,29 +502,29 @@ class _ProductRow extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
+                            fontWeight: FontWeight.w800,
                           ),
                     ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            product.category?.trim().isNotEmpty == true
-                                ? product.category!
-                                : 'Uncategorized',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style:
-                                Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: AppBrand.mutedOf(context),
-                                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      category,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppBrand.mutedOf(context),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        _StatusDotLabel(status: status),
-                      ],
                     ),
+                    const SizedBox(height: 2),
+                    Text(
+                      supplier.isEmpty ? 'Supplier not set' : 'Supplier: $supplier',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppBrand.mutedOf(context),
+                          ),
+                    ),
+                    const SizedBox(height: 7),
+                    _StatusDotLabel(status: status),
                   ],
                 ),
               ),
@@ -386,24 +533,30 @@ class _ProductRow extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    quantity.toString(),
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    sellingPrice,
+                    maxLines: 1,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w800,
-                          color: status.color,
+                          color: product.sellingPrice > 0
+                              ? AppBrand.inkOf(context)
+                              : AppBrand.mutedOf(context),
                         ),
                   ),
+                  const SizedBox(height: 5),
                   Text(
-                    unit,
+                    '$quantity $unit',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppBrand.mutedOf(context),
+                          color: status.color,
+                          fontWeight: FontWeight.w700,
                         ),
+                  ),
+                  const SizedBox(height: 8),
+                  Icon(
+                    Icons.chevron_right_rounded,
+                    size: 20,
+                    color: AppBrand.mutedOf(context),
                   ),
                 ],
-              ),
-              const SizedBox(width: 4),
-              Icon(
-                Icons.chevron_right_rounded,
-                color: AppBrand.mutedOf(context),
               ),
             ],
           ),
@@ -414,13 +567,21 @@ class _ProductRow extends StatelessWidget {
 
   void _showActions(BuildContext context) {
     final status = _stockStatus(context, product);
+    final supplier = product.supplierName?.trim() ?? '';
+    final cost = product.costPrice > 0
+        ? '₱${product.costPrice.toStringAsFixed(2)}'
+        : 'Not set';
+    final sell = product.sellingPrice > 0
+        ? '₱${product.sellingPrice.toStringAsFixed(2)}'
+        : 'Not set';
 
     showModalBottomSheet<void>(
       context: context,
       useSafeArea: true,
       isScrollControlled: true,
+      showDragHandle: true,
       builder: (sheetContext) => Padding(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -451,7 +612,34 @@ class _ProductRow extends StatelessWidget {
                       ),
                 ),
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppBrand.primaryFaintOf(context),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      supplier.isEmpty ? 'Supplier not set' : 'Supplier: $supplier',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Cost $cost · Selling $sell',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppBrand.mutedOf(context),
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
               _ActionTile(
                 icon: Icons.add_rounded,
                 title: 'Stock In',
@@ -507,7 +695,7 @@ class _ProductRow extends StatelessWidget {
                 _ActionTile(
                   icon: Icons.edit_outlined,
                   title: 'Edit details',
-                  subtitle: 'Photo, reorder level, category, unit, or barcode',
+                  subtitle: 'Supplier, prices, photo, category and stock setup',
                   onTap: () {
                     Navigator.pop(sheetContext);
                     ProductEditorSheet.show(context, product: product);
@@ -556,6 +744,13 @@ class _ProductGridCard extends StatelessWidget {
     final hasImage = imagePath != null &&
         imagePath.isNotEmpty &&
         File(imagePath).existsSync();
+    final supplier = product.supplierName?.trim() ?? '';
+    final category = product.category?.trim().isNotEmpty == true
+        ? product.category!.trim()
+        : 'Uncategorized';
+    final unit = product.unit?.trim().isNotEmpty == true
+        ? product.unit!.trim()
+        : 'units';
 
     return Material(
       color: AppBrand.surfaceOf(context),
@@ -564,7 +759,7 @@ class _ProductGridCard extends StatelessWidget {
         onTap: () => _ProductRow(product: product)._showActions(context),
         borderRadius: BorderRadius.circular(18),
         child: Container(
-          padding: const EdgeInsets.all(13),
+          padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             border: Border.all(color: AppBrand.borderOf(context)),
             borderRadius: BorderRadius.circular(18),
@@ -606,60 +801,71 @@ class _ProductGridCard extends StatelessWidget {
                   _StatusBadge(status: status),
                 ],
               ),
-              const Spacer(),
+              const SizedBox(height: 12),
               Text(
                 product.name,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.w800,
+                      height: 1.2,
                     ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 5),
               Text(
-                product.category?.trim().isNotEmpty == true
-                    ? product.category!
-                    : 'Uncategorized',
+                category,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: AppBrand.mutedOf(context),
                     ),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 2),
+              Text(
+                supplier.isEmpty ? 'Supplier not set' : supplier,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppBrand.mutedOf(context),
+                    ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                product.sellingPrice > 0
+                    ? '₱${product.sellingPrice.toStringAsFixed(2)}'
+                    : 'Price not set',
+                maxLines: 1,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+              ),
+              const Spacer(),
               Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text(
-                    quantity.toString(),
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          color: status.color,
-                          fontWeight: FontWeight.w800,
-                        ),
+                  Icon(
+                    Icons.inventory_2_outlined,
+                    size: 16,
+                    color: status.color,
                   ),
                   const SizedBox(width: 5),
                   Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.only(bottom: 3),
-                      child: Text(
-                        product.unit?.trim().isNotEmpty == true
-                            ? product.unit!
-                            : 'units',
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: AppBrand.mutedOf(context),
-                            ),
-                      ),
+                    child: Text(
+                      '$quantity $unit',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                            color: status.color,
+                            fontWeight: FontWeight.w700,
+                          ),
                     ),
                   ),
+                  Text(
+                    'Reorder ${product.reorderLevel}',
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: AppBrand.mutedOf(context),
+                        ),
+                  ),
                 ],
-              ),
-              const SizedBox(height: 3),
-              Text(
-                'Reorder at ${product.reorderLevel}',
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: AppBrand.mutedOf(context),
-                    ),
               ),
             ],
           ),
